@@ -1,0 +1,73 @@
+##########################
+# BASE DEL SISTEMA
+##########################
+Flask==3.0.2
+Flask-Login==0.6.3
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.25
+Werkzeug==3.0.1
+python-dotenv==1.0.1
+gunicorn==21.2.0
+
+##########################
+# BASES DE DATOS
+##########################
+pymysql==1.1.1          # MySQL (opcional)
+psycopg2-binary==2.9.9  # PostgreSQL (opcional)
+sqlite-web==0.3.9       # Explorador SQLite
+
+##########################
+# ARCHIVOS EXCEL / CSV
+##########################
+pandas==2.2.3
+openpyxl==3.1.2
+xlrd==2.0.1
+xlsxwriter==3.2.0
+numpy==2.2.2
+
+##########################
+# REPORTES / PDF
+##########################
+reportlab==4.1.0
+fpdf2==2.7.7
+
+##########################
+# IMÁGENES Y QR
+##########################
+Pillow==10.2.0
+qrcode==7.4.2
+python-barcode==0.15.1
+
+##########################
+# FECHAS Y TIEMPO
+##########################
+python-dateutil==2.9.0.post0
+pytz==2024.1
+
+##########################
+# SEGURIDAD / OTP
+##########################
+pyotp==2.9.0
+bcrypt==4.1.2
+
+##########################
+# VALIDACIONES
+##########################
+email-validator==2.2.0
+
+##########################
+# REQUESTS / APIs
+##########################
+requests==2.32.3
+
+##########################
+# MANIPULACIÓN AVANZADA (OPCIONAL)
+##########################
+regex==2023.12.25
+pyyaml==6.0.1
+
+##########################
+# IA / MACHINE LEARNING (OPCIONAL)
+##########################
+scikit-learn==1.4.2
+joblib==1.4.0
