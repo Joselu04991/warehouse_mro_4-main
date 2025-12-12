@@ -3,8 +3,6 @@ from datetime import datetime
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-
-
 # =============================================================================
 # INVENTARIO BASE
 # =============================================================================
@@ -79,3 +77,4 @@ def sort_location_advanced(loc):
         return 999999
     except:
         return 999999
+
