@@ -12,7 +12,6 @@ from flask import (
 )
 from flask_login import login_required, current_user
 
-# ✅ IMPORTS CORREGIDOS PARA RAILWAY
 from models import db
 from models.warehouse2d import WarehouseLocation
 from models.alerts import Alert
@@ -21,7 +20,6 @@ from utils.excel import load_warehouse2d_excel, sort_location_advanced
 warehouse2d_bp = Blueprint("warehouse2d", __name__, url_prefix="/warehouse2d")
 
 
-# Ranking de severidad
 STATUS_RANK = {
     "vacío": 0,
     "normal": 1,
@@ -31,17 +29,11 @@ STATUS_RANK = {
 
 
 # =====================================================================================
-#                            CARGA DEL EXCEL 2D  (ARREGLADO)
+#                              CARGA EXCEL ALMACÉN 2D
 # =====================================================================================
-
 @warehouse2d_bp.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_warehouse2d():
-
-    # 🔥 Si quieres activar roles, destapa esta línea
-    # if current_user.role != "admin":
-    #     flash("No tienes permiso para subir el layout 2D.", "danger")
-    #     return redirect(url_for("dashboard.dashboard"))
 
     if request.method == "POST":
         file = request.files.get("file")
@@ -52,70 +44,81 @@ def upload_warehouse2d():
 
         try:
             df = load_warehouse2d_excel(file)
-        except ValueError as e:
+        except Exception as e:
             flash(str(e), "danger")
             return redirect(url_for("warehouse2d.upload_warehouse2d"))
-        except Exception:
-            flash("Error al procesar el archivo 2D. Revise formato y columnas.", "danger")
-            return redirect(url_for("warehouse2d.upload_warehouse2d"))
 
-        # 🔥 Limpiamos la tabla antes de cargar nuevo layout
+        # NORMALIZACIÓN CRÍTICA
+        df["Ubicación"] = (
+            df["Ubicación"]
+            .astype(str)
+            .str.replace(" ", "")
+            .str.upper()
+            .str.strip()
+        )
+
+        # LIMPIAR TABLA
         WarehouseLocation.query.delete()
         db.session.commit()
 
-        # ---------------------------------------------
-        # Insertar datos del Excel
-        # ---------------------------------------------
+        alertas_generadas = 0
+
         for _, row in df.iterrows():
 
-            cod = str(row.get("Código del Material", "")).strip()
-            desc = str(row.get("Texto breve de material", "")).strip()
-            umb = str(row.get("Unidad de medida base", "")).strip()
-            ubi = str(row.get("Ubicación", "")).strip()
+            material_code = str(row["Código del Material"]).strip()
+            material_text = str(row["Texto breve de material"]).strip()
+            base_unit = str(row["Unidad de medida base"]).strip()
+            ubicacion = str(row["Ubicación"]).strip()
 
-            seg = float(row.get("Stock de seguridad", 0) or 0)
-            maxi = float(row.get("Stock máximo", 0) or 0)
-            libre = float(row.get("Libre utilización", 0) or 0)
+            stock_maximo = float(row["Stock máximo"] or 0)
+            consumo_mes = float(row["Consumo mes actual"] or 0)
+            libre = float(row["Libre utilización"] or 0)
+            lote_min = float(row["Tamaño de lote mínimo"] or 0)
 
             item = WarehouseLocation(
-                material_code=cod,
-                material_text=desc,
-                base_unit=umb,
-                ubicacion=ubi,
-                stock_seguridad=seg,
-                stock_maximo=maxi,
+                material_code=material_code,
+                material_text=material_text,
+                base_unit=base_unit,
+                ubicacion=ubicacion,
+                stock_maximo=stock_maximo,
+                consumo_mes=consumo_mes,
                 libre_utilizacion=libre,
+                lote_minimo=lote_min,
+                creado_en=datetime.utcnow(),
             )
 
             db.session.add(item)
+            db.session.flush()  # para tener status calculado
 
-            # VERIFICAR ESTADO
-            estado = item.status  # Según modelo
-
-            if estado == "crítico":
-                mensaje = (
-                    f"Stock crítico en {ubi}: {cod} ({desc}) "
-                    f"Libre={libre}, Seguridad={seg}"
-                )
+            # ALERTA AUTOMÁTICA
+            if item.status == "crítico":
                 alerta = Alert(
                     alert_type="stock_critico_2d",
-                    message=mensaje,
+                    message=(
+                        f"Ubicación {ubicacion} | "
+                        f"{material_code} - {material_text} | "
+                        f"Libre={libre}, LoteMin={lote_min}"
+                    ),
                     severity="Alta",
+                    estado="activo",
                 )
                 db.session.add(alerta)
+                alertas_generadas += 1
 
         db.session.commit()
 
-        flash("El layout 2D fue cargado correctamente.", "success")
+        flash(
+            f"Layout 2D cargado correctamente. Alertas críticas: {alertas_generadas}",
+            "success",
+        )
         return redirect(url_for("warehouse2d.map_view"))
 
     return render_template("warehouse2d/upload.html")
 
 
 # =====================================================================================
-#                                     MAPA 2D
+#                                      MAPA 2D
 # =====================================================================================
-
 @warehouse2d_bp.route("/map")
 @login_required
 def map_view():
@@ -123,77 +126,76 @@ def map_view():
 
 
 # =====================================================================================
-#                           DATA PARA EL MAPA (JSON)
+#                                 DATA MAPA 2D (JSON)
 # =====================================================================================
-
 @warehouse2d_bp.route("/map-data")
 @login_required
 def map_data():
 
     items = WarehouseLocation.query.all()
-    por_ubicacion = {}
+    data = {}
 
     for item in items:
-        loc = item.ubicacion or "SIN UBICACIÓN"
-        estado_item = item.status
+        loc = item.ubicacion
+        estado = item.status
+        rank = STATUS_RANK.get(estado, 0)
 
-        if loc not in por_ubicacion:
-            por_ubicacion[loc] = {
+        if loc not in data:
+            data[loc] = {
                 "location": loc,
-                "total_libre": 0.0,
+                "total_libre": 0,
                 "items": 0,
-                "status": estado_item,
-                "rank": STATUS_RANK.get(estado_item, 0),
+                "status": estado,
+                "rank": rank,
             }
 
-        por_ubicacion[loc]["total_libre"] += float(item.libre_utilizacion or 0)
-        por_ubicacion[loc]["items"] += 1
+        data[loc]["total_libre"] += float(item.libre_utilizacion or 0)
+        data[loc]["items"] += 1
 
-        rank = STATUS_RANK.get(estado_item, 0)
-        if rank > por_ubicacion[loc]["rank"]:
-            por_ubicacion[loc]["rank"] = rank
-            por_ubicacion[loc]["status"] = estado_item
+        if rank > data[loc]["rank"]:
+            data[loc]["rank"] = rank
+            data[loc]["status"] = estado
 
-    data_sorted = sorted(
-        por_ubicacion.values(),
+    salida = sorted(
+        data.values(),
         key=lambda x: sort_location_advanced(x["location"])
     )
 
-    for d in data_sorted:
+    for d in salida:
         d.pop("rank", None)
 
-    return jsonify(data_sorted)
+    return jsonify(salida)
 
 
 # =====================================================================================
-#                       DETALLE DE MATERIALES POR UBICACIÓN
+#                        DETALLE DE UBICACIÓN (MODAL)
 # =====================================================================================
-
-@warehouse2d_bp.route("/location/<path:ubicacion>")
+@warehouse2d_bp.route("/location/<string:ubicacion>")
 @login_required
 def location_detail(ubicacion):
 
+    ubicacion = ubicacion.replace(" ", "").upper().strip()
+
     items = (
-        WarehouseLocation.query.filter_by(ubicacion=ubicacion.strip())
+        WarehouseLocation.query
+        .filter_by(ubicacion=ubicacion)
         .order_by(WarehouseLocation.material_code)
         .all()
     )
 
-    detalle = []
-
-    for item in items:
-        detalle.append({
-            "material_code": item.material_code,
-            "material_text": item.material_text,
-            "base_unit": item.base_unit,
-            "stock_seguridad": item.stock_seguridad,
-            "stock_maximo": item.stock_maximo,
-            "libre_utilizacion": item.libre_utilizacion,
-            "status": item.status,
-        })
-
     return jsonify({
         "ubicacion": ubicacion,
-        "items": detalle,
+        "items": [
+            {
+                "material_code": i.material_code,
+                "material_text": i.material_text,
+                "base_unit": i.base_unit,
+                "libre_utilizacion": i.libre_utilizacion,
+                "stock_maximo": i.stock_maximo,
+                "consumo_mes": i.consumo_mes,
+                "lote_minimo": i.lote_minimo,
+                "status": i.status,
+            }
+            for i in items
+        ]
     })
-
