@@ -1,16 +1,6 @@
 from datetime import datetime
-import pandas as pd
-
-from flask import (
-    Blueprint,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    flash,
-    jsonify,
-)
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required
 
 from models import db
 from models.warehouse2d import WarehouseLocation
@@ -18,7 +8,6 @@ from models.alerts import Alert
 from utils.excel import load_warehouse2d_excel, sort_location_advanced
 
 warehouse2d_bp = Blueprint("warehouse2d", __name__, url_prefix="/warehouse2d")
-
 
 STATUS_RANK = {
     "vacío": 0,
@@ -28,9 +17,9 @@ STATUS_RANK = {
 }
 
 
-# =====================================================================================
-#                              CARGA EXCEL ALMACÉN 2D
-# =====================================================================================
+# =============================================================================
+# CARGA EXCEL 2D
+# =============================================================================
 @warehouse2d_bp.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_warehouse2d():
@@ -48,67 +37,46 @@ def upload_warehouse2d():
             flash(str(e), "danger")
             return redirect(url_for("warehouse2d.upload_warehouse2d"))
 
-        # NORMALIZACIÓN CRÍTICA
-        df["Ubicación"] = (
-            df["Ubicación"]
-            .astype(str)
-            .str.replace(" ", "")
-            .str.upper()
-            .str.strip()
-        )
-
         # LIMPIAR TABLA
         WarehouseLocation.query.delete()
         db.session.commit()
 
-        alertas_generadas = 0
+        alertas = 0
 
         for _, row in df.iterrows():
 
-            material_code = str(row["Código del Material"]).strip()
-            material_text = str(row["Texto breve de material"]).strip()
-            base_unit = str(row["Unidad de medida base"]).strip()
-            ubicacion = str(row["Ubicación"]).strip()
-
-            stock_maximo = float(row["Stock máximo"] or 0)
-            consumo_mes = float(row["Consumo mes actual"] or 0)
-            libre = float(row["Libre utilización"] or 0)
-            lote_min = float(row["Tamaño de lote mínimo"] or 0)
-
             item = WarehouseLocation(
-                material_code=material_code,
-                material_text=material_text,
-                base_unit=base_unit,
-                ubicacion=ubicacion,
-                stock_maximo=stock_maximo,
-                consumo_mes=consumo_mes,
-                libre_utilizacion=libre,
-                lote_minimo=lote_min,
+                material_code=row["Código del Material"],
+                material_text=row["Texto breve de material"],
+                base_unit=row["Unidad de medida base"],
+                ubicacion=row["Ubicación"],
+                stock_seguridad=row["Stock de seguridad"],
+                stock_maximo=row["Stock máximo"],
+                libre_utilizacion=row["Libre utilización"],
                 creado_en=datetime.utcnow(),
             )
 
             db.session.add(item)
-            db.session.flush()  # para tener status calculado
+            db.session.flush()  # calcula status
 
-            # ALERTA AUTOMÁTICA
             if item.status == "crítico":
                 alerta = Alert(
                     alert_type="stock_critico_2d",
                     message=(
-                        f"Ubicación {ubicacion} | "
-                        f"{material_code} - {material_text} | "
-                        f"Libre={libre}, LoteMin={lote_min}"
+                        f"Ubicación {item.ubicacion} | "
+                        f"{item.material_code} - {item.material_text} | "
+                        f"Libre={item.libre_utilizacion} / Seguridad={item.stock_seguridad}"
                     ),
                     severity="Alta",
                     estado="activo",
                 )
                 db.session.add(alerta)
-                alertas_generadas += 1
+                alertas += 1
 
         db.session.commit()
 
         flash(
-            f"Layout 2D cargado correctamente. Alertas críticas: {alertas_generadas}",
+            f"Layout 2D cargado correctamente. Alertas críticas: {alertas}",
             "success",
         )
         return redirect(url_for("warehouse2d.map_view"))
@@ -116,18 +84,18 @@ def upload_warehouse2d():
     return render_template("warehouse2d/upload.html")
 
 
-# =====================================================================================
-#                                      MAPA 2D
-# =====================================================================================
+# =============================================================================
+# MAPA 2D
+# =============================================================================
 @warehouse2d_bp.route("/map")
 @login_required
 def map_view():
     return render_template("warehouse2d/map.html")
 
 
-# =====================================================================================
-#                                 DATA MAPA 2D (JSON)
-# =====================================================================================
+# =============================================================================
+# DATA MAPA 2D
+# =============================================================================
 @warehouse2d_bp.route("/map-data")
 @login_required
 def map_data():
@@ -135,26 +103,25 @@ def map_data():
     items = WarehouseLocation.query.all()
     data = {}
 
-    for item in items:
-        loc = item.ubicacion
-        estado = item.status
-        rank = STATUS_RANK.get(estado, 0)
+    for i in items:
+        loc = i.ubicacion
+        rank = STATUS_RANK.get(i.status, 0)
 
         if loc not in data:
             data[loc] = {
                 "location": loc,
                 "total_libre": 0,
                 "items": 0,
-                "status": estado,
+                "status": i.status,
                 "rank": rank,
             }
 
-        data[loc]["total_libre"] += float(item.libre_utilizacion or 0)
+        data[loc]["total_libre"] += float(i.libre_utilizacion or 0)
         data[loc]["items"] += 1
 
         if rank > data[loc]["rank"]:
             data[loc]["rank"] = rank
-            data[loc]["status"] = estado
+            data[loc]["status"] = i.status
 
     salida = sorted(
         data.values(),
@@ -167,9 +134,9 @@ def map_data():
     return jsonify(salida)
 
 
-# =====================================================================================
-#                        DETALLE DE UBICACIÓN (MODAL)
-# =====================================================================================
+# =============================================================================
+# DETALLE POR UBICACIÓN
+# =============================================================================
 @warehouse2d_bp.route("/location/<string:ubicacion>")
 @login_required
 def location_detail(ubicacion):
@@ -190,10 +157,9 @@ def location_detail(ubicacion):
                 "material_code": i.material_code,
                 "material_text": i.material_text,
                 "base_unit": i.base_unit,
-                "libre_utilizacion": i.libre_utilizacion,
+                "stock_seguridad": i.stock_seguridad,
                 "stock_maximo": i.stock_maximo,
-                "consumo_mes": i.consumo_mes,
-                "lote_minimo": i.lote_minimo,
+                "libre_utilizacion": i.libre_utilizacion,
                 "status": i.status,
             }
             for i in items
