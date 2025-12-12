@@ -13,6 +13,7 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required
+from sqlalchemy import text
 
 # MODELOS
 from models import db
@@ -28,7 +29,6 @@ from utils.excel import (
 )
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
-
 
 # =============================================================================
 # 1. SUBIR INVENTARIO BASE
@@ -50,15 +50,14 @@ def upload_inventory():
             flash(f"Error procesando archivo: {str(e)}", "danger")
             return redirect(url_for("inventory.upload_inventory"))
 
-        # Normalizar ubicaciones
-        df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper()
+        df["Ubicación"] = (
+            df["Ubicación"].astype(str).str.replace(" ", "").str.upper()
+        )
 
-        # Limpiar inventario anterior y conteos
         InventoryItem.query.delete()
         InventoryCount.query.delete()
         db.session.commit()
 
-        # Guardar inventario nuevo
         for _, row in df.iterrows():
             db.session.add(
                 InventoryItem(
@@ -66,11 +65,10 @@ def upload_inventory():
                     material_text=row["Texto breve de material"],
                     base_unit=row["Unidad de medida base"],
                     location=row["Ubicación"],
-                    libre_utilizacion=row["Libre utilización"],
+                    libre_utilizacion=int(row["Libre utilización"]),
                 )
             )
 
-        # Guardar snapshot histórico
         snapshot_id = str(uuid.uuid4())
         snapshot_name = f"Inventario {datetime.now():%d/%m/%Y %H:%M}"
 
@@ -83,7 +81,7 @@ def upload_inventory():
                     material_text=row["Texto breve de material"],
                     base_unit=row["Unidad de medida base"],
                     location=row["Ubicación"],
-                    libre_utilizacion=row["Libre utilización"],
+                    libre_utilizacion=int(row["Libre utilización"]),
                 )
             )
 
@@ -92,7 +90,6 @@ def upload_inventory():
         return redirect(url_for("inventory.list_inventory"))
 
     return render_template("inventory/upload.html")
-
 
 # =============================================================================
 # 2. LISTA INVENTARIO
@@ -104,9 +101,8 @@ def list_inventory():
     items_sorted = sorted(items, key=lambda x: sort_location_advanced(x.location))
     return render_template("inventory/list.html", items=items_sorted)
 
-
 # =============================================================================
-# 3. PANTALLA DE CONTEO
+# 3. CONTEO
 # =============================================================================
 @inventory_bp.route("/count")
 @login_required
@@ -114,7 +110,6 @@ def count_inventory():
     items = InventoryItem.query.all()
     items_sorted = sorted(items, key=lambda x: sort_location_advanced(x.location))
     return render_template("inventory/count.html", items=items_sorted)
-
 
 # =============================================================================
 # 4. GUARDAR CONTEO
@@ -128,15 +123,13 @@ def save_count():
         if not isinstance(data, list):
             return jsonify({"success": False, "msg": "Formato inválido"}), 400
 
-        # Limpiar conteo previo
         InventoryCount.query.delete()
 
-        # Guardar nuevo conteo
         for c in data:
             db.session.add(
                 InventoryCount(
-                    material_code=c["material_code"],
-                    location=c["location"].replace(" ", "").upper(),
+                    material_code=str(c["material_code"]).strip(),
+                    location=str(c["location"]).replace(" ", "").upper(),
                     real_count=int(c["real_count"]),
                     fecha=datetime.now(),
                 )
@@ -147,55 +140,54 @@ def save_count():
 
     except Exception as e:
         print("❌ ERROR SAVE COUNT:", e)
-        return jsonify({"success": False}), 500
-
+        return jsonify({"success": False, "msg": str(e)}), 500
 
 # =============================================================================
-# 5. EXPORTAR DISCREPANCIAS (PRO, SIN ERRORES)
+# 5. EXPORTAR DISCREPANCIAS (FIX DEFINITIVO)
 # =============================================================================
 @inventory_bp.route("/export-discrepancies", methods=["POST"])
 @login_required
 def export_discrepancies_auto():
 
     try:
-        conteo = request.get_json()
+        conteo = request.get_json() or []
 
-        # Inventario del sistema
-        sistema_query = db.session.query(
-            InventoryItem.material_code.label("Código Material"),
-            InventoryItem.material_text.label("Descripción"),
-            InventoryItem.base_unit.label("Unidad"),
-            InventoryItem.location.label("Ubicación"),
-            InventoryItem.libre_utilizacion.label("Stock sistema"),
-        )
+        engine = db.engine  # 🔥 CLAVE PARA RAILWAY
 
-        sistema = pd.read_sql(sistema_query.statement, db.session.bind)
+        query = text("""
+            SELECT
+                material_code AS "Código Material",
+                material_text AS "Descripción",
+                base_unit AS "Unidad",
+                location AS "Ubicación",
+                libre_utilizacion AS "Stock sistema"
+            FROM inventory_items
+        """)
 
-        # Normalizar
+        sistema = pd.read_sql(query, engine)
+
         sistema["Código Material"] = sistema["Código Material"].astype(str).str.strip()
         sistema["Ubicación"] = sistema["Ubicación"].astype(str).str.strip()
 
-        # Conteo → DataFrame
-        conteo_df = pd.DataFrame(conteo) if conteo else pd.DataFrame()
+        conteo_df = pd.DataFrame(conteo)
 
         if not conteo_df.empty:
-            conteo_df = conteo_df.rename(
-                columns={
-                    "material_code": "Código Material",
-                    "location": "Ubicación",
-                    "real_count": "Stock contado",
-                }
-            )
+            conteo_df = conteo_df.rename(columns={
+                "material_code": "Código Material",
+                "location": "Ubicación",
+                "real_count": "Stock contado",
+            })
             conteo_df["Código Material"] = conteo_df["Código Material"].astype(str).str.strip()
             conteo_df["Ubicación"] = conteo_df["Ubicación"].astype(str).str.strip()
 
-        # MERGE TIPO LEFT (todos los materiales del sistema)
-        merged = sistema.merge(conteo_df, on=["Código Material", "Ubicación"], how="left")
+        merged = sistema.merge(
+            conteo_df,
+            on=["Código Material", "Ubicación"],
+            how="left"
+        )
 
-        # Valores para los no contados
         merged["Stock contado"] = merged["Stock contado"].fillna("NO CONTADO")
 
-        # Diferencia
         def diff_calc(row):
             if row["Stock contado"] == "NO CONTADO":
                 return 0
@@ -203,7 +195,6 @@ def export_discrepancies_auto():
 
         merged["Diferencia"] = merged.apply(diff_calc, axis=1)
 
-        # Estado final
         def estado_calc(row):
             if row["Stock contado"] == "NO CONTADO":
                 return "NO CONTADO"
@@ -216,22 +207,18 @@ def export_discrepancies_auto():
 
         merged["Estado"] = merged.apply(estado_calc, axis=1)
 
-        # Generar Excel válido
         excel = generate_discrepancies_excel(merged)
-        fname = f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx"
 
         return send_file(
             excel,
             as_attachment=True,
-            download_name=fname,
-            mimetype="application/vnd.ms-excel",
+            download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
     except Exception as e:
         print("❌ ERROR EXPORT-DISCREP:", e)
-        return jsonify({"success": False, "msg": "Error generando Excel"}), 500
-
-
+        return jsonify({"success": False, "msg": str(e)}), 500
 
 # =============================================================================
 # 6. DASHBOARD INVENTARIO
@@ -239,6 +226,7 @@ def export_discrepancies_auto():
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard_inventory():
+
     items = InventoryItem.query.all()
 
     total_items = len(items)
