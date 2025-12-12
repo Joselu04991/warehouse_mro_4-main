@@ -13,15 +13,18 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required
-from sqlalchemy import text
 
+# ============================
 # MODELOS
+# ============================
 from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
 
+# ============================
 # UTILS
+# ============================
 from utils.excel import (
     load_inventory_excel,
     sort_location_advanced,
@@ -29,6 +32,7 @@ from utils.excel import (
 )
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
+
 
 # =============================================================================
 # 1. SUBIR INVENTARIO BASE
@@ -47,17 +51,23 @@ def upload_inventory():
         try:
             df = load_inventory_excel(file)
         except Exception as e:
-            flash(f"Error procesando archivo: {str(e)}", "danger")
+            flash(str(e), "danger")
             return redirect(url_for("inventory.upload_inventory"))
 
+        # Normalizar ubicación
         df["Ubicación"] = (
-            df["Ubicación"].astype(str).str.replace(" ", "").str.upper()
+            df["Ubicación"]
+            .astype(str)
+            .str.replace(" ", "")
+            .str.upper()
         )
 
+        # Limpiar inventario y conteos previos
         InventoryItem.query.delete()
         InventoryCount.query.delete()
         db.session.commit()
 
+        # Guardar inventario
         for _, row in df.iterrows():
             db.session.add(
                 InventoryItem(
@@ -65,10 +75,11 @@ def upload_inventory():
                     material_text=row["Texto breve de material"],
                     base_unit=row["Unidad de medida base"],
                     location=row["Ubicación"],
-                    libre_utilizacion=int(row["Libre utilización"]),
+                    libre_utilizacion=float(row["Libre utilización"]),
                 )
             )
 
+        # Snapshot histórico
         snapshot_id = str(uuid.uuid4())
         snapshot_name = f"Inventario {datetime.now():%d/%m/%Y %H:%M}"
 
@@ -81,7 +92,7 @@ def upload_inventory():
                     material_text=row["Texto breve de material"],
                     base_unit=row["Unidad de medida base"],
                     location=row["Ubicación"],
-                    libre_utilizacion=int(row["Libre utilización"]),
+                    libre_utilizacion=float(row["Libre utilización"]),
                 )
             )
 
@@ -91,8 +102,9 @@ def upload_inventory():
 
     return render_template("inventory/upload.html")
 
+
 # =============================================================================
-# 2. LISTA INVENTARIO
+# 2. LISTAR INVENTARIO
 # =============================================================================
 @inventory_bp.route("/list")
 @login_required
@@ -101,8 +113,9 @@ def list_inventory():
     items_sorted = sorted(items, key=lambda x: sort_location_advanced(x.location))
     return render_template("inventory/list.html", items=items_sorted)
 
+
 # =============================================================================
-# 3. CONTEO
+# 3. PANTALLA DE CONTEO
 # =============================================================================
 @inventory_bp.route("/count")
 @login_required
@@ -110,6 +123,7 @@ def count_inventory():
     items = InventoryItem.query.all()
     items_sorted = sorted(items, key=lambda x: sort_location_advanced(x.location))
     return render_template("inventory/count.html", items=items_sorted)
+
 
 # =============================================================================
 # 4. GUARDAR CONTEO
@@ -142,8 +156,9 @@ def save_count():
         print("❌ ERROR SAVE COUNT:", e)
         return jsonify({"success": False, "msg": str(e)}), 500
 
+
 # =============================================================================
-# 5. EXPORTAR DISCREPANCIAS (FIX DEFINITIVO)
+# 5. EXPORTAR DISCREPANCIAS (ESTABLE, SIN SQL CRUDO)
 # =============================================================================
 @inventory_bp.route("/export-discrepancies", methods=["POST"])
 @login_required
@@ -152,23 +167,31 @@ def export_discrepancies_auto():
     try:
         conteo = request.get_json() or []
 
-        engine = db.engine  # 🔥 CLAVE PARA RAILWAY
+        # ============================
+        # INVENTARIO DESDE ORM
+        # ============================
+        items = InventoryItem.query.all()
 
-        query = text("""
-            SELECT
-                material_code AS "Código Material",
-                material_text AS "Descripción",
-                base_unit AS "Unidad",
-                location AS "Ubicación",
-                libre_utilizacion AS "Stock sistema"
-            FROM inventory_items
-        """)
+        if not items:
+            return jsonify({
+                "success": False,
+                "msg": "Inventario vacío."
+            }), 400
 
-        sistema = pd.read_sql(query, engine)
+        sistema = pd.DataFrame([{
+            "Código Material": i.material_code,
+            "Descripción": i.material_text,
+            "Unidad": i.base_unit,
+            "Ubicación": i.location,
+            "Stock sistema": int(i.libre_utilizacion or 0)
+        } for i in items])
 
         sistema["Código Material"] = sistema["Código Material"].astype(str).str.strip()
         sistema["Ubicación"] = sistema["Ubicación"].astype(str).str.strip()
 
+        # ============================
+        # CONTEO DEL USUARIO
+        # ============================
         conteo_df = pd.DataFrame(conteo)
 
         if not conteo_df.empty:
@@ -177,48 +200,59 @@ def export_discrepancies_auto():
                 "location": "Ubicación",
                 "real_count": "Stock contado",
             })
+
             conteo_df["Código Material"] = conteo_df["Código Material"].astype(str).str.strip()
             conteo_df["Ubicación"] = conteo_df["Ubicación"].astype(str).str.strip()
+            conteo_df["Stock contado"] = conteo_df["Stock contado"].astype(int)
 
+        # ============================
+        # MERGE
+        # ============================
         merged = sistema.merge(
             conteo_df,
             on=["Código Material", "Ubicación"],
             how="left"
         )
 
-        merged["Stock contado"] = merged["Stock contado"].fillna("NO CONTADO")
+        merged["Stock contado"] = merged["Stock contado"].fillna(-1)
 
-        def diff_calc(row):
-            if row["Stock contado"] == "NO CONTADO":
-                return 0
-            return int(row["Stock contado"]) - int(row["Stock sistema"])
+        # ============================
+        # DIFERENCIAS Y ESTADO
+        # ============================
+        merged["Diferencia"] = merged.apply(
+            lambda r: 0 if r["Stock contado"] == -1
+            else r["Stock contado"] - r["Stock sistema"],
+            axis=1
+        )
 
-        merged["Diferencia"] = merged.apply(diff_calc, axis=1)
-
-        def estado_calc(row):
-            if row["Stock contado"] == "NO CONTADO":
+        def estado(row):
+            if row["Stock contado"] == -1:
                 return "NO CONTADO"
-            d = row["Diferencia"]
-            if d == 0:
+            if row["Diferencia"] == 0:
                 return "OK"
-            if d < 0:
-                return "CRÍTICO" if d <= -10 else "FALTA"
+            if row["Diferencia"] < 0:
+                return "CRÍTICO" if row["Diferencia"] <= -10 else "FALTA"
             return "SOBRA"
 
-        merged["Estado"] = merged.apply(estado_calc, axis=1)
+        merged["Estado"] = merged.apply(estado, axis=1)
+        merged["Stock contado"] = merged["Stock contado"].replace(-1, "NO CONTADO")
 
+        # ============================
+        # GENERAR EXCEL REAL
+        # ============================
         excel = generate_discrepancies_excel(merged)
 
         return send_file(
             excel,
             as_attachment=True,
             download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
-            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
     except Exception as e:
         print("❌ ERROR EXPORT-DISCREP:", e)
         return jsonify({"success": False, "msg": str(e)}), 500
+
 
 # =============================================================================
 # 6. DASHBOARD INVENTARIO
@@ -226,7 +260,6 @@ def export_discrepancies_auto():
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard_inventory():
-
     items = InventoryItem.query.all()
 
     total_items = len(items)
@@ -235,11 +268,11 @@ def dashboard_inventory():
     criticos = sum(1 for i in items if i.libre_utilizacion <= 0)
     faltantes = sum(1 for i in items if 0 < i.libre_utilizacion < 5)
 
-    estados = {"OK": 0, "FALTA": 0, "CRITICO": 0, "SOBRA": 0}
+    estados = {"OK": 0, "FALTA": 0, "CRÍTICO": 0, "SOBRA": 0}
 
     for i in items:
-        if i.libre_utilizacion == 0:
-            estados["CRITICO"] += 1
+        if i.libre_utilizacion <= 0:
+            estados["CRÍTICO"] += 1
         elif i.libre_utilizacion < 5:
             estados["FALTA"] += 1
         elif i.libre_utilizacion > 50:
