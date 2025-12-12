@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Registrar Bulto{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="fw-bold">➕ Registrar Bulto</h2>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+
+            <form method="POST">
+
+                <label class="form-label">Cantidad</label>
+                <input type="number" class="form-control" name="cantidad" required>
+
+                <label class="form-label mt-3">Chofer</label>
+                <input type="text" class="form-control" name="chofer" required>
+
+                <label class="form-label mt-3">Placa</label>
+                <input type="text" class="form-control" name="placa" required>
+
+                <label class="form-label mt-3">Observación</label>
+                <textarea class="form-control" name="observacion"></textarea>
+
+                <div class="text-end mt-4">
+                    <button class="btn btn-primary">Registrar</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

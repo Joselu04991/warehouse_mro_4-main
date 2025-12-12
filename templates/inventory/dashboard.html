@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="fw-bold mb-4">
+    <i class="bi bi-pie-chart-fill me-2"></i> Dashboard de Inventario
+</h2>
+
+<!-- ========================= KPIs SUPERIORES ========================= -->
+<div class="row g-3 mb-4">
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center p-3 bg-primary text-white">
+            <div class="fs-3 fw-bold">{{ total_items }}</div>
+            <div>Total de Materiales</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center p-3 bg-success text-white">
+            <div class="fs-3 fw-bold">{{ ubicaciones_unicas }}</div>
+            <div>Ubicaciones Activas</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center p-3 bg-warning text-dark">
+            <div class="fs-3 fw-bold">{{ criticos }}</div>
+            <div>Materiales Críticos</div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 text-center p-3 bg-danger text-white">
+            <div class="fs-3 fw-bold">{{ faltantes }}</div>
+            <div>Materiales con Faltante</div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- ========================= GRÁFICOS ========================= -->
+<div class="row g-4">
+
+    <!-- PIE CHART: Estado del stock -->
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-2"></i>Estado del Inventario</h5>
+            <canvas id="estadoChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- BAR CHART: Materiales por ubicación -->
+    <div class="col-md-6">
+        <div class="card shadow-sm p-3">
+            <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>Materiales por Ubicación</h5>
+            <canvas id="ubicacionChart" height="200"></canvas>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- ========================= TABLA DE LISTADO SIMPLE ========================= -->
+<div class="card shadow-sm p-4 mt-4">
+
+    <h5 class="fw-bold mb-3">
+        <i class="bi bi-table me-2"></i>Vista Rápida del Inventario
+    </h5>
+
+    <input type="text" id="searchInv" class="form-control mb-3"
+           placeholder="🔍 Buscar materiales o ubicaciones...">
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="dashboardTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Ubicación</th>
+                    <th>Unidad</th>
+                    <th>Stock</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in items %}
+                <tr>
+                    <td>{{ i.material_code }}</td>
+                    <td>{{ i.material_text }}</td>
+                    <td>{{ i.location }}</td>
+                    <td>{{ i.base_unit }}</td>
+                    <td>{{ i.libre_utilizacion }}</td>
+                    <td>
+                        {% if i.estado == "CRÍTICO" %}
+                            <span class="badge bg-danger">Crítico</span>
+                        {% elif i.estado == "FALTA" %}
+                            <span class="badge bg-warning text-dark">Falta</span>
+                        {% elif i.estado == "SOBRA" %}
+                            <span class="badge bg-info">Sobra</span>
+                        {% else %}
+                            <span class="badge bg-success">OK</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+
+
+
+<!-- ========================= JS CHARTS ========================= -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// ------ GRAFICO PIE ------
+new Chart(document.getElementById("estadoChart"), {
+    type: "pie",
+    data: {
+        labels: ["OK", "Faltante", "Crítico", "Sobra"],
+        datasets: [{
+            data: [
+                {{ estados.OK }},
+                {{ estados.FALTA }},
+                {{ estados.CRITICO }},
+                {{ estados.SOBRA }}
+            ],
+            backgroundColor: ["#28a745", "#ffc107", "#dc3545", "#0dcaf0"]
+        }]
+    }
+});
+
+// ------ GRAFICO BARRAS ------
+new Chart(document.getElementById("ubicacionChart"), {
+    type: "bar",
+    data: {
+        labels: {{ ubicaciones_labels | safe }},
+        datasets: [{
+            label: "Materiales",
+            data: {{ ubicaciones_counts | safe }},
+            backgroundColor: "#0d6efd"
+        }]
+    }
+});
+
+// ------ BUSCADOR ------
+document.getElementById("searchInv").addEventListener("keyup", function() {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll("#dashboardTable tbody tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}

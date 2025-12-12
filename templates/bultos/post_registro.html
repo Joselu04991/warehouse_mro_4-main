@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Post-Registro{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold">📝 Post-Registro de Bulto</h2>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+
+            <p><strong>Chofer:</strong> {{ bulto.chofer }}</p>
+            <p><strong>Placa:</strong> {{ bulto.placa }}</p>
+            <p><strong>Fecha Ingreso:</strong> {{ bulto.fecha_hora }}</p>
+            <p><strong>Bultos registrados:</strong> {{ bulto.cantidad }}</p>
+
+            <form method="POST">
+
+                <label class="form-label mt-3">Cantidad REAL contada</label>
+                <input type="number" class="form-control" name="cantidad_real" required>
+
+                <label class="form-label mt-3">Observación</label>
+                <textarea class="form-control" name="observacion" rows="2"></textarea>
+
+                <div class="d-flex justify-content-between mt-3">
+                    <a href="{{ url_for('bultos.list_bultos') }}" class="btn btn-secondary">
+                        ⬅ Volver
+                    </a>
+                    <button class="btn btn-primary">💾 Guardar Post-Registro</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

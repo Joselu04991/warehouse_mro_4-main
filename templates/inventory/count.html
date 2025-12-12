@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="fw-bold mb-4">
+    <i class="bi bi-clipboard-data me-2"></i> Conteo de Inventario
+</h2>
+
+<div class="card shadow-sm p-4">
+
+    <!-- ========================== BUSCADOR + BOTONES ========================== -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <input type="text" id="searchCount"
+               class="form-control w-50 shadow-sm"
+               placeholder="🔍 Buscar material, texto o ubicación…">
+
+        <div>
+            <!-- 📌 Exportar discrepancias automáticamente -->
+            <button id="exportBtn" class="btn btn-primary btn-lg shadow-sm me-2">
+                <i class="bi bi-file-earmark-excel me-2"></i>
+                Exportar Discrepancias
+            </button>
+
+            <!-- 📌 Guardar conteo -->
+            <button id="saveCountBtn" class="btn btn-success btn-lg shadow-sm">
+                <i class="bi bi-cloud-check me-2"></i>
+                Guardar Conteo
+            </button>
+        </div>
+
+    </div>
+
+    <!-- ========================== TABLA ========================== -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle" id="countTable">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Ubicación</th>
+                    <th>Stock Sistema</th>
+                    <th>Conteo Real</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for i in items %}
+                <tr data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
+                    <td><strong>{{ i.material_code }}</strong></td>
+                    <td>{{ i.material_text }}</td>
+                    <td class="text-primary fw-bold">{{ i.location }}</td>
+                    <td class="text-center">{{ i.libre_utilizacion }}</td>
+
+                    <td class="text-center" style="width: 180px;">
+                        <input type="number"
+                               min="0"
+                               class="form-control count-input shadow-sm text-center"
+                               placeholder="0">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+<!-- ========================== SCRIPTS ========================== -->
+<script>
+/* ==================================================
+   🔍 BÚSQUEDA EN TIEMPO REAL
+   ================================================== */
+document.getElementById("searchCount").addEventListener("input", function () {
+    const filter = this.value.toLowerCase();
+    document.querySelectorAll("#countTable tbody tr").forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+
+
+/* ==================================================
+   🎨 EFECTOS EN INPUTS (colores y navegación)
+   ================================================== */
+document.querySelectorAll(".count-input").forEach(input => {
+
+    // Fondo según si está vacío o lleno
+    input.addEventListener("input", () => {
+        input.style.backgroundColor = input.value.trim() === ""
+            ? "#ffe5e5"
+            : "#e6ffe6";
+
+        // Resaltar fila modificada
+        input.closest("tr").style.backgroundColor = "#f7fff0";
+    });
+
+    // ENTER → ir al siguiente input
+    input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+            const inputs = [...document.querySelectorAll(".count-input")];
+            const idx = inputs.indexOf(input);
+            if (inputs[idx + 1]) inputs[idx + 1].focus();
+        }
+    });
+
+});
+
+
+/* ==================================================
+   📝 GUARDAR CONTEO (YA FUNCIONA CON TU BACKEND)
+   ================================================== */
+document.getElementById("saveCountBtn").addEventListener("click", () => {
+
+    const conteos = [];
+
+    document.querySelectorAll("#countTable tbody tr").forEach(row => {
+        const material_code = row.dataset.code;
+        const location = row.dataset.loc;
+        const input = row.querySelector(".count-input").value.trim();
+
+        if (input !== "") {
+            conteos.push({
+                material_code,
+                location,
+                real_count: Number(input)
+            });
+        }
+    });
+
+    if (conteos.length === 0) {
+        return alert("⚠ Debe ingresar al menos un valor de conteo.");
+    }
+
+    fetch("/inventory/save-count", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(conteos)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+
+            alert("✅ Conteo guardado correctamente.");
+
+            document.querySelectorAll(".count-input").forEach(i => {
+                i.style.backgroundColor = "white";
+            });
+
+        } else {
+            alert("❌ Error guardando conteo.");
+        }
+    })
+    .catch(err => {
+        alert("❌ Error conectando con el servidor.");
+    });
+});
+
+
+/* ==================================================
+   📌 EXPORTAR DISCREPANCIAS DIRECTO A EXCEL (sin archivo)
+   ================================================== */
+document.getElementById("exportBtn").addEventListener("click", () => {
+
+    const conteos = [];
+
+    document.querySelectorAll("#countTable tbody tr").forEach(row => {
+        const material_code = row.dataset.code;
+        const location = row.dataset.loc;
+        const input = row.querySelector(".count-input").value.trim();
+
+        if (input !== "") {
+            conteos.push({
+                material_code,
+                location,
+                real_count: Number(input)
+            });
+        }
+    });
+
+    if (conteos.length === 0) {
+        return alert("⚠ Debe ingresar mínimo un conteo para generar discrepancias.");
+    }
+
+    fetch("/inventory/export-discrepancies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(conteos)
+    })
+    .then(r => r.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "discrepancias.xlsx";
+        a.click();
+
+        window.URL.revokeObjectURL(url);
+    });
+});
+</script>
+
+{% endblock %}

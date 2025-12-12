@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>WAREHOUSE MRO</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->  
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body { background: #f1f3f5; }
+
+        #sidebar-wrapper {
+            width: 260px;
+            transition: 0.3s;
+            background: #1d2125;
+            min-height: 100vh;
+        }
+
+        #wrapper.toggled #sidebar-wrapper { margin-left: -260px; }
+
+        .list-group-item {
+            border: none;
+            padding: 15px;
+            color: white;
+            background: #1d2125;
+        }
+
+        .list-group-item:hover {
+            background: #2c3238;
+        }
+
+        .navbar {
+            background: #0d6efd !important;
+        }
+
+        .role-title {
+            padding-left: 20px;
+            color: #f8c000;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .accordion-button {
+            background: #1d2125 !important;
+            color: white !important;
+        }
+        .accordion-button:not(.collapsed) {
+            color: #f8c000 !important;
+        }
+        .accordion-body .list-group-item {
+            padding-left: 40px !important;
+        }
+    </style>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="d-flex" id="wrapper">
+
+{% if current_user.is_authenticated %}
+
+    <!-- ======================== SIDEBAR ======================== -->
+    <div id="sidebar-wrapper" class="border-end text-white">
+
+        <div class="sidebar-heading text-center py-4 fs-4 fw-bold bg-dark">
+            <i class="bi bi-building-gear me-2"></i>WAREHOUSE MRO
+        </div>
+
+        <div class="list-group list-group-flush">
+
+            <!-- ======================== DASHBOARD PRINCIPAL ======================== -->
+            <a href="{{ url_for('dashboard.dashboard') }}" class="list-group-item">
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+            </a>
+
+            <!-- ======================== INVENTARIO ======================== -->
+            <div class="accordion" id="accordionInventory">
+
+                <div class="accordion-item bg-dark border-0">
+
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#inventoryMenu">
+                            <i class="bi bi-box-seam me-2"></i> Inventario
+                        </button>
+                    </h2>
+
+                    <div id="inventoryMenu" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+
+                            <a href="{{ url_for('inventory.dashboard_inventory') }}"
+                               class="list-group-item bg-dark text-white">
+                                📊 Dashboard Inventario
+                            </a>
+
+                            <a href="{{ url_for('inventory.list_inventory') }}"
+                               class="list-group-item bg-dark text-white">
+                                📚 Inventario actual
+                            </a>
+
+                            <a href="{{ url_for('inventory.upload_inventory') }}"
+                               class="list-group-item bg-dark text-white">
+                                ⬆ Cargar inventario base
+                            </a>
+
+                            <a href="{{ url_for('inventory.upload_inventory_history') }}"
+                               class="list-group-item bg-dark text-white">
+                                🕒 Subir inventarios antiguos
+                            </a>
+
+                            <a href="{{ url_for('inventory.count_inventory') }}"
+                               class="list-group-item bg-dark text-white">
+                                🔢 Conteo de inventario
+                            </a>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ======================== ALMACÉN 2D ======================== -->
+            <a href="{{ url_for('warehouse2d.map_view') }}" class="list-group-item">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>Almacén 2D
+            </a>
+
+            <!-- ======================== BULTOS ======================== -->
+            <div class="accordion" id="accordionBultos">
+
+                <div class="accordion-item bg-dark border-0">
+
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#bultosMenu">
+                            <i class="bi bi-truck me-2"></i> Bultos
+                        </button>
+                    </h2>
+
+                    <div id="bultosMenu" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+
+                            <a href="{{ url_for('bultos.new_bulto') }}"
+                               class="list-group-item bg-dark text-white">
+                                ➕ Registrar Bulto
+                            </a>
+
+                            <a href="{{ url_for('bultos.list_bultos') }}"
+                               class="list-group-item bg-dark text-white">
+                                📄 Dashboard
+                            </a>
+
+                            <a href="{{ url_for('bultos.contar_bultos') }}"
+                               class="list-group-item bg-dark text-white">
+                                🧮 Conteo de Bultos
+                            </a>
+
+                            <a href="{{ url_for('bultos.historial_post') }}"
+                               class="list-group-item bg-dark text-white">
+                                📋 Historial
+                            </a>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ======================== ACCIONES VARIAS ======================== -->
+            <a href="{{ url_for('technician_errors.list_errors') }}" class="list-group-item">
+                <i class="bi bi-tools me-2"></i>Errores Técnicos
+            </a>
+
+            <a href="{{ url_for('alerts.list_alerts') }}" class="list-group-item">
+                <i class="bi bi-exclamation-triangle me-2"></i>Alertas
+            </a>
+
+            <a href="{{ url_for('auth.perfil_usuario') }}" class="list-group-item">
+                <i class="bi bi-person-lines-fill me-2"></i>Mi Perfil
+            </a>
+
+            <a href="{{ url_for('equipos.lista') }}" class="list-group-item">
+                <i class="bi bi-collection me-2"></i>Lista de Equipos
+            </a>
+
+            <a href="{{ url_for('equipos.nuevo') }}" class="list-group-item">
+                <i class="bi bi-plus-circle me-2"></i>Registrar Equipo
+            </a>
+
+            <a href="{{ url_for('productividad.dashboard_productividad') }}" class="list-group-item">
+                <i class="bi bi-graph-up-arrow me-2"></i>Productividades
+            </a>
+
+            <a href="{{ url_for('qr.vista_qr') }}" class="list-group-item">
+                <i class="bi bi-qr-code-scan me-2"></i>QR de Equipos
+            </a>
+
+            <a href="{{ url_for('auditoria.vista_auditoria') }}" class="list-group-item">
+                <i class="bi bi-journal-text me-2"></i>Auditoría
+            </a>
+
+            <a href="{{ url_for('alertas_ai.listado_ai') }}" class="list-group-item">
+                <i class="bi bi-robot me-2"></i>Alertas Inteligentes
+            </a>
+
+            {% if current_user.role == "owner" %}
+            <div class="role-title">
+                <i class="bi bi-shield-lock-fill me-2"></i>Administración Owner
+            </div>
+            <a href="{{ url_for('admin_roles.listar_roles') }}" class="list-group-item">
+                <i class="bi bi-people-fill me-2"></i>Gestión de Roles
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+
+{% endif %}
+
+    <!-- ======================== CONTENIDO ======================== -->
+    <div id="page-content-wrapper">
+
+        <nav class="navbar navbar-expand-lg navbar-dark px-3">
+            <div class="container-fluid">
+
+                {% if current_user.is_authenticated %}
+                <button class="btn btn-outline-light me-2" id="menu-toggle">
+                    <i class="bi bi-list"></i>
+                </button>
+                {% endif %}
+
+                <span class="navbar-brand fw-bold">Sistema MRO</span>
+
+                <ul class="navbar-nav ms-auto">
+
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item me-3">
+                        <span class="nav-link text-white">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ current_user.username }} ({{ current_user.role | upper }})
+                        </span>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{{ url_for('auth.logout') }}">
+                            <i class="bi bi-box-arrow-right me-1"></i>Salir
+                        </a>
+                    </li>
+                    {% endif %}
+
+                </ul>
+            </div>
+        </nav>
+
+        <div class="container-fluid py-4">
+            {% block content %}{% endblock %}
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.getElementById("menu-toggle")?.addEventListener("click", () => {
+        document.getElementById("wrapper").classList.toggle("toggled");
+    });
+</script>
+
+</body>
+</html>

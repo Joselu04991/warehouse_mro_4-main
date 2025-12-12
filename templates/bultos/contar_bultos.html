@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Conteo de Bultos{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold">📦 Conteo de Bultos Registrados</h2>
+    <p class="text-muted">Selecciona un bulto para registrar la cantidad real.</p>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-body table-responsive">
+
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Chofer</th>
+                        <th>Placa</th>
+                        <th>Fecha ingreso</th>
+                        <th class="text-end">Cantidad declarada</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bultos %}
+                    <tr>
+                        <td>{{ b.id }}</td>
+                        <td>{{ b.chofer }}</td>
+                        <td>{{ b.placa }}</td>
+                        <td>{{ b.fecha_hora.strftime("%d/%m/%Y %H:%M") }}</td>
+                        <td class="text-end fw-bold">{{ b.cantidad }}</td>
+
+                        <td class="text-center">
+                            <a href="{{ url_for('bultos.post_registro', bulto_id=b.id) }}"
+                               class="btn btn-primary btn-sm">
+                                ✏ Contar
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-3">
+                            No hay bultos registrados.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

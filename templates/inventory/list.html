@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="fw-bold mb-4">
+    <i class="bi bi-archive me-2"></i> Inventario Actual
+</h2>
+
+<div class="card shadow-sm p-3">
+
+    <div class="d-flex justify-content-between mb-3">
+
+        <input type="text" id="searchInput" class="form-control w-50"
+               placeholder="🔍 Buscar por material, texto o ubicación...">
+
+        <div class="d-flex gap-2">
+
+            <!-- ✔ BOTÓN DE CONTEO EN LÍNEA -->
+            <a href="{{ url_for('inventory.count_inventory') }}"
+               class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-2"></i> Conteo en línea
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="inventoryTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Unidad</th>
+                    <th>Ubicación</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in items %}
+                <tr>
+                    <td>{{ i.material_code }}</td>
+                    <td>{{ i.material_text }}</td>
+                    <td>{{ i.base_unit }}</td>
+                    <td>{{ i.location }}</td>
+                    <td>{{ i.libre_utilizacion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#inventoryTable tbody tr");
+
+    rows.forEach(r => {
+        let txt = r.innerText.toLowerCase();
+        r.style.display = txt.includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}
+
+
