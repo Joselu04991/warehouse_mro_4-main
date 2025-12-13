@@ -34,7 +34,7 @@ def load_inventory_excel(file):
 
 
 # =============================================================================
-# ALMACÉN 2D (COMPATIBLE CON models/warehouse2d.py)
+# ALMACÉN 2D
 # =============================================================================
 def load_warehouse2d_excel(file):
     df = pd.read_excel(file)
@@ -69,7 +69,7 @@ def load_warehouse2d_excel(file):
 
 
 # =============================================================================
-# ORDENAR UBICACIONES E001, E015...
+# ORDENAR UBICACIONES
 # =============================================================================
 def sort_location_advanced(loc):
     try:
@@ -80,3 +80,69 @@ def sort_location_advanced(loc):
         return 999999
     except:
         return 999999
+
+
+# =============================================================================
+# EXCEL PRO DE DISCREPANCIAS (USADO POR inventory_routes)
+# =============================================================================
+def generate_discrepancies_excel(df):
+
+    output = BytesIO()
+    wb = Workbook()
+
+    if df is None or df.empty:
+        ws = wb.active
+        ws.title = "DISCREPANCIAS"
+        ws.append(["SIN DATOS PARA EXPORTAR"])
+        wb.save(output)
+        output.seek(0)
+        return output
+
+    df = df.copy()
+
+    columnas = [
+        "Código Material",
+        "Descripción",
+        "Unidad",
+        "Ubicación",
+        "Stock sistema",
+        "Stock contado",
+        "Diferencia",
+        "Estado",
+    ]
+
+    for c in columnas:
+        if c not in df.columns:
+            df[c] = ""
+
+    df = df[columnas]
+
+    ws = wb.active
+    ws.title = "DISCREPANCIAS"
+
+    ws.append(columnas)
+
+    for _, r in df.iterrows():
+        ws.append(list(r))
+
+    header = PatternFill("solid", fgColor="1F4E78")
+    font = Font(bold=True, color="FFFFFF")
+    center = Alignment(horizontal="center")
+
+    for cell in ws[1]:
+        cell.fill = header
+        cell.font = font
+        cell.alignment = center
+
+    thin = Side(border_style="thin", color="000000")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for row in ws.iter_rows(min_row=2):
+        for cell in row:
+            cell.border = border
+            cell.alignment = center
+
+    ws.auto_filter.ref = ws.dimensions
+    wb.save(output)
+    output.seek(0)
+    return output
