@@ -18,7 +18,7 @@ from utils.excel import load_warehouse2d_excel, sort_location_advanced
 warehouse2d_bp = Blueprint("warehouse2d", __name__, url_prefix="/warehouse2d")
 
 
-# Severidad para consolidar por ubicación
+# Severidad para consolidar estado por ubicación
 STATUS_RANK = {
     "vacío": 0,
     "normal": 1,
@@ -28,7 +28,7 @@ STATUS_RANK = {
 
 
 # =============================================================================
-# CARGA DE EXCEL ALMACÉN 2D
+# CARGA EXCEL ALMACÉN 2D
 # =============================================================================
 @warehouse2d_bp.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -47,16 +47,7 @@ def upload_warehouse2d():
             flash(str(e), "danger")
             return redirect(url_for("warehouse2d.upload_warehouse2d"))
 
-        # Normalizar ubicación
-        df["Ubicación"] = (
-            df["Ubicación"]
-            .astype(str)
-            .str.replace(" ", "")
-            .str.upper()
-            .str.strip()
-        )
-
-        # Limpiar layout anterior
+        # 🔥 LIMPIAR LAYOUT ANTERIOR
         WarehouseLocation.query.delete()
         db.session.commit()
 
@@ -70,20 +61,20 @@ def upload_warehouse2d():
                 base_unit=str(row["Unidad de medida base"]).strip(),
                 ubicacion=str(row["Ubicación"]).strip(),
 
-                stock_seguridad=float(row.get("Stock de seguridad", 0) or 0),
-                stock_maximo=float(row.get("Stock máximo", 0) or 0),
-                consumo_mes=float(row.get("Consumo mes actual", 0) or 0),
-                libre_utilizacion=float(row.get("Libre utilización", 0) or 0),
+                stock_seguridad=float(row["Stock de seguridad"]),
+                stock_maximo=float(row["Stock máximo"]),
+                libre_utilizacion=float(row["Libre utilización"]),
 
+                consumo_mes=0.0,  # el Excel 2D no lo trae
                 created_at=datetime.utcnow(),
             )
 
             db.session.add(item)
-            db.session.flush()  # para que status funcione
+            db.session.flush()  # permite calcular status
 
-            # ALERTA AUTOMÁTICA
+            # 🚨 ALERTA AUTOMÁTICA
             if item.status == "crítico":
-                alerta = Alert(
+                db.session.add(Alert(
                     alert_type="stock_critico_2d",
                     message=(
                         f"Ubicación {item.ubicacion} | "
@@ -93,14 +84,13 @@ def upload_warehouse2d():
                     ),
                     severity="Alta",
                     estado="activo",
-                )
-                db.session.add(alerta)
+                ))
                 alertas += 1
 
         db.session.commit()
 
         flash(
-            f"Layout 2D cargado correctamente. Alertas críticas: {alertas}",
+            f"✅ Layout 2D cargado correctamente. Alertas críticas: {alertas}",
             "success",
         )
         return redirect(url_for("warehouse2d.map_view"))
@@ -118,7 +108,7 @@ def map_view():
 
 
 # =============================================================================
-# DATA PARA EL MAPA 2D
+# DATA MAPA 2D (JSON)
 # =============================================================================
 @warehouse2d_bp.route("/map-data")
 @login_required
@@ -135,13 +125,13 @@ def map_data():
         if loc not in data:
             data[loc] = {
                 "location": loc,
-                "total_libre": 0,
+                "total_libre": 0.0,
                 "items": 0,
                 "status": estado,
                 "rank": rank,
             }
 
-        data[loc]["total_libre"] += float(item.libre_utilizacion or 0)
+        data[loc]["total_libre"] += float(item.libre_utilizacion)
         data[loc]["items"] += 1
 
         if rank > data[loc]["rank"]:
@@ -160,7 +150,7 @@ def map_data():
 
 
 # =============================================================================
-# DETALLE POR UBICACIÓN (MODAL)
+# DETALLE POR UBICACIÓN
 # =============================================================================
 @warehouse2d_bp.route("/location/<string:ubicacion>")
 @login_required
@@ -184,7 +174,6 @@ def location_detail(ubicacion):
                 "base_unit": i.base_unit,
                 "stock_seguridad": i.stock_seguridad,
                 "stock_maximo": i.stock_maximo,
-                "consumo_mes": i.consumo_mes,
                 "libre_utilizacion": i.libre_utilizacion,
                 "status": i.status,
             }
