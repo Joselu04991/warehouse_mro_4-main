@@ -18,7 +18,7 @@ STATUS_RANK = {
 
 
 # =============================================================================
-# CARGA EXCEL 2D
+# CARGA EXCEL ALMACÉN 2D
 # =============================================================================
 @warehouse2d_bp.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -37,27 +37,25 @@ def upload_warehouse2d():
             flash(str(e), "danger")
             return redirect(url_for("warehouse2d.upload_warehouse2d"))
 
-        # LIMPIAR TABLA
         WarehouseLocation.query.delete()
         db.session.commit()
 
         alertas = 0
 
         for _, row in df.iterrows():
-
             item = WarehouseLocation(
                 material_code=row["Código del Material"],
                 material_text=row["Texto breve de material"],
                 base_unit=row["Unidad de medida base"],
-                ubicacion=row["Ubicación"],
                 stock_seguridad=row["Stock de seguridad"],
                 stock_maximo=row["Stock máximo"],
+                consumo_mes=row["Consumo mes actual"],
+                ubicacion=row["Ubicación"],
                 libre_utilizacion=row["Libre utilización"],
-                creado_en=datetime.utcnow(),
             )
 
             db.session.add(item)
-            db.session.flush()  # calcula status
+            db.session.flush()
 
             if item.status == "crítico":
                 alerta = Alert(
@@ -65,7 +63,7 @@ def upload_warehouse2d():
                     message=(
                         f"Ubicación {item.ubicacion} | "
                         f"{item.material_code} - {item.material_text} | "
-                        f"Libre={item.libre_utilizacion} / Seguridad={item.stock_seguridad}"
+                        f"Libre={item.libre_utilizacion}"
                     ),
                     severity="Alta",
                     estado="activo",
@@ -75,10 +73,7 @@ def upload_warehouse2d():
 
         db.session.commit()
 
-        flash(
-            f"Layout 2D cargado correctamente. Alertas críticas: {alertas}",
-            "success",
-        )
+        flash(f"Layout 2D cargado correctamente. Alertas críticas: {alertas}", "success")
         return redirect(url_for("warehouse2d.map_view"))
 
     return render_template("warehouse2d/upload.html")
@@ -103,30 +98,27 @@ def map_data():
     items = WarehouseLocation.query.all()
     data = {}
 
-    for i in items:
-        loc = i.ubicacion
-        rank = STATUS_RANK.get(i.status, 0)
+    for item in items:
+        loc = item.ubicacion
+        rank = STATUS_RANK.get(item.status, 0)
 
         if loc not in data:
             data[loc] = {
                 "location": loc,
                 "total_libre": 0,
                 "items": 0,
-                "status": i.status,
+                "status": item.status,
                 "rank": rank,
             }
 
-        data[loc]["total_libre"] += float(i.libre_utilizacion or 0)
+        data[loc]["total_libre"] += item.libre_utilizacion
         data[loc]["items"] += 1
 
         if rank > data[loc]["rank"]:
             data[loc]["rank"] = rank
-            data[loc]["status"] = i.status
+            data[loc]["status"] = item.status
 
-    salida = sorted(
-        data.values(),
-        key=lambda x: sort_location_advanced(x["location"])
-    )
+    salida = sorted(data.values(), key=lambda x: sort_location_advanced(x["location"]))
 
     for d in salida:
         d.pop("rank", None)
@@ -159,6 +151,7 @@ def location_detail(ubicacion):
                 "base_unit": i.base_unit,
                 "stock_seguridad": i.stock_seguridad,
                 "stock_maximo": i.stock_maximo,
+                "consumo_mes": i.consumo_mes,
                 "libre_utilizacion": i.libre_utilizacion,
                 "status": i.status,
             }
