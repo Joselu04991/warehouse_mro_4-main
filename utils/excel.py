@@ -39,34 +39,39 @@ def load_inventory_excel(file):
 def load_warehouse2d_excel(file):
     df = pd.read_excel(file)
 
-    columnas = [
+    columnas_requeridas = [
         "Código del Material",
         "Texto breve de material",
         "Unidad de medida base",
         "Stock de seguridad",
         "Stock máximo",
-        "Consumo mes actual",
         "Ubicación",
         "Libre utilización",
     ]
 
-    for c in columnas:
+    for c in columnas_requeridas:
         if c not in df.columns:
-            raise Exception(f"❌ Falta columna obligatoria en Almacén 2D: {c}")
+            raise Exception(f"❌ Falta columna obligatoria en almacén 2D: {c}")
 
     df = df.copy()
+
     df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
     df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
     df["Unidad de medida base"] = df["Unidad de medida base"].astype(str).str.strip()
-    df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper().str.strip()
+
+    df["Ubicación"] = (
+        df["Ubicación"]
+        .astype(str)
+        .str.strip()
+        .str.replace(" ", "")
+        .str.upper()
+    )
 
     df["Stock de seguridad"] = pd.to_numeric(df["Stock de seguridad"], errors="coerce").fillna(0)
     df["Stock máximo"] = pd.to_numeric(df["Stock máximo"], errors="coerce").fillna(0)
-    df["Consumo mes actual"] = pd.to_numeric(df["Consumo mes actual"], errors="coerce").fillna(0)
     df["Libre utilización"] = pd.to_numeric(df["Libre utilización"], errors="coerce").fillna(0)
 
     return df
-
 
 # =============================================================================
 # ORDENAR UBICACIONES
@@ -146,3 +151,4 @@ def generate_discrepancies_excel(df):
     wb.save(output)
     output.seek(0)
     return output
+
