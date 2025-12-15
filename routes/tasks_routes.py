@@ -1,18 +1,19 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-from models.user import User
+
 from models import db
 from models.task import Task
 from models.user import User
+from utils.task_scoring import aplicar_puntaje
 from utils.score import reset_score_if_needed
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 
 
-# ============================
+# =========================
 # MIS TAREAS
-# ============================
+# =========================
 @tasks_bp.route("/")
 @login_required
 def my_tasks():
@@ -22,9 +23,9 @@ def my_tasks():
     return render_template("tasks/my_tasks.html", tareas=tareas)
 
 
-# ============================
-# FORMULARIO CREAR TAREA (NUEVO)
-# ============================
+# =========================
+# FORM CREAR TAREA (GET)
+# =========================
 @tasks_bp.route("/create", methods=["GET"])
 @login_required
 def create_task_form():
@@ -32,13 +33,13 @@ def create_task_form():
         flash("No autorizado", "danger")
         return redirect(url_for("tasks.my_tasks"))
 
-    usuarios = User.query.filter(User.role == "user").all()
+    usuarios = User.query.filter(User.status == "active").all()
     return render_template("tasks/create_task.html", usuarios=usuarios)
 
 
-# ============================
+# =========================
 # CREAR TAREA (POST)
-# ============================
+# =========================
 @tasks_bp.route("/create", methods=["POST"])
 @login_required
 def create_task():
@@ -51,8 +52,7 @@ def create_task():
         descripcion=request.form["descripcion"],
         assigned_to_id=int(request.form["assigned_to"]),
         assigned_by_id=current_user.id,
-        fecha_limite=date.fromisoformat(request.form["fecha_limite"]),
-        estado="pendiente"
+        fecha_limite=date.fromisoformat(request.form["fecha_limite"])
     )
 
     db.session.add(task)
@@ -62,9 +62,9 @@ def create_task():
     return redirect(url_for("tasks.my_tasks"))
 
 
-# ============================
+# =========================
 # COMPLETAR TAREA
-# ============================
+# =========================
 @tasks_bp.route("/complete/<int:task_id>")
 @login_required
 def complete_task(task_id):
@@ -77,21 +77,16 @@ def complete_task(task_id):
     task.estado = "completada"
     task.fecha_completado = date.today()
 
-    # Puntaje
-    if task.fecha_completado <= task.fecha_limite:
-        current_user.score += 1
-    else:
-        current_user.score -= 1
+    aplicar_puntaje(task)
 
     db.session.commit()
-
     flash("Tarea completada", "success")
     return redirect(url_for("tasks.my_tasks"))
 
 
-# ============================
-# RANKING (NUEVO)
-# ============================
+# =========================
+# RANKING TÉCNICOS
+# =========================
 @tasks_bp.route("/ranking")
 @login_required
 def ranking():
@@ -99,15 +94,5 @@ def ranking():
         flash("No autorizado", "danger")
         return redirect(url_for("dashboard.dashboard"))
 
-    tecnicos = User.query.order_by(User.score.desc()).all()
-    return render_template("tasks/ranking.html", tecnicos=tecnicos)
-
-@tasks_bp.route("/create-form")
-@login_required
-def create_task_form():
-    if current_user.role not in ["admin", "owner"]:
-        flash("No autorizado", "danger")
-        return redirect(url_for("tasks.my_tasks"))
-
-    usuarios = User.query.filter(User.status == "active").all()
-    return render_template("tasks/create_task.html", usuarios=usuarios)
+    usuarios = User.query.order_by(User.score.desc()).all()
+    return render_template("tasks/ranking.html", usuarios=usuarios)
