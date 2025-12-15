@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 
 from models import db
 from models.task import Task
+from models.user import User
 from utils.task_scoring import aplicar_puntaje
 from utils.score import reset_score_if_needed
 
@@ -16,18 +17,13 @@ def my_tasks():
     reset_score_if_needed(current_user.id)
 
     tareas = Task.query.filter_by(assigned_to_id=current_user.id).all()
-    return render_template("tasks/my_tasks.html", tareas=tareas)
+    usuarios = User.query.all()
 
-
-# 🔥 FORMULARIO PARA CREAR TAREA (SOLUCIONA EL ERROR)
-@tasks_bp.route("/create/form")
-@login_required
-def create_task_form():
-    if current_user.role not in ["admin", "owner"]:
-        flash("No autorizado", "danger")
-        return redirect(url_for("tasks.my_tasks"))
-
-    return render_template("tasks/create_task.html")
+    return render_template(
+        "tasks/my_tasks.html",
+        tareas=tareas,
+        usuarios=usuarios
+    )
 
 
 @tasks_bp.route("/create", methods=["POST"])
@@ -49,7 +45,7 @@ def create_task():
     db.session.add(task)
     db.session.commit()
 
-    flash("Tarea creada", "success")
+    flash("Tarea creada correctamente", "success")
     return redirect(url_for("tasks.my_tasks"))
 
 
@@ -57,6 +53,10 @@ def create_task():
 @login_required
 def complete_task(task_id):
     task = Task.query.get_or_404(task_id)
+
+    if task.assigned_to_id != current_user.id:
+        flash("No autorizado", "danger")
+        return redirect(url_for("tasks.my_tasks"))
 
     task.estado = "completada"
     task.fecha_completado = date.today()
@@ -66,3 +66,14 @@ def complete_task(task_id):
     db.session.commit()
     flash("Tarea completada", "success")
     return redirect(url_for("tasks.my_tasks"))
+
+
+@tasks_bp.route("/ranking")
+@login_required
+def ranking():
+    if current_user.role not in ["admin", "owner"]:
+        flash("No autorizado", "danger")
+        return redirect(url_for("tasks.my_tasks"))
+
+    usuarios = User.query.order_by(User.score.desc()).all()
+    return render_template("tasks/ranking.html", usuarios=usuarios)
