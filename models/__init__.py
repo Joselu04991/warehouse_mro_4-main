@@ -22,5 +22,6 @@ from .warehouse2d import WarehouseLocation
 from .actividad import ActividadUsuario
 from .inventory_count import InventoryCount
 from .tasks import Task
-from .score import UserScore
+from .scores import UserScore
+
 
