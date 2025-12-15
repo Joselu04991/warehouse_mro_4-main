@@ -200,22 +200,12 @@ def reportes_usuario():
 @auth_bp.route("/descargar-datos")
 @login_required
 def descargar_datos_gerencia():
-    from reportlab.pdfgen import canvas
-    from reportlab.lib.pagesizes import letter
+    from utils.pdf_reports import create_pdf_reporte
 
-    reports_folder = os.path.join(current_app.root_path, "static", "reports")
-    os.makedirs(reports_folder, exist_ok=True)
+    pdf_path = create_pdf_reporte(current_user.id)
 
-    pdf_path = os.path.join(reports_folder, f"perfil_usuario_{current_user.id}.pdf")
+    if not pdf_path or not os.path.exists(pdf_path):
+        flash("No se pudo generar el reporte.", "danger")
+        return redirect(url_for("auth.perfil_usuario"))
 
-    c = canvas.Canvas(pdf_path, pagesize=letter)
-    c.setFont("Helvetica-Bold", 20)
-    c.drawString(40, 750, "Reporte de Usuario – Nivel Gerencia")
-    c.setFont("Helvetica", 12)
-    c.drawString(40, 720, f"Usuario: {current_user.username}")
-    c.drawString(40, 700, f"Correo: {current_user.email}")
-    c.drawString(40, 680, f"Fecha: {datetime.utcnow()}")
-
-    c.save()
     return send_file(pdf_path, as_attachment=True)
-
