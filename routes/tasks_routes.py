@@ -90,9 +90,10 @@ def complete_task(task_id):
 @tasks_bp.route("/ranking")
 @login_required
 def ranking():
-    if current_user.role not in ["admin", "owner"]:
-        flash("No autorizado", "danger")
-        return redirect(url_for("dashboard.dashboard"))
-
-    usuarios = User.query.order_by(User.score.desc()).all()
+    usuarios = (
+        User.query
+        .filter(User.score.isnot(None))
+        .order_by(User.score.desc())
+        .all()
+    )
     return render_template("tasks/ranking.html", usuarios=usuarios)
