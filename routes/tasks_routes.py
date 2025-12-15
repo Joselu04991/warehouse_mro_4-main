@@ -19,6 +19,17 @@ def my_tasks():
     return render_template("tasks/my_tasks.html", tareas=tareas)
 
 
+# 🔥 FORMULARIO PARA CREAR TAREA (SOLUCIONA EL ERROR)
+@tasks_bp.route("/create/form")
+@login_required
+def create_task_form():
+    if current_user.role not in ["admin", "owner"]:
+        flash("No autorizado", "danger")
+        return redirect(url_for("tasks.my_tasks"))
+
+    return render_template("tasks/create_task.html")
+
+
 @tasks_bp.route("/create", methods=["POST"])
 @login_required
 def create_task():
@@ -31,7 +42,8 @@ def create_task():
         descripcion=request.form["descripcion"],
         assigned_to_id=request.form["assigned_to"],
         assigned_by_id=current_user.id,
-        fecha_limite=date.fromisoformat(request.form["fecha_limite"])
+        fecha_limite=date.fromisoformat(request.form["fecha_limite"]),
+        estado="pendiente"
     )
 
     db.session.add(task)
