@@ -1,127 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3 class="mb-3">
-    <i class="bi bi-list-check"></i> Mis Tareas
-</h3>
+<h3 class="mb-3">📋 Mis Tareas</h3>
 
-<!-- =================== SCORE =================== -->
-<div class="card mb-4 shadow-sm">
-    <div class="card-body">
-        <h5 class="mb-1">🎯 Puntaje Anual</h5>
-        <h2 class="fw-bold text-primary">
-            {{ current_user.score or 20 }} / 20
-        </h2>
-        <small class="text-muted">
-            Se ajusta automáticamente según cumplimiento de tareas
-        </small>
-    </div>
-</div>
+<div class="row g-3">
+    {% for t in tareas %}
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card shadow-sm h-100
+            {% if t.is_overdue %} border-danger
+            {% elif t.days_left <= 3 %} border-warning
+            {% else %} border-success {% endif %}">
+            
+            <div class="card-body">
+                <h5 class="card-title">{{ t.titulo }}</h5>
+                <p class="text-muted small">{{ t.descripcion }}</p>
 
-<!-- =================== TABLA TAREAS =================== -->
-<div class="card shadow-sm">
-    <div class="card-body p-0">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Tarea</th>
-                    <th>Fecha Límite</th>
-                    <th>Días Restantes</th>
-                    <th>Estado</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for t in tareas %}
-                <tr>
-                    <td>
-                        <strong>{{ t.titulo }}</strong><br>
-                        <small class="text-muted">{{ t.descripcion }}</small>
-                    </td>
-                    <td>{{ t.fecha_limite.strftime("%d/%m/%Y") }}</td>
-                    <td>
-                        {% if t.days_left < 0 %}
-                            <span class="badge bg-danger">Vencida</span>
-                        {% elif t.days_left <= 3 %}
-                            <span class="badge bg-warning text-dark">
-                                {{ t.days_left }} días
-                            </span>
-                        {% else %}
-                            <span class="badge bg-success">
-                                {{ t.days_left }} días
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if t.estado == "completada" %}
-                            <span class="badge bg-success">Completada</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Pendiente</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if t.estado != "completada" %}
-                        <a href="{{ url_for('tasks.complete_task', task_id=t.id) }}"
-                           class="btn btn-sm btn-outline-success">
-                            <i class="bi bi-check-circle"></i>
-                        </a>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% else %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">
-                        No tienes tareas asignadas.
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+                <p class="mb-1">
+                    📅 Límite: <strong>{{ t.fecha_limite }}</strong>
+                </p>
 
-<!-- =================== CREAR TAREA =================== -->
-{% if current_user.role in ["admin", "owner"] %}
-<hr class="my-5">
+                <p class="mb-2">
+                    ⏳ Días restantes:
+                    <strong class="
+                        {% if t.is_overdue %} text-danger
+                        {% elif t.days_left <= 3 %} text-warning
+                        {% else %} text-success {% endif %}
+                    ">
+                        {{ t.days_left }}
+                    </strong>
+                </p>
 
-<h4 id="crear">
-    <i class="bi bi-plus-square"></i> Asignar Nueva Tarea
-</h4>
-
-<form method="POST" action="{{ url_for('tasks.create_task') }}" class="card p-4 shadow-sm mt-3">
-
-    <div class="mb-3">
-        <label class="form-label">Título</label>
-        <input type="text" name="titulo" class="form-control" required>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <textarea name="descripcion" class="form-control" rows="3" required></textarea>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Asignar a</label>
-            <select name="assigned_to" class="form-select" required>
-                {% for u in users %}
-                <option value="{{ u.id }}">
-                    {{ u.username }} ({{ u.role }})
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Fecha límite</label>
-            <input type="date" name="fecha_limite" class="form-control" required>
+                {% if t.estado != "completada" %}
+                <a href="{{ url_for('tasks.complete_task', task_id=t.id) }}"
+                   class="btn btn-success btn-sm w-100">
+                    ✔ Marcar como completada
+                </a>
+                {% else %}
+                <span class="badge bg-success w-100">COMPLETADA</span>
+                {% endif %}
+            </div>
         </div>
     </div>
-
-    <button class="btn btn-primary">
-        <i class="bi bi-save"></i> Crear tarea
-    </button>
-</form>
-{% endif %}
+    {% else %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            No tienes tareas asignadas.
+        </div>
+    </div>
+    {% endfor %}
+</div>
 
 {% endblock %}
