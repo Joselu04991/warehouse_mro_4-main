@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from models import db
 
 class Score(db.Model):
@@ -7,5 +7,5 @@ class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True)
 
-    points = db.Column(db.Integer, default=20)
-    last_reset_year = db.Column(db.Integer, default=datetime.utcnow().year)
+    puntos = db.Column(db.Integer, default=20)
+    last_reset_year = db.Column(db.Integer, default=date.today().year)
