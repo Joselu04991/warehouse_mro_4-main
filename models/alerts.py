@@ -39,7 +39,10 @@ class Alert(db.Model):
 
     # Datos extras en JSON
     detalles = db.Column(db.Text, nullable=True)
-
+    
+    @property
+    def created_at(self):
+        return self.fecha
     # ============================================================
     # Normalizador automático: asegura compatibilidad con todo
     # ============================================================
@@ -68,5 +71,6 @@ class Alert(db.Model):
 
     def __repr__(self):
         return f"<Alerta {self.tipo or self.alert_type}>"
+
 
 
