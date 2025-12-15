@@ -199,15 +199,44 @@
                 <i class="bi bi-graph-up-arrow me-2"></i>Productividades
             </a>
 
-            <a href="{{ url_for('tasks.my_tasks') }}" class="list-group-item">
-                <i class="bi bi-list-check me-2"></i>Mis Tareas
-            </a>
-            {% if current_user.role in ["admin", "owner"] %}
-            <a href="{{ url_for('tasks.my_tasks') }}#crear" class="list-group-item">
-                <i class="bi bi-plus-square me-2"></i>Asignar Tareas
-            </a>
-            {% endif %}
+<div class="accordion" id="accordionTasks">
 
+                <div class="accordion-item bg-dark border-0">
+
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#tasksMenu">
+                            <i class="bi bi-list-check me-2"></i> Tareas
+                        </button>
+                    </h2>
+
+                    <div id="tasksMenu" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+
+                            <a href="{{ url_for('tasks.my_tasks') }}"
+                               class="list-group-item bg-dark text-white">
+                                📋 Mis tareas
+                            </a>
+
+                            {% if current_user.role in ["admin","owner"] %}
+                            <a href="{{ url_for('tasks.create_task_form') }}"
+                               class="list-group-item bg-dark text-white">
+                                ➕ Crear tarea
+                            </a>
+
+                            <a href="{{ url_for('tasks.ranking') }}"
+                               class="list-group-item bg-dark text-white">
+                                🏆 Ranking técnicos
+                            </a>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
             <a href="{{ url_for('qr.vista_qr') }}" class="list-group-item">
                 <i class="bi bi-qr-code-scan me-2"></i>QR de Equipos
             </a>
@@ -268,18 +297,18 @@
                 </ul>
             </div>
         </nav>
-    {% if task_alerts %}
-    <div class="alert alert-warning">
-        <h6 class="fw-bold mb-2">
-            <i class="bi bi-bell-fill me-1"></i> Alertas de Tareas
-        </h6>
-        <ul class="mb-0">
-            {% for a in task_alerts %}
-            <li>{{ a }}</li>
-            {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
+{% if task_alerts %}
+        <div class="alert alert-warning">
+            <h6 class="fw-bold mb-2">
+                <i class="bi bi-bell-fill me-1"></i> Alertas de Tareas
+            </h6>
+            <ul class="mb-0">
+                {% for a in task_alerts %}
+                <li>{{ a }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
         <div class="container-fluid py-4">
             {% block content %}{% endblock %}
         </div>
@@ -298,5 +327,6 @@
 
 </body>
 </html>
+
 
 
