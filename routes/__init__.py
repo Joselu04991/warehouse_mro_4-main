@@ -64,3 +64,4 @@ def register_blueprints(app):
     print("\n========== BLUEPRINTS CARGADOS OK ==========\n")
 
 
+
