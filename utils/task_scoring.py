@@ -7,11 +7,12 @@ def aplicar_puntaje(task):
     if not user:
         return
 
-    dias_diferencia = (task.fecha_completado - task.fecha_limite).days
-
-    if dias_diferencia <= 0:
-        user.score = min(user.score + 1, 20)
+    if task.fecha_completado <= task.fecha_limite:
+        user.score += 1
     else:
-        user.score = max(user.score - 1, 0)
+        user.score -= 1
 
-    db.session.add(user)
+    if user.score < 0:
+        user.score = 0
+
+    db.session.commit()
