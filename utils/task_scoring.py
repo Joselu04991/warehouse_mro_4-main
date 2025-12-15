@@ -1,35 +1,23 @@
 from datetime import date
 from models import db
-from models.alerts import Alert
+from models.user import User
 
-def apply_task_score(task):
-    user_score = task.assigned_to.score
+def aplicar_puntaje(task):
+    usuario = User.query.get(task.assigned_to_id)
 
-    if task.completed:
-        days_diff = (task.due_date - task.completed_at.date()).days
+    if not usuario:
+        return
 
-        if days_diff > 0:
-            user_score.score += 2
-            msg = "Tarea completada antes de la fecha (+2)"
-        elif days_diff == 0:
-            user_score.score += 1
-            msg = "Tarea completada a tiempo (+1)"
-        else:
-            user_score.score -= 1
-            msg = "Tarea completada fuera de fecha (-1)"
+    dias_diferencia = (task.fecha_completado - task.fecha_limite).days
+
+    if dias_diferencia <= 0:
+        usuario.score += 1
     else:
-        if date.today() > task.due_date:
-            user_score.score -= 2
-            msg = "Tarea vencida (-2)"
-        else:
-            return
+        usuario.score -= 1
 
-    alert = Alert(
-        alert_type="task_score",
-        message=msg,
-        severity="Media",
-        estado="activo",
-    )
+    if usuario.score < 0:
+        usuario.score = 0
+    if usuario.score > 20:
+        usuario.score = 20
 
-    db.session.add(alert)
-    db.session.commit()
+    db.session.add(usuario)
