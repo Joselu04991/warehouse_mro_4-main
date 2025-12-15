@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 from models import db
 
 class Task(db.Model):
@@ -6,19 +6,22 @@ class Task(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=True)
+    titulo = db.Column(db.String(150), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
 
-    assigned_to = db.Column(db.Integer, db.ForeignKey("users.id"))
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    assigned_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    due_date = db.Column(db.Date, nullable=False)
-    completed_at = db.Column(db.DateTime, nullable=True)
+    fecha_creacion = db.Column(db.Date, default=date.today)
+    fecha_limite = db.Column(db.Date, nullable=False)
+    fecha_completado = db.Column(db.Date, nullable=True)
 
-    status = db.Column(db.String(20), default="pendiente")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    estado = db.Column(db.String(20), default="pendiente")  # pendiente | completada
 
-    def is_late(self):
-        if self.completed_at:
-            return self.completed_at.date() > self.due_date
-        return datetime.utcnow().date() > self.due_date
+    @property
+    def days_left(self):
+        return (self.fecha_limite - date.today()).days
+
+    @property
+    def is_overdue(self):
+        return self.estado != "completada" and self.fecha_limite < date.today()
