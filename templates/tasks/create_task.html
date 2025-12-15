@@ -18,11 +18,15 @@
     <div class="mb-3">
         <label class="form-label">Asignar a</label>
         <select name="assigned_to" class="form-select" required>
-            {% for u in tecnicos %}
-            <option value="{{ u.id }}">{{ u.username }}</option>
+            <option value="">Seleccionar técnico</option>
+            {% for u in usuarios %}
+            <option value="{{ u.id }}">
+                {{ u.username }} {% if u.area %} ({{ u.area }}) {% endif %}
+            </option>
             {% endfor %}
         </select>
     </div>
+
 
     <div class="mb-3">
         <label class="form-label">Fecha límite</label>
