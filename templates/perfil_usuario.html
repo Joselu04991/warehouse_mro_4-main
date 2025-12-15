@@ -163,7 +163,7 @@
 
     <!-- ==================== KPI RESPONSIVO ==================== -->
     <div class="row text-center g-3">
-
+    
         <div class="col-6 col-md-3">
             <div class="kpi-box">
                 <i class="bi bi-box-seam-fill fs-1 text-primary"></i>
@@ -171,7 +171,7 @@
                 <p>Inventarios Subidos</p>
             </div>
         </div>
-
+    
         <div class="col-6 col-md-3">
             <div class="kpi-box">
                 <i class="bi bi-truck fs-1 text-success"></i>
@@ -179,7 +179,7 @@
                 <p>Bultos Registrados</p>
             </div>
         </div>
-
+    
         <div class="col-6 col-md-3">
             <div class="kpi-box">
                 <i class="bi bi-bell-fill fs-1 text-danger"></i>
@@ -187,15 +187,15 @@
                 <p>Alertas Reportadas</p>
             </div>
         </div>
-
+    
         <div class="col-6 col-md-3">
             <div class="kpi-box">
-                <i class="bi bi-graph-up-arrow fs-1 text-info"></i>
-                <h3>{{ perfil_completado }}%</h3>
-                <p>Perfil Completado</p>
+                <i class="bi bi-award-fill fs-1 text-warning"></i>
+                <h3>{{ current_user.score }}</h3>
+                <p>Puntaje Técnico</p>
             </div>
         </div>
-
+    
     </div>
 
     <!-- ==================== INFORMACIÓN PERSONAL ==================== -->
@@ -278,4 +278,5 @@
 </div>
 
 {% endblock %}
+
 
