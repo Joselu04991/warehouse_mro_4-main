@@ -1,7 +1,7 @@
 from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-
+from models.user import User
 from models import db
 from models.task import Task
 from models.user import User
@@ -101,3 +101,13 @@ def ranking():
 
     tecnicos = User.query.order_by(User.score.desc()).all()
     return render_template("tasks/ranking.html", tecnicos=tecnicos)
+
+@tasks_bp.route("/create-form")
+@login_required
+def create_task_form():
+    if current_user.role not in ["admin", "owner"]:
+        flash("No autorizado", "danger")
+        return redirect(url_for("tasks.my_tasks"))
+
+    usuarios = User.query.filter(User.status == "active").all()
+    return render_template("tasks/create_task.html", usuarios=usuarios)
