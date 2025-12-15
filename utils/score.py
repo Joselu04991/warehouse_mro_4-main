@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from models import db
 from models.user import User
 
@@ -7,14 +7,14 @@ def reset_score_if_needed(user_id):
     if not user:
         return
 
-    hoy = date.today()
+    now = datetime.utcnow()
 
-    if not user.score_last_reset:
-        user.score_last_reset = hoy
+    if not hasattr(user, "score_year"):
+        user.score_year = now.year
         db.session.commit()
         return
 
-    if (hoy - user.score_last_reset).days >= 365:
+    if user.score_year != now.year:
         user.score = 20
-        user.score_last_reset = hoy
+        user.score_year = now.year
         db.session.commit()
