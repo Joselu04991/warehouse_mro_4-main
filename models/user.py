@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db
@@ -35,9 +35,12 @@ class User(UserMixin, db.Model):
 
     perfil_completado = db.Column(db.Boolean, default=False)
 
+    # 🔥 SISTEMA DE PUNTAJE
+    score = db.Column(db.Integer, default=20)
+    score_year = db.Column(db.Integer, default=date.today().year)
+
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
