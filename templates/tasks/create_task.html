@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mb-3">➕ Crear Tarea</h3>
+
+<form method="post" action="{{ url_for('tasks.create_task') }}" class="card p-4 shadow-sm">
+
+    <div class="mb-3">
+        <label class="form-label">Título</label>
+        <input name="titulo" class="form-control" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="descripcion" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Asignar a</label>
+        <select name="assigned_to" class="form-select" required>
+            {% for u in tecnicos %}
+            <option value="{{ u.id }}">{{ u.username }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Fecha límite</label>
+        <input type="date" name="fecha_limite" class="form-control" required>
+    </div>
+
+    <button class="btn btn-primary w-100">
+        💾 Crear tarea
+    </button>
+
+</form>
+
+{% endblock %}
