@@ -1,5 +1,5 @@
 from models import db
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 class Alert(db.Model):
@@ -7,47 +7,45 @@ class Alert(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # Campo REAL que usan tus rutas
-    alert_type = db.Column(db.String(50), nullable=True)   # Ej: stock_critico, tecnico, IA
-
-    # Compatibilidad con tu campo antiguo "tipo"
+    alert_type = db.Column(db.String(50), nullable=True)
     tipo = db.Column(db.String(50), nullable=True)
 
-    # Campo REAL que usan tus rutas
     message = db.Column(db.Text, nullable=True)
-
-    # Compatibilidad con tu campo antiguo "mensaje"
     mensaje = db.Column(db.String(255), nullable=True)
 
-    # Nivel usado por tus rutas (Alta, Media, Baja)
-    severity = db.Column(db.String(20), default="info")  # info, warning, danger, critical
-
-    # Compatibilidad con tu campo anterior "nivel"
+    severity = db.Column(db.String(20), default="info")
     nivel = db.Column(db.String(20), default="info")
 
-    # Área o módulo que genera la alerta
     origen = db.Column(db.String(100), default="Sistema")
-
-    # Usuario que la generó (string simple o id)
     usuario = db.Column(db.String(120), nullable=True)
 
-    # Estado interno
-    estado = db.Column(db.String(20), default="activo")  # activo / cerrado
+    estado = db.Column(db.String(20), default="activo")
 
-    # Fecha de creación
+    # 👉 SE GUARDA EN UTC (CORRECTO)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Datos extras en JSON
     detalles = db.Column(db.Text, nullable=True)
-    
+
+    # ============================================================
+    # COMPATIBILIDAD CON TEMPLATES (created_at)
+    # ============================================================
     @property
     def created_at(self):
-        return self.fecha
+        return self.fecha_local
+
     # ============================================================
-    # Normalizador automático: asegura compatibilidad con todo
+    # FECHA CONVERTIDA A HORA PERÚ (UTC - 5)
+    # ============================================================
+    @property
+    def fecha_local(self):
+        if self.fecha:
+            return self.fecha - timedelta(hours=5)
+        return None
+
+    # ============================================================
+    # NORMALIZADOR AUTOMÁTICO
     # ============================================================
     def __init__(self, **kwargs):
-        # Mapea campos que pueden venir desde rutas antiguas
         if "alert_type" in kwargs:
             kwargs.setdefault("tipo", kwargs["alert_type"])
         if "message" in kwargs:
@@ -58,7 +56,7 @@ class Alert(db.Model):
         super().__init__(**kwargs)
 
     # ============================================================
-    # Guardar JSON en dict automáticamente
+    # JSON HELPERS
     # ============================================================
     def set_detalles(self, data: dict):
         self.detalles = json.dumps(data)
@@ -71,6 +69,3 @@ class Alert(db.Model):
 
     def __repr__(self):
         return f"<Alerta {self.tipo or self.alert_type}>"
-
-
-
