@@ -99,22 +99,27 @@
                                class="list-group-item bg-dark text-white">
                                 📊 Dashboard Inventario
                             </a>
-
+                            
                             <a href="{{ url_for('inventory.list_inventory') }}"
                                class="list-group-item bg-dark text-white">
                                 📚 Inventario actual
                             </a>
-
+                            
                             <a href="{{ url_for('inventory.upload_inventory') }}"
                                class="list-group-item bg-dark text-white">
                                 ⬆ Cargar inventario base
                             </a>
-
-                            <a href="{{ url_for('inventory.upload_inventory') }}"
+                            
+                            <a href="{{ url_for('inventory.upload_history') }}"
                                class="list-group-item bg-dark text-white">
                                 🕒 Subir inventarios antiguos
                             </a>
-
+                            
+                            <a href="{{ url_for('inventory.history_inventory') }}"
+                               class="list-group-item bg-dark text-white">
+                                🗂 Inventarios Anteriores
+                            </a>
+                            
                             <a href="{{ url_for('inventory.count_inventory') }}"
                                class="list-group-item bg-dark text-white">
                                 🔢 Conteo de inventario
@@ -327,6 +332,7 @@
 
 </body>
 </html>
+
 
 
 
