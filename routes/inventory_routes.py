@@ -295,3 +295,37 @@ def dashboard_inventory():
         ubicaciones_counts=list(ubicaciones.values()),
         items=items,
     )
+@inventory_bp.route("/close", methods=["POST"])
+@login_required
+def close_inventory():
+
+    items = InventoryItem.query.all()
+    if not items:
+        flash("No hay inventario para cerrar.", "warning")
+        return redirect(url_for("inventory.list_inventory"))
+
+    snapshot_id = str(uuid.uuid4())
+    snapshot_name = f"Inventario {datetime.now():%d/%m/%Y %H:%M}"
+
+    for i in items:
+        db.session.add(
+            InventoryHistory(
+                snapshot_id=snapshot_id,
+                snapshot_name=snapshot_name,
+                material_code=i.material_code,
+                material_text=i.material_text,
+                base_unit=i.base_unit,
+                location=i.location,
+                libre_utilizacion=i.libre_utilizacion,
+                closed_by=current_user.username,
+                closed_at=datetime.now()
+            )
+        )
+
+    InventoryItem.query.delete()
+    InventoryCount.query.delete()
+
+    db.session.commit()
+
+    flash("Inventario cerrado y archivado correctamente.", "success")
+    return redirect(url_for("inventory.upload_inventory"))
