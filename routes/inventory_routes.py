@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
-
+from openpyxl import load_workbook
 from flask import (
     Blueprint,
     render_template,
@@ -109,7 +109,6 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
-
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
@@ -117,62 +116,69 @@ def upload_history():
             return redirect(url_for("inventory.upload_history"))
 
         try:
-            df = pd.read_excel(file)
+            wb = load_workbook(file, read_only=True, data_only=True)
 
-            # Intento de mapeo flexible para formatos antiguos
-            possible_map = {
-                "Código del Material": ["Código del Material", "Codigo", "Código Material", "Material", "COD"],
-                "Texto breve de material": ["Texto breve de material", "Descripción", "Texto", "Material Text"],
-                "Unidad de medida base": ["Unidad de medida base", "Unidad", "UM", "U.M."],
-                "Ubicación": ["Ubicación", "Ubicacion", "Location", "UBI"],
-                "Libre utilización": ["Libre utilización", "Libre utilizacion", "Stock", "Cantidad", "Libre", "LibreUtil"],
-            }
+            # ✅ Recomendado: elegir la hoja correcta
+            ws = wb[wb.sheetnames[0]]  # primera hoja (o busca por nombre)
 
-            def find_col(target):
-                for cand in possible_map[target]:
-                    if cand in df.columns:
-                        return cand
+            # leer header
+            rows = ws.iter_rows(min_row=1, max_row=1, values_only=True)
+            header = [str(x).strip() if x is not None else "" for x in next(rows)]
+
+            def idx(name_variants):
+                for n in name_variants:
+                    if n in header:
+                        return header.index(n)
                 return None
 
-            c_code = find_col("Código del Material")
-            c_text = find_col("Texto breve de material")
-            c_unit = find_col("Unidad de medida base")
-            c_loc  = find_col("Ubicación")
-            c_qty  = find_col("Libre utilización")
+            i_code = idx(["Código del Material","Codigo","Código Material","Material","COD"])
+            i_text = idx(["Texto breve de material","Descripción","Texto","Material Text"])
+            i_unit = idx(["Unidad de medida base","Unidad","UM","U.M."])
+            i_loc  = idx(["Ubicación","Ubicacion","Location","UBI"])
+            i_qty  = idx(["Libre utilización","Libre utilizacion","Stock","Cantidad","Libre","LibreUtil"])
 
-            if not all([c_code, c_text, c_unit, c_loc, c_qty]):
-                raise Exception("Formato histórico no reconocido. Asegura columnas equivalentes a: Código, Texto, Unidad, Ubicación, Stock.")
-
-            df = df[[c_code, c_text, c_unit, c_loc, c_qty]].copy()
-            df.columns = ["Código del Material", "Texto breve de material", "Unidad de medida base", "Ubicación", "Libre utilización"]
-
-            df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
-            df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
-            df["Unidad de medida base"] = df["Unidad de medida base"].astype(str).str.strip()
-            df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper().str.strip()
-            df["Libre utilización"] = pd.to_numeric(df["Libre utilización"], errors="coerce").fillna(0)
+            if not all([i_code, i_text, i_unit, i_loc, i_qty]):
+                raise Exception("Formato histórico no reconocido. Debe tener columnas equivalentes a Código, Texto, Unidad, Ubicación, Stock.")
 
             snapshot_id = str(uuid.uuid4())
             snapshot_name = f"Inventario Antiguo {now_pe():%d/%m/%Y %H:%M}"
 
-            for _, row in df.iterrows():
-                db.session.add(
-                    InventoryHistory(
-                        user_id=current_user.id,
-                        snapshot_id=snapshot_id,
-                        snapshot_name=snapshot_name,
-                        material_code=row["Código del Material"],
-                        material_text=row["Texto breve de material"],
-                        base_unit=row["Unidad de medida base"],
-                        location=row["Ubicación"],
-                        libre_utilizacion=float(row["Libre utilización"]),
-                        creado_en=now_pe(),
-                        source_type="HISTORICO",
-                        source_filename=getattr(file, "filename", None),
-                    )
-                )
+            batch = []
+            for r in ws.iter_rows(min_row=2, values_only=True):
+                code = str(r[i_code]).strip() if r[i_code] is not None else ""
+                if not code:
+                    continue
 
-            db.session.commit()
+                loc = str(r[i_loc]).replace(" ", "").upper().strip() if r[i_loc] is not None else ""
+                qty = r[i_qty]
+                try:
+                    qty = float(qty) if qty is not None else 0.0
+                except:
+                    qty = 0.0
+
+                batch.append(InventoryHistory(
+                    user_id=current_user.id,
+                    snapshot_id=snapshot_id,
+                    snapshot_name=snapshot_name,
+                    material_code=code,
+                    material_text=str(r[i_text]).strip() if r[i_text] is not None else "",
+                    base_unit=str(r[i_unit]).strip() if r[i_unit] is not None else "",
+                    location=loc,
+                    libre_utilizacion=qty,
+                    creado_en=now_pe(),
+                    source_type="HISTORICO",
+                    source_filename=getattr(file, "filename", None),
+                ))
+
+                if len(batch) >= 1000:
+                    db.session.add_all(batch)
+                    db.session.commit()
+                    batch.clear()
+
+            if batch:
+                db.session.add_all(batch)
+                db.session.commit()
+
             flash("Inventario histórico cargado correctamente.", "success")
             return redirect(url_for("inventory.history_inventory"))
 
@@ -181,8 +187,6 @@ def upload_history():
             return redirect(url_for("inventory.upload_history"))
 
     return render_template("inventory/upload_history.html")
-
-
 # =============================================================================
 # 2) LISTAR INVENTARIO (SOLO EL MÍO)
 # =============================================================================
