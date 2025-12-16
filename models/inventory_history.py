@@ -23,3 +23,4 @@ class InventoryHistory(db.Model):
 
     def __repr__(self):
         return f"<History {self.snapshot_name}>"
+
