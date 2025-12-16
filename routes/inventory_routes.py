@@ -408,13 +408,12 @@ def dashboard_inventory():
     criticos = sum(1 for i in items if (i.libre_utilizacion or 0) <= 0)
     faltantes = sum(1 for i in items if 0 < (i.libre_utilizacion or 0) < 5)
 
-    estados = {"OK": 0, "FALTA": 0, "CRÍTICO": 0, "SOBRA": 0}
+    estados = {"OK": 0, "FALTA": 0, "CRITICO": 0, "SOBRA": 0}
 
     for i in items:
         stock = float(i.libre_utilizacion or 0)
-
         if stock <= 0:
-            estados["CRÍTICO"] += 1
+            estados["CRITICO"] += 1
         elif stock < 5:
             estados["FALTA"] += 1
         elif stock > 50:
