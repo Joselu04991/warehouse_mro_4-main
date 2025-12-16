@@ -394,3 +394,46 @@ def close_inventory():
 
     flash("Inventario cerrado y archivado correctamente.", "success")
     return redirect(url_for("inventory.upload_inventory"))
+# =============================================================================
+# 6B) DASHBOARD INVENTARIO (SOLO EL MÍO)
+# =============================================================================
+@inventory_bp.route("/dashboard")
+@login_required
+def dashboard_inventory():
+    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
+
+    total_items = len(items)
+    ubicaciones_unicas = len(set(i.location for i in items))
+
+    criticos = sum(1 for i in items if (i.libre_utilizacion or 0) <= 0)
+    faltantes = sum(1 for i in items if 0 < (i.libre_utilizacion or 0) < 5)
+
+    estados = {"OK": 0, "FALTA": 0, "CRÍTICO": 0, "SOBRA": 0}
+
+    for i in items:
+        stock = float(i.libre_utilizacion or 0)
+
+        if stock <= 0:
+            estados["CRÍTICO"] += 1
+        elif stock < 5:
+            estados["FALTA"] += 1
+        elif stock > 50:
+            estados["SOBRA"] += 1
+        else:
+            estados["OK"] += 1
+
+    ubicaciones = {}
+    for i in items:
+        ubicaciones[i.location] = ubicaciones.get(i.location, 0) + 1
+
+    return render_template(
+        "inventory/dashboard.html",
+        total_items=total_items,
+        ubicaciones_unicas=ubicaciones_unicas,
+        criticos=criticos,
+        faltantes=faltantes,
+        estados=estados,
+        ubicaciones_labels=list(ubicaciones.keys()),
+        ubicaciones_counts=list(ubicaciones.values()),
+        items=items,
+    )
