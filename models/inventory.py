@@ -6,12 +6,13 @@ class InventoryItem(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    user_id = db.Column(db.Integer, nullable=False, index=True)
+
     material_code = db.Column(db.String(50), nullable=False, index=True)
     material_text = db.Column(db.String(255), nullable=False)
     base_unit = db.Column(db.String(20), nullable=False)
 
     location = db.Column(db.String(50), nullable=False, index=True)
-
     libre_utilizacion = db.Column(db.Float, default=0)
 
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
@@ -28,4 +29,3 @@ class InventoryItem(db.Model):
 
     def __repr__(self):
         return f"<InventoryItem {self.material_code} - {self.location}>"
-
