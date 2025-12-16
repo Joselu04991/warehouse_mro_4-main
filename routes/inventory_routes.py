@@ -12,7 +12,7 @@ from flask import (
     send_file,
     jsonify,
 )
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 # ============================
 # MODELOS
