@@ -3,7 +3,7 @@ from datetime import datetime
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-
+from openpyxl.utils import get_column_letter
 
 # =============================================================================
 # INVENTARIO BASE
@@ -90,7 +90,8 @@ def sort_location_advanced(loc):
 # =============================================================================
 # EXCEL PRO DE DISCREPANCIAS (USADO POR inventory_routes)
 # =============================================================================
-def generate_discrepancies_excel(df):
+def generate_discrepancies_excel(df, meta=None):
+
     output = BytesIO()
     wb = Workbook()
 
@@ -114,103 +115,118 @@ def generate_discrepancies_excel(df):
         "Diferencia",
         "Estado",
     ]
-
     for c in columnas:
         if c not in df.columns:
-            df[c] = 0 if "Stock" in c or c == "Diferencia" else ""
+            df[c] = ""
 
     df = df[columnas]
 
-    # =======================
-    # HOJA 1: RESUMEN
-    # =======================
-    ws_resumen = wb.active
-    ws_resumen.title = "RESUMEN"
+    # =========================
+    # Hoja 1: RESUMEN
+    # =========================
+    ws0 = wb.active
+    ws0.title = "RESUMEN"
 
-    fecha = datetime.now().strftime("%d/%m/%Y %H:%M")
+    title_fill = PatternFill("solid", fgColor="1F4E78")
+    title_font = Font(bold=True, color="FFFFFF", size=14)
+    bold = Font(bold=True)
+    center = Alignment(horizontal="center", vertical="center")
+    left = Alignment(horizontal="left", vertical="center")
 
-    ws_resumen.append(["REPORTE DE DISCREPANCIAS DE INVENTARIO"])
-    ws_resumen.append([f"Fecha de generación: {fecha}"])
-    ws_resumen.append(["Sistema: Warehouse MRO"])
-    ws_resumen.append([])
+    ws0["A1"] = "REPORTE DE DISCREPANCIAS - WAREHOUSE MRO"
+    ws0["A1"].fill = title_fill
+    ws0["A1"].font = title_font
+    ws0["A1"].alignment = left
+    ws0.merge_cells("A1:F1")
 
-    total = len(df)
-    ok = (df["Estado"] == "OK").sum()
-    falta = (df["Estado"] == "FALTA").sum()
-    sobra = (df["Estado"] == "SOBRA").sum()
-    critico = (df["Estado"] == "CRÍTICO").sum()
+    generado_por = (meta or {}).get("generado_por", "Sistema")
+    generado_en = (meta or {}).get("generado_en", "")
 
-    resumen_data = [
-        ("Total materiales", total),
-        ("OK", ok),
-        ("FALTANTES", falta),
-        ("SOBRANTES", sobra),
-        ("CRÍTICOS", critico),
-    ]
+    ws0["A3"] = "Generado por:"
+    ws0["B3"] = generado_por
+    ws0["A4"] = "Generado en (Perú):"
+    ws0["B4"] = generado_en
 
-    ws_resumen.append(["Indicador", "Cantidad"])
-    for r in resumen_data:
-        ws_resumen.append(r)
+    ws0["A3"].font = bold
+    ws0["A4"].font = bold
 
-    header_fill = PatternFill("solid", fgColor="1F4E78")
-    header_font = Font(bold=True, color="FFFFFF")
+    # Conteos por estado
+    estados = df["Estado"].value_counts().to_dict()
+    ws0["A6"] = "Resumen por Estado"
+    ws0["A6"].font = Font(bold=True, size=12)
 
-    for cell in ws_resumen[5]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal="center")
+    ws0.append(["Estado", "Cantidad"])
+    ws0["A7"].font = bold
+    ws0["B7"].font = bold
 
-    # =======================
-    # HOJA 2: DETALLE
-    # =======================
-    ws = wb.create_sheet("DETALLE_DISCREPANCIAS")
+    row = 8
+    for k in ["OK", "FALTA", "CRÍTICO", "SOBRA", "NO CONTADO"]:
+        ws0[f"A{row}"] = k
+        ws0[f"B{row}"] = int(estados.get(k, 0))
+        row += 1
+
+    ws0["D3"] = "Total items:"
+    ws0["E3"] = int(len(df))
+    ws0["D3"].font = bold
+
+    # Ajuste ancho
+    for col in range(1, 7):
+        ws0.column_dimensions[get_column_letter(col)].width = 22
+
+    # =========================
+    # Hoja 2: DISCREPANCIAS
+    # =========================
+    ws = wb.create_sheet("DISCREPANCIAS")
     ws.append(columnas)
 
     for _, r in df.iterrows():
         ws.append(list(r))
 
-    center = Alignment(horizontal="center", vertical="center")
+    header = PatternFill("solid", fgColor="1F4E78")
+    font = Font(bold=True, color="FFFFFF")
     thin = Side(border_style="thin", color="000000")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    fill_ok = PatternFill("solid", fgColor="C6EFCE")
-    fill_falta = PatternFill("solid", fgColor="FFC7CE")
-    fill_sobra = PatternFill("solid", fgColor="FFEB9C")
-    fill_critico = PatternFill("solid", fgColor="FF0000")
-
-    for row in ws.iter_rows(min_row=2):
-        estado = row[7].value
-        for cell in row:
-            cell.border = border
-            cell.alignment = center
-
-        if estado == "OK":
-            for cell in row:
-                cell.fill = fill_ok
-        elif estado == "FALTA":
-            for cell in row:
-                cell.fill = fill_falta
-        elif estado == "SOBRA":
-            for cell in row:
-                cell.fill = fill_sobra
-        elif estado == "CRÍTICO":
-            for cell in row:
-                cell.fill = fill_critico
-                cell.font = Font(color="FFFFFF", bold=True)
-
+    # Header style
     for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
+        cell.fill = header
+        cell.font = font
         cell.alignment = center
+        cell.border = border
+
+    # Column widths
+    widths = [18, 45, 10, 14, 14, 14, 12, 12]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
 
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
-    for col in ws.columns:
-        max_length = max(len(str(c.value)) if c.value else 0 for c in col)
-        ws.column_dimensions[col[0].column_letter].width = max_length + 4
+    fill_ok = PatternFill("solid", fgColor="C6EFCE")
+    fill_falta = PatternFill("solid", fgColor="FFEB9C")
+    fill_critico = PatternFill("solid", fgColor="FFC7CE")
+    fill_sobra = PatternFill("solid", fgColor="BFEFFF")
+    fill_nocont = PatternFill("solid", fgColor="E7E6E6")
+
+    # Body style + colores por Estado
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+        estado_val = str(row[7].value).upper() if row[7].value is not None else ""
+        if "CRÍTICO" in estado_val:
+            row_fill = fill_critico
+        elif "FALTA" in estado_val:
+            row_fill = fill_falta
+        elif "SOBRA" in estado_val:
+            row_fill = fill_sobra
+        elif "NO CONTADO" in estado_val:
+            row_fill = fill_nocont
+        else:
+            row_fill = fill_ok
+
+        for cell in row:
+            cell.border = border
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.fill = row_fill
 
     wb.save(output)
     output.seek(0)
     return output
-
