@@ -7,23 +7,38 @@
 
 <div class="card shadow-sm p-3">
 
-    <div class="d-flex justify-content-between mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
 
         <input type="text" id="searchInput" class="form-control w-50"
                placeholder="🔍 Buscar por material, texto o ubicación...">
 
         <div class="d-flex gap-2">
 
-            <!-- ✔ BOTÓN DE CONTEO EN LÍNEA -->
+            <!-- ✔ CONTEO EN LÍNEA -->
             <a href="{{ url_for('inventory.count_inventory') }}"
                class="btn btn-outline-primary">
                 <i class="bi bi-pencil-square me-2"></i> Conteo en línea
             </a>
 
+            <!-- 📂 INVENTARIOS ANTERIORES -->
+            <a href="{{ url_for('inventory.upload_history') }}"
+               class="btn btn-outline-secondary">
+                <i class="bi bi-clock-history me-2"></i> Inventarios anteriores
+            </a>
+
+            <!-- 🔒 CERRAR INVENTARIO -->
+            <form method="POST"
+                  action="{{ url_for('inventory.close_inventory') }}"
+                  onsubmit="return confirm('¿Seguro que deseas cerrar el inventario del día?');">
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-lock-fill me-2"></i> Cerrar inventario
+                </button>
+            </form>
+
         </div>
 
     </div>
-
 
     <div class="table-responsive">
         <table class="table table-hover" id="inventoryTable">
@@ -65,5 +80,3 @@ document.getElementById("searchInput").addEventListener("keyup", function() {
 </script>
 
 {% endblock %}
-
-
