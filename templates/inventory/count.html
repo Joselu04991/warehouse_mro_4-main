@@ -204,54 +204,74 @@ document.getElementById("exportBtn").addEventListener("click", () => {
 });
 </script>
 <script>
-let recognition;
-let listening = false;
+/* ==================================================
+   🎙 DICTADO POR VOZ – CONTEO DE INVENTARIO
+   ================================================== */
 
-if ("webkitSpeechRecognition" in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.lang = "es-PE";
-    recognition.continuous = true;
-    recognition.interimResults = false;
-} else {
-    alert("Tu navegador no soporta dictado por voz");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (!SpeechRecognition) {
+    alert("❌ El navegador no soporta dictado por voz.");
 }
 
-document.getElementById("voiceBtn").addEventListener("click", () => {
-    if (!recognition) return;
+const recognition = new SpeechRecognition();
+recognition.lang = "es-PE";
+recognition.continuous = false;
+recognition.interimResults = false;
 
-    if (!listening) {
-        recognition.start();
-        listening = true;
-        document.getElementById("voiceBtn").classList.add("btn-danger");
-    } else {
-        recognition.stop();
-        listening = false;
-        document.getElementById("voiceBtn").classList.remove("btn-danger");
-    }
+document.getElementById("voiceBtn").addEventListener("click", () => {
+    recognition.start();
 });
 
-recognition.onresult = function(event) {
-    const texto = event.results[event.results.length - 1][0].transcript.toLowerCase();
-    console.log("🎤 Voz:", texto);
+/* =========================
+   PROCESAR VOZ
+   ========================= */
+recognition.onresult = (event) => {
+    let texto = event.results[0][0].transcript.toLowerCase();
+    console.log("🎙 Dictado:", texto);
 
-    // Ejemplo esperado: "codigo a123 cantidad 15"
-    const match = texto.match(/codigo\s+([a-z0-9]+).*?(\d+)/i);
+    /*
+      Normalizamos:
+      "100 40 568" → "10040568"
+    */
+    let numeros = texto.match(/\d+/g);
+    if (!numeros || numeros.length < 2) {
+        alert("❌ No se reconoció código y cantidad.");
+        return;
+    }
 
-    if (!match) return;
+    // Último número = cantidad
+    let cantidad = parseInt(numeros.pop());
 
-    const codigo = match[1].toUpperCase();
-    const cantidad = parseInt(match[2]);
+    // El resto unido = código
+    let codigo = numeros.join("");
 
-    document.querySelectorAll("#countTable tbody tr").forEach(row => {
-        if (row.dataset.code === codigo) {
-            const input = row.querySelector(".count-input");
-            input.value = cantidad;
-            input.style.backgroundColor = "#e6ffe6";
-            row.style.backgroundColor = "#f7fff0";
-        }
-    });
+    console.log("Código:", codigo, "Cantidad:", cantidad);
+
+    // Buscar fila por código
+    let fila = document.querySelector(
+        `tr[data-code="${codigo}"]`
+    );
+
+    if (!fila) {
+        alert(`❌ Código ${codigo} no encontrado.`);
+        return;
+    }
+
+    let input = fila.querySelector(".count-input");
+    input.value = cantidad;
+
+    // Estilos visuales
+    input.style.backgroundColor = "#e6ffe6";
+    fila.style.backgroundColor = "#f7fff0";
 };
 
-recognition.onerror = e => console.error("🎤 Error voz:", e);
+/* =========================
+   ERRORES
+   ========================= */
+recognition.onerror = (e) => {
+    alert("❌ Error en dictado: " + e.error);
+};
 </script>
 {% endblock %}
+
