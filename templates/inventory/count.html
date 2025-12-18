@@ -1,299 +1,559 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="fw-bold mb-4">
-    <i class="bi bi-clipboard-data me-2"></i> Conteo de Inventario
+<style>
+  .count-toolbar { gap: .5rem; flex-wrap: wrap; }
+  .count-toolbar .btn { white-space: nowrap; }
+  .glove-mode .count-input{
+    font-size: 1.35rem !important;
+    height: 56px !important;
+    border-radius: 14px !important;
+  }
+  .glove-mode #searchCount{
+    font-size: 1.15rem !important;
+    height: 52px !important;
+    border-radius: 14px !important;
+  }
+  .glove-mode .btn{
+    font-size: 1.05rem !important;
+    padding: .85rem 1rem !important;
+    border-radius: 14px !important;
+  }
+  .row-active{
+    outline: 3px solid rgba(13,110,253,.35);
+    box-shadow: 0 0 0 4px rgba(13,110,253,.08);
+  }
+  .sticky-actions{
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid rgba(0,0,0,.08);
+    padding: .75rem;
+    margin: 0 -1rem -1rem -1rem;
+  }
+  .mini-status{
+    font-size: .95rem;
+  }
+</style>
+
+<h2 class="fw-bold mb-3">
+  <i class="bi bi-clipboard-data me-2"></i> Conteo de Inventario
 </h2>
 
-<div class="card shadow-sm p-4">
+<div class="card shadow-sm p-3 p-md-4">
 
-    <!-- ========================== BUSCADOR + BOTONES ========================== -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
+  <div class="d-flex justify-content-between align-items-center mb-3 count-toolbar">
+    <input
+      type="text"
+      id="searchCount"
+      class="form-control shadow-sm flex-grow-1"
+      placeholder="🔍 Buscar material, texto o ubicación…"
+      style="min-width: 240px;"
+    >
 
-        <input type="text" id="searchCount"
-               class="form-control w-50 shadow-sm"
-               placeholder="🔍 Buscar material, texto o ubicación…">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <div class="form-check form-switch m-0">
+        <input class="form-check-input" type="checkbox" id="gloveToggle">
+        <label class="form-check-label" for="gloveToggle">🧤 Modo guantes</label>
+      </div>
 
-        <div>
-            <!-- 📌 Exportar discrepancias automáticamente -->
-            <button id="exportBtn" class="btn btn-primary btn-lg shadow-sm me-2">
-                <i class="bi bi-file-earmark-excel me-2"></i>
-                Exportar Discrepancias
-            </button>
+      <button id="pwaInstallBtn" class="btn btn-outline-dark btn-lg shadow-sm d-none">
+        <i class="bi bi-download me-2"></i>Instalar app
+      </button>
 
-            <!-- 📌 Guardar conteo -->
-            <button id="saveCountBtn" class="btn btn-success btn-lg shadow-sm">
-                <i class="bi bi-cloud-check me-2"></i>
-                Guardar Conteo
-            </button>
+      <button id="voiceBtn" class="btn btn-danger btn-lg shadow-sm">
+        <i class="bi bi-mic-fill me-2"></i>Dictado
+      </button>
 
-            <button id="voiceBtn" class="btn btn-danger btn-lg shadow-sm">
-                🎙️ Dictar conteo
-            </button>
-            <span id="voiceStatus" class="ms-3 text-muted"></span>
-        </div>
+      <button id="exportBtn" class="btn btn-primary btn-lg shadow-sm">
+        <i class="bi bi-file-earmark-excel me-2"></i>Exportar
+      </button>
 
+      <button id="saveCountBtn" class="btn btn-success btn-lg shadow-sm">
+        <i class="bi bi-cloud-check me-2"></i>Guardar
+      </button>
     </div>
-    <!-- ========================== TABLA ========================== -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle" id="countTable">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th>Código</th>
-                    <th>Descripción</th>
-                    <th>Ubicación</th>
-                    <th>Stock Sistema</th>
-                    <th>Conteo Real</th>
-                </tr>
-            </thead>
+  </div>
 
-            <tbody>
-                {% for i in items %}
-                <tr data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
-                    <td><strong>{{ i.material_code }}</strong></td>
-                    <td>{{ i.material_text }}</td>
-                    <td class="text-primary fw-bold">{{ i.location }}</td>
-                    <td class="text-center">{{ i.libre_utilizacion }}</td>
+  <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+    <span id="voiceStatus" class="text-muted mini-status"></span>
+    <span id="saveStatus" class="text-muted mini-status"></span>
+    <span id="hintStatus" class="text-muted mini-status"></span>
+  </div>
 
-                    <td class="text-center" style="width: 180px;">
-                        <input type="number"
-                               min="0"
-                               class="form-control count-input shadow-sm text-center"
-                               placeholder="0">
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+  <div class="table-responsive" style="max-height: 70vh;">
+    <table class="table table-hover align-middle" id="countTable">
+      <thead class="table-dark text-center" style="position: sticky; top: 0; z-index: 2;">
+        <tr>
+          <th style="min-width:120px;">Código</th>
+          <th style="min-width:220px;">Descripción</th>
+          <th style="min-width:120px;">Ubicación</th>
+          <th style="min-width:120px;">Stock Sistema</th>
+          <th style="min-width:180px;">Conteo Real</th>
+        </tr>
+      </thead>
 
-        </table>
+      <tbody>
+        {% for i in items %}
+        <tr class="count-row" data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
+          <td><strong>{{ i.material_code }}</strong></td>
+          <td>{{ i.material_text }}</td>
+          <td class="text-primary fw-bold">{{ i.location }}</td>
+          <td class="text-center">{{ i.libre_utilizacion }}</td>
+          <td class="text-center" style="width: 220px;">
+            <input
+              type="number"
+              min="0"
+              class="form-control count-input shadow-sm text-center"
+              placeholder="0"
+              inputmode="numeric"
+              autocomplete="off"
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+
+    </table>
+  </div>
+
+  <div class="sticky-actions d-md-none">
+    <div class="d-grid gap-2">
+      <button id="voiceBtnMobile" class="btn btn-danger btn-lg shadow-sm">
+        <i class="bi bi-mic-fill me-2"></i>Dictado
+      </button>
+      <div class="d-flex gap-2">
+        <button id="exportBtnMobile" class="btn btn-primary btn-lg shadow-sm w-50">
+          <i class="bi bi-file-earmark-excel me-2"></i>Exportar
+        </button>
+        <button id="saveCountBtnMobile" class="btn btn-success btn-lg shadow-sm w-50">
+          <i class="bi bi-cloud-check me-2"></i>Guardar
+        </button>
+      </div>
     </div>
+  </div>
 
 </div>
 
-<!-- ========================== SCRIPTS ========================== -->
 <script>
-/* ==================================================
-   🔍 BÚSQUEDA EN TIEMPO REAL
-   ================================================== */
-document.getElementById("searchCount").addEventListener("input", function () {
+  // ===== Helpers UI =====
+  const bodyEl = document.body;
+  const gloveToggle = document.getElementById("gloveToggle");
+  const voiceStatus = document.getElementById("voiceStatus");
+  const saveStatus = document.getElementById("saveStatus");
+  const hintStatus = document.getElementById("hintStatus");
+
+  gloveToggle?.addEventListener("change", () => {
+    bodyEl.classList.toggle("glove-mode", gloveToggle.checked);
+    localStorage.setItem("glove_mode", gloveToggle.checked ? "1" : "0");
+  });
+  if (localStorage.getItem("glove_mode") === "1") {
+    gloveToggle.checked = true;
+    bodyEl.classList.add("glove-mode");
+  }
+
+  function speak(text) {
+    try {
+      if (!("speechSynthesis" in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "es-PE";
+      u.rate = 1.0;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch {}
+  }
+
+  function normalizeDigits(x) {
+    const s = String(x ?? "").trim();
+    const digits = (s.match(/\d+/g) || []).join("");
+    return digits.replace(/^0+/, "") || digits;
+  }
+
+  // ===== Buscar =====
+  document.getElementById("searchCount").addEventListener("input", function () {
     const filter = this.value.toLowerCase();
     document.querySelectorAll("#countTable tbody tr").forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+      row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
     });
-});
+  });
 
+  // ===== Selección de fila (tap) =====
+  let activeRow = null;
+  let lastRow = null;
 
-/* ==================================================
-   🎨 EFECTOS EN INPUTS (colores y navegación)
-   ================================================== */
-document.querySelectorAll(".count-input").forEach(input => {
+  function setActiveRow(row) {
+    document.querySelectorAll(".count-row").forEach(r => r.classList.remove("row-active"));
+    activeRow = row;
+    if (activeRow) activeRow.classList.add("row-active");
+  }
 
-    // Fondo según si está vacío o lleno
-    input.addEventListener("input", () => {
-        input.style.backgroundColor = input.value.trim() === ""
-            ? "#ffe5e5"
-            : "#e6ffe6";
-
-        // Resaltar fila modificada
-        input.closest("tr").style.backgroundColor = "#f7fff0";
+  document.querySelectorAll(".count-row").forEach(row => {
+    row.addEventListener("click", (e) => {
+      if (e.target && e.target.classList && e.target.classList.contains("count-input")) return;
+      setActiveRow(row);
+      const input = row.querySelector(".count-input");
+      input?.focus();
+      lastRow = row;
+      hintStatus.innerText = `✅ Fila seleccionada: ${row.dataset.code}`;
+      setTimeout(() => (hintStatus.innerText = ""), 2500);
     });
+  });
 
-    // ENTER → ir al siguiente input
-    input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            const inputs = [...document.querySelectorAll(".count-input")];
-            const idx = inputs.indexOf(input);
-            if (inputs[idx + 1]) inputs[idx + 1].focus();
-        }
-    });
+  // ===== Efectos + autosave debounce =====
+  let autosaveTimer = null;
+  let autosaveInFlight = false;
 
-});
-
-
-/* ==================================================
-   📝 GUARDAR CONTEO (YA FUNCIONA CON TU BACKEND)
-   ================================================== */
-document.getElementById("saveCountBtn").addEventListener("click", () => {
-
+  function collectConteos() {
     const conteos = [];
-
     document.querySelectorAll("#countTable tbody tr").forEach(row => {
-        const material_code = row.dataset.code;
-        const location = row.dataset.loc;
-        const input = row.querySelector(".count-input").value.trim();
+      const material_code = row.dataset.code;
+      const location = row.dataset.loc;
+      const input = row.querySelector(".count-input")?.value?.trim();
 
-        if (input !== "") {
-            conteos.push({
-                material_code,
-                location,
-                real_count: Number(input)
-            });
-        }
+      if (input !== "") {
+        conteos.push({
+          material_code,
+          location,
+          real_count: Number(input)
+        });
+      }
     });
+    return conteos;
+  }
 
-    if (conteos.length === 0) {
-        return alert("⚠ Debe ingresar al menos un valor de conteo.");
-    }
+  function scheduleAutosave() {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(async () => {
+      const conteos = collectConteos();
+      if (conteos.length === 0) return;
 
-    fetch("/inventory/save-count", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(conteos)
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
+      autosaveInFlight = true;
+      saveStatus.innerText = "💾 Guardando…";
 
-            alert("✅ Conteo guardado correctamente.");
+      try {
+        const res = await fetch("/inventory/save-count", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(conteos),
+          keepalive: true
+        });
 
-            document.querySelectorAll(".count-input").forEach(i => {
-                i.style.backgroundColor = "white";
-            });
+        const data = await res.json().catch(() => null);
 
+        if (res.ok && data && data.success) {
+          saveStatus.innerText = "✅ Guardado automático";
+          setTimeout(() => (saveStatus.innerText = ""), 1800);
         } else {
-            alert("❌ Error guardando conteo.");
+          saveStatus.innerText = "⚠️ No se pudo guardar";
         }
-    })
-    .catch(err => {
-        alert("❌ Error conectando con el servidor.");
-    });
-});
+      } catch (e) {
+        saveStatus.innerText = "⚠️ Error de red guardando";
+      } finally {
+        autosaveInFlight = false;
+      }
+    }, 700);
+  }
 
-
-/* ==================================================
-   📌 EXPORTAR DISCREPANCIAS DIRECTO A EXCEL (sin archivo)
-   ================================================== */
-document.getElementById("exportBtn").addEventListener("click", () => {
-
-    const conteos = [];
-
-    document.querySelectorAll("#countTable tbody tr").forEach(row => {
-        const material_code = row.dataset.code;
-        const location = row.dataset.loc;
-        const input = row.querySelector(".count-input").value.trim();
-
-        if (input !== "") {
-            conteos.push({
-                material_code,
-                location,
-                real_count: Number(input)
-            });
-        }
+  document.querySelectorAll(".count-input").forEach(input => {
+    input.addEventListener("input", () => {
+      input.style.backgroundColor = input.value.trim() === "" ? "#ffe5e5" : "#e6ffe6";
+      const row = input.closest("tr");
+      row.style.backgroundColor = "#f7fff0";
+      lastRow = row;
+      scheduleAutosave();
     });
 
-    if (conteos.length === 0) {
-        return alert("⚠ Debe ingresar mínimo un conteo para generar discrepancias.");
-    }
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const inputs = [...document.querySelectorAll(".count-input")];
+        const idx = inputs.indexOf(input);
+        if (inputs[idx + 1]) inputs[idx + 1].focus();
+      }
+    });
+  });
 
-    fetch("/inventory/export-discrepancies", {
+  // ===== Guardar manual =====
+  async function saveManual() {
+    const conteos = collectConteos();
+    if (conteos.length === 0) return alert("⚠ Debe ingresar al menos un valor de conteo.");
+
+    saveStatus.innerText = "💾 Guardando…";
+    try {
+      const res = await fetch("/inventory/save-count", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(conteos)
-    })
-    .then(r => r.blob())
-    .then(blob => {
-        const url = window.URL.createObjectURL(blob);
+      });
+      const data = await res.json();
 
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "discrepancias.xlsx";
-        a.click();
+      if (data.success) {
+        alert("✅ Conteo guardado correctamente.");
+        saveStatus.innerText = "✅ Guardado";
+        setTimeout(() => (saveStatus.innerText = ""), 2000);
+      } else {
+        alert("❌ Error guardando conteo.");
+        saveStatus.innerText = "⚠️ No se pudo guardar";
+      }
+    } catch {
+      alert("❌ Error conectando con el servidor.");
+      saveStatus.innerText = "⚠️ Error de red";
+    }
+  }
 
-        window.URL.revokeObjectURL(url);
-    });
-});
-</script>
-<script>
-let recognition = null;
-let lastRow = null;
-let listening = false;
+  document.getElementById("saveCountBtn").addEventListener("click", saveManual);
+  document.getElementById("saveCountBtnMobile")?.addEventListener("click", saveManual);
 
-const btn = document.getElementById("voiceBtn");
-const status = document.getElementById("voiceStatus");
+  // ===== Exportar =====
+  async function exportExcel() {
+    const conteos = collectConteos();
+    if (conteos.length === 0) return alert("⚠ Debe ingresar mínimo un conteo para generar discrepancias.");
 
-function initRecognition() {
-    const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
+    try {
+      const r = await fetch("/inventory/export-discrepancies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(conteos)
+      });
 
+      const blob = await r.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "discrepancias.xlsx";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert("❌ Error exportando.");
+    }
+  }
+
+  document.getElementById("exportBtn").addEventListener("click", exportExcel);
+  document.getElementById("exportBtnMobile")?.addEventListener("click", exportExcel);
+
+  // ===== Dictado continuo =====
+  let recognition = null;
+  let listening = false;
+  let pendingCode = null;
+
+  function initRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-        alert("❌ Dictado no compatible con este navegador. Usa Chrome en Android.");
-        return null;
+      alert("❌ Dictado no compatible. Usa Chrome en Android.");
+      return null;
     }
 
     const rec = new SpeechRecognition();
     rec.lang = "es-PE";
-    rec.continuous = false;
-    rec.interimResults = false;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
     return rec;
-}
+  }
 
-btn.addEventListener("click", () => {
+  function buildCodeMap() {
+    const map = new Map();
+    document.querySelectorAll("#countTable tbody tr").forEach(row => {
+      const raw = row.dataset.code;
+      const key = normalizeDigits(raw);
+      if (key) map.set(key, row);
+    });
+    return map;
+  }
 
+  const codeMap = buildCodeMap();
+
+  function setRowValue(row, cantidad) {
+    if (!row) return false;
+    const input = row.querySelector(".count-input");
+    if (!input) return false;
+
+    setActiveRow(row);
+    input.value = String(cantidad);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    lastRow = row;
+
+    speak("registrado");
+    return true;
+  }
+
+  function parseNumbers(texto) {
+    const nums = (texto.match(/\d+/g) || []).map(n => n.trim()).filter(Boolean);
+    return nums;
+  }
+
+  function procesarTexto(texto) {
+    const nums = parseNumbers(texto);
+    if (nums.length === 0) return;
+
+    // Si quedó un código pendiente, el primer número es la cantidad
+    if (pendingCode) {
+      const row = codeMap.get(normalizeDigits(pendingCode));
+      const ok = setRowValue(row, nums[0]);
+      if (ok) {
+        voiceStatus.innerText = `✅ ${pendingCode} → ${nums[0]} (registrado)`;
+        scheduleAutosave();
+      } else {
+        voiceStatus.innerText = `⚠️ Código no encontrado: ${pendingCode}`;
+      }
+      pendingCode = null;
+      nums.shift();
+      if (nums.length === 0) return;
+    }
+
+    // Si solo dictan 1 número y hay fila activa, lo ponemos ahí
+    if (nums.length === 1) {
+      const target = activeRow || lastRow;
+      if (target) {
+        setRowValue(target, nums[0]);
+        voiceStatus.innerText = `✅ ${target.dataset.code} → ${nums[0]} (registrado)`;
+        scheduleAutosave();
+      } else {
+        voiceStatus.innerText = "ℹ️ Toca una fila o dicta: CÓDIGO + CANTIDAD";
+      }
+      return;
+    }
+
+    // Múltiples números: interpretamos como pares (código,cantidad)
+    // Si hay impar: el último queda como pendingCode
+    for (let i = 0; i < nums.length; i += 2) {
+      const code = nums[i];
+      const qty = nums[i + 1];
+
+      if (qty === undefined) {
+        pendingCode = code;
+        voiceStatus.innerText = `⌛ Código ${code} listo… di la cantidad`;
+        break;
+      }
+
+      const row = codeMap.get(normalizeDigits(code));
+      if (row) {
+        setRowValue(row, qty);
+        voiceStatus.innerText = `✅ ${code} → ${qty} (registrado)`;
+      } else {
+        voiceStatus.innerText = `⚠️ No encuentro el código: ${code}`;
+      }
+    }
+
+    scheduleAutosave();
+  }
+
+  function startDictation() {
     if (listening) return;
-
-    recognition = initRecognition();
+    if (!recognition) recognition = initRecognition();
     if (!recognition) return;
 
     recognition.onstart = () => {
-        listening = true;
-        status.innerText = "🎙️ Hablando…";
-        btn.disabled = true;
+      listening = true;
+      voiceStatus.innerText = "🎙️ Dictado activo (continuo)…";
     };
 
     recognition.onend = () => {
-        listening = false;
-        status.innerText = "⏹️ Listo";
-        btn.disabled = false;
+      listening = false;
+      if (dictationWanted) {
+        try { recognition.start(); } catch {}
+      } else {
+        voiceStatus.innerText = "⏹️ Dictado detenido";
+      }
     };
 
     recognition.onerror = (e) => {
-        console.warn("Speech error:", e.error);
-        status.innerText = "⚠️ Error de micrófono";
-        listening = false;
-        btn.disabled = false;
+      const msg =
+        e.error === "not-allowed" ? "⚠️ Permiso de micrófono bloqueado" :
+        e.error === "network" ? "⚠️ Error network: revisa internet/HTTPS" :
+        "⚠️ Error de dictado: " + e.error;
+
+      voiceStatus.innerText = msg;
+      listening = false;
     };
 
     recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript.toLowerCase().trim();
-        console.log("Dictado:", text);
-        procesarTexto(text);
+      let finalText = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        if (res.isFinal) finalText += (res[0]?.transcript || "") + " ";
+      }
+      finalText = finalText.trim().toLowerCase();
+      if (finalText) procesarTexto(finalText);
     };
 
-    recognition.start();
-});
+    try { recognition.start(); } catch {}
+  }
 
-function procesarTexto(texto) {
+  function stopDictation() {
+    dictationWanted = false;
+    try { recognition?.stop(); } catch {}
+    listening = false;
+    voiceStatus.innerText = "⏹️ Dictado detenido";
+  }
 
-    const numeros = texto.match(/\d+/g);
-    if (!numeros) return;
+  let dictationWanted = false;
 
-    const rows = document.querySelectorAll("#countTable tbody tr");
-
-    // Caso: "codigo cantidad" → 123 40
-    if (numeros.length >= 2) {
-        const codigo = numeros[0];
-        const cantidad = numeros[1];
-
-        rows.forEach(row => {
-            if (row.dataset.code === codigo) {
-                const input = row.querySelector(".count-input");
-                input.value = cantidad;
-                input.dispatchEvent(new Event("input"));
-                lastRow = row;
-            }
-        });
-        return;
+  function toggleDictation() {
+    dictationWanted = !dictationWanted;
+    if (dictationWanted) {
+      startDictation();
+      btnText("Detener dictado", true);
+    } else {
+      stopDictation();
+      btnText("Dictado", false);
     }
+  }
 
-    // Caso: solo cantidad → 40
-    if (numeros.length === 1 && lastRow) {
-        const input = lastRow.querySelector(".count-input");
-        input.value = numeros[0];
-        input.dispatchEvent(new Event("input"));
+  function btnText(label, active) {
+    const main = document.getElementById("voiceBtn");
+    const mob = document.getElementById("voiceBtnMobile");
+    if (main) {
+      main.classList.toggle("btn-danger", !active);
+      main.classList.toggle("btn-outline-danger", active);
+      main.innerHTML = active
+        ? `<i class="bi bi-mic-mute-fill me-2"></i>${label}`
+        : `<i class="bi bi-mic-fill me-2"></i>${label}`;
     }
-}
+    if (mob) {
+      mob.classList.toggle("btn-danger", !active);
+      mob.classList.toggle("btn-outline-danger", active);
+      mob.innerHTML = active
+        ? `<i class="bi bi-mic-mute-fill me-2"></i>${label}`
+        : `<i class="bi bi-mic-fill me-2"></i>${label}`;
+    }
+  }
+
+  document.getElementById("voiceBtn").addEventListener("click", toggleDictation);
+  document.getElementById("voiceBtnMobile")?.addEventListener("click", toggleDictation);
+
+  // ===== PWA install prompt =====
+  let deferredPrompt = null;
+  const pwaBtn = document.getElementById("pwaInstallBtn");
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    pwaBtn.classList.remove("d-none");
+  });
+
+  pwaBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice.catch(() => null);
+    deferredPrompt = null;
+    pwaBtn.classList.add("d-none");
+  });
+
+  // Service worker (si existe en tu proyecto)
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+  }
+
 </script>
+
 {% endblock %}
+
 
 
 
