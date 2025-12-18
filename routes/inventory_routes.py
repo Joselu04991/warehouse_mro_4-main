@@ -109,6 +109,7 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
+
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
@@ -116,74 +117,64 @@ def upload_history():
             return redirect(url_for("inventory.upload_history"))
 
         try:
-            wb = load_workbook(file, read_only=True, data_only=True)
-
-            # ✅ Recomendado: elegir la hoja correcta
-            ws = wb[wb.sheetnames[0]]  # primera hoja (o busca por nombre)
-
-            # leer header
-            rows = ws.iter_rows(min_row=1, max_row=1, values_only=True)
-            header = [str(x).strip() if x is not None else "" for x in next(rows)]
-
-            def idx(name_variants):
-                for n in name_variants:
-                    if n in header:
-                        return header.index(n)
-                return None
-
-            i_code = idx(["Código del Material","Codigo","Código Material","Material","COD"])
-            i_text = idx(["Texto breve de material","Descripción","Texto","Material Text"])
-            i_unit = idx(["Unidad de medida base","Unidad","UM","U.M."])
-            i_loc  = idx(["Ubicación","Ubicacion","Location","UBI"])
-            i_qty  = idx(["Libre utilización","Libre utilizacion","Stock","Cantidad","Libre","LibreUtil"])
-
-            if not all([i_code, i_text, i_unit, i_loc, i_qty]):
-                raise Exception("Formato histórico no reconocido. Debe tener columnas equivalentes a Código, Texto, Unidad, Ubicación, Stock.")
+            xls = pd.ExcelFile(file, engine="openpyxl")
 
             snapshot_id = str(uuid.uuid4())
-            snapshot_name = f"Inventario Antiguo {now_pe():%d/%m/%Y %H:%M}"
+            snapshot_name = f"Inventario Histórico {now_pe():%d/%m/%Y %H:%M}"
 
-            batch = []
-            for r in ws.iter_rows(min_row=2, values_only=True):
-                code = str(r[i_code]).strip() if r[i_code] is not None else ""
-                if not code:
-                    continue
+            total_insertados = 0
 
-                loc = str(r[i_loc]).replace(" ", "").upper().strip() if r[i_loc] is not None else ""
-                qty = r[i_qty]
-                try:
-                    qty = float(qty) if qty is not None else 0.0
-                except:
-                    qty = 0.0
+            for sheet in xls.sheet_names:
+                df = pd.read_excel(
+                    xls,
+                    sheet_name=sheet,
+                    usecols=[
+                        "Código del Material",
+                        "Texto breve de material",
+                        "Unidad de medida base",
+                        "Ubicación",
+                        "Libre utilización"
+                    ]
+                )
 
-                batch.append(InventoryHistory(
-                    user_id=current_user.id,
-                    snapshot_id=snapshot_id,
-                    snapshot_name=snapshot_name,
-                    material_code=code,
-                    material_text=str(r[i_text]).strip() if r[i_text] is not None else "",
-                    base_unit=str(r[i_unit]).strip() if r[i_unit] is not None else "",
-                    location=loc,
-                    libre_utilizacion=qty,
-                    creado_en=now_pe(),
-                    source_type="HISTORICO",
-                    source_filename=getattr(file, "filename", None),
-                ))
+                df = df.dropna(how="all")
+                df["Ubicación"] = (
+                    df["Ubicación"]
+                    .astype(str)
+                    .str.replace(" ", "")
+                    .str.upper()
+                    .str.strip()
+                )
 
-                if len(batch) >= 1000:
-                    db.session.add_all(batch)
-                    db.session.commit()
-                    batch.clear()
+                objetos = []
 
-            if batch:
-                db.session.add_all(batch)
+                for _, row in df.iterrows():
+                    objetos.append(
+                        InventoryHistory(
+                            user_id=current_user.id,
+                            snapshot_id=snapshot_id,
+                            snapshot_name=snapshot_name,
+                            material_code=str(row["Código del Material"]).strip(),
+                            material_text=str(row["Texto breve de material"]).strip(),
+                            base_unit=str(row["Unidad de medida base"]).strip(),
+                            location=row["Ubicación"],
+                            libre_utilizacion=float(row["Libre utilización"] or 0),
+                            creado_en=now_pe(),
+                            source_type="HISTORICO",
+                            source_filename=file.filename,
+                        )
+                    )
+
+                db.session.bulk_save_objects(objetos)
                 db.session.commit()
+                total_insertados += len(objetos)
 
-            flash("Inventario histórico cargado correctamente.", "success")
+            flash(f"Inventario histórico cargado ({total_insertados} registros).", "success")
             return redirect(url_for("inventory.history_inventory"))
 
         except Exception as e:
-            flash(str(e), "danger")
+            db.session.rollback()
+            flash(f"Error cargando histórico: {e}", "danger")
             return redirect(url_for("inventory.upload_history"))
 
     return render_template("inventory/upload_history.html")
