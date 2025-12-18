@@ -205,72 +205,71 @@ document.getElementById("exportBtn").addEventListener("click", () => {
 </script>
 <script>
 let recognition = null;
-let listening = false;
 let lastRow = null;
+let listening = false;
 
-const status = document.getElementById("voiceStatus");
 const btn = document.getElementById("voiceBtn");
+const status = document.getElementById("voiceStatus");
 
-function initVoice() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+function initRecognition() {
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-        alert("❌ Dictado por voz no soportado en este navegador");
-        return;
+        alert("❌ Dictado no compatible con este navegador. Usa Chrome en Android.");
+        return null;
     }
 
-    recognition = new SpeechRecognition();
-    recognition.lang = "es-PE";
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    const rec = new SpeechRecognition();
+    rec.lang = "es-PE";
+    rec.continuous = false;
+    rec.interimResults = false;
+    return rec;
+}
+
+btn.addEventListener("click", () => {
+
+    if (listening) return;
+
+    recognition = initRecognition();
+    if (!recognition) return;
 
     recognition.onstart = () => {
-        status.innerText = "🎙️ Escuchando...";
         listening = true;
+        status.innerText = "🎙️ Hablando…";
+        btn.disabled = true;
     };
 
     recognition.onend = () => {
         listening = false;
-        status.innerText = "⏸️ Dictado detenido";
+        status.innerText = "⏹️ Listo";
+        btn.disabled = false;
     };
 
     recognition.onerror = (e) => {
-        console.warn("Voice error:", e.error);
-
-        // Error típico en móviles
-        if (e.error === "network" || e.error === "no-speech") {
-            status.innerText = "🔄 Reintentando…";
-            try {
-                recognition.stop();
-                recognition.start();
-            } catch (err) {}
-            return;
-        }
-
+        console.warn("Speech error:", e.error);
         status.innerText = "⚠️ Error de micrófono";
         listening = false;
+        btn.disabled = false;
     };
 
     recognition.onresult = (event) => {
-        const texto = event.results[event.results.length - 1][0].transcript
-            .toLowerCase()
-            .trim();
-
-        console.log("🎧 Dictado:", texto);
-        procesarTexto(texto);
+        const text = event.results[0][0].transcript.toLowerCase().trim();
+        console.log("Dictado:", text);
+        procesarTexto(text);
     };
-}
+
+    recognition.start();
+});
 
 function procesarTexto(texto) {
 
-    // Extrae números: "100", "40", "568"
     const numeros = texto.match(/\d+/g);
     if (!numeros) return;
 
     const rows = document.querySelectorAll("#countTable tbody tr");
 
-    // CASO 1: "código cantidad" → 100 40
+    // Caso: "codigo cantidad" → 123 40
     if (numeros.length >= 2) {
         const codigo = numeros[0];
         const cantidad = numeros[1];
@@ -286,26 +285,15 @@ function procesarTexto(texto) {
         return;
     }
 
-    // CASO 2: solo cantidad → "568"
+    // Caso: solo cantidad → 40
     if (numeros.length === 1 && lastRow) {
         const input = lastRow.querySelector(".count-input");
         input.value = numeros[0];
         input.dispatchEvent(new Event("input"));
     }
 }
-
-// ⚠️ IMPORTANTE: solo se inicia con toque del usuario
-btn.addEventListener("click", () => {
-    if (!recognition) initVoice();
-
-    if (listening) {
-        recognition.stop();
-        status.innerText = "⏹️ Dictado detenido";
-    } else {
-        recognition.start();
-    }
-});
 </script>
 {% endblock %}
+
 
 
