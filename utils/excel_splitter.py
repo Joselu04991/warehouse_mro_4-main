@@ -1,57 +1,51 @@
-# utils/excel_splitter.py
-import pandas as pd
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
+from openpyxl import load_workbook
+import pandas as pd
 
-def split_excel_by_day(
-    excel_path,
-    base_output="inventarios_procesados",
-    year=2025,
-    start_month=4,
-    end_month=12
-):
-    base = Path(base_output) / str(year)
-    base.mkdir(parents=True, exist_ok=True)
+BASE_DIR = Path("inventarios_procesados")
 
-    xls = pd.ExcelFile(excel_path)
+def dividir_excel_por_dias(archivo_excel):
+    wb = load_workbook(archivo_excel, read_only=True, data_only=True)
 
-    for sheet in xls.sheet_names:
+    for sheet_name in wb.sheetnames:
         try:
-            fecha = datetime.strptime(sheet.strip(), "%d-%m-%Y")
+            fecha = datetime.strptime(sheet_name.strip(), "%d-%m-%Y")
         except:
             continue
 
-        if not (start_month <= fecha.month <= end_month):
+        if not (fecha.month >= 4 and fecha.month <= 12):
             continue
 
-        month_dir = base / f"{fecha.month:02d}"
-        month_dir.mkdir(exist_ok=True)
+        print(f"Procesando hoja {sheet_name}")
 
-        df = pd.read_excel(
-            excel_path,
-            sheet_name=sheet,
-            dtype=str
-        )
+        ws = wb[sheet_name]
+        data = list(ws.values)
+        headers = data[0]
+        rows = data[1:]
+
+        df = pd.DataFrame(rows, columns=headers)
 
         df = df.rename(columns={
             "Código del Material": "Código del Material",
             "Texto breve de material": "Texto breve de material",
             "Unidad Medid": "Unidad de medida base",
             "Ubicación": "Ubicación",
-            "Fisico": "Libre utilización",
+            "Fisico": "Libre utilización"
         })
 
-        columnas = [
-            "Código del Material",
-            "Texto breve de material",
-            "Unidad de medida base",
-            "Ubicación",
-            "Libre utilización",
+        df = df[
+            ["Código del Material",
+             "Texto breve de material",
+             "Unidad de medida base",
+             "Ubicación",
+             "Libre utilización"]
         ]
 
-        df = df[columnas]
+        salida_dir = BASE_DIR / str(fecha.year) / f"{fecha.month:02d}"
+        salida_dir.mkdir(parents=True, exist_ok=True)
 
-        salida = month_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
+        salida = salida_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
         df.to_excel(salida, index=False)
 
-    return True
+    wb.close()
