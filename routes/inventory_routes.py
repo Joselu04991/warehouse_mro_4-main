@@ -14,12 +14,13 @@ from flask import (
     jsonify,
 )
 from flask_login import login_required, current_user
-
+import tempfile
+import os
 from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
-
+from utils.excel_splitter import split_excel_by_day
 from utils.excel import (
     load_inventory_excel,
     sort_location_advanced,
@@ -106,78 +107,31 @@ def upload_inventory():
 # =============================================================================
 # 1B) SUBIR INVENTARIO HISTÓRICO (EXCEL PESADO / FORMATO ANTIGUO)
 # =============================================================================
-@inventory_bp.route("/upload-history", methods=["GET", "POST"])
+
+@inventory_bp.route("/upload-history", methods=["POST"])
 @login_required
 def upload_history():
 
-    if request.method == "POST":
-        file = request.files.get("file")
-        if not file:
-            flash("Debes seleccionar un archivo Excel.", "warning")
-            return redirect(url_for("inventory.upload_history"))
+    file = request.files.get("file")
+    if not file:
+        flash("Selecciona un archivo", "warning")
+        return redirect(url_for("inventory.upload_history"))
 
-        try:
-            xls = pd.ExcelFile(file, engine="openpyxl")
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        file.save(tmp.name)
+        temp_path = tmp.name
 
-            snapshot_id = str(uuid.uuid4())
-            snapshot_name = f"Inventario Histórico {now_pe():%d/%m/%Y %H:%M}"
+    split_excel_by_day(
+        excel_path=temp_path,
+        year=2025,
+        start_month=4,
+        end_month=12
+    )
 
-            total_insertados = 0
+    os.remove(temp_path)
 
-            for sheet in xls.sheet_names:
-                df = pd.read_excel(
-                    xls,
-                    sheet_name=sheet,
-                    usecols=[
-                        "Código del Material",
-                        "Texto breve de material",
-                        "Unidad de medida base",
-                        "Ubicación",
-                        "Libre utilización"
-                    ]
-                )
-
-                df = df.dropna(how="all")
-                df["Ubicación"] = (
-                    df["Ubicación"]
-                    .astype(str)
-                    .str.replace(" ", "")
-                    .str.upper()
-                    .str.strip()
-                )
-
-                objetos = []
-
-                for _, row in df.iterrows():
-                    objetos.append(
-                        InventoryHistory(
-                            user_id=current_user.id,
-                            snapshot_id=snapshot_id,
-                            snapshot_name=snapshot_name,
-                            material_code=str(row["Código del Material"]).strip(),
-                            material_text=str(row["Texto breve de material"]).strip(),
-                            base_unit=str(row["Unidad de medida base"]).strip(),
-                            location=row["Ubicación"],
-                            libre_utilizacion=float(row["Libre utilización"] or 0),
-                            creado_en=now_pe(),
-                            source_type="HISTORICO",
-                            source_filename=file.filename,
-                        )
-                    )
-
-                db.session.bulk_save_objects(objetos)
-                db.session.commit()
-                total_insertados += len(objetos)
-
-            flash(f"Inventario histórico cargado ({total_insertados} registros).", "success")
-            return redirect(url_for("inventory.history_inventory"))
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Error cargando histórico: {e}", "danger")
-            return redirect(url_for("inventory.upload_history"))
-
-    return render_template("inventory/upload_history.html")
+    flash("Excel histórico procesado y fragmentado correctamente", "success")
+    return redirect(url_for("inventory.history_inventory"))
 # =============================================================================
 # 2) LISTAR INVENTARIO (SOLO EL MÍO)
 # =============================================================================
