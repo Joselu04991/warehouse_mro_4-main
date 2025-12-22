@@ -1,33 +1,33 @@
-# utils/excel_splitter.py
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
-def split_excel_by_day(
-    excel_path: str,
-    output_base="inventarios_procesados",
-    start_date=None,
-    end_date=None
+def dividir_excel_por_dias(
+    archivo_excel,
+    salida_base="inventarios_procesados",
+    anio=2025,
+    mes_inicio=4,
+    mes_fin=12
 ):
-    output_base = Path(output_base)
+    salida_base = Path(salida_base)
+    salida_base.mkdir(parents=True, exist_ok=True)
 
-    xls = pd.ExcelFile(excel_path)
+    xls = pd.ExcelFile(archivo_excel)
 
     for sheet in xls.sheet_names:
         try:
             fecha = datetime.strptime(sheet.strip(), "%d-%m-%Y")
-        except ValueError:
+        except:
             continue
 
-        if start_date and fecha < start_date:
-            continue
-        if end_date and fecha > end_date:
+        if fecha.year != anio or not (mes_inicio <= fecha.month <= mes_fin):
             continue
 
-        print(f"Procesando hoja {sheet}")
+        carpeta_mes = salida_base / str(anio) / f"{fecha.month:02d}"
+        carpeta_mes.mkdir(parents=True, exist_ok=True)
 
         df = pd.read_excel(
-            excel_path,
+            archivo_excel,
             sheet_name=sheet,
             dtype=str
         )
@@ -50,11 +50,7 @@ def split_excel_by_day(
 
         df = df[columnas]
 
-        # 📁 Crear carpetas automáticamente
-        out_dir = output_base / f"{fecha.year}" / f"{fecha.month:02d}"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        out_file = out_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
-        df.to_excel(out_file, index=False)
+        salida = carpeta_mes / f"inventario_{fecha:%Y_%m_%d}.xlsx"
+        df.to_excel(salida, index=False)
 
     return True
