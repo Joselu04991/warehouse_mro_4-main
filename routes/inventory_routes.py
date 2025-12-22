@@ -110,78 +110,48 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
+
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Debes seleccionar un archivo Excel.", "warning")
+            flash("Debes seleccionar un Excel.", "warning")
             return redirect(url_for("inventory.upload_history"))
 
-        temp_path = Path("/tmp") / file.filename
-        file.save(temp_path)
+        temp = Path("/tmp") / file.filename
+        file.save(temp)
 
-        try:
-            exports = dividir_excel_por_dias(
-                archivo_excel=temp_path,
-                salida_base="inventarios_procesados",
-                anio=2025,
-                mes_inicio=4,
-                mes_fin=12,
+        dividir_excel_por_dias(
+            archivo_excel=temp,
+            salida_base="inventarios_procesados",
+            anio=2025,
+            mes_inicio=4,
+            mes_fin=12
+        )
+
+        # REGISTRAR SNAPSHOT
+        snapshot_id = str(uuid.uuid4())
+        snapshot_name = f"Inventario Histórico {now_pe():%d/%m/%Y %H:%M}"
+
+        db.session.add(
+            InventoryHistory(
+                user_id=current_user.id,
+                snapshot_id=snapshot_id,
+                snapshot_name=snapshot_name,
+                material_code="*",
+                material_text="Inventario histórico dividido por días",
+                base_unit="-",
+                location="-",
+                libre_utilizacion=0,
+                creado_en=now_pe(),
+                source_type="HISTORICO",
+                source_filename=file.filename,
             )
+        )
 
-            if not exports:
-                flash("No se encontraron hojas válidas (dd-mm-YYYY) entre abril y diciembre 2025.", "warning")
-                return redirect(url_for("inventory.upload_history"))
+        db.session.commit()
 
-            total_insert = 0
-
-            for exp in exports:
-                df = pd.read_excel(exp.output_path, sheet_name="DATA", dtype=str)
-
-                df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper().str.strip()
-                df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
-                df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
-                df["Unidad Medida"] = df["Unidad Medida"].astype(str).str.strip()
-
-                for col in ["Fisico", "STOCK", "Difere"]:
-                    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-
-                snapshot_id = str(uuid.uuid4())
-                snapshot_name = f"Inventario {exp.fecha:%d/%m/%Y} (HISTÓRICO)"
-
-                payload = []
-                for _, r in df.iterrows():
-                    payload.append({
-                        "user_id": current_user.id,
-                        "snapshot_id": snapshot_id,
-                        "snapshot_name": snapshot_name,
-                        "material_code": r.get("Código del Material", ""),
-                        "material_text": r.get("Texto breve de material", ""),
-                        "base_unit": r.get("Unidad Medida", ""),
-                        "location": r.get("Ubicación", ""),
-                        "fisico": float(r.get("Fisico", 0) or 0),
-                        "stock_sap": float(r.get("STOCK", 0) or 0),
-                        "difere": float(r.get("Difere", 0) or 0),
-                        "observacion": str(r.get("Observac.", "") or "")[:255],
-                        "item_n": str(r.get("Item", "") or "")[:30],
-                        "libre_utilizacion": float(r.get("Fisico", 0) or 0),  # compat con lo que ya usabas
-                        "creado_en": now_pe(),
-                        "source_type": "HISTORICO",
-                        "source_filename": getattr(file, "filename", None),
-                    })
-
-                chunk = 5000
-                for i in range(0, len(payload), chunk):
-                    db.session.bulk_insert_mappings(InventoryHistory, payload[i:i+chunk])
-                    db.session.commit()
-
-                total_insert += len(payload)
-
-            flash(f"✅ Histórico cargado: {len(exports)} días, {total_insert} filas importadas.", "success")
-            return redirect(url_for("inventory.history_inventory"))
-
-        except Exception as e:
-            flash(str(e), "danger")
-            return redirect(url_for("inventory.upload_history"))
+        flash("✅ Inventario histórico procesado correctamente.", "success")
+        return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
 # =============================================================================
