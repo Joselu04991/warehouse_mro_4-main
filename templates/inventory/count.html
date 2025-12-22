@@ -1,98 +1,103 @@
 {% extends "base.html" %}
 {% block content %}
 
+<h2 class="fw-bold mb-3">
+  <i class="bi bi-clipboard-data me-2"></i> Conteo de Inventario
+</h2>
+
 <style>
-  .count-wrap { max-width: 1200px; margin: 0 auto; }
-  .btn-big { padding: 14px 18px; font-size: 1.05rem; border-radius: 14px; }
-  .gloves .count-input { height: 58px; font-size: 1.35rem; border-radius: 14px; }
-  .gloves td, .gloves th { padding-top: 18px !important; padding-bottom: 18px !important; }
-  .sticky-head thead th { position: sticky; top: 0; z-index: 5; }
-  .row-hit { outline: 3px solid rgba(13,110,253,.35); border-radius: 10px; }
-  .mini { font-size:.92rem; }
-  @media (max-width: 768px){
-    .toolbar { flex-direction: column; gap: 10px; align-items: stretch !important; }
-    .toolbar .form-control { width: 100% !important; }
-    .toolbar .btns { display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between; }
-    .btn-big { width: 100%; }
+  /* Modo guantes */
+  .glove-input {
+    font-size: 1.1rem;
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+  .btn-mobile {
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+  .row-highlight {
+    background: #f7fff0 !important;
+    transition: background 0.2s ease;
+  }
+  .sticky-tools {
+    position: sticky;
+    top: 12px;
+    z-index: 9;
+    background: transparent;
   }
 </style>
 
-<div class="count-wrap">
+<div class="card shadow-sm p-3">
 
-  <h2 class="fw-bold mb-3">
-    <i class="bi bi-clipboard-data me-2"></i> Conteo de Inventario
-  </h2>
+  <!-- TOOLBAR RESPONSIVE -->
+  <div class="sticky-tools mb-3">
+    <div class="row g-2 align-items-center">
+      <div class="col-12 col-lg-6">
+        <input id="searchCount" type="text" class="form-control glove-input shadow-sm"
+               placeholder="🔍 Buscar material, texto o ubicación…">
+      </div>
 
-  <div class="card shadow-sm p-3 p-md-4">
+      <div class="col-12 col-lg-6">
+        <div class="d-grid d-lg-flex gap-2 justify-content-lg-end">
+          <button id="exportBtn" class="btn btn-primary btn-mobile shadow-sm">
+            <i class="bi bi-file-earmark-excel me-2"></i>Exportar
+          </button>
 
-    <div class="d-flex justify-content-between align-items-center mb-3 toolbar">
-      <input type="text" id="searchCount"
-             class="form-control w-50 shadow-sm"
-             placeholder="🔍 Buscar material, texto o ubicación…">
+          <button id="saveCountBtn" class="btn btn-success btn-mobile shadow-sm">
+            <i class="bi bi-cloud-check me-2"></i>Guardar
+          </button>
 
-      <div class="btns">
-        <button id="exportBtn" class="btn btn-primary btn-big shadow-sm">
-          <i class="bi bi-file-earmark-excel me-2"></i>Exportar Discrepancias
-        </button>
+          <button id="voiceBtn" class="btn btn-danger btn-mobile shadow-sm">
+            <i class="bi bi-mic-fill me-2"></i>Dictar
+          </button>
+        </div>
 
-        <button id="saveCountBtn" class="btn btn-success btn-big shadow-sm">
-          <i class="bi bi-cloud-check me-2"></i>Guardar Conteo
-        </button>
-
-        <button id="voiceBtn" class="btn btn-danger btn-big shadow-sm">
-          <i class="bi bi-mic-fill me-2"></i>Dictado (Android)
-        </button>
-
-        <button id="glovesBtn" class="btn btn-dark btn-big shadow-sm">
-          <i class="bi bi-hand-index-thumb me-2"></i>Modo guantes
-        </button>
+        <div class="mt-2">
+          <small id="voiceStatus" class="text-muted">Listo.</small>
+        </div>
       </div>
     </div>
-
-    <div class="d-flex align-items-center gap-2 mb-3">
-      <span class="badge text-bg-secondary">Estado</span>
-      <span id="voiceStatus" class="text-muted mini">Listo</span>
-      <span class="text-muted mini">Tip: di “100 40 568 cantidad 12” o “100 40 568 12”.</span>
-    </div>
-
-    <div class="table-responsive sticky-head" id="tableContainer">
-      <table class="table table-hover align-middle" id="countTable">
-        <thead class="table-dark text-center">
-          <tr>
-            <th>Código</th>
-            <th>Descripción</th>
-            <th>Ubicación</th>
-            <th>Stock Sistema</th>
-            <th>Conteo Real</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% for i in items %}
-          <tr data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
-            <td><strong>{{ i.material_code }}</strong></td>
-            <td>{{ i.material_text }}</td>
-            <td class="text-primary fw-bold">{{ i.location }}</td>
-            <td class="text-center">{{ i.libre_utilizacion }}</td>
-
-            <td class="text-center" style="width: 190px;">
-              <input type="number" min="0"
-                     class="form-control count-input shadow-sm text-center"
-                     placeholder="0"
-                     inputmode="numeric">
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-
-      </table>
-    </div>
-
   </div>
+
+  <!-- TABLA -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle" id="countTable">
+      <thead class="table-dark text-center">
+        <tr>
+          <th style="min-width:140px;">Código</th>
+          <th style="min-width:420px;">Descripción</th>
+          <th style="min-width:120px;">Ubicación</th>
+          <th style="min-width:140px;">Stock Sistema</th>
+          <th style="min-width:170px;">Conteo Real</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in items %}
+        <tr data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
+          <td><strong>{{ i.material_code }}</strong></td>
+          <td>{{ i.material_text }}</td>
+          <td class="text-primary fw-bold">{{ i.location }}</td>
+          <td class="text-center">{{ i.libre_utilizacion }}</td>
+          <td class="text-center">
+            <input type="number"
+                   inputmode="numeric"
+                   min="0"
+                   class="form-control glove-input count-input shadow-sm text-center"
+                   placeholder="0">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
 </div>
 
 <script>
-/* ===================== BUSCADOR ===================== */
+/* ==========================
+   BÚSQUEDA
+========================== */
 document.getElementById("searchCount").addEventListener("input", function () {
   const filter = this.value.toLowerCase();
   document.querySelectorAll("#countTable tbody tr").forEach(row => {
@@ -100,14 +105,21 @@ document.getElementById("searchCount").addEventListener("input", function () {
   });
 });
 
-/* ===================== UI INPUTS ===================== */
-function paintInput(input){
-  input.style.backgroundColor = input.value.trim() === "" ? "#ffe5e5" : "#e6ffe6";
-  input.closest("tr").style.backgroundColor = "#f7fff0";
+/* ==========================
+   INPUT UX
+========================== */
+function paintInput(input) {
+  const v = (input.value || "").trim();
+  input.style.backgroundColor = v === "" ? "#ffe5e5" : "#e6ffe6";
 }
 
-document.querySelectorAll(".count-input").forEach(input => {
-  input.addEventListener("input", () => paintInput(input));
+document.querySelectorAll(".count-input").forEach((input) => {
+  input.addEventListener("input", () => {
+    paintInput(input);
+    const tr = input.closest("tr");
+    tr.classList.add("row-highlight");
+  });
+
   input.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const inputs = [...document.querySelectorAll(".count-input")];
@@ -115,10 +127,49 @@ document.querySelectorAll(".count-input").forEach(input => {
       if (inputs[idx + 1]) inputs[idx + 1].focus();
     }
   });
+
+  paintInput(input);
 });
 
-/* ===================== GUARDAR ===================== */
-document.getElementById("saveCountBtn").addEventListener("click", () => {
+/* ==========================
+   GUARDAR CONTEO
+========================== */
+document.getElementById("saveCountBtn").addEventListener("click", async () => {
+  const conteos = [];
+  document.querySelectorAll("#countTable tbody tr").forEach(row => {
+    const material_code = row.dataset.code;
+    const location = row.dataset.loc;
+    const input = row.querySelector(".count-input").value.trim();
+    if (input !== "") {
+      conteos.push({ material_code, location, real_count: Number(input) });
+    }
+  });
+
+  if (conteos.length === 0) return alert("⚠ Debe ingresar al menos un valor de conteo.");
+
+  try {
+    const res = await fetch("/inventory/save-count", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(conteos)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ Conteo guardado correctamente.");
+      document.querySelectorAll(".count-input").forEach(i => i.style.backgroundColor = "white");
+    } else {
+      alert("❌ Error guardando conteo: " + (data.msg || ""));
+    }
+  } catch (e) {
+    alert("❌ Error conectando con el servidor.");
+  }
+});
+
+/* ==========================
+   EXPORTAR DISCREPANCIAS
+========================== */
+document.getElementById("exportBtn").addEventListener("click", async () => {
   const conteos = [];
   document.querySelectorAll("#countTable tbody tr").forEach(row => {
     const material_code = row.dataset.code;
@@ -127,231 +178,142 @@ document.getElementById("saveCountBtn").addEventListener("click", () => {
     if (input !== "") conteos.push({ material_code, location, real_count: Number(input) });
   });
 
-  if (!conteos.length) return alert("⚠ Debe ingresar al menos un valor de conteo.");
+  if (conteos.length === 0) return alert("⚠ Debe ingresar mínimo un conteo para generar discrepancias.");
 
-  fetch("/inventory/save-count", {
+  const r = await fetch("/inventory/export-discrepancies", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(conteos)
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) alert("✅ Conteo guardado correctamente.");
-    else alert("❌ Error guardando conteo.");
-  })
-  .catch(() => alert("❌ Error conectando con el servidor."));
-});
-
-/* ===================== EXPORTAR ===================== */
-document.getElementById("exportBtn").addEventListener("click", () => {
-  const conteos = [];
-  document.querySelectorAll("#countTable tbody tr").forEach(row => {
-    const material_code = row.dataset.code;
-    const location = row.dataset.loc;
-    const input = row.querySelector(".count-input").value.trim();
-    if (input !== "") conteos.push({ material_code, location, real_count: Number(input) });
   });
 
-  if (!conteos.length) return alert("⚠ Debe ingresar mínimo un conteo para generar discrepancias.");
-
-  fetch("/inventory/export-discrepancies", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(conteos)
-  })
-  .then(r => r.blob())
-  .then(blob => {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "discrepancias.xlsx";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  });
+  const blob = await r.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "discrepancias.xlsx";
+  a.click();
+  window.URL.revokeObjectURL(url);
 });
 
-/* ===================== MODO GUANTES ===================== */
-const glovesBtn = document.getElementById("glovesBtn");
-const container = document.querySelector(".count-wrap");
-let glovesOn = false;
-
-glovesBtn.addEventListener("click", () => {
-  glovesOn = !glovesOn;
-  document.body.classList.toggle("gloves", glovesOn);
-});
-
-/* ===================== VOZ ANDROID (FIX) ===================== */
+/* ==========================
+   DICTADO ANDROID (Web Speech)
+========================== */
 let recognition = null;
 let listening = false;
 let lastRow = null;
 
-const voiceBtn = document.getElementById("voiceBtn");
-const voiceStatus = document.getElementById("voiceStatus");
+const btn = document.getElementById("voiceBtn");
+const status = document.getElementById("voiceStatus");
 
-const CODE_SET = new Set([...document.querySelectorAll("#countTable tbody tr")].map(r => String(r.dataset.code)));
-const CODE_TO_ROW = new Map([...document.querySelectorAll("#countTable tbody tr")].map(r => [String(r.dataset.code), r]));
-
-function speak(text){
-  try{
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "es-PE";
-    window.speechSynthesis.speak(u);
-  } catch(e){}
-}
-
-function getSpeechRecognition(){
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
-}
-
-function parseNums(text){
-  const m = text.match(/\d+/g);
-  return m ? m.map(x => String(x)) : [];
-}
-
-function findBestCode(nums){
-  // intenta armar código juntando 2..6 grupos (para casos 100 40 568 => 10040568)
-  // y deja el último como cantidad si sobra
-  for (let k = Math.min(6, nums.length); k >= 2; k--){
-    const code = nums.slice(0, k).join("");
-    if (CODE_SET.has(code)){
-      const rest = nums.slice(k);
-      const qty = rest.length ? rest[rest.length - 1] : null;
-      return { code, qty };
-    }
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert("❌ Dictado no compatible. Usa Chrome en Android.");
+    return null;
   }
-  // fallback: primer num como código exacto
-  if (CODE_SET.has(nums[0])) {
-    const qty = nums.length >= 2 ? nums[1] : null;
-    return { code: nums[0], qty };
-  }
-  return { code: null, qty: null };
+
+  const rec = new SR();
+  rec.lang = "es-PE";
+  rec.continuous = true;     // continuo (Android puede cortarlo igual)
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  return rec;
 }
 
-function applyCount(code, qty){
-  if (!code) return false;
-  const row = CODE_TO_ROW.get(code);
-  if (!row) return false;
-
+function setCellValue(row, cantidad) {
   const input = row.querySelector(".count-input");
-  if (!input) return false;
+  input.value = String(cantidad);
+  input.setAttribute("value", String(cantidad));
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
 
-  if (qty != null){
-    input.value = qty;
-    input.dispatchEvent(new Event("input"));
-    lastRow = row;
+  row.classList.add("row-highlight");
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  input.focus({ preventScroll: true });
 
-    row.classList.add("row-hit");
-    setTimeout(() => row.classList.remove("row-hit"), 900);
-
-    input.focus({preventScroll:false});
-    input.scrollIntoView({behavior:"smooth", block:"center"});
-
-    speak("registrado");
-    return true;
-  }
-
-  // si no vino qty, solo selecciona fila como "última"
   lastRow = row;
-  row.classList.add("row-hit");
-  setTimeout(() => row.classList.remove("row-hit"), 900);
-  speak("código detectado");
-  return true;
 }
 
-function applyQtyOnly(qty){
-  if (!lastRow) return false;
-  const input = lastRow.querySelector(".count-input");
-  if (!input) return false;
-  input.value = qty;
-  input.dispatchEvent(new Event("input"));
-  speak("registrado");
-  return true;
+function findRowByCode(code) {
+  const rows = document.querySelectorAll("#countTable tbody tr");
+  for (const row of rows) {
+    if (String(row.dataset.code).trim() === String(code).trim()) return row;
+  }
+  return null;
 }
 
-function startListening(){
-  const SR = getSpeechRecognition();
-  if (!SR){
-    alert("❌ Dictado no compatible. Usa Chrome en Android y en HTTPS.");
+/**
+ * Reglas:
+ * - Si el dictado trae varios números:
+ *    - último número = cantidad
+ *    - resto concatenado = código (para casos tipo "100 40 568 12" => 10040568 / 12)
+ * - Si trae 2 números: "codigo cantidad"
+ * - Si trae 1 número: cantidad para lastRow
+ */
+function procesarTexto(texto) {
+  const nums = (texto.match(/\d+/g) || []).map(x => String(x));
+  if (nums.length === 0) return;
+
+  if (nums.length === 1) {
+    if (lastRow) setCellValue(lastRow, nums[0]);
     return;
   }
 
-  recognition = new SR();
-  recognition.lang = "es-PE";
-  recognition.interimResults = false;
+  const cantidad = nums[nums.length - 1];
+  const codigo = nums.slice(0, -1).join(""); // concat
 
-  // Android suele ignorar continuous=true, entonces reiniciamos en onend
-  recognition.continuous = true;
-
-  recognition.onstart = () => {
-    listening = true;
-    voiceStatus.innerText = "🎙️ Escuchando...";
-    voiceBtn.classList.add("disabled");
-  };
-
-  recognition.onerror = (e) => {
-    // "network" pasa cuando Google Speech no responde o no hay permisos / conexión
-    voiceStatus.innerText = (e.error === "network")
-      ? "⚠️ error network (conexión/servicio). Intenta con datos o reintenta."
-      : `⚠️ error: ${e.error}`;
-    listening = false;
-    voiceBtn.classList.remove("disabled");
-  };
-
-  recognition.onresult = (event) => {
-    const text = event.results?.[0]?.[0]?.transcript ? event.results[0][0].transcript.toLowerCase().trim() : "";
-    if (!text) return;
-
-    const nums = parseNums(text);
-    if (!nums.length) return;
-
-    // caso: "cantidad 12" / "doce" -> solo números (si vino 1 num, qty-only)
-    if (nums.length === 1) {
-      if (!applyQtyOnly(nums[0])) {
-        voiceStatus.innerText = "⚠️ No hay código previo para asignar cantidad.";
-      }
-      return;
-    }
-
-    const best = findBestCode(nums);
-    if (best.code){
-      // si qty viene null, intenta usar el último como qty
-      const qty = best.qty ?? nums[nums.length - 1];
-      const ok = applyCount(best.code, qty);
-      if (!ok) voiceStatus.innerText = "⚠️ Código no encontrado en la tabla.";
-      return;
-    }
-
-    voiceStatus.innerText = "⚠️ No pude reconocer el código. Di el código más claro.";
-  };
-
-  recognition.onend = () => {
-    // reinicio automático si seguimos “en modo dictado”
-    if (listening){
-      try { recognition.start(); } catch(e){}
-      return;
-    }
-    voiceStatus.innerText = "⏹️ Detenido";
-    voiceBtn.classList.remove("disabled");
-  };
-
-  try{
-    recognition.start();
-  } catch(e){
-    voiceStatus.innerText = "⚠️ No pude iniciar micrófono. Revisa permisos.";
-    listening = false;
-    voiceBtn.classList.remove("disabled");
+  const row = findRowByCode(codigo) || findRowByCode(nums[0]); // fallback
+  if (row) {
+    setCellValue(row, cantidad);
+  } else {
+    status.innerText = `⚠️ No encontré código ${codigo}`;
   }
 }
 
-function stopListening(){
-  listening = false;
-  try{ recognition && recognition.stop(); } catch(e){}
-  voiceBtn.classList.remove("disabled");
-}
+btn.addEventListener("click", () => {
+  if (!recognition) recognition = initRecognition();
+  if (!recognition) return;
 
-voiceBtn.addEventListener("click", () => {
-  if (!listening) startListening();
-  else stopListening();
+  if (!listening) {
+    recognition.onstart = () => {
+      listening = true;
+      status.innerText = "🎙️ Escuchando… (di: 100 40 568 12)";
+      btn.classList.remove("btn-danger");
+      btn.classList.add("btn-dark");
+    };
+
+    recognition.onresult = (event) => {
+      const text = (event.results?.[event.results.length - 1]?.[0]?.transcript || "").toLowerCase().trim();
+      if (text) procesarTexto(text);
+    };
+
+    recognition.onerror = (e) => {
+      // en Android suele salir "network" si no hay servicio/permiso
+      status.innerText = `⚠️ Dictado error: ${e.error}`;
+      listening = false;
+      btn.classList.add("btn-danger");
+      btn.classList.remove("btn-dark");
+      try { recognition.stop(); } catch {}
+    };
+
+    recognition.onend = () => {
+      // si estaba en modo “continuo”, reintenta (cuando Android lo corta)
+      if (listening) {
+        try { recognition.start(); } catch {}
+      } else {
+        status.innerText = "⏹️ Detenido.";
+      }
+    };
+
+    recognition.start();
+
+  } else {
+    listening = false;
+    try { recognition.stop(); } catch {}
+    btn.classList.add("btn-danger");
+    btn.classList.remove("btn-dark");
+    status.innerText = "⏹️ Detenido.";
+  }
 });
 </script>
 
