@@ -3,6 +3,8 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 from openpyxl import load_workbook
+from pathlib import Path
+from utils.excel_splitter import dividir_excel_por_dias
 from flask import (
     Blueprint,
     render_template,
@@ -20,8 +22,6 @@ from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
-from utils.excel_splitter import split_excel_by_day
-from pathlib import Path
 from utils.excel import (
     load_inventory_excel,
     sort_location_advanced,
@@ -115,17 +115,21 @@ def upload_history():
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Selecciona un archivo", "warning")
-            return redirect(request.url)
+            flash("Debes seleccionar un archivo Excel.", "warning")
+            return redirect(url_for("inventory.upload_history"))
 
-        path = Path("/tmp") / file.filename
-        file.save(path)
+        temp_path = Path("/tmp") / file.filename
+        file.save(temp_path)
 
-        from utils.excel_splitter import dividir_excel_por_dias
+        dividir_excel_por_dias(
+            archivo_excel=temp_path,
+            salida_base="inventarios_procesados",
+            anio=2025,
+            mes_inicio=4,
+            mes_fin=12
+        )
 
-        dividir_excel_por_dias(path)
-
-        flash("Archivo recibido. Inventarios procesados correctamente.", "success")
+        flash("Excel histórico dividido correctamente por días.", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
