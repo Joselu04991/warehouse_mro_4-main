@@ -1,41 +1,70 @@
+# utils/excel_splitter.py
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-import re
 
-def normalizar(col):
-    return (
-        col.strip()
-        .lower()
-        .replace("\n", " ")
-        .replace("\r", " ")
-        .replace("  ", " ")
+
+def normalizar_columnas(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Normaliza columnas reales del Excel histórico
+    a un formato estándar interno
+    """
+
+    # limpiar nombres
+    df.columns = (
+        df.columns
+        .astype(str)
+        .str.replace("\n", " ")
+        .str.replace("  ", " ")
+        .str.strip()
     )
 
+    mapa = {
+        "Código del Material": ["Código del Material", "Codigo del Material", "CODIGO"],
+        "Texto breve de material": ["Texto breve de material", "Descripción"],
+        "Unidad Medida": ["Unidad Medida", "Unidad", "U.M"],
+        "Ubicación": ["Ubicación", "Ubicacion"],
+        "Fisico": ["Fisico", "Físico", "Stock Fisico"],
+        "STOCK": ["STOCK", "Stock Sistema"],
+        "Difere": ["Difere", "Diferencia"],
+        "Observac.": ["Observac.", "Observaciones"],
+    }
+
+    columnas_finales = {}
+
+    for estandar, variantes in mapa.items():
+        for v in variantes:
+            if v in df.columns:
+                columnas_finales[v] = estandar
+                break
+
+    df = df.rename(columns=columnas_finales)
+
+    faltantes = set(mapa.keys()) - set(df.columns)
+    if faltantes:
+        raise Exception(f"❌ Columnas faltantes en hoja: {faltantes}")
+
+    return df
+
+
 def dividir_excel_por_dias(
-    archivo_excel,
-    output_base="inventarios_procesados",
-    anio=2025,
-    mes_inicio=4,
-    mes_fin=12
+    archivo_excel: Path,
+    salida_base: Path,
+    fecha_inicio: datetime,
+    fecha_fin: datetime,
 ):
-    output_base = Path(output_base) / str(anio)
-    output_base.mkdir(parents=True, exist_ok=True)
+    salida_base.mkdir(parents=True, exist_ok=True)
 
     xls = pd.ExcelFile(archivo_excel)
 
     for sheet in xls.sheet_names:
-
-        # 🔹 detectar fecha en nombre de hoja
         try:
             fecha = datetime.strptime(sheet.strip(), "%d-%m-%Y")
         except:
             continue
 
-        if not (mes_inicio <= fecha.month <= mes_fin):
+        if not (fecha_inicio <= fecha <= fecha_fin):
             continue
-
-        print(f"📄 Procesando hoja: {sheet}")
 
         df = pd.read_excel(
             archivo_excel,
@@ -43,55 +72,13 @@ def dividir_excel_por_dias(
             dtype=str
         )
 
-        # 🔹 normalizar columnas
-        df.columns = [normalizar(c) for c in df.columns]
+        df = normalizar_columnas(df)
 
-        # 🔹 mapeo flexible (ESTE ES EL FIX CLAVE)
-        mapa = {
-            "codigo": ["código del material", "codigo del material"],
-            "texto": ["texto breve de material"],
-            "unidad": ["unidad medida", "unidad medid", "unidad"],
-            "ubicacion": ["ubicación", "ubicacion"],
-            "stock": ["fisico", "stock"]
-        }
+        # carpetas automáticas
+        carpeta = salida_base / f"{fecha.year}" / f"{fecha.month:02d}"
+        carpeta.mkdir(parents=True, exist_ok=True)
 
-        def encontrar(col_opciones):
-            for c in col_opciones:
-                if c in df.columns:
-                    return c
-            return None
+        salida = carpeta / f"inventario_{fecha:%Y_%m_%d}.xlsx"
+        df.to_excel(salida, index=False)
 
-        c_codigo = encontrar(mapa["codigo"])
-        c_texto = encontrar(mapa["texto"])
-        c_unidad = encontrar(mapa["unidad"])
-        c_ubicacion = encontrar(mapa["ubicacion"])
-        c_stock = encontrar(mapa["stock"])
-
-        if not all([c_codigo, c_texto, c_unidad, c_ubicacion, c_stock]):
-            print("⚠️ Hoja ignorada por columnas incompatibles")
-            continue
-
-        df_final = df[[c_codigo, c_texto, c_unidad, c_ubicacion, c_stock]].copy()
-
-        df_final.columns = [
-            "Código del Material",
-            "Texto breve de material",
-            "Unidad de medida base",
-            "Ubicación",
-            "Libre utilización"
-        ]
-
-        # 🔹 limpiar datos
-        df_final["Ubicación"] = df_final["Ubicación"].astype(str).str.replace(" ", "").str.upper()
-        df_final["Libre utilización"] = pd.to_numeric(
-            df_final["Libre utilización"], errors="coerce"
-        ).fillna(0)
-
-        # 🔹 estructura de carpetas
-        carpeta_mes = output_base / f"{fecha.month:02d}"
-        carpeta_mes.mkdir(exist_ok=True)
-
-        salida = carpeta_mes / f"inventario_{fecha:%Y_%m_%d}.xlsx"
-        df_final.to_excel(salida, index=False)
-
-        print(f"✅ Generado: {salida}")
+        print(f"✅ {salida}")
