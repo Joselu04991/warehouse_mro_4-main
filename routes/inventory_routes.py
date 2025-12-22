@@ -1,21 +1,10 @@
+from pathlib import Path
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from pathlib import Path
-import os
-import tempfile
 import pandas as pd
 
-from flask import (
-    Blueprint,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    flash,
-    send_file,
-    jsonify,
-)
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
 
 from models import db
@@ -23,11 +12,7 @@ from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
 
-from utils.excel import (
-    load_inventory_excel,
-    sort_location_advanced,
-    generate_discrepancies_excel,
-)
+from utils.excel import load_inventory_excel, sort_location_advanced, generate_discrepancies_excel
 from utils.excel_splitter import dividir_excel_por_dias
 
 
@@ -110,29 +95,42 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
-
     if request.method == "POST":
         file = request.files.get("file")
-        if not file:
-            flash("Selecciona un Excel", "warning")
+        if not file or file.filename == "":
+            flash("Debes seleccionar un archivo Excel.", "warning")
             return redirect(url_for("inventory.upload_history"))
 
-        from pathlib import Path
-        temp_path = Path("/tmp") / file.filename
-        file.save(temp_path)
+        # Guardar en /tmp
+        safe_name = f"hist_{uuid.uuid4().hex}_{file.filename}"
+        temp_path = Path("/tmp") / safe_name
 
-        from utils.excel_splitter import dividir_excel_por_dias
+        try:
+            file.save(str(temp_path))
 
-        dividir_excel_por_dias(
-            archivo_excel=temp_path,
-            salida_base="inventarios_procesados",
-            anio=2025,
-            mes_inicio=4,
-            mes_fin=12,
-        )
+            # Divide por días (Abril–Diciembre 2025)
+            generados = dividir_excel_por_dias(
+                archivo_excel=temp_path,
+                salida_base="inventarios_procesados",
+                anio=2025,
+                mes_inicio=4,
+                mes_fin=12,
+            )
 
-        flash("Excel histórico dividido correctamente.", "success")
-        return redirect(url_for("inventory.history_inventory"))
+            flash(f"✅ Excel histórico dividido: {len(generados)} archivos diarios generados.", "success")
+            return redirect(url_for("inventory.history_inventory"))
+
+        except Exception as e:
+            flash(f"❌ Error procesando Excel histórico: {e}", "danger")
+            return redirect(url_for("inventory.upload_history"))
+
+        finally:
+            # limpiar temp (si quieres)
+            try:
+                if temp_path.exists():
+                    temp_path.unlink()
+            except Exception:
+                pass
 
     return render_template("inventory/upload_history.html")
 # =============================================================================
