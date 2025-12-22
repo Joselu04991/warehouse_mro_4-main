@@ -107,31 +107,27 @@ def upload_inventory():
 # =============================================================================
 # 1B) SUBIR INVENTARIO HISTÓRICO (EXCEL PESADO / FORMATO ANTIGUO)
 # =============================================================================
-
-@inventory_bp.route("/upload-history", methods=["POST"])
+@inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
 
-    file = request.files.get("file")
-    if not file:
-        flash("Selecciona un archivo", "warning")
-        return redirect(url_for("inventory.upload_history"))
+    if request.method == "POST":
+        file = request.files.get("file")
+        if not file:
+            flash("Selecciona un archivo", "warning")
+            return redirect(request.url)
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-        file.save(tmp.name)
-        temp_path = tmp.name
+        path = Path("/tmp") / file.filename
+        file.save(path)
 
-    split_excel_by_day(
-        excel_path=temp_path,
-        year=2025,
-        start_month=4,
-        end_month=12
-    )
+        from utils.excel_splitter import dividir_excel_por_dias
 
-    os.remove(temp_path)
+        dividir_excel_por_dias(path)
 
-    flash("Excel histórico procesado y fragmentado correctamente", "success")
-    return redirect(url_for("inventory.history_inventory"))
+        flash("Archivo recibido. Inventarios procesados correctamente.", "success")
+        return redirect(url_for("inventory.history_inventory"))
+
+    return render_template("inventory/upload_history.html")
 # =============================================================================
 # 2) LISTAR INVENTARIO (SOLO EL MÍO)
 # =============================================================================
