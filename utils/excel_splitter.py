@@ -1,21 +1,16 @@
+# utils/excel_splitter.py
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
-
 def split_excel_by_day(
     excel_path: str,
-    output_base: str = "inventarios_procesados",
-    year: int = 2025,
-    start_month: int = 4,
-    end_month: int = 12
+    output_base="inventarios_procesados",
+    start_date=None,
+    end_date=None
 ):
-    """
-    Divide un Excel histórico con múltiples hojas (por día)
-    en archivos diarios organizados por año/mes.
-    """
-
     output_base = Path(output_base)
+
     xls = pd.ExcelFile(excel_path)
 
     for sheet in xls.sheet_names:
@@ -24,13 +19,12 @@ def split_excel_by_day(
         except ValueError:
             continue
 
-        if fecha.year != year:
+        if start_date and fecha < start_date:
+            continue
+        if end_date and fecha > end_date:
             continue
 
-        if not (start_month <= fecha.month <= end_month):
-            continue
-
-        print(f"📅 Procesando hoja: {sheet}")
+        print(f"Procesando hoja {sheet}")
 
         df = pd.read_excel(
             excel_path,
@@ -56,11 +50,11 @@ def split_excel_by_day(
 
         df = df[columnas]
 
-        # Crear carpetas año / mes
-        out_dir = output_base / str(fecha.year) / f"{fecha.month:02d}"
+        # 📁 Crear carpetas automáticamente
+        out_dir = output_base / f"{fecha.year}" / f"{fecha.month:02d}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
         out_file = out_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
         df.to_excel(out_file, index=False)
 
-    print("✅ Excel histórico dividido correctamente")
+    return True
