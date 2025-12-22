@@ -6,31 +6,34 @@ class InventoryHistory(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # Usuario dueño del inventario
     user_id = db.Column(db.Integer, nullable=False, index=True)
 
-    # Snapshot
     snapshot_id = db.Column(db.String(64), nullable=False, index=True)
     snapshot_name = db.Column(db.String(150), nullable=False)
 
-    # Datos del material
+    item_n = db.Column(db.String(30), nullable=True)
+
     material_code = db.Column(db.String(50), nullable=False, index=True)
     material_text = db.Column(db.String(255), nullable=False)
     base_unit = db.Column(db.String(20), nullable=False)
     location = db.Column(db.String(50), nullable=False, index=True)
 
+    # Tus columnas reales
+    fisico = db.Column(db.Float, default=0)
+    stock_sap = db.Column(db.Float, default=0)
+    difere = db.Column(db.Float, default=0)
+    observacion = db.Column(db.String(255), nullable=True)
+
+    # compat con lo que ya usabas (si algo aún lee "libre_utilizacion")
     libre_utilizacion = db.Column(db.Float, default=0)
 
-    # Fecha Perú
     creado_en = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
-    # Metadata del origen
-    source_type = db.Column(db.String(30), default="DIARIO")  
+    source_type = db.Column(db.String(30), default="DIARIO")     # DIARIO / HISTORICO / CIERRE
     source_filename = db.Column(db.String(255), nullable=True)
 
-    # Cierre
     closed_by = db.Column(db.String(120), nullable=True)
     closed_at = db.Column(db.DateTime, nullable=True)
 
     def __repr__(self):
-        return f"<InventoryHistory {self.snapshot_name} - {self.material_code}>"
+        return f"<History {self.snapshot_name} - {self.material_code}>"
