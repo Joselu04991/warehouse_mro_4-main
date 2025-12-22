@@ -110,49 +110,80 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
-
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
             flash("Debes seleccionar un archivo Excel.", "warning")
             return redirect(url_for("inventory.upload_history"))
 
-        # Guardar a /tmp (Railway)
-        suffix = Path(file.filename).suffix.lower() or ".xlsx"
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-        tmp_path = Path(tmp.name)
-        tmp.close()
-        file.save(tmp_path)
+        temp_path = Path("/tmp") / file.filename
+        file.save(temp_path)
 
         try:
-            res = dividir_excel_por_dias(
-                archivo_excel=tmp_path,
+            exports = dividir_excel_por_dias(
+                archivo_excel=temp_path,
                 salida_base="inventarios_procesados",
                 anio=2025,
                 mes_inicio=4,
                 mes_fin=12,
             )
 
-            flash(
-                f"✅ Histórico procesado. Hojas totales: {res.total_sheets} | "
-                f"Procesadas: {res.processed} | Omitidas: {res.skipped}",
-                "success",
-            )
+            if not exports:
+                flash("No se encontraron hojas válidas (dd-mm-YYYY) entre abril y diciembre 2025.", "warning")
+                return redirect(url_for("inventory.upload_history"))
+
+            total_insert = 0
+
+            for exp in exports:
+                df = pd.read_excel(exp.output_path, sheet_name="DATA", dtype=str)
+
+                df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper().str.strip()
+                df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
+                df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
+                df["Unidad Medida"] = df["Unidad Medida"].astype(str).str.strip()
+
+                for col in ["Fisico", "STOCK", "Difere"]:
+                    df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
+                snapshot_id = str(uuid.uuid4())
+                snapshot_name = f"Inventario {exp.fecha:%d/%m/%Y} (HISTÓRICO)"
+
+                payload = []
+                for _, r in df.iterrows():
+                    payload.append({
+                        "user_id": current_user.id,
+                        "snapshot_id": snapshot_id,
+                        "snapshot_name": snapshot_name,
+                        "material_code": r.get("Código del Material", ""),
+                        "material_text": r.get("Texto breve de material", ""),
+                        "base_unit": r.get("Unidad Medida", ""),
+                        "location": r.get("Ubicación", ""),
+                        "fisico": float(r.get("Fisico", 0) or 0),
+                        "stock_sap": float(r.get("STOCK", 0) or 0),
+                        "difere": float(r.get("Difere", 0) or 0),
+                        "observacion": str(r.get("Observac.", "") or "")[:255],
+                        "item_n": str(r.get("Item", "") or "")[:30],
+                        "libre_utilizacion": float(r.get("Fisico", 0) or 0),  # compat con lo que ya usabas
+                        "creado_en": now_pe(),
+                        "source_type": "HISTORICO",
+                        "source_filename": getattr(file, "filename", None),
+                    })
+
+                chunk = 5000
+                for i in range(0, len(payload), chunk):
+                    db.session.bulk_insert_mappings(InventoryHistory, payload[i:i+chunk])
+                    db.session.commit()
+
+                total_insert += len(payload)
+
+            flash(f"✅ Histórico cargado: {len(exports)} días, {total_insert} filas importadas.", "success")
             return redirect(url_for("inventory.history_inventory"))
 
         except Exception as e:
             flash(str(e), "danger")
             return redirect(url_for("inventory.upload_history"))
 
-        finally:
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
-
     return render_template("inventory/upload_history.html")
-
-
 # =============================================================================
 # 2) LISTAR INVENTARIO (SOLO EL MÍO)
 # =============================================================================
