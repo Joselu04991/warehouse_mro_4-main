@@ -1,84 +1,78 @@
-# utils/excel_splitter.py
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
 
 
-def normalizar_columnas(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Normaliza columnas reales del Excel histórico
-    a un formato estándar interno
-    """
-
-    # limpiar nombres
-    df.columns = (
-        df.columns
-        .astype(str)
-        .str.replace("\n", " ")
-        .str.replace("  ", " ")
-        .str.strip()
-    )
-
-    mapa = {
-        "Código del Material": ["Código del Material", "Codigo del Material", "CODIGO"],
-        "Texto breve de material": ["Texto breve de material", "Descripción"],
-        "Unidad Medida": ["Unidad Medida", "Unidad", "U.M"],
-        "Ubicación": ["Ubicación", "Ubicacion"],
-        "Fisico": ["Fisico", "Físico", "Stock Fisico"],
-        "STOCK": ["STOCK", "Stock Sistema"],
-        "Difere": ["Difere", "Diferencia"],
-        "Observac.": ["Observac.", "Observaciones"],
-    }
-
-    columnas_finales = {}
-
-    for estandar, variantes in mapa.items():
-        for v in variantes:
-            if v in df.columns:
-                columnas_finales[v] = estandar
-                break
-
-    df = df.rename(columns=columnas_finales)
-
-    faltantes = set(mapa.keys()) - set(df.columns)
-    if faltantes:
-        raise Exception(f"❌ Columnas faltantes en hoja: {faltantes}")
-
-    return df
-
-
 def dividir_excel_por_dias(
-    archivo_excel: Path,
-    salida_base: Path,
-    fecha_inicio: datetime,
-    fecha_fin: datetime,
+    archivo_excel,
+    salida_base,
+    fecha_inicio=None,
+    fecha_fin=None
 ):
+    """
+    Divide un Excel histórico con múltiples hojas (fechas) en archivos diarios.
+    Mantiene TODAS las columnas originales.
+    """
+
+    salida_base = Path(salida_base)
     salida_base.mkdir(parents=True, exist_ok=True)
 
     xls = pd.ExcelFile(archivo_excel)
 
-    for sheet in xls.sheet_names:
+    for hoja in xls.sheet_names:
         try:
-            fecha = datetime.strptime(sheet.strip(), "%d-%m-%Y")
-        except:
+            fecha = datetime.strptime(hoja.strip(), "%d-%m-%Y")
+        except ValueError:
+            # hoja que no es fecha
             continue
 
-        if not (fecha_inicio <= fecha <= fecha_fin):
+        if fecha_inicio and fecha < fecha_inicio:
             continue
+        if fecha_fin and fecha > fecha_fin:
+            continue
+
+        print(f"📄 Procesando hoja {hoja}")
 
         df = pd.read_excel(
             archivo_excel,
-            sheet_name=sheet,
+            sheet_name=hoja,
             dtype=str
         )
 
-        df = normalizar_columnas(df)
+        # 🔁 NORMALIZAR NOMBRES (los reales de tu Excel)
+        rename_map = {
+            "Unidad Medida": "Unidad de medida base",
+            "Fisico": "Libre utilización"
+        }
 
-        # carpetas automáticas
-        carpeta = salida_base / f"{fecha.year}" / f"{fecha.month:02d}"
+        df.columns = df.columns.str.strip()
+        df = df.rename(columns=rename_map)
+
+        # ✅ VALIDAR columnas mínimas
+        columnas_necesarias = [
+            "Código del Material",
+            "Texto breve de material",
+            "Unidad de medida base",
+            "Ubicación",
+            "Libre utilización",
+            "STOCK",
+            "Difere",
+            "Observac."
+        ]
+
+        faltantes = [c for c in columnas_necesarias if c not in df.columns]
+        if faltantes:
+            raise Exception(
+                f"❌ Columnas faltantes en hoja {hoja}: {faltantes}"
+            )
+
+        # 📂 estructura /inventarios_procesados/2025/04/
+        carpeta = salida_base / str(fecha.year) / f"{fecha.month:02d}"
         carpeta.mkdir(parents=True, exist_ok=True)
 
         salida = carpeta / f"inventario_{fecha:%Y_%m_%d}.xlsx"
         df.to_excel(salida, index=False)
 
-        print(f"✅ {salida}")
+        print(f"✅ Generado {salida}")
+
+    print("🎉 División completada correctamente")
