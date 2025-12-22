@@ -114,43 +114,24 @@ def upload_history():
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Debes seleccionar un Excel.", "warning")
+            flash("Selecciona un Excel", "warning")
             return redirect(url_for("inventory.upload_history"))
 
-        temp = Path("/tmp") / file.filename
-        file.save(temp)
+        from pathlib import Path
+        temp_path = Path("/tmp") / file.filename
+        file.save(temp_path)
+
+        from utils.excel_splitter import dividir_excel_por_dias
 
         dividir_excel_por_dias(
-            archivo_excel=temp,
+            archivo_excel=temp_path,
             salida_base="inventarios_procesados",
             anio=2025,
             mes_inicio=4,
-            mes_fin=12
+            mes_fin=12,
         )
 
-        # REGISTRAR SNAPSHOT
-        snapshot_id = str(uuid.uuid4())
-        snapshot_name = f"Inventario Histórico {now_pe():%d/%m/%Y %H:%M}"
-
-        db.session.add(
-            InventoryHistory(
-                user_id=current_user.id,
-                snapshot_id=snapshot_id,
-                snapshot_name=snapshot_name,
-                material_code="*",
-                material_text="Inventario histórico dividido por días",
-                base_unit="-",
-                location="-",
-                libre_utilizacion=0,
-                creado_en=now_pe(),
-                source_type="HISTORICO",
-                source_filename=file.filename,
-            )
-        )
-
-        db.session.commit()
-
-        flash("✅ Inventario histórico procesado correctamente.", "success")
+        flash("Excel histórico dividido correctamente.", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
