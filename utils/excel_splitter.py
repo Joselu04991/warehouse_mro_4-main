@@ -1,41 +1,35 @@
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
-from openpyxl import load_workbook
-
+import re
 
 COLUMN_MAP = {
-    "Código del Material": ["Código del Material", "Codigo del Material", "Codigo"],
-    "Texto breve de material": ["Texto breve de material", "Descripción", "Texto"],
-    "Unidad de medida base": ["Unidad Medida", "Unidad", "UM"],
-    "Ubicación": ["Ubicación", "Ubicacion", "Location"],
-    "Libre utilización": ["Fisico", "STOCK", "Cantidad"],
-    "Difere": ["Difere", "Diferencia"],
-    "Observac.": ["Observac.", "Observaciones"],
+    "Código del Material": ["Código del Material", "Codigo del Material"],
+    "Texto breve de material": ["Texto breve de material"],
+    "Unidad Medida": ["Unidad Medida", "Unidad"],
+    "Ubicación": ["Ubicación", "Ubicacion"],
+    "Fisico": ["Fisico"],
+    "STOCK": ["STOCK"],
+    "Difere": ["Difere"],
+    "Observac.": ["Observac.", "Observacion"],
 }
 
-
-def _map_columns(df):
-    mapped = {}
-    for final, candidates in COLUMN_MAP.items():
-        for c in candidates:
-            if c in df.columns:
-                mapped[final] = c
+def normalizar_columnas(df):
+    nuevas = {}
+    for col, posibles in COLUMN_MAP.items():
+        for p in posibles:
+            if p in df.columns:
+                nuevas[p] = col
                 break
-    return mapped
+    return df.rename(columns=nuevas)
 
-
-def dividir_excel_por_dias(
-    archivo_excel: Path,
-    salida_base: str,
-    anio: int,
-    mes_inicio: int,
-    mes_fin: int,
-):
+def dividir_excel_por_dias(archivo_excel, salida_base, anio, mes_inicio, mes_fin):
     salida_base = Path(salida_base)
-    wb = load_workbook(archivo_excel, read_only=True, data_only=True)
+    salida_base.mkdir(parents=True, exist_ok=True)
 
-    for sheet in wb.sheetnames:
+    xls = pd.ExcelFile(archivo_excel)
+
+    for sheet in xls.sheet_names:
         try:
             fecha = datetime.strptime(sheet.strip(), "%d-%m-%Y")
         except:
@@ -44,41 +38,28 @@ def dividir_excel_por_dias(
         if fecha.year != anio or not (mes_inicio <= fecha.month <= mes_fin):
             continue
 
-        print(f"📄 Procesando hoja {sheet}")
+        df = pd.read_excel(xls, sheet_name=sheet)
+        df = normalizar_columnas(df)
 
-        df = pd.read_excel(
-            archivo_excel,
-            sheet_name=sheet,
-            dtype=str
-        )
-
-        col_map = _map_columns(df)
-
-        required = [
+        requeridas = [
             "Código del Material",
             "Texto breve de material",
-            "Unidad de medida base",
+            "Unidad Medida",
             "Ubicación",
-            "Libre utilización",
+            "Fisico",
+            "STOCK",
+            "Difere",
+            "Observac.",
         ]
 
-        if not all(k in col_map for k in required):
-            raise Exception(
-                f"❌ Columnas faltantes en hoja {sheet}: {list(col_map.keys())}"
-            )
+        faltantes = [c for c in requeridas if c not in df.columns]
+        if faltantes:
+            raise Exception(f"Columnas faltantes en hoja {sheet}: {faltantes}")
 
-        df = df.rename(columns={v: k for k, v in col_map.items()})
-        df = df[required].copy()
+        salida_dir = salida_base / str(anio) / f"{fecha.month:02d}"
+        salida_dir.mkdir(parents=True, exist_ok=True)
 
-        df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper()
-        df["Libre utilización"] = pd.to_numeric(
-            df["Libre utilización"], errors="coerce"
-        ).fillna(0)
+        salida = salida_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
+        df[requeridas].to_excel(salida, index=False)
 
-        out_dir = salida_base / str(fecha.year) / f"{fecha.month:02d}"
-        out_dir.mkdir(parents=True, exist_ok=True)
-
-        out_file = out_dir / f"inventario_{fecha:%Y_%m_%d}.xlsx"
-        df.to_excel(out_file, index=False)
-
-    print("✅ Excel histórico dividido correctamente")
+    return True
