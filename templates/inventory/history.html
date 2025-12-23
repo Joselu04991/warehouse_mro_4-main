@@ -1,39 +1,102 @@
-<form method="get" class="row g-2 mb-3">
-  <div class="col">
-    <input type="date" name="desde" class="form-control">
-  </div>
-  <div class="col">
-    <input type="date" name="hasta" class="form-control">
-  </div>
-  <div class="col">
-    <button class="btn btn-primary">Filtrar</button>
-  </div>
-</form>
+{% extends "base.html" %}
+{% block content %}
 
-<table class="table table-hover">
-  <thead class="table-dark">
-    <tr>
-      <th>Inventario</th>
-      <th>Fecha</th>
-      <th>Tipo</th>
-      <th>Total</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for s in snapshots %}
-    <tr>
-      <td>{{ s.snapshot_name }}</td>
-      <td>{{ s.creado_en.strftime('%d/%m/%Y') }}</td>
-      <td>{{ s.source_type }}</td>
-      <td>{{ s.total }}</td>
-      <td>
-        <a class="btn btn-sm btn-primary"
-           href="{{ url_for('inventory.history_detail', snapshot_id=s.snapshot_id) }}">
-          Ver
-        </a>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="d-flex align-items-center mb-4">
+  <i class="bi bi-clock-history fs-2 me-3 text-primary"></i>
+  <h2 class="fw-bold mb-0">Inventarios Anteriores</h2>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+
+    <!-- ================= FILTROS ================= -->
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Desde</label>
+        <input type="date" name="desde" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Hasta</label>
+        <input type="date" name="hasta" class="form-control">
+      </div>
+
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100">
+          <i class="bi bi-funnel-fill me-2"></i> Filtrar
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- ================= TABLA ================= -->
+<div class="card shadow-sm">
+  <div class="card-body table-responsive">
+
+    <table class="table table-hover align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Inventario</th>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Total Ítems</th>
+          <th>Archivo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% if snapshots %}
+          {% for s in snapshots %}
+          <tr>
+            <td class="fw-semibold">{{ s.snapshot_name }}</td>
+
+            <td class="text-center">
+              {{ s.creado_en.strftime('%d/%m/%Y %H:%M') if s.creado_en else '-' }}
+            </td>
+
+            <td class="text-center">
+              <span class="badge bg-secondary">
+                {{ s.source_type }}
+              </span>
+            </td>
+
+            <td class="text-center fw-bold">
+              {{ s.total }}
+            </td>
+
+            <td class="text-center text-muted small">
+              {{ s.source_filename or '—' }}
+            </td>
+
+            <td class="text-center">
+              <a href="{{ url_for('inventory.history_detail', snapshot_id=s.snapshot_id) }}"
+                 class="btn btn-sm btn-outline-primary me-1">
+                <i class="bi bi-eye"></i>
+              </a>
+
+              <!-- preparado para futuro -->
+              <button class="btn btn-sm btn-outline-success" disabled
+                      title="Descarga Excel (próximamente)">
+                <i class="bi bi-file-earmark-excel"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-4">
+              <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+              No hay inventarios históricos cargados
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+{% endblock %}
