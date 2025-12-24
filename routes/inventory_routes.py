@@ -98,46 +98,74 @@ def upload_history():
 
     if request.method == "POST":
         file = request.files.get("file")
+
         if not file:
             flash("Debes seleccionar un archivo Excel.", "warning")
             return redirect(url_for("inventory.upload_history"))
 
         try:
-            from utils.excel import load_inventory_historic_excel
-            df = load_inventory_historic_excel(file)
+            df = pd.read_excel(file)
+
+            # Columnas reales de tus excels antiguos
+            columnas_reales = [
+                "Código del Material",
+                "Texto breve de material",
+                "Unidad Medida",
+                "Ubicación",
+                "Fisico",
+                "STOCK",
+                "Difere",
+                "Observac.",
+            ]
+
+            for c in columnas_reales:
+                if c not in df.columns:
+                    raise Exception(f"Falta columna: {c}")
+
+            # Normalización mínima
+            df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
+            df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
+            df["Unidad Medida"] = df["Unidad Medida"].astype(str).str.strip()
+            df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper()
+            df["Fisico"] = pd.to_numeric(df["Fisico"], errors="coerce").fillna(0)
+
+            # 📅 FECHA DESDE EL NOMBRE DEL ARCHIVO
+            # inventario_2025_04_10.xlsx
+            nombre = file.filename
+            fecha = datetime.strptime(nombre.replace("inventario_", "").replace(".xlsx", ""), "%Y_%m_%d")
+
+            snapshot_id = str(uuid.uuid4())
+            snapshot_name = f"Inventario Histórico - {nombre}"
+
+            for _, row in df.iterrows():
+                db.session.add(
+                    InventoryHistory(
+                        user_id=current_user.id,
+                        snapshot_id=snapshot_id,
+                        snapshot_name=snapshot_name,
+                        material_code=row["Código del Material"],
+                        material_text=row["Texto breve de material"],
+                        base_unit=row["Unidad Medida"],
+                        location=row["Ubicación"],
+                        libre_utilizacion=float(row["Fisico"]),
+                        creado_en=fecha,
+                        source_type="HISTORICO",
+                        source_filename=nombre,
+                    )
+                )
+
+            db.session.commit()
+
+            flash("Inventario histórico cargado correctamente.", "success")
+            return redirect(url_for("inventory.history_inventory"))
+
         except Exception as e:
+            db.session.rollback()
             flash(str(e), "danger")
             return redirect(url_for("inventory.upload_history"))
 
-        snapshot_id = str(uuid.uuid4())
-        snapshot_name = f"Inventario Histórico - {file.filename}"
-
-        for _, row in df.iterrows():
-            db.session.add(
-                InventoryHistory(
-                    user_id=current_user.id,
-                    snapshot_id=snapshot_id,
-                    snapshot_name=snapshot_name,
-
-                    material_code=row["Código del Material"],
-                    material_text=row["Texto breve de material"],
-                    base_unit=row["Unidad Medida"],
-                    location=row["Ubicación"],
-
-                    libre_utilizacion=float(row["Fisico"]),
-                    creado_en=now_pe(),
-
-                    source_type="HISTORICO",
-                    source_filename=file.filename,
-                )
-            )
-
-        db.session.commit()
-
-        flash("Inventario histórico cargado correctamente.", "success")
-        return redirect(url_for("inventory.history_inventory"))
-
     return render_template("inventory/upload_history.html")
+
 # =============================================================================
 # 2) LISTAR INVENTARIO (SOLO EL MÍO)
 # =============================================================================
