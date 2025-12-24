@@ -271,27 +271,29 @@ def generate_discrepancies_excel(df, meta=None):
     output.seek(0)
     return output
 # =============================================================================
-# 🔥 EXPORTAR SNAPSHOT HISTÓRICO (ESTA ES LA QUE FALTABA)
+# EXPORTAR SNAPSHOT HISTÓRICO A EXCEL  ✅ (ESTO FALTABA)
 # =============================================================================
-def generate_history_snapshot_excel(items, title="Inventario Histórico"):
+def generate_history_snapshot_excel(items, snapshot_name):
     output = BytesIO()
     wb = Workbook()
     ws = wb.active
-    ws.title = "INVENTARIO"
+    ws.title = "INVENTARIO HISTÓRICO"
 
     headers = [
-        "Código del Material",
+        "Código Material",
         "Descripción",
         "Unidad",
         "Ubicación",
         "Stock",
+        "Fecha",
+        "Tipo",
     ]
 
     ws.append(headers)
 
     header_fill = PatternFill("solid", fgColor="1F4E78")
     header_font = Font(bold=True, color="FFFFFF")
-    center = Alignment(horizontal="center")
+    center = Alignment(horizontal="center", vertical="center")
 
     for cell in ws[1]:
         cell.fill = header_fill
@@ -304,14 +306,17 @@ def generate_history_snapshot_excel(items, title="Inventario Histórico"):
             i.material_text,
             i.base_unit,
             i.location,
-            float(i.libre_utilizacion or 0),
+            i.libre_utilizacion,
+            i.creado_en.strftime("%d/%m/%Y"),
+            i.source_type,
         ])
 
-    for col in range(1, 6):
-        ws.column_dimensions[get_column_letter(col)].width = 22
+    widths = [20, 45, 12, 14, 14, 16, 12]
+    for idx, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(idx)].width = w
 
+    ws.freeze_panes = "A2"
     wb.save(output)
     output.seek(0)
     return output
-
 
