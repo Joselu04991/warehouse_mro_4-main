@@ -270,5 +270,48 @@ def generate_discrepancies_excel(df, meta=None):
     wb.save(output)
     output.seek(0)
     return output
+# =============================================================================
+# 🔥 EXPORTAR SNAPSHOT HISTÓRICO (ESTA ES LA QUE FALTABA)
+# =============================================================================
+def generate_history_snapshot_excel(items, title="Inventario Histórico"):
+    output = BytesIO()
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "INVENTARIO"
+
+    headers = [
+        "Código del Material",
+        "Descripción",
+        "Unidad",
+        "Ubicación",
+        "Stock",
+    ]
+
+    ws.append(headers)
+
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    header_font = Font(bold=True, color="FFFFFF")
+    center = Alignment(horizontal="center")
+
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+
+    for i in items:
+        ws.append([
+            i.material_code,
+            i.material_text,
+            i.base_unit,
+            i.location,
+            float(i.libre_utilizacion or 0),
+        ])
+
+    for col in range(1, 6):
+        ws.column_dimensions[get_column_letter(col)].width = 22
+
+    wb.save(output)
+    output.seek(0)
+    return output
 
 
