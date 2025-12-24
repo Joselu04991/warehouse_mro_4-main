@@ -95,42 +95,47 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
+
     if request.method == "POST":
         file = request.files.get("file")
-        if not file or file.filename == "":
+        if not file:
             flash("Debes seleccionar un archivo Excel.", "warning")
             return redirect(url_for("inventory.upload_history"))
 
-        # Guardar en /tmp
-        safe_name = f"hist_{uuid.uuid4().hex}_{file.filename}"
-        temp_path = Path("/tmp") / safe_name
-
         try:
-            file.save(str(temp_path))
-
-            # Divide por días (Abril–Diciembre 2025)
-            generados = dividir_excel_por_dias(
-                archivo_excel=temp_path,
-                salida_base="inventarios_procesados",
-                anio=2025,
-                mes_inicio=4,
-                mes_fin=12,
-            )
-
-            flash(f"✅ Excel histórico dividido: {len(generados)} archivos diarios generados.", "success")
-            return redirect(url_for("inventory.history_inventory"))
-
+            from utils.excel import load_inventory_historic_excel
+            df = load_inventory_historic_excel(file)
         except Exception as e:
-            flash(f"❌ Error procesando Excel histórico: {e}", "danger")
+            flash(str(e), "danger")
             return redirect(url_for("inventory.upload_history"))
 
-        finally:
-            # limpiar temp (si quieres)
-            try:
-                if temp_path.exists():
-                    temp_path.unlink()
-            except Exception:
-                pass
+        snapshot_id = str(uuid.uuid4())
+        snapshot_name = f"Inventario Histórico - {file.filename}"
+
+        for _, row in df.iterrows():
+            db.session.add(
+                InventoryHistory(
+                    user_id=current_user.id,
+                    snapshot_id=snapshot_id,
+                    snapshot_name=snapshot_name,
+
+                    material_code=row["Código del Material"],
+                    material_text=row["Texto breve de material"],
+                    base_unit=row["Unidad Medida"],
+                    location=row["Ubicación"],
+
+                    libre_utilizacion=float(row["Fisico"]),
+                    creado_en=now_pe(),
+
+                    source_type="HISTORICO",
+                    source_filename=file.filename,
+                )
+            )
+
+        db.session.commit()
+
+        flash("Inventario histórico cargado correctamente.", "success")
+        return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
 # =============================================================================
