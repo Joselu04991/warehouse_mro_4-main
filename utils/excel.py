@@ -33,12 +33,12 @@ def load_inventory_excel(file):
     return df
 
 # =============================================================================
-# 🕰️ INVENTARIO HISTÓRICO (EXCEL ANTIGUO)
+# INVENTARIO HISTÓRICO (EXCEL ANTIGUO)
 # =============================================================================
-def load_inventory_historico_excel(file):
+def load_inventory_historic_excel(file):
     df = pd.read_excel(file)
 
-    columnas_reales = [
+    columnas_requeridas = [
         "Código del Material",
         "Texto breve de material",
         "Unidad Medida",
@@ -49,7 +49,7 @@ def load_inventory_historico_excel(file):
         "Observac.",
     ]
 
-    for c in columnas_reales:
+    for c in columnas_requeridas:
         if c not in df.columns:
             raise Exception(f"❌ Falta columna histórica: {c}")
 
@@ -58,14 +58,21 @@ def load_inventory_historico_excel(file):
     df["Código del Material"] = df["Código del Material"].astype(str).str.strip()
     df["Texto breve de material"] = df["Texto breve de material"].astype(str).str.strip()
     df["Unidad Medida"] = df["Unidad Medida"].astype(str).str.strip()
-    df["Ubicación"] = df["Ubicación"].astype(str).str.replace(" ", "").str.upper().str.strip()
+
+    df["Ubicación"] = (
+        df["Ubicación"]
+        .astype(str)
+        .str.replace(" ", "")
+        .str.upper()
+        .str.strip()
+    )
 
     df["Fisico"] = pd.to_numeric(df["Fisico"], errors="coerce").fillna(0)
     df["STOCK"] = pd.to_numeric(df["STOCK"], errors="coerce").fillna(0)
     df["Difere"] = pd.to_numeric(df["Difere"], errors="coerce").fillna(0)
+    df["Observac."] = df["Observac."].astype(str).fillna("")
 
     return df
-
 # =============================================================================
 # ALMACÉN 2D
 # =============================================================================
@@ -263,4 +270,5 @@ def generate_discrepancies_excel(df, meta=None):
     wb.save(output)
     output.seek(0)
     return output
+
 
