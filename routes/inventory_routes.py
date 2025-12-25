@@ -462,38 +462,66 @@ def export_discrepancies_auto():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    desde = request.args.get("desde")  # YYYY-MM-DD
-    hasta = request.args.get("hasta")  # YYYY-MM-DD
+    desde = request.args.get("desde")
+    hasta = request.args.get("hasta")
     page = int(request.args.get("page", 1))
     per_page = 12
 
-    q = InventoryHistory.query.filter_by(user_id=current_user.id)
+    base_q = InventoryHistory.query.filter(
+        InventoryHistory.user_id == current_user.id,
+        InventoryHistory.snapshot_id.isnot(None)
+    )
 
     if desde:
         d = datetime.strptime(desde, "%Y-%m-%d")
-        q = q.filter(InventoryHistory.creado_en >= d)
+        base_q = base_q.filter(InventoryHistory.creado_en >= d)
 
     if hasta:
         h = datetime.strptime(hasta, "%Y-%m-%d")
         h = datetime.combine(h.date(), time(23, 59, 59))
-        q = q.filter(InventoryHistory.creado_en <= h)
+        base_q = base_q.filter(InventoryHistory.creado_en <= h)
 
-    # Agrupación real en SQL (rápido)
-    grouped = (
-        q.with_entities(
-            InventoryHistory.snapshot_id.label("snapshot_id"),
-            func.max(InventoryHistory.snapshot_name).label("snapshot_name"),
-            func.max(InventoryHistory.creado_en).label("creado_en"),
-            func.max(InventoryHistory.source_type).label("source_type"),
-            func.max(InventoryHistory.source_filename).label("source_filename"),
-            func.count(InventoryHistory.id).label("total"),
-        )
-        .group_by(InventoryHistory.snapshot_id)
-        .order_by(func.max(InventoryHistory.creado_en).desc())
+    # 🔑 PASO 1: obtener snapshot_id únicos
+    snapshot_ids = (
+        base_q
+        .with_entities(InventoryHistory.snapshot_id)
+        .distinct()
+        .order_by(InventoryHistory.snapshot_id)
+        .all()
     )
 
-    total_snapshots = grouped.count()
-    snapshots = grouped.offset((page - 1) * per_page).limit(per_page).all()
+    snapshot_ids = [s[0] for s in snapshot_ids]
+    total_snapshots = len(snapshot_ids)
+
+    # paginación manual (FIJA)
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_snapshot_ids = snapshot_ids[start:end]
+
+    snapshots = []
+    for sid in page_snapshot_ids:
+        resumen = (
+            InventoryHistory.query
+            .filter_by(user_id=current_user.id, snapshot_id=sid)
+            .with_entities(
+                InventoryHistory.snapshot_id,
+                func.max(InventoryHistory.snapshot_name),
+                func.max(InventoryHistory.creado_en),
+                func.max(InventoryHistory.source_type),
+                func.max(InventoryHistory.source_filename),
+                func.count(InventoryHistory.id),
+            )
+            .first()
+        )
+
+        snapshots.append({
+            "snapshot_id": resumen[0],
+            "snapshot_name": resumen[1],
+            "creado_en": resumen[2],
+            "source_type": resumen[3],
+            "source_filename": resumen[4],
+            "total": resumen[5],
+        })
 
     total_pages = max(1, (total_snapshots + per_page - 1) // per_page)
 
@@ -507,53 +535,25 @@ def history_inventory():
         total_snapshots=total_snapshots,
     )
 
-
 @inventory_bp.route("/history/<snapshot_id>")
 @login_required
 def history_detail(snapshot_id):
     items = (
         InventoryHistory.query
-        .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
+        .filter_by(
+            user_id=current_user.id,
+            snapshot_id=snapshot_id
+        )
+        .order_by(InventoryHistory.location)
         .all()
     )
-    items_sorted = sorted(items, key=lambda x: sort_location_advanced(x.location))
-    title = items[0].snapshot_name if items else "Inventario"
-    return render_template("inventory/history_detail.html", items=items_sorted, title=title)
 
+    if not items:
+        flash("Inventario histórico no encontrado.", "warning")
+        return redirect(url_for("inventory.history_inventory"))
 
-# =============================================================================
-# ✅ Descargar Excel por snapshot
-# =============================================================================
-def generate_history_snapshot_excel(items, snapshot_name):
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "INVENTARIO"
-
-    headers = [
-        "Código Material",
-        "Descripción",
-        "Unidad",
-        "Ubicación",
-        "Stock",
-        "Fecha",
-    ]
-    ws.append(headers)
-
-    for i in items:
-        ws.append([
-            i.material_code,
-            i.material_text,
-            i.base_unit,
-            i.location,
-            i.libre_utilizacion,
-            i.creado_en.strftime("%d/%m/%Y") if i.creado_en else "",
-        ])
-
-    for col in range(1, len(headers) + 1):
-        ws.column_dimensions[get_column_letter(col)].width = 22
-
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
+    return render_template(
+        "inventory/history_detail.html",
+        items=items,
+        title=items[0].snapshot_name
+    )
