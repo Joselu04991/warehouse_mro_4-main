@@ -462,54 +462,49 @@ def export_discrepancies_auto():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    desde = request.args.get("desde")  # YYYY-MM-DD
-    hasta = request.args.get("hasta")  # YYYY-MM-DD
-    page = int(request.args.get("page", 1))
-    per_page = 12
+    desde = request.args.get("desde")
+    hasta = request.args.get("hasta")
 
-    q = InventoryHistory.query.filter(
-        InventoryHistory.user_id == current_user.id
-    )
+    q = InventoryHistory.query.filter_by(user_id=current_user.id)
 
-    # ✅ FILTRO POR FECHA (SOLO DATE, NO DATETIME)
     if desde:
-        q = q.filter(func.date(InventoryHistory.creado_en) >= desde)
+        d = datetime.strptime(desde, "%Y-%m-%d")
+        q = q.filter(InventoryHistory.creado_en >= d)
 
     if hasta:
-        q = q.filter(func.date(InventoryHistory.creado_en) <= hasta)
+        h = datetime.strptime(hasta, "%Y-%m-%d")
+        h = datetime.combine(h.date(), time(23, 59, 59))
+        q = q.filter(InventoryHistory.creado_en <= h)
 
-    # ✅ AGRUPACIÓN CORRECTA
-    grouped = (
-        q.with_entities(
-            InventoryHistory.snapshot_id.label("snapshot_id"),
-            func.max(InventoryHistory.snapshot_name).label("snapshot_name"),
-            func.max(InventoryHistory.creado_en).label("creado_en"),
-            func.max(InventoryHistory.source_type).label("source_type"),
-            func.max(InventoryHistory.source_filename).label("source_filename"),
-            func.count(InventoryHistory.id).label("total"),
-        )
-        .group_by(InventoryHistory.snapshot_id)
-        .order_by(func.max(InventoryHistory.creado_en).desc())
+    rows = q.order_by(InventoryHistory.creado_en.desc()).all()
+
+    snapshots = {}
+    for r in rows:
+        if r.snapshot_id not in snapshots:
+            snapshots[r.snapshot_id] = {
+                "snapshot_id": r.snapshot_id,
+                "snapshot_name": r.snapshot_name,
+                "creado_en": r.creado_en,
+                "source_type": r.source_type,
+                "source_filename": r.source_filename,
+                "total": 0,
+            }
+        snapshots[r.snapshot_id]["total"] += 1
+
+    snapshots_list = sorted(
+        snapshots.values(),
+        key=lambda x: x["creado_en"] or datetime.min,
+        reverse=True,
     )
-
-    total_snapshots = grouped.count()
-    snapshots = (
-        grouped
-        .offset((page - 1) * per_page)
-        .limit(per_page)
-        .all()
-    )
-
-    total_pages = max(1, (total_snapshots + per_page - 1) // per_page)
 
     return render_template(
         "inventory/history.html",
-        snapshots=snapshots,
-        page=page,
-        total_pages=total_pages,
+        snapshots=snapshots_list,
+        total_snapshots=len(snapshots_list),
         desde=desde or "",
         hasta=hasta or "",
-        total_snapshots=total_snapshots,
+        page=1,
+        total_pages=1,
     )
 
 @inventory_bp.route("/history/<snapshot_id>")
@@ -517,20 +512,14 @@ def history_inventory():
 def history_detail(snapshot_id):
     items = (
         InventoryHistory.query
-        .filter_by(
-            user_id=current_user.id,
-            snapshot_id=snapshot_id
-        )
+        .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
         .order_by(InventoryHistory.location)
         .all()
     )
 
-    if not items:
-        flash("Inventario histórico no encontrado.", "warning")
-        return redirect(url_for("inventory.history_inventory"))
-
+    title = items[0].snapshot_name if items else "Inventario"
     return render_template(
         "inventory/history_detail.html",
         items=items,
-        title=items[0].snapshot_name
+        title=title
     )
