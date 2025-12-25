@@ -519,31 +519,36 @@ def history_detail(snapshot_id):
 # =============================================================================
 # ✅ Descargar Excel por snapshot
 # =============================================================================
-@inventory_bp.route("/history/<snapshot_id>/download")
-@login_required
-def history_download(snapshot_id):
-    items = (
-        InventoryHistory.query
-        .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
-        .order_by(InventoryHistory.id.asc())
-        .all()
-    )
-    if not items:
-        flash("Snapshot no encontrado.", "warning")
-        return redirect(url_for("inventory.history_inventory"))
+def generate_history_snapshot_excel(items, snapshot_name):
 
-    nombre = items[0].snapshot_name or "Inventario"
-    safe = re.sub(r"[^a-zA-Z0-9_-]+", "_", nombre)[:90]
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "INVENTARIO"
 
-    meta = {
-        "generado_por": current_user.username,
-        "generado_en": now_pe().strftime("%d/%m/%Y %H:%M:%S"),
-    }
-    excel = generate_history_snapshot_excel(items, meta=meta)
+    headers = [
+        "Código Material",
+        "Descripción",
+        "Unidad",
+        "Ubicación",
+        "Stock",
+        "Fecha",
+    ]
+    ws.append(headers)
 
-    return send_file(
-        excel,
-        as_attachment=True,
-        download_name=f"{safe}.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    for i in items:
+        ws.append([
+            i.material_code,
+            i.material_text,
+            i.base_unit,
+            i.location,
+            i.libre_utilizacion,
+            i.creado_en.strftime("%d/%m/%Y"),
+        ])
+
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 22
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output
