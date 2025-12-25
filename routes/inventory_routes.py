@@ -465,16 +465,24 @@ def history_inventory():
     desde = request.args.get("desde")
     hasta = request.args.get("hasta")
 
-    q = InventoryHistory.query.filter_by(user_id=current_user.id)
+    q = InventoryHistory.query.filter(
+        InventoryHistory.user_id == current_user.id
+    )
 
     if desde:
-        d = datetime.strptime(desde, "%Y-%m-%d")
-        q = q.filter(InventoryHistory.creado_en >= d)
+        try:
+            d = datetime.strptime(desde, "%Y-%m-%d")
+            q = q.filter(InventoryHistory.creado_en >= d)
+        except ValueError:
+            pass
 
     if hasta:
-        h = datetime.strptime(hasta, "%Y-%m-%d")
-        h = datetime.combine(h.date(), time(23, 59, 59))
-        q = q.filter(InventoryHistory.creado_en <= h)
+        try:
+            h = datetime.strptime(hasta, "%Y-%m-%d")
+            h = datetime.combine(h.date(), time(23, 59, 59))
+            q = q.filter(InventoryHistory.creado_en <= h)
+        except ValueError:
+            pass
 
     rows = q.order_by(InventoryHistory.creado_en.desc()).all()
 
@@ -506,6 +514,7 @@ def history_inventory():
         page=1,
         total_pages=1,
     )
+
 @inventory_bp.route("/history/<snapshot_id>")
 @login_required
 def history_detail(snapshot_id):
