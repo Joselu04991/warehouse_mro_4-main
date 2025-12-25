@@ -29,6 +29,36 @@ def now_pe():
     return datetime.now(ZoneInfo("America/Lima"))
 
 
+# =============================================================================
+# 0) DASHBOARD INVENTARIO  ✅ (AGREGADO)
+# =============================================================================
+@inventory_bp.route("/dashboard")
+@login_required
+def dashboard_inventory():
+    total_items = InventoryItem.query.filter_by(user_id=current_user.id).count()
+
+    total_locations = (
+        db.session.query(func.count(func.distinct(InventoryItem.location)))
+        .filter(InventoryItem.user_id == current_user.id)
+        .scalar()
+    )
+
+    total_snapshots = (
+        InventoryHistory.query
+        .filter_by(user_id=current_user.id)
+        .with_entities(InventoryHistory.snapshot_id)
+        .distinct()
+        .count()
+    )
+
+    return render_template(
+        "inventory/dashboard.html",
+        total_items=total_items,
+        total_locations=total_locations or 0,
+        total_snapshots=total_snapshots,
+    )
+
+
 # ==========================
 # Helpers: normalización para excels antiguos
 # ==========================
@@ -41,10 +71,9 @@ def _norm(s):
     s = s.replace(".", "").replace(":", "")
     return s
 
+
 def _read_historic_excel(file_storage):
-    # Lee 1 sola hoja (tu archivo diario histórico ya viene así)
     df = pd.read_excel(file_storage, dtype=object)
-    # Normaliza nombres de columnas
     colmap = {_norm(c): c for c in df.columns}
 
     def pick(*candidates):
@@ -78,8 +107,6 @@ def _read_historic_excel(file_storage):
 
     faltan = [k for k, v in required.items() if v is None]
     if faltan:
-        # No bloquees por Observac si a veces viene vacía o no existe
-        # (igual la guardamos como None)
         if faltan == ["Observac."]:
             required["Observac."] = None
         else:
@@ -96,7 +123,6 @@ def _read_historic_excel(file_storage):
     out["Difere"] = df[required["Difere"]]
     out["Observac."] = df[required["Observac."]] if required["Observac."] else None
 
-    # Limpieza
     out["Código del Material"] = out["Código del Material"].astype(str).str.strip()
     out["Texto breve de material"] = out["Texto breve de material"].astype(str).str.strip()
     out["Unidad Medida"] = out["Unidad Medida"].astype(str).str.strip()
@@ -112,7 +138,6 @@ def _read_historic_excel(file_storage):
 
 
 def _parse_date_from_filename(filename: str):
-    # inventario_2025_04_10.xlsx -> 2025-04-10 00:00
     m = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", filename)
     if not m:
         return None
@@ -144,7 +169,6 @@ def upload_inventory():
         InventoryCount.query.filter_by(user_id=current_user.id).delete()
         db.session.commit()
 
-        # Inserción
         items = []
         for _, row in df.iterrows():
             items.append(InventoryItem(
@@ -182,7 +206,6 @@ def upload_inventory():
         return redirect(url_for("inventory.list_inventory"))
 
     return render_template("inventory/upload.html")
-
 
 # =============================================================================
 # 1B) SUBIR INVENTARIO HISTÓRICO (ARCHIVO DIARIO ANTIGUO)
