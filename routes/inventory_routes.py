@@ -4,7 +4,6 @@ from datetime import datetime, time
 from zoneinfo import ZoneInfo
 import re
 import pandas as pd
-from utils.excel import generate_history_snapshot_excel
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
@@ -18,9 +17,9 @@ from models.inventory_count import InventoryCount
 
 from utils.excel import (
     load_inventory_excel,
+    load_inventory_historic_excel,
     sort_location_advanced,
-    generate_discrepancies_excel,
-    generate_history_snapshot_excel,
+    generate_discrepancies_excel
 )
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
@@ -36,29 +35,51 @@ def now_pe():
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard_inventory():
-    total_items = InventoryItem.query.filter_by(user_id=current_user.id).count()
 
-    total_locations = (
-        db.session.query(func.count(func.distinct(InventoryItem.location)))
-        .filter(InventoryItem.user_id == current_user.id)
-        .scalar()
-    )
+    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
 
-    total_snapshots = (
-        InventoryHistory.query
-        .filter_by(user_id=current_user.id)
-        .with_entities(InventoryHistory.snapshot_id)
-        .distinct()
-        .count()
-    )
+    total_items = len(items)
+    ubicaciones_unicas = len(set(i.location for i in items)) if items else 0
+
+    estados = {
+        "OK": 0,
+        "FALTA": 0,
+        "CRITICO": 0,
+        "SOBRA": 0,
+    }
+
+    criticos = 0
+    faltantes = 0
+
+    for i in items:
+        stock = float(i.libre_utilizacion or 0)
+
+        if stock <= 0:
+            estados["CRITICO"] += 1
+            criticos += 1
+        elif stock < 5:
+            estados["FALTA"] += 1
+            faltantes += 1
+        elif stock > 50:
+            estados["SOBRA"] += 1
+        else:
+            estados["OK"] += 1
+
+    ubicaciones = {}
+    for i in items:
+        ubicaciones[i.location] = ubicaciones.get(i.location, 0) + 1
 
     return render_template(
         "inventory/dashboard.html",
         total_items=total_items,
-        total_locations=total_locations or 0,
-        total_snapshots=total_snapshots,
+        ubicaciones_unicas=ubicaciones_unicas,
+        criticos=criticos,
+        faltantes=faltantes,
+        estados=estados,  # ✅ SIEMPRE definido
+        ubicaciones_labels=list(ubicaciones.keys()),
+        ubicaciones_counts=list(ubicaciones.values()),
+        items=items,
     )
-
 
 # ==========================
 # Helpers: normalización para excels antiguos
