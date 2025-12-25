@@ -5,6 +5,11 @@ from zoneinfo import ZoneInfo
 import re
 import pandas as pd
 
+# ✅ FIX DEFINITIVO
+from io import BytesIO
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
 
