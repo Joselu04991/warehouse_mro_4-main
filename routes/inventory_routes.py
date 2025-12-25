@@ -506,7 +506,6 @@ def history_inventory():
         page=1,
         total_pages=1,
     )
-
 @inventory_bp.route("/history/<snapshot_id>")
 @login_required
 def history_detail(snapshot_id):
