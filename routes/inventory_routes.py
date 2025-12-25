@@ -542,7 +542,7 @@ def generate_history_snapshot_excel(items, snapshot_name):
             i.base_unit,
             i.location,
             i.libre_utilizacion,
-            i.creado_en.strftime("%d/%m/%Y"),
+            i.creado_en.strftime("%d/%m/%Y") if i.creado_en else "",
         ])
 
     for col in range(1, len(headers) + 1):
