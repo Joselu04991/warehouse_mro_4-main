@@ -4,6 +4,7 @@ from datetime import datetime, time
 from zoneinfo import ZoneInfo
 import re
 import pandas as pd
+from utils.excel import generate_history_snapshot_excel
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import login_required, current_user
