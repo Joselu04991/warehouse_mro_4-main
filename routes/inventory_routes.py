@@ -462,66 +462,43 @@ def export_discrepancies_auto():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    desde = request.args.get("desde")
-    hasta = request.args.get("hasta")
+    desde = request.args.get("desde")  # YYYY-MM-DD
+    hasta = request.args.get("hasta")  # YYYY-MM-DD
     page = int(request.args.get("page", 1))
     per_page = 12
 
-    base_q = InventoryHistory.query.filter(
-        InventoryHistory.user_id == current_user.id,
-        InventoryHistory.snapshot_id.isnot(None)
+    q = InventoryHistory.query.filter(
+        InventoryHistory.user_id == current_user.id
     )
 
+    # ✅ FILTRO POR FECHA (SOLO DATE, NO DATETIME)
     if desde:
-        d = datetime.strptime(desde, "%Y-%m-%d")
-        base_q = base_q.filter(InventoryHistory.creado_en >= d)
+        q = q.filter(func.date(InventoryHistory.creado_en) >= desde)
 
     if hasta:
-        h = datetime.strptime(hasta, "%Y-%m-%d")
-        h = datetime.combine(h.date(), time(23, 59, 59))
-        base_q = base_q.filter(InventoryHistory.creado_en <= h)
+        q = q.filter(func.date(InventoryHistory.creado_en) <= hasta)
 
-    # 🔑 PASO 1: obtener snapshot_id únicos
-    snapshot_ids = (
-        base_q
-        .with_entities(InventoryHistory.snapshot_id)
-        .distinct()
-        .order_by(InventoryHistory.snapshot_id)
-        .all()
+    # ✅ AGRUPACIÓN CORRECTA
+    grouped = (
+        q.with_entities(
+            InventoryHistory.snapshot_id.label("snapshot_id"),
+            func.max(InventoryHistory.snapshot_name).label("snapshot_name"),
+            func.max(InventoryHistory.creado_en).label("creado_en"),
+            func.max(InventoryHistory.source_type).label("source_type"),
+            func.max(InventoryHistory.source_filename).label("source_filename"),
+            func.count(InventoryHistory.id).label("total"),
+        )
+        .group_by(InventoryHistory.snapshot_id)
+        .order_by(func.max(InventoryHistory.creado_en).desc())
     )
 
-    snapshot_ids = [s[0] for s in snapshot_ids]
-    total_snapshots = len(snapshot_ids)
-
-    # paginación manual (FIJA)
-    start = (page - 1) * per_page
-    end = start + per_page
-    page_snapshot_ids = snapshot_ids[start:end]
-
-    snapshots = []
-    for sid in page_snapshot_ids:
-        resumen = (
-            InventoryHistory.query
-            .filter_by(user_id=current_user.id, snapshot_id=sid)
-            .with_entities(
-                InventoryHistory.snapshot_id,
-                func.max(InventoryHistory.snapshot_name),
-                func.max(InventoryHistory.creado_en),
-                func.max(InventoryHistory.source_type),
-                func.max(InventoryHistory.source_filename),
-                func.count(InventoryHistory.id),
-            )
-            .first()
-        )
-
-        snapshots.append({
-            "snapshot_id": resumen[0],
-            "snapshot_name": resumen[1],
-            "creado_en": resumen[2],
-            "source_type": resumen[3],
-            "source_filename": resumen[4],
-            "total": resumen[5],
-        })
+    total_snapshots = grouped.count()
+    snapshots = (
+        grouped
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+        .all()
+    )
 
     total_pages = max(1, (total_snapshots + per_page - 1) // per_page)
 
