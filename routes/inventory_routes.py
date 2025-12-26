@@ -239,6 +239,69 @@ def history_detail(snapshot_id):
     ).all()
 
     return render_template("inventory/history_detail.html", rows=rows)
+# =============================================================================
+# DESCARGAR SNAPSHOT HISTÓRICO (OBLIGATORIO PARA history.html)
+# =============================================================================
+@inventory_bp.route("/history/<snapshot_id>/download")
+@login_required
+def history_download(snapshot_id):
+    rows = (
+        InventoryHistory.query
+        .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
+        .order_by(InventoryHistory.location)
+        .all()
+    )
+
+    if not rows:
+        flash("Inventario histórico no encontrado.", "danger")
+        return redirect(url_for("inventory.history_inventory"))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Inventario Histórico"
+
+    headers = [
+        "Item",
+        "Código Material",
+        "Descripción",
+        "Unidad",
+        "Ubicación",
+        "Físico",
+        "Stock SAP",
+        "Diferencia",
+        "Observación",
+        "Fecha"
+    ]
+    ws.append(headers)
+
+    for r in rows:
+        ws.append([
+            r.item_n,
+            r.material_code,
+            r.material_text,
+            r.base_unit,
+            r.location,
+            r.fisico,
+            r.stock_sap,
+            r.difere,
+            r.observacion,
+            r.creado_en.strftime("%d/%m/%Y") if r.creado_en else ""
+        ])
+
+    for col in ws.columns:
+        ws.column_dimensions[get_column_letter(col[0].column)].width = 20
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    name = rows[0].snapshot_name.replace(" ", "_")
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=f"{name}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 # =============================================================================
 # CONTEO FÍSICO (PARA BASE.HTML)
@@ -261,3 +324,44 @@ def count_inventory():
 
     items = InventoryItem.query.filter_by(user_id=current_user.id).all()
     return render_template("inventory/count.html", items=items)
+# =============================================================================
+# GUARDADO DE CONTEO POR FILA (AJAX)
+# =============================================================================
+@inventory_bp.route("/save-count-row", methods=["POST"])
+@login_required
+def save_count_row():
+    try:
+        data = request.get_json() or {}
+
+        material_code = str(data.get("material_code", "")).strip()
+        location = str(data.get("location", "")).replace(" ", "").upper()
+        fisico = safe_float(data.get("fisico"))
+
+        if not material_code or not location:
+            return jsonify({"success": False, "msg": "Datos incompletos"}), 400
+
+        row = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=material_code,
+            location=location
+        ).first()
+
+        if row:
+            row.fisico = fisico
+            row.contado_en = now_pe()
+        else:
+            row = InventoryCount(
+                user_id=current_user.id,
+                material_code=material_code,
+                location=location,
+                fisico=fisico,
+                contado_en=now_pe()
+            )
+            db.session.add(row)
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "msg": str(e)}), 500
