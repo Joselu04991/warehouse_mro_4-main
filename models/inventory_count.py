@@ -13,6 +13,6 @@ class InventoryCount(db.Model):
 
     real_count = db.Column(db.Integer, nullable=False)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
-
+    contado_en = db.Column(db.DateTime, nullable=True)
     def __repr__(self):
         return f"<InventoryCount {self.material_code} @ {self.location}>"
