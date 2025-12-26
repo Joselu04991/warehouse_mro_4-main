@@ -531,3 +531,36 @@ def history_detail(snapshot_id):
         items=items,
         title=title
     )
+@inventory_bp.route("/close", methods=["POST"])
+@login_required
+def close_inventory():
+    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
+
+    if not items:
+        flash("No hay inventario para cerrar.", "warning")
+        return redirect(url_for("inventory.list_inventory"))
+
+    snapshot_id = str(uuid.uuid4())
+    snapshot_name = f"Cierre de Inventario - {now_pe():%d/%m/%Y %H:%M}"
+
+    rows = []
+    for i in items:
+        rows.append(InventoryHistory(
+            user_id=current_user.id,
+            snapshot_id=snapshot_id,
+            snapshot_name=snapshot_name,
+            material_code=i.material_code,
+            material_text=i.material_text,
+            base_unit=i.base_unit,
+            location=i.location,
+            libre_utilizacion=i.libre_utilizacion,
+            creado_en=now_pe(),
+            source_type="CIERRE",
+            source_filename=None,
+        ))
+
+    db.session.bulk_save_objects(rows)
+    db.session.commit()
+
+    flash("Inventario cerrado y guardado en históricos.", "success")
+    return redirect(url_for("inventory.history_inventory"))
