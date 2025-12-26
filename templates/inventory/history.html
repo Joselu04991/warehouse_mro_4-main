@@ -67,7 +67,16 @@
 
             <td class="text-center">
               {% set t = (s.source_type or '') %}
-              <span class="badge {% if t=='HISTORICO' %} bg-warning text-dark {% elif t=='CIERRE' %} bg-danger {% else %} bg-secondary {% endif %}">
+              <span class="badge {% if t=='HISTORICO' %}
+                bg-warning text-dark
+              {% elif t=='CIERRE' %}
+                bg-danger
+              {% elif t=='DIARIO' %}
+                bg-success
+              {% else %}
+                bg-secondary
+              {% endif %}
+              ">
                 {{ t }}
               </span>
             </td>
