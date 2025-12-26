@@ -29,7 +29,7 @@
                 <i class="bi bi-upload me-2"></i> Subir Inventario Antiguo
             </a>
 
-            <form method="POST" action="{{ url_for('inventory.close_inventory') }}"
+            <form method="POST" action="{{ url_for('inventory.list_inventory') }}"
                   onsubmit="return confirm('¿Seguro que deseas CERRAR el inventario del día? Se archivará y se limpiará el inventario actual.');">
                 <button class="btn btn-danger">
                     <i class="bi bi-lock-fill me-2"></i> Cerrar inventario del día
@@ -79,3 +79,4 @@ document.getElementById("searchInput").addEventListener("keyup", function() {
 </script>
 
 {% endblock %}
+
