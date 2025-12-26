@@ -465,11 +465,13 @@ def history_inventory():
 
     rows = (
         InventoryHistory.query
+        .filter_by(user_id=current_user.id)   # ✅ FILTRO CLAVE
         .order_by(InventoryHistory.creado_en.desc())
         .all()
     )
 
     snapshots = {}
+
     for r in rows:
         if r.snapshot_id not in snapshots:
             snapshots[r.snapshot_id] = {
@@ -479,7 +481,6 @@ def history_inventory():
                 "source_type": r.source_type,
                 "source_filename": r.source_filename,
                 "total": 0,
-                "user_id": r.user_id,
             }
         snapshots[r.snapshot_id]["total"] += 1
 
