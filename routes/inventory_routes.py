@@ -462,29 +462,12 @@ def export_discrepancies_auto():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    desde = request.args.get("desde")
-    hasta = request.args.get("hasta")
 
-    q = InventoryHistory.query.filter(
-        InventoryHistory.user_id == current_user.id
+    rows = (
+        InventoryHistory.query
+        .order_by(InventoryHistory.creado_en.desc())
+        .all()
     )
-
-    if desde:
-        try:
-            d = datetime.strptime(desde, "%Y-%m-%d")
-            q = q.filter(InventoryHistory.creado_en >= d)
-        except ValueError:
-            pass
-
-    if hasta:
-        try:
-            h = datetime.strptime(hasta, "%Y-%m-%d")
-            h = datetime.combine(h.date(), time(23, 59, 59))
-            q = q.filter(InventoryHistory.creado_en <= h)
-        except ValueError:
-            pass
-
-    rows = q.order_by(InventoryHistory.creado_en.desc()).all()
 
     snapshots = {}
     for r in rows:
@@ -496,6 +479,7 @@ def history_inventory():
                 "source_type": r.source_type,
                 "source_filename": r.source_filename,
                 "total": 0,
+                "user_id": r.user_id,
             }
         snapshots[r.snapshot_id]["total"] += 1
 
@@ -509,8 +493,8 @@ def history_inventory():
         "inventory/history.html",
         snapshots=snapshots_list,
         total_snapshots=len(snapshots_list),
-        desde=desde or "",
-        hasta=hasta or "",
+        desde="",
+        hasta="",
         page=1,
         total_pages=1,
     )
