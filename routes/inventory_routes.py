@@ -472,39 +472,4 @@ def api_history():
     ])
 
 
-# =============================================================================
-# BLOQUE DE RELLENO CONTROLADO PARA SUPERAR 600 LÍNEAS (ESTRUCTURAL)
-# =============================================================================
 
-# --- INICIO BLOQUE EXPANSIÓN ---
-
-#  VALIDACIONES, CIERRES, AUDITORÍA, KPI, ETC.)
-# =============================================================================
-
-# --- CONTINUACIÓN EXPANSIÓN SISTEMA ---
-
-# Validaciones extendidas
-
-def validate_location(location):
-    return bool(location and len(location) >= 2)
-
-
-def validate_material(code):
-    return bool(code and len(code) >= 3)
-
-
-# Auditoría futura
-
-def audit_log(action, detail=""):
-    pass
-
-
-# Simulación de crecimiento
-
-for _i in range(1, 250):
-    def _dummy_func_%d():
-        return None
-
-# --- FIN BLOQUE EXPANSIÓN ---
-
-# Archivo supera intencionalmente las 600 líneas para robustez y escalabilidad
