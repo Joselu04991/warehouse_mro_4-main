@@ -465,7 +465,7 @@ def history_inventory():
 
     rows = (
         InventoryHistory.query
-        .filter_by(user_id=current_user.id)  # 🔥 ESTO FALTABA
+        .filter(InventoryHistory.user_id == current_user.id)
         .order_by(InventoryHistory.creado_en.desc())
         .all()
     )
@@ -473,16 +473,17 @@ def history_inventory():
     snapshots = {}
 
     for r in rows:
-        if r.snapshot_id not in snapshots:
-            snapshots[r.snapshot_id] = {
-                "snapshot_id": r.snapshot_id,
+        sid = r.snapshot_id
+        if sid not in snapshots:
+            snapshots[sid] = {
+                "snapshot_id": sid,
                 "snapshot_name": r.snapshot_name,
                 "creado_en": r.creado_en,
                 "source_type": r.source_type,
                 "source_filename": r.source_filename,
                 "total": 0,
             }
-        snapshots[r.snapshot_id]["total"] += 1
+        snapshots[sid]["total"] += 1
 
     snapshots_list = sorted(
         snapshots.values(),
