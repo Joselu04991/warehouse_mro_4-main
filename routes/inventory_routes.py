@@ -519,4 +519,9 @@ def count_inventory():
         counts=counts,
     )
 
+@inventory_bp.route("/count")
+@login_required
+def count_inventory():
+    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
+    return render_template("inventory/count.html", items=items)
 
