@@ -145,14 +145,20 @@ def dashboard_inventory():
     criticos = sum(1 for i in items if (i.libre_utilizacion or 0) <= 0)
     bajos = sum(1 for i in items if 0 < (i.libre_utilizacion or 0) < 5)
 
+    estados = {
+        "OK": total - criticos - bajos,
+        "BAJO": bajos,
+        "CRITICO": criticos,
+    }
+
     return render_template(
         "inventory/dashboard.html",
         total_items=total,
         criticos=criticos,
         bajos=bajos,
+        estados=estados,
         items=items,
     )
-
 
 # =============================================================================
 # SUBIR INVENTARIO DIARIO
