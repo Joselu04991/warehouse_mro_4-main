@@ -250,10 +250,12 @@ def upload_history():
             df = _read_historic_excel(file)
 
             nombre = getattr(file, "filename", "inventario_historico.xlsx")
-            fecha = _parse_date_from_filename(nombre) or now_pe().replace(tzinfo=None)
+            fecha = _parse_date_from_filename(nombre)
+            if not fecha:
+                fecha = now_pe()
 
             snapshot_id = str(uuid.uuid4())
-            snapshot_name = f"Inventario Histórico - {nombre}"
+            snapshot_name = f"Inventario Histórico - {fecha:%Y-%m-%d} - {nombre}"
 
             # ✅ insert optimizado
             rows = []
@@ -464,11 +466,12 @@ def export_discrepancies_auto():
 def history_inventory():
 
     rows = (
-        InventoryHistory.query
-        .filter(InventoryHistory.user_id == current_user.id)
-        .order_by(InventoryHistory.creado_en.desc())
-        .all()
-    )
+    InventoryHistory.query
+    .filter(InventoryHistory.user_id == current_user.id)
+    .filter(InventoryHistory.snapshot_id.isnot(None))
+    .order_by(InventoryHistory.creado_en.desc())
+    .all()
+)
 
     snapshots = {}
 
