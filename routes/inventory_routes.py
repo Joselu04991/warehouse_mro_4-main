@@ -471,5 +471,46 @@ def api_history():
         for d in data
     ])
 
+# =============================================================================
+# CONTEO FÍSICO DE INVENTARIO
+# =============================================================================
+
+@inventory_bp.route("/count", methods=["GET", "POST"])
+@login_required
+def count_inventory():
+    if request.method == "POST":
+        data = request.get_json() or {}
+
+        material_code = data.get("material_code")
+        location = data.get("location")
+        fisico = safe_float(data.get("fisico"))
+
+        if not material_code or not location:
+            return jsonify({"error": "Datos incompletos"}), 400
+
+        count = InventoryCount(
+            user_id=current_user.id,
+            material_code=material_code,
+            location=location,
+            fisico=fisico,
+            contado_en=now_pe(),
+        )
+
+        db.session.add(count)
+        db.session.commit()
+
+        return jsonify({"status": "ok"})
+
+    counts = (
+        InventoryCount.query
+        .filter_by(user_id=current_user.id)
+        .order_by(InventoryCount.contado_en.desc())
+        .all()
+    )
+
+    return render_template(
+        "inventory/count.html",
+        counts=counts,
+    )
 
 
