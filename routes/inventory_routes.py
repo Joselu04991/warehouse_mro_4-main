@@ -552,7 +552,7 @@ def history_download(snapshot_id):
     wb.save(output)
     output.seek(0)
 
-    name = rows[0].snapshot_name.replace(" ", "_")
+    name = re.sub(r"[^\w\-]", "_", rows[0].snapshot_name)
     return send_file(
         output,
         as_attachment=True,
