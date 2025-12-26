@@ -465,7 +465,7 @@ def history_inventory():
 
     rows = (
         InventoryHistory.query
-        .filter_by(user_id=current_user.id)   # ✅ FILTRO CLAVE
+        .filter_by(user_id=current_user.id)  # 🔥 ESTO FALTABA
         .order_by(InventoryHistory.creado_en.desc())
         .all()
     )
