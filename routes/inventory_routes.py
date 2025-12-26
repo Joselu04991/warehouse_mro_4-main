@@ -515,22 +515,66 @@ def history_inventory():
         total_pages=1,
     )
 
-@inventory_bp.route("/history/<snapshot_id>")
+@inventory_bp.route("/history/<snapshot_id>/download")
 @login_required
-def history_detail(snapshot_id):
-    items = (
+def history_download(snapshot_id):
+
+    rows = (
         InventoryHistory.query
         .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
         .order_by(InventoryHistory.location)
         .all()
     )
 
-    title = items[0].snapshot_name if items else "Inventario"
-    return render_template(
-        "inventory/history_detail.html",
-        items=items,
-        title=title
+    if not rows:
+        flash("Inventario histórico no encontrado.", "danger")
+        return redirect(url_for("inventory.history_inventory"))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Inventario Histórico"
+
+    headers = [
+        "Item",
+        "Código Material",
+        "Descripción",
+        "Unidad",
+        "Ubicación",
+        "Stock",
+        "Fecha",
+        "Tipo",
+        "Archivo"
+    ]
+    ws.append(headers)
+
+    for r in rows:
+        ws.append([
+            r.item,
+            r.material_code,
+            r.material_text,
+            r.base_unit,
+            r.location,
+            r.libre_utilizacion,
+            r.creado_en.strftime("%d/%m/%Y") if r.creado_en else "",
+            r.source_type,
+            r.source_filename,
+        ])
+
+    for col in ws.columns:
+        ws.column_dimensions[get_column_letter(col[0].column)].width = 20
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    name = rows[0].snapshot_name.replace(" ", "_")
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=f"{name}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
 @inventory_bp.route("/close", methods=["POST"])
 @login_required
 def close_inventory():
