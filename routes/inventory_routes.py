@@ -248,12 +248,34 @@ def history_download(snapshot_id):
 # -----------------------------------------------------------------------------
 # CONTEO
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/count")
 @login_required
 def count_inventory():
-    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
-    return render_template("inventory/count.html", items=items)
+    items = (
+        db.session.query(
+            InventoryItem.id,
+            InventoryItem.material_code,
+            InventoryItem.material_text,
+            InventoryItem.base_unit,
+            InventoryItem.location,
+            InventoryItem.libre_utilizacion,
+            InventoryCount.real_count
+        )
+        .outerjoin(
+            InventoryCount,
+            (InventoryCount.material_code == InventoryItem.material_code) &
+            (InventoryCount.location == InventoryItem.location) &
+            (InventoryCount.user_id == current_user.id)
+        )
+        .filter(InventoryItem.user_id == current_user.id)
+        .order_by(InventoryItem.location)
+        .all()
+    )
+
+    return render_template(
+        "inventory/count.html",
+        items=items
+    )
 
 @inventory_bp.route("/save-count-row", methods=["POST"])
 @login_required
