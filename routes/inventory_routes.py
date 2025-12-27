@@ -411,3 +411,77 @@ def save_count_row():
 def save_count():
     return save_count_row()
     
+# -----------------------------------------------------------------------------
+# DESCARGA DE DISCREPANCIAS (EXCEL)
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/discrepancies/download")
+@login_required
+def download_discrepancies():
+    rows = (
+        db.session.query(
+            InventoryItem.material_code,
+            InventoryItem.material_text,
+            InventoryItem.base_unit,
+            InventoryItem.location,
+            InventoryItem.libre_utilizacion.label("stock_sistema"),
+            InventoryCount.real_count
+        )
+        .join(
+            InventoryCount,
+            db.and_(
+                InventoryItem.user_id == InventoryCount.user_id,
+                InventoryItem.material_code == InventoryCount.material_code,
+                InventoryItem.location == InventoryCount.location
+            )
+        )
+        .filter(InventoryItem.user_id == current_user.id)
+        .filter(InventoryCount.real_count != InventoryItem.libre_utilizacion)
+        .all()
+    )
+
+    if not rows:
+        flash("No existen discrepancias para descargar.", "info")
+        return redirect(url_for("inventory.count_inventory"))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Discrepancias"
+
+    headers = [
+        "Código del Material",
+        "Descripción",
+        "Unidad de Medida",
+        "Ubicación",
+        "Stock Sistema",
+        "Conteo Físico",
+        "Diferencia"
+    ]
+    ws.append(headers)
+
+    for r in rows:
+        diferencia = (r.real_count or 0) - (r.stock_sistema or 0)
+        ws.append([
+            r.material_code,
+            r.material_text,
+            r.base_unit,
+            r.location,
+            r.stock_sistema,
+            r.real_count,
+            diferencia
+        ])
+
+    for col in ws.columns:
+        ws.column_dimensions[col[0].column_letter].width = 22
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+,
+        download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
