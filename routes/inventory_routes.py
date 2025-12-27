@@ -67,27 +67,26 @@ def read_old_inventory_excel(file):
                 return cols[norm(n)]
         return None
 
-    codigo = pick("codigo del material", "codigo")
-    texto = pick("texto breve de material", "descripcion")
-    unidad = pick("unidad de medida base", "unidad medida", "um")
-    ubic = pick("ubicacion")
-    libre = pick("libre utilizacion", "libre utilización", "stock")
-
-    if not codigo or not ubic:
-        raise Exception("Faltan columnas obligatorias (Código o Ubicación)")
-
     out = pd.DataFrame()
-    out["codigo"] = df[codigo]
-    out["texto"] = df[texto] if texto else ""
-    out["unidad"] = df[unidad] if unidad else ""
-    out["ubicacion"] = df[ubic]
-    out["libre"] = df[libre] if libre else 0
+
+    out["codigo"] = df[pick("codigo del material", "codigo")]
+    out["texto"] = df[pick("texto breve de material", "descripcion")] if pick("texto breve de material", "descripcion") else ""
+    out["unidad"] = df[pick("unidad medida", "unidad de medida base", "um")] if pick("unidad medida", "unidad de medida base", "um") else ""
+    out["ubicacion"] = df[pick("ubicacion")]
+
+    out["fisico"] = df[pick("fisico")] if pick("fisico") else 0
+    out["stock"] = df[pick("stock")] if pick("stock") else 0
+    out["difere"] = df[pick("difere", "diferencia")] if pick("difere", "diferencia") else 0
+    out["obs"] = df[pick("observac", "observacion")] if pick("observac", "observacion") else ""
 
     out["codigo"] = out["codigo"].astype(str).str.strip()
     out["texto"] = out["texto"].astype(str).str.strip()
     out["unidad"] = out["unidad"].astype(str).str.strip()
     out["ubicacion"] = out["ubicacion"].astype(str).str.upper().str.replace(" ", "")
-    out["libre"] = pd.to_numeric(out["libre"], errors="coerce").fillna(0)
+
+    out["fisico"] = pd.to_numeric(out["fisico"], errors="coerce").fillna(0)
+    out["stock"] = pd.to_numeric(out["stock"], errors="coerce").fillna(0)
+    out["difere"] = pd.to_numeric(out["difere"], errors="coerce").fillna(0)
 
     return out
 
