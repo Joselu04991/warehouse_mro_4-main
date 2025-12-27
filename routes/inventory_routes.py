@@ -277,3 +277,11 @@ def save_count_row():
     row.contado_en = now_pe()
     db.session.commit()
     return jsonify(success=True)
+# -----------------------------------------------------------------------------
+# ALIAS PARA COMPATIBILIDAD CON count.html
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/save-count", methods=["POST"])
+@login_required
+def save_count():
+    return save_count_row()
