@@ -297,7 +297,6 @@ def count_inventory():
         items=rows
     )
 
-
 @inventory_bp.route("/save-count-row", methods=["POST"])
 @login_required
 def save_count_row():
@@ -305,10 +304,16 @@ def save_count_row():
 
     code = data.get("material_code")
     loc = data.get("location")
-    real = int(data.get("real_count", 0))
+    real = safe_float(data.get("real_count"))
 
-    if not code or not loc:
-        return jsonify(success=False), 400
+    item = InventoryItem.query.filter_by(
+        user_id=current_user.id,
+        material_code=code,
+        location=loc
+    ).first()
+
+    if not item:
+        return jsonify(success=False, msg="Item no encontrado"), 404
 
     row = InventoryCount.query.filter_by(
         user_id=current_user.id,
@@ -320,7 +325,10 @@ def save_count_row():
         row = InventoryCount(
             user_id=current_user.id,
             material_code=code,
-            location=loc
+            material_text=item.material_text,
+            base_unit=item.base_unit,
+            location=loc,
+            stock_sistema=item.libre_utilizacion
         )
         db.session.add(row)
 
