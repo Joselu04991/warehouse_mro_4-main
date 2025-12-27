@@ -11,8 +11,17 @@ class InventoryCount(db.Model):
     material_code = db.Column(db.String(50), nullable=False, index=True)
     location = db.Column(db.String(50), nullable=False, index=True)
 
-    real_count = db.Column(db.Integer, nullable=False)
-    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    real_count = db.Column(db.Integer, nullable=False, default=0)
+
     contado_en = db.Column(db.DateTime, nullable=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "user_id", "material_code", "location",
+            name="uq_inventory_count_user_mat_loc"
+        ),
+    )
+
     def __repr__(self):
-        return f"<InventoryCount {self.material_code} @ {self.location}>"
+        return f"<InventoryCount {self.material_code} @ {self.location} = {self.real_count}>"
