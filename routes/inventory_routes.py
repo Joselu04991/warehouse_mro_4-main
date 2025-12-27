@@ -31,8 +31,10 @@ TZ = ZoneInfo("America/Lima")
 
 def now_pe():
     return datetime.now(TZ).replace(tzinfo=None)
+    
 def read_inventory_actual_excel(file):
     df = pd.read_excel(file, dtype=object)
+
     cols = {norm(c): c for c in df.columns}
 
     def pick(*names):
@@ -42,13 +44,13 @@ def read_inventory_actual_excel(file):
         return None
 
     codigo = pick("codigo del material")
-    texto  = pick("texto breve de material")
-    unidad = pick("unidad de medida base", "unidad")
+    texto = pick("texto breve de material")
+    unidad = pick("unidad de medida base")
     ubic   = pick("ubicacion")
     libre  = pick("libre utilizacion", "libre utilización")
 
     if not all([codigo, texto, unidad, ubic, libre]):
-        raise Exception("El Excel NO es un inventario actual válido")
+        raise Exception("Excel de inventario ACTUAL inválido")
 
     out = pd.DataFrame()
     out["codigo"] = df[codigo].astype(str).str.strip()
@@ -61,6 +63,7 @@ def read_inventory_actual_excel(file):
     
 def read_inventory_historico_excel(file):
     df = pd.read_excel(file, dtype=object)
+
     cols = {norm(c): c for c in df.columns}
 
     def pick(*names):
@@ -71,22 +74,22 @@ def read_inventory_historico_excel(file):
 
     codigo = pick("codigo del material")
     texto  = pick("texto breve de material")
-    unidad = pick("unidad medida", "unidad")
+    unidad = pick("unidad medida", "unidad de medida")
     ubic   = pick("ubicacion")
     fisico = pick("fisico")
     stock  = pick("stock")
     difere = pick("difere")
     obs    = pick("observac", "observacion")
 
-    if not all([codigo, ubic, fisico]):
-        raise Exception("El Excel NO es un inventario histórico válido")
+    if not all([codigo, texto, unidad, ubic]):
+        raise Exception("Excel HISTÓRICO inválido")
 
     out = pd.DataFrame()
     out["codigo"] = df[codigo].astype(str).str.strip()
-    out["texto"] = df[texto].astype(str).str.strip() if texto else ""
-    out["unidad"] = df[unidad].astype(str).str.strip() if unidad else ""
+    out["texto"] = df[texto].astype(str).str.strip()
+    out["unidad"] = df[unidad].astype(str).str.strip()
     out["ubicacion"] = df[ubic].astype(str).str.upper().str.replace(" ", "")
-    out["fisico"] = pd.to_numeric(df[fisico], errors="coerce").fillna(0)
+    out["fisico"] = pd.to_numeric(df[fisico], errors="coerce").fillna(0) if fisico else 0
     out["stock"] = pd.to_numeric(df[stock], errors="coerce").fillna(0) if stock else 0
     out["difere"] = pd.to_numeric(df[difere], errors="coerce").fillna(0) if difere else 0
     out["obs"] = df[obs].astype(str).str.strip() if obs else ""
@@ -192,7 +195,7 @@ def list_inventory():
 @login_required
 def upload_inventory():
     if request.method == "POST":
-        df = read_old_inventory_excel(request.files["file"])
+        df = read_inventory_actual_excel(request.files["file"])
 
         InventoryItem.query.filter_by(user_id=current_user.id).delete()
         db.session.commit()
@@ -202,9 +205,9 @@ def upload_inventory():
                 user_id=current_user.id,
                 material_code=r["codigo"],
                 material_text=r["texto"],
-                base_unit=r["unidad"],          # 👈 UM REAL
+                base_unit=r["unidad"],
                 location=r["ubicacion"],
-                libre_utilizacion=r["libre"],   # 👈 STOCK REAL
+                libre_utilizacion=r["libre"],
                 creado_en=now_pe()
             ))
 
@@ -222,7 +225,7 @@ def upload_inventory():
 @login_required
 def upload_history():
     if request.method == "POST":
-        df = read_old_inventory_excel(request.files["file"])
+        df = read_inventory_historico_excel(request.files["file"])
         sid = str(uuid.uuid4())
         name = f"Inventario Histórico {now_pe():%Y-%m-%d %H:%M}"
 
@@ -239,7 +242,8 @@ def upload_history():
                 stock_sap=r["stock"],
                 difere=r["difere"],
                 observacion=r["obs"],
-                creado_en=now_pe()
+                creado_en=now_pe(),
+                source_type="HISTORICO"
             ))
 
         db.session.commit()
