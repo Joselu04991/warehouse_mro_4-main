@@ -1,6 +1,5 @@
 # =============================================================================
-# INVENTORY ROUTES – SISTEMA MRO (ESTABLE Y DEFINITIVO)
-# Autor: José Castillo 😎
+# INVENTORY ROUTES – SISTEMA MRO (ESTABLE FINAL)
 # =============================================================================
 
 from datetime import datetime
@@ -44,9 +43,8 @@ def now_pe():
 def norm(txt):
     if not txt:
         return ""
-    txt = str(txt).strip().lower()
+    txt = str(txt).lower().strip()
     txt = re.sub(r"\s+", " ", txt)
-    txt = txt.replace("\n", " ")
     txt = txt.replace("á","a").replace("é","e").replace("í","i")
     txt = txt.replace("ó","o").replace("ú","u").replace("ñ","n")
     return txt
@@ -58,7 +56,7 @@ def safe_float(v):
         return 0.0
 
 # =============================================================================
-# LECTOR UNIVERSAL DE EXCEL ANTIGUO (TOLERANTE)
+# LECTOR EXCEL ANTIGUO (100% TOLERANTE)
 # =============================================================================
 
 def read_old_inventory_excel(file):
@@ -74,18 +72,18 @@ def read_old_inventory_excel(file):
 
     cols = {
         "item": pick("item"),
-        "codigo": pick("codigo del material", "codigo"),
-        "texto": pick("texto breve de material", "descripcion"),
-        "unidad": pick("unidad medida", "unidad"),
+        "codigo": pick("codigo del material"),
+        "texto": pick("texto breve de material"),
+        "unidad": pick("unidad medida"),
         "ubicacion": pick("ubicacion"),
         "fisico": pick("fisico"),
         "stock": pick("stock"),
-        "difere": pick("difere", "diferencia"),
-        "obs": pick("observac", "observacion"),
+        "difere": pick("difere"),
+        "obs": pick("observac"),
     }
 
     if not cols["codigo"] or not cols["ubicacion"]:
-        raise Exception("El Excel no tiene Código del Material o Ubicación")
+        raise Exception("Excel inválido: falta Código del Material o Ubicación")
 
     out = pd.DataFrame()
     out["item"] = df[cols["item"]] if cols["item"] else None
@@ -99,7 +97,8 @@ def read_old_inventory_excel(file):
     out["obs"] = df[cols["obs"]] if cols["obs"] else ""
 
     out["codigo"] = out["codigo"].astype(str).str.strip()
-    out["ubicacion"] = out["ubicacion"].astype(str).str.upper().str.replace(" ", "")
+    out["ubicacion"] = out["ubicacion"].astype(str).str.replace(" ", "").str.upper()
+
     out["fisico"] = pd.to_numeric(out["fisico"], errors="coerce").fillna(0)
     out["stock"] = pd.to_numeric(out["stock"], errors="coerce").fillna(0)
     out["difere"] = pd.to_numeric(out["difere"], errors="coerce").fillna(0)
@@ -122,7 +121,7 @@ def dashboard_inventory():
     estados = {
         "OK": total - criticos - bajos,
         "BAJO": bajos,
-        "CRITICO": criticos,
+        "CRITICO": criticos
     }
 
     return render_template(
@@ -133,18 +132,14 @@ def dashboard_inventory():
     )
 
 # =============================================================================
-# SUBIR INVENTARIO (ANTIGUO O DIARIO)
+# UPLOAD INVENTARIO
 # =============================================================================
 
-@inventory_bp.route("/upload", methods=["GET", "POST"])
+@inventory_bp.route("/upload", methods=["GET","POST"])
 @login_required
 def upload_inventory():
     if request.method == "POST":
         file = request.files.get("file")
-        if not file:
-            flash("Selecciona un Excel", "warning")
-            return redirect(request.url)
-
         df = read_old_inventory_excel(file)
 
         InventoryItem.query.filter_by(user_id=current_user.id).delete()
@@ -168,10 +163,10 @@ def upload_inventory():
     return render_template("inventory/upload.html")
 
 # =============================================================================
-# SUBIR INVENTARIO HISTÓRICO
+# HISTÓRICO
 # =============================================================================
 
-@inventory_bp.route("/upload-history", methods=["GET", "POST"])
+@inventory_bp.route("/upload-history", methods=["GET","POST"])
 @login_required
 def upload_history():
     if request.method == "POST":
@@ -199,36 +194,34 @@ def upload_history():
             ))
 
         db.session.commit()
-        flash("Histórico cargado correctamente", "success")
+        flash("Histórico cargado", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
 
-# =============================================================================
-# LISTADOS
-# =============================================================================
-
-@inventory_bp.route("/list")
-@login_required
-def list_inventory():
-    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
-    return render_template("inventory/list.html", items=items)
-
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    snapshots = (
-        db.session.query(
-            InventoryHistory.snapshot_id,
-            InventoryHistory.snapshot_name,
-            func.count(InventoryHistory.id).label("total")
-        )
-        .filter_by(user_id=current_user.id)
-        .group_by(InventoryHistory.snapshot_id, InventoryHistory.snapshot_name)
-        .all()
-    )
+    rows = InventoryHistory.query.filter_by(
+        user_id=current_user.id
+    ).order_by(InventoryHistory.creado_en.desc()).all()
 
-    return render_template("inventory/history.html", snapshots=snapshots)
+    snapshots = {}
+    for r in rows:
+        if r.snapshot_id not in snapshots:
+            snapshots[r.snapshot_id] = {
+                "snapshot_id": r.snapshot_id,
+                "snapshot_name": r.snapshot_name,
+                "total": 0
+            }
+        snapshots[r.snapshot_id]["total"] += 1
+
+    return render_template(
+        "inventory/history.html",
+        snapshots=list(snapshots.values()),
+        total_pages=1,
+        current_page=1
+    )
 
 @inventory_bp.route("/history/<snapshot_id>")
 @login_required
@@ -239,129 +232,73 @@ def history_detail(snapshot_id):
     ).all()
 
     return render_template("inventory/history_detail.html", rows=rows)
-# =============================================================================
-# DESCARGAR SNAPSHOT HISTÓRICO (OBLIGATORIO PARA history.html)
-# =============================================================================
+
 @inventory_bp.route("/history/<snapshot_id>/download")
 @login_required
 def history_download(snapshot_id):
-    rows = (
-        InventoryHistory.query
-        .filter_by(user_id=current_user.id, snapshot_id=snapshot_id)
-        .order_by(InventoryHistory.location)
-        .all()
-    )
-
-    if not rows:
-        flash("Inventario histórico no encontrado.", "danger")
-        return redirect(url_for("inventory.history_inventory"))
+    rows = InventoryHistory.query.filter_by(
+        user_id=current_user.id,
+        snapshot_id=snapshot_id
+    ).all()
 
     wb = Workbook()
     ws = wb.active
-    ws.title = "Inventario Histórico"
+    ws.append([
+        "Item","Código","Texto","Unidad",
+        "Ubicación","Fisico","STOCK","Difere","Obs"
+    ])
 
-    headers = [
-        "Item",
-        "Código Material",
-        "Descripción",
-        "Unidad",
-        "Ubicación",
-        "Físico",
-        "Stock SAP",
-        "Diferencia",
-        "Observación",
-        "Fecha"
-    ]
-    ws.append(headers)
-
-    for r in rows:
+    for i, r in enumerate(rows, 1):
         ws.append([
-            r.item_n,
-            r.material_code,
-            r.material_text,
-            r.base_unit,
-            r.location,
-            r.fisico,
-            r.stock_sap,
-            r.difere,
-            r.observacion,
-            r.creado_en.strftime("%d/%m/%Y") if r.creado_en else ""
+            i, r.material_code, r.material_text,
+            r.base_unit, r.location,
+            r.fisico, r.stock_sap,
+            r.difere, r.observacion
         ])
 
-    for col in ws.columns:
-        ws.column_dimensions[get_column_letter(col[0].column)].width = 20
+    out = BytesIO()
+    wb.save(out)
+    out.seek(0)
 
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-
-    name = rows[0].snapshot_name.replace(" ", "_")
-    return send_file(
-        output,
-        as_attachment=True,
-        download_name=f"{name}.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    return send_file(out, as_attachment=True,
+        download_name="inventario_historico.xlsx"
     )
 
 # =============================================================================
-# CONTEO FÍSICO (PARA BASE.HTML)
+# CONTEO FÍSICO
 # =============================================================================
 
-@inventory_bp.route("/count", methods=["GET", "POST"])
+@inventory_bp.route("/count")
 @login_required
 def count_inventory():
-    if request.method == "POST":
-        data = request.get_json()
-        db.session.add(InventoryCount(
-            user_id=current_user.id,
-            material_code=data["material_code"],
-            location=data["location"],
-            fisico=safe_float(data["fisico"]),
-            creado_en=now_pe()
-        ))
-        db.session.commit()
-        return jsonify({"ok": True})
+    items = InventoryItem.query.filter_by(
+        user_id=current_user.id
+    ).order_by(InventoryItem.location).all()
 
-    items = InventoryItem.query.filter_by(user_id=current_user.id).all()
     return render_template("inventory/count.html", items=items)
-# =============================================================================
-# GUARDADO DE CONTEO POR FILA (AJAX)
-# =============================================================================
+
 @inventory_bp.route("/save-count-row", methods=["POST"])
 @login_required
 def save_count_row():
-    try:
-        data = request.get_json() or {}
+    data = request.get_json() or {}
 
-        material_code = str(data.get("material_code", "")).strip()
-        location = str(data.get("location", "")).replace(" ", "").upper()
-        fisico = safe_float(data.get("fisico"))
+    row = InventoryCount.query.filter_by(
+        user_id=current_user.id,
+        material_code=data.get("material_code"),
+        location=data.get("location")
+    ).first()
 
-        if not material_code or not location:
-            return jsonify({"success": False, "msg": "Datos incompletos"}), 400
-
-        row = InventoryCount.query.filter_by(
+    if row:
+        row.fisico = safe_float(data.get("fisico"))
+        row.contado_en = now_pe()
+    else:
+        db.session.add(InventoryCount(
             user_id=current_user.id,
-            material_code=material_code,
-            location=location
-        ).first()
+            material_code=data.get("material_code"),
+            location=data.get("location"),
+            fisico=safe_float(data.get("fisico")),
+            contado_en=now_pe()
+        ))
 
-        if row:
-            row.fisico = fisico
-            row.contado_en = now_pe()
-        else:
-            row = InventoryCount(
-                user_id=current_user.id,
-                material_code=material_code,
-                location=location,
-                fisico=fisico,
-                contado_en=now_pe()
-            )
-            db.session.add(row)
-
-        db.session.commit()
-        return jsonify({"success": True})
-
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"success": False, "msg": str(e)}), 500
+    db.session.commit()
+    return jsonify({"success": True})
