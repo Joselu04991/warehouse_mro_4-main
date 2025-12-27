@@ -299,25 +299,35 @@ def count_inventory():
 @inventory_bp.route("/save-count-row", methods=["POST"])
 @login_required
 def save_count_row():
-    d = request.get_json()
+    data = request.get_json() or {}
+
+    code = data.get("material_code")
+    loc = data.get("location")
+    real = int(data.get("real_count", 0))
+
+    if not code or not loc:
+        return jsonify(success=False), 400
+
     row = InventoryCount.query.filter_by(
         user_id=current_user.id,
-        material_code=d["material_code"],
-        location=d["location"]
+        material_code=code,
+        location=loc
     ).first()
 
     if not row:
         row = InventoryCount(
             user_id=current_user.id,
-            material_code=d["material_code"],
-            location=d["location"]
+            material_code=code,
+            location=loc
         )
         db.session.add(row)
 
-    row.fisico = safe_float(d["fisico"])
+    row.real_count = real
     row.contado_en = now_pe()
+
     db.session.commit()
     return jsonify(success=True)
+
 # -----------------------------------------------------------------------------
 # ALIAS PARA COMPATIBILIDAD CON count.html
 # -----------------------------------------------------------------------------
