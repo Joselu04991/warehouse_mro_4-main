@@ -253,29 +253,48 @@ def history_download(snapshot_id):
 def count_inventory():
     items = (
         db.session.query(
-            InventoryItem.id,
-            InventoryItem.material_code,
-            InventoryItem.material_text,
-            InventoryItem.base_unit,
-            InventoryItem.location,
-            InventoryItem.libre_utilizacion,
+            InventoryItem,
             InventoryCount.real_count
         )
         .outerjoin(
             InventoryCount,
-            (InventoryCount.material_code == InventoryItem.material_code) &
-            (InventoryCount.location == InventoryItem.location) &
-            (InventoryCount.user_id == current_user.id)
+            db.and_(
+                InventoryItem.user_id == InventoryCount.user_id,
+                InventoryItem.material_code == InventoryCount.material_code,
+                InventoryItem.location == InventoryCount.location
+            )
         )
         .filter(InventoryItem.user_id == current_user.id)
         .order_by(InventoryItem.location)
         .all()
     )
 
+    rows = []
+    for item, real in items:
+        real = real if real is not None else 0
+
+        if real == 0:
+            estado = "Pendiente"
+        elif real == item.libre_utilizacion:
+            estado = "OK"
+        else:
+            estado = "Diferencia"
+
+        rows.append({
+            "material_code": item.material_code,
+            "material_text": item.material_text,
+            "base_unit": item.base_unit,
+            "location": item.location,
+            "stock": item.libre_utilizacion,
+            "real_count": real,
+            "estado": estado
+        })
+
     return render_template(
         "inventory/count.html",
-        items=items
+        items=rows
     )
+
 
 @inventory_bp.route("/save-count-row", methods=["POST"])
 @login_required
