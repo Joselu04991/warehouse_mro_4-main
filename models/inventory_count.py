@@ -9,9 +9,12 @@ class InventoryCount(db.Model):
     user_id = db.Column(db.Integer, nullable=False, index=True)
 
     material_code = db.Column(db.String(50), nullable=False, index=True)
-    location = db.Column(db.String(50), nullable=False, index=True)
+    material_text = db.Column(db.String(255))
+    base_unit = db.Column(db.String(20))
+    location = db.Column(db.String(50), nullable=False)
 
-    real_count = db.Column(db.Integer, nullable=False, default=0)
+    stock_sistema = db.Column(db.Float, default=0)
+    real_count = db.Column(db.Float, default=0)
 
     contado_en = db.Column(db.DateTime, nullable=True)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
