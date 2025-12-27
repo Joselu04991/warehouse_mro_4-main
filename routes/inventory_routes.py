@@ -31,6 +31,67 @@ TZ = ZoneInfo("America/Lima")
 
 def now_pe():
     return datetime.now(TZ).replace(tzinfo=None)
+def read_inventory_actual_excel(file):
+    df = pd.read_excel(file, dtype=object)
+    cols = {norm(c): c for c in df.columns}
+
+    def pick(*names):
+        for n in names:
+            if norm(n) in cols:
+                return cols[norm(n)]
+        return None
+
+    codigo = pick("codigo del material")
+    texto  = pick("texto breve de material")
+    unidad = pick("unidad de medida base", "unidad")
+    ubic   = pick("ubicacion")
+    libre  = pick("libre utilizacion", "libre utilización")
+
+    if not all([codigo, texto, unidad, ubic, libre]):
+        raise Exception("El Excel NO es un inventario actual válido")
+
+    out = pd.DataFrame()
+    out["codigo"] = df[codigo].astype(str).str.strip()
+    out["texto"] = df[texto].astype(str).str.strip()
+    out["unidad"] = df[unidad].astype(str).str.strip()
+    out["ubicacion"] = df[ubic].astype(str).str.upper().str.replace(" ", "")
+    out["libre"] = pd.to_numeric(df[libre], errors="coerce").fillna(0)
+
+    return out
+    
+def read_inventory_historico_excel(file):
+    df = pd.read_excel(file, dtype=object)
+    cols = {norm(c): c for c in df.columns}
+
+    def pick(*names):
+        for n in names:
+            if norm(n) in cols:
+                return cols[norm(n)]
+        return None
+
+    codigo = pick("codigo del material")
+    texto  = pick("texto breve de material")
+    unidad = pick("unidad medida", "unidad")
+    ubic   = pick("ubicacion")
+    fisico = pick("fisico")
+    stock  = pick("stock")
+    difere = pick("difere")
+    obs    = pick("observac", "observacion")
+
+    if not all([codigo, ubic, fisico]):
+        raise Exception("El Excel NO es un inventario histórico válido")
+
+    out = pd.DataFrame()
+    out["codigo"] = df[codigo].astype(str).str.strip()
+    out["texto"] = df[texto].astype(str).str.strip() if texto else ""
+    out["unidad"] = df[unidad].astype(str).str.strip() if unidad else ""
+    out["ubicacion"] = df[ubic].astype(str).str.upper().str.replace(" ", "")
+    out["fisico"] = pd.to_numeric(df[fisico], errors="coerce").fillna(0)
+    out["stock"] = pd.to_numeric(df[stock], errors="coerce").fillna(0) if stock else 0
+    out["difere"] = pd.to_numeric(df[difere], errors="coerce").fillna(0) if difere else 0
+    out["obs"] = df[obs].astype(str).str.strip() if obs else ""
+
+    return out
 
 # -----------------------------------------------------------------------------
 # HELPERS
@@ -345,3 +406,4 @@ def save_count_row():
 @login_required
 def save_count():
     return save_count_row()
+    
