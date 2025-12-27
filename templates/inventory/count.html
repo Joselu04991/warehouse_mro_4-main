@@ -57,6 +57,7 @@
             <th>Descripción</th>
             <th>UM</th>
             <th>Ubicación</th>
+            <th>Stock</th>
             <th style="width: 170px;">Conteo</th>
             <th style="width: 130px;">Estado</th>
           </tr>
@@ -68,18 +69,26 @@
             <td class="text-muted small">{{ i.material_text }}</td>
             <td class="text-center">{{ i.base_unit }}</td>
             <td class="text-center fw-semibold">{{ i.location }}</td>
+            <td class="text-center fw-semibold">{{ i.stock }}</td>
 
             <td>
               <input class="form-control text-center count-input"
                      inputmode="numeric"
                      pattern="[0-9]*"
                      placeholder="0"
+                     value="{{ i.real_count }}"
                      data-code="{{ i.material_code }}"
                      data-loc="{{ i.location }}">
             </td>
 
             <td class="text-center">
-              <span class="badge bg-secondary status-badge">Pendiente</span>
+              <span class="badge
+              {% if i.estado == 'OK' %}bg-success
+              {% elif i.estado == 'Diferencia' %}bg-warning
+              {% else %}bg-secondary{% endif %}
+            ">
+              {{ i.estado }}
+            </span>
             </td>
           </tr>
           {% endfor %}
@@ -305,3 +314,4 @@
 </script>
 
 {% endblock %}
+
