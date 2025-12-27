@@ -99,6 +99,11 @@
         <button id="btnSaveAll" class="btn btn-success">
           <i class="bi bi-cloud-check me-2"></i> Guardar todo
         </button>
+        <a href="{{ url_for('inventory.download_discrepancies') }}"
+           class="btn btn-outline-danger">
+          <i class="bi bi-file-earmark-excel me-2"></i>
+          Descargar discrepancias
+        </a>
       </div>
     </div>
   </div>
@@ -314,4 +319,5 @@
 </script>
 
 {% endblock %}
+
 
