@@ -8,7 +8,9 @@ from io import BytesIO
 import uuid
 import re
 import pandas as pd
-
+import os
+import re
+from datetime import datetime
 from flask import (
     Blueprint, render_template, request,
     redirect, url_for, flash,
@@ -85,7 +87,22 @@ def read_inventory_history_excel(file):
     out["ubicacion"] = out["ubicacion"].astype(str).str.upper().str.replace(" ", "")
 
     return out
+    
+def parse_snapshot_from_filename(filename: str):
+    """
+    Ejemplo:
+    inventario_2025_04_10.xlsx
+    """
+    name = os.path.splitext(filename)[0]
 
+    m = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", name)
+    if m:
+        y, mth, d = m.groups()
+        fecha = datetime(int(y), int(mth), int(d))
+    else:
+        fecha = datetime.utcnow()
+
+    return name, fecha
 # -----------------------------------------------------------------------------
 # HELPERS
 # -----------------------------------------------------------------------------
@@ -210,44 +227,54 @@ def upload_inventory():
 # -----------------------------------------------------------------------------
 # UPLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
-@inventory_bp.route("/upload-history", methods=["GET", "POST"])
+@inventory_bp.route("/upload-history", methods=["POST"])
 @login_required
 def upload_history():
 
-    if request.method == "POST":
-        file = request.files.get("file")
-        if not file:
-            flash("Selecciona un archivo Excel", "warning")
-            return redirect(request.url)
-
-        df = load_inventory_historic_excel(file)
-
-        sid = str(uuid.uuid4())
-        snapshot_name = f"inventario_{datetime.now().strftime('%Y_%m_%d')}"
-
-        for _, r in df.iterrows():
-            db.session.add(InventoryHistory(
-                user_id=current_user.id,
-                snapshot_id=sid,
-                snapshot_name=snapshot_name,
-                material_code=r["Código del Material"],
-                material_text=r["Texto breve de material"],
-                base_unit=r["Unidad Medida"],
-                location=r["Ubicación"],
-                fisico=r["Fisico"],
-                stock_sap=r["STOCK"],
-                difere=r["Difere"],
-                observacion=r["Observac."],
-                source_type="HISTORICO",
-                source_filename=file.filename,
-                creado_en=now_pe()
-            ))
-
-        db.session.commit()
-        flash("Inventario histórico cargado correctamente", "success")
+    file = request.files.get("file")
+    if not file:
+        flash("Archivo no válido", "danger")
         return redirect(url_for("inventory.history_inventory"))
 
-    return render_template("inventory/upload_history.html")
+    filename = file.filename
+
+    snapshot_name, snapshot_date = parse_snapshot_from_filename(filename)
+
+    # ⚠️ EVITAR DUPLICADOS
+    exists = InventoryHistory.query.filter_by(
+        user_id=current_user.id,
+        snapshot_name=snapshot_name,
+        source_filename=filename
+    ).first()
+
+    if exists:
+        flash("Este inventario ya fue cargado", "warning")
+        return redirect(url_for("inventory.history_inventory"))
+
+    df = load_inventory_historic_excel(file)
+    snapshot_id = str(uuid.uuid4())
+
+    for _, r in df.iterrows():
+        db.session.add(InventoryHistory(
+            user_id=current_user.id,
+            snapshot_id=snapshot_id,
+            snapshot_name=snapshot_name,
+            material_code=r["Código del Material"],
+            material_text=r["Texto breve de material"],
+            base_unit=r["Unidad Medida"],
+            location=r["Ubicación"],
+            fisico=r["Fisico"],
+            stock_sap=r["STOCK"],
+            difere=r["Difere"],
+            observacion=r["Observac."],
+            creado_en=snapshot_date,
+            source_type="HISTORICO",
+            source_filename=filename
+        ))
+
+    db.session.commit()
+    flash("Inventario histórico cargado correctamente", "success")
+    return redirect(url_for("inventory.history_inventory"))
 # -----------------------------------------------------------------------------
 # HISTORY
 # -----------------------------------------------------------------------------
@@ -565,3 +592,30 @@ def download_discrepancias():
         as_attachment=True,
         download_name="discrepancias_conteo.xlsx"
     )
+@inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
+@login_required
+def cleanup_duplicates():
+
+    subq = (
+        db.session.query(
+            InventoryHistory.snapshot_name,
+            func.max(InventoryHistory.creado_en).label("max_fecha")
+        )
+        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(InventoryHistory.snapshot_name)
+        .subquery()
+    )
+
+    deleted = (
+        InventoryHistory.query
+        .filter(
+            InventoryHistory.user_id == current_user.id,
+            InventoryHistory.snapshot_name == subq.c.snapshot_name,
+            InventoryHistory.creado_en < subq.c.max_fecha
+        )
+        .delete(synchronize_session=False)
+    )
+
+    db.session.commit()
+    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
+    return redirect(url_for("inventory.history_inventory"))
