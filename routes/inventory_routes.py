@@ -21,12 +21,8 @@ from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
-from utils.excel import (
-    load_inventory_excel,
-    load_inventory_historic_excel,   # 👈 ESTE FALTABA
-    generate_discrepancies_excel,
-    generate_history_snapshot_excel
-)
+from utils.excel import load_inventory_historic_excel
+from utils.excel import generate_discrepancies_excel
 # -----------------------------------------------------------------------------
 # CONFIG
 # -----------------------------------------------------------------------------
