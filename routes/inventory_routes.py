@@ -21,6 +21,7 @@ from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
+from utils.excel import generate_discrepancies_excel
 
 # -----------------------------------------------------------------------------
 # CONFIG
@@ -352,6 +353,9 @@ def count_inventory():
 def save_count_row():
     data = request.get_json() or {}
 
+    if not isinstance(data, dict):
+        return jsonify(success=False, msg="Formato inválido"), 400
+
     code = data.get("material_code")
     loc = data.get("location")
     real = safe_float(data.get("real_count"))
@@ -375,10 +379,7 @@ def save_count_row():
         row = InventoryCount(
             user_id=current_user.id,
             material_code=code,
-            material_text=item.material_text,
-            base_unit=item.base_unit,
-            location=loc,
-            stock_sistema=item.libre_utilizacion
+            location=loc
         )
         db.session.add(row)
 
@@ -395,7 +396,44 @@ def save_count_row():
 @inventory_bp.route("/save-count", methods=["POST"])
 @login_required
 def save_count():
-    return save_count_row()
+    data = request.get_json() or []
+
+    if not isinstance(data, list):
+        return jsonify(success=False, msg="Se esperaba lista"), 400
+
+    for d in data:
+        code = d.get("material_code")
+        loc = d.get("location")
+        real = safe_float(d.get("real_count"))
+
+        item = InventoryItem.query.filter_by(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        ).first()
+
+        if not item:
+            continue
+
+        row = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        ).first()
+
+        if not row:
+            row = InventoryCount(
+                user_id=current_user.id,
+                material_code=code,
+                location=loc
+            )
+            db.session.add(row)
+
+        row.real_count = real
+        row.contado_en = now_pe()
+
+    db.session.commit()
+    return jsonify(success=True)
     
 # =============================================================================
 # DESCARGAR EXCEL DE DISCREPANCIAS  ✅
