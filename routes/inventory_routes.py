@@ -397,22 +397,24 @@ def save_count_row():
 def save_count():
     return save_count_row()
     
-# -----------------------------------------------------------------------------
-# DESCARGA DE DISCREPANCIAS (EXCEL)
-# -----------------------------------------------------------------------------
-@inventory_bp.route("/discrepancies/download")
+# =============================================================================
+# DESCARGAR EXCEL DE DISCREPANCIAS  ✅
+# =============================================================================
+@inventory_bp.route("/discrepancias/excel")
 @login_required
-def download_discrepancies():
+def download_discrepancies_excel():
+
+    # Traemos inventario + conteo
     rows = (
         db.session.query(
             InventoryItem.material_code,
             InventoryItem.material_text,
             InventoryItem.base_unit,
             InventoryItem.location,
-            InventoryItem.libre_utilizacion.label("stock_sistema"),
+            InventoryItem.libre_utilizacion,
             InventoryCount.real_count
         )
-        .join(
+        .outerjoin(
             InventoryCount,
             db.and_(
                 InventoryItem.user_id == InventoryCount.user_id,
@@ -421,52 +423,38 @@ def download_discrepancies():
             )
         )
         .filter(InventoryItem.user_id == current_user.id)
-        .filter(InventoryCount.real_count != InventoryItem.libre_utilizacion)
         .all()
     )
 
-    if not rows:
-        flash("No existen discrepancias para descargar.", "info")
-        return redirect(url_for("inventory.count_inventory"))
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Discrepancias"
-
-    headers = [
-        "Código del Material",
-        "Descripción",
-        "Unidad de Medida",
-        "Ubicación",
-        "Stock Sistema",
-        "Conteo Físico",
-        "Diferencia"
-    ]
-    ws.append(headers)
-
+    data = []
     for r in rows:
-        diferencia = (r.real_count or 0) - (r.stock_sistema or 0)
-        ws.append([
-            r.material_code,
-            r.material_text,
-            r.base_unit,
-            r.location,
-            r.stock_sistema,
-            r.real_count,
-            diferencia
-        ])
+        stock_sistema = r.libre_utilizacion or 0
+        stock_contado = r.real_count or 0
+        diferencia = stock_contado - stock_sistema
 
-    for col in ws.columns:
-        ws.column_dimensions[col[0].column_letter].width = 22
+        data.append({
+            "Código Material": r.material_code,
+            "Descripción": r.material_text,
+            "Unidad": r.base_unit,
+            "Ubicación": r.location,
+            "Stock sistema": stock_sistema,
+            "Stock contado": stock_contado,
+            "Diferencia": diferencia,
+        })
 
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
+    df = pd.DataFrame(data)
+
+    meta = {
+        "generado_por": current_user.username if hasattr(current_user, "username") else "Usuario",
+        "generado_en": now_pe().strftime("%Y-%m-%d %H:%M")
+    }
+
+    output = generate_discrepancies_excel(df, meta)
 
     return send_file(
         output,
         as_attachment=True,
-        download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
+        download_name="discrepancias_inventario.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
     
