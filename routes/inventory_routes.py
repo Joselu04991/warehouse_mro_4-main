@@ -87,23 +87,7 @@ def read_inventory_history_excel(file):
     out["ubicacion"] = out["ubicacion"].astype(str).str.upper().str.replace(" ", "")
 
     return out
-    
-    def parse_snapshot_from_filename(filename: str):
-    """
-    inventario_2025_04_10.xlsx
-    -> name: inventario_2025_04_10
-    -> date: 2025-04-10
-    """
-    base = filename.lower().replace(".xlsx", "").replace(".xls", "")
 
-    match = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", base)
-    if match:
-        y, m, d = match.groups()
-        fecha = datetime(int(y), int(m), int(d))
-    else:
-        fecha = None
-
-    return base, fecha
 # -----------------------------------------------------------------------------
 # HELPERS
 # -----------------------------------------------------------------------------
@@ -124,6 +108,23 @@ def safe_float(v):
         return float(v)
     except:
         return 0.0
+        
+def parse_snapshot_from_filename(filename: str):
+    """
+    inventario_2025_04_10.xlsx
+    -> name: inventario_2025_04_10
+    -> date: 2025-04-10
+    """
+    base = filename.lower().replace(".xlsx", "").replace(".xls", "")
+
+    match = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", base)
+    if match:
+        y, m, d = match.groups()
+        fecha = datetime(int(y), int(m), int(d))
+    else:
+        fecha = now_pe()  # fallback seguro
+
+    return base, fecha
 
 # -----------------------------------------------------------------------------
 # EXCEL ANTIGUO (TOLERANTE)
