@@ -286,7 +286,53 @@ def cleanup_duplicates():
     flash(f"Se eliminaron {deleted} registros duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
-@inventory_bp.route("/count")
+@inventory_bp.route("/count", endpoint="count_inventory")
 @login_required
 def count_inventory():
-    return render_template("inventory/count.html", items=[])
+
+    rows = (
+        db.session.query(
+            InventoryItem.material_code,
+            InventoryItem.material_text,
+            InventoryItem.base_unit,
+            InventoryItem.location,
+            InventoryItem.libre_utilizacion,
+            InventoryCount.real_count
+        )
+        .outerjoin(
+            InventoryCount,
+            db.and_(
+                InventoryItem.user_id == InventoryCount.user_id,
+                InventoryItem.material_code == InventoryCount.material_code,
+                InventoryItem.location == InventoryCount.location
+            )
+        )
+        .filter(InventoryItem.user_id == current_user.id)
+        .order_by(InventoryItem.location)
+        .all()
+    )
+
+    items = []
+    for r in rows:
+        stock = r.libre_utilizacion or 0
+        real = r.real_count or 0
+
+        if real == 0:
+            estado = "Pendiente"
+        elif real == stock:
+            estado = "OK"
+        else:
+            estado = "Diferencia"
+
+        items.append({
+            "material_code": r.material_code,
+            "material_text": r.material_text,
+            "base_unit": r.base_unit,
+            "location": r.location,
+            "stock": stock,
+            "real_count": real,
+            "estado": estado
+        })
+
+    return render_template("inventory/count.html", items=items)
+
