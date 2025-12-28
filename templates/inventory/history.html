@@ -87,12 +87,6 @@
               {{ s.source_filename or '—' }}
             </td>
 
-            <td class="text-center">
-              <a href="{{ url_for('inventory.history_detail', snapshot_id=s.snapshot_id) }}"
-                 class="btn btn-sm btn-outline-primary me-1">
-                <i class="bi bi-eye me-1"></i> Ver
-              </a>
-
               <a href="{{ url_for('inventory.history_download', snapshot_id=s.snapshot_id) }}"
                  class="btn btn-sm btn-outline-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Excel
