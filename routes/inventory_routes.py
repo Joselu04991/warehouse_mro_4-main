@@ -16,7 +16,7 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from openpyxl import Workbook
-
+from sqlalchemy import func 
 from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
