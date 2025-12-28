@@ -34,7 +34,6 @@ def now_pe():
     
 def read_inventory_actual_excel(file):
     df = pd.read_excel(file, dtype=object)
-
     cols = {norm(c): c for c in df.columns}
 
     def pick(*names):
@@ -45,25 +44,24 @@ def read_inventory_actual_excel(file):
 
     codigo = pick("codigo del material")
     texto = pick("texto breve de material")
-    unidad = pick("unidad de medida base")
-    ubic   = pick("ubicacion")
-    libre  = pick("libre utilizacion", "libre utilización")
+    unidad = pick("unidad de medida base", "unidad")
+    ubic = pick("ubicacion")
+    libre = pick("libre utilizacion", "libre utilización")
 
-    if not all([codigo, texto, unidad, ubic, libre]):
+    if not codigo or not ubic or not libre:
         raise Exception("Excel de inventario ACTUAL inválido")
 
     out = pd.DataFrame()
     out["codigo"] = df[codigo].astype(str).str.strip()
-    out["texto"] = df[texto].astype(str).str.strip()
-    out["unidad"] = df[unidad].astype(str).str.strip()
+    out["texto"] = df[texto] if texto else ""
+    out["unidad"] = df[unidad] if unidad else ""
     out["ubicacion"] = df[ubic].astype(str).str.upper().str.replace(" ", "")
     out["libre"] = pd.to_numeric(df[libre], errors="coerce").fillna(0)
 
     return out
     
-def read_inventory_historico_excel(file):
+def read_inventory_history_excel(file):
     df = pd.read_excel(file, dtype=object)
-
     cols = {norm(c): c for c in df.columns}
 
     def pick(*names):
@@ -72,27 +70,18 @@ def read_inventory_historico_excel(file):
                 return cols[norm(n)]
         return None
 
-    codigo = pick("codigo del material")
-    texto  = pick("texto breve de material")
-    unidad = pick("unidad medida", "unidad de medida")
-    ubic   = pick("ubicacion")
-    fisico = pick("fisico")
-    stock  = pick("stock")
-    difere = pick("difere")
-    obs    = pick("observac", "observacion")
-
-    if not all([codigo, texto, unidad, ubic]):
-        raise Exception("Excel HISTÓRICO inválido")
-
     out = pd.DataFrame()
-    out["codigo"] = df[codigo].astype(str).str.strip()
-    out["texto"] = df[texto].astype(str).str.strip()
-    out["unidad"] = df[unidad].astype(str).str.strip()
-    out["ubicacion"] = df[ubic].astype(str).str.upper().str.replace(" ", "")
-    out["fisico"] = pd.to_numeric(df[fisico], errors="coerce").fillna(0) if fisico else 0
-    out["stock"] = pd.to_numeric(df[stock], errors="coerce").fillna(0) if stock else 0
-    out["difere"] = pd.to_numeric(df[difere], errors="coerce").fillna(0) if difere else 0
-    out["obs"] = df[obs].astype(str).str.strip() if obs else ""
+    out["codigo"] = df[pick("codigo del material")]
+    out["texto"] = df[pick("texto breve de material")]
+    out["unidad"] = df[pick("unidad medida", "unidad")]
+    out["ubicacion"] = df[pick("ubicacion")]
+    out["fisico"] = pd.to_numeric(df[pick("fisico")], errors="coerce").fillna(0)
+    out["stock"] = pd.to_numeric(df[pick("stock")], errors="coerce").fillna(0)
+    out["difere"] = pd.to_numeric(df[pick("difere")], errors="coerce").fillna(0)
+    out["obs"] = df[pick("observac")] if pick("observac") else ""
+
+    out["codigo"] = out["codigo"].astype(str).str.strip()
+    out["ubicacion"] = out["ubicacion"].astype(str).str.upper().str.replace(" ", "")
 
     return out
 
@@ -191,7 +180,7 @@ def list_inventory():
 # UPLOAD INVENTARIO
 # -----------------------------------------------------------------------------
 
-@inventory_bp.route("/upload", methods=["GET","POST"])
+@inventory_bp.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_inventory():
     if request.method == "POST":
@@ -212,7 +201,7 @@ def upload_inventory():
             ))
 
         db.session.commit()
-        flash("Inventario cargado", "success")
+        flash("Inventario diario cargado correctamente", "success")
         return redirect(url_for("inventory.list_inventory"))
 
     return render_template("inventory/upload.html")
@@ -220,12 +209,11 @@ def upload_inventory():
 # -----------------------------------------------------------------------------
 # UPLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
-
-@inventory_bp.route("/upload-history", methods=["GET","POST"])
+@inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
     if request.method == "POST":
-        df = read_inventory_historico_excel(request.files["file"])
+        df = read_inventory_history_excel(request.files["file"])
         sid = str(uuid.uuid4())
         name = f"Inventario Histórico {now_pe():%Y-%m-%d %H:%M}"
 
@@ -242,16 +230,14 @@ def upload_history():
                 stock_sap=r["stock"],
                 difere=r["difere"],
                 observacion=r["obs"],
-                creado_en=now_pe(),
-                source_type="HISTORICO"
+                creado_en=now_pe()
             ))
 
         db.session.commit()
-        flash("Histórico cargado", "success")
+        flash("Inventario histórico cargado", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
-
 # -----------------------------------------------------------------------------
 # HISTORY
 # -----------------------------------------------------------------------------
@@ -484,4 +470,55 @@ def download_discrepancies():
 ,
         download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+@inventory_bp.route("/count/discrepancias")
+@login_required
+def download_discrepancias():
+    rows = (
+        db.session.query(
+            InventoryItem,
+            InventoryCount.real_count
+        )
+        .outerjoin(
+            InventoryCount,
+            db.and_(
+                InventoryItem.user_id == InventoryCount.user_id,
+                InventoryItem.material_code == InventoryCount.material_code,
+                InventoryItem.location == InventoryCount.location
+            )
+        )
+        .filter(InventoryItem.user_id == current_user.id)
+        .all()
+    )
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Discrepancias"
+    ws.append([
+        "Código", "Texto", "Unidad", "Ubicación",
+        "Stock Sistema", "Conteo Físico", "Diferencia"
+    ])
+
+    for item, real in rows:
+        real = real or 0
+        diff = real - item.libre_utilizacion
+        if diff != 0:
+            ws.append([
+                item.material_code,
+                item.material_text,
+                item.base_unit,
+                item.location,
+                item.libre_utilizacion,
+                real,
+                diff
+            ])
+
+    out = BytesIO()
+    wb.save(out)
+    out.seek(0)
+
+    return send_file(
+        out,
+        as_attachment=True,
+        download_name="discrepancias_conteo.xlsx"
     )
