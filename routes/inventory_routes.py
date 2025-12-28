@@ -213,79 +213,76 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
+
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Debe seleccionar un archivo", "danger")
+            flash("Debe subir un archivo", "danger")
             return redirect(request.url)
 
-        # 🔹 nombre REAL del archivo
-        original_name = file.filename
+        filename = file.filename
+        snapshot_name = filename.replace(".xlsx", "").replace(".xls", "")
 
-        # 🔹 leer excel histórico
         df = load_inventory_historic_excel(file)
 
         snapshot_id = str(uuid.uuid4())
-        snapshot_name = original_name  # 👈 AQUÍ ESTÁ LA CLAVE
-        creado_en = now_pe()
+        now = now_pe()
 
         for _, r in df.iterrows():
             db.session.add(InventoryHistory(
                 user_id=current_user.id,
                 snapshot_id=snapshot_id,
                 snapshot_name=snapshot_name,
+
                 material_code=r["Código del Material"],
                 material_text=r["Texto breve de material"],
                 base_unit=r["Unidad Medida"],
                 location=r["Ubicación"],
+
                 fisico=r["Fisico"],
                 stock_sap=r["STOCK"],
                 difere=r["Difere"],
                 observacion=r["Observac."],
-                creado_en=creado_en,
+
+                creado_en=now,
                 source_type="HISTORICO",
-                source_filename=snapshot_name
+                source_filename=filename
             ))
 
         db.session.commit()
 
-        flash(f"Inventario histórico '{snapshot_name}' cargado correctamente", "success")
+        flash("Inventario histórico cargado correctamente", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
 # -----------------------------------------------------------------------------
 # HISTORY
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    rows = InventoryHistory.query.filter_by(user_id=current_user.id).all()
-    snaps = {}
+
+    rows = InventoryHistory.query.filter_by(
+        user_id=current_user.id
+    ).order_by(InventoryHistory.creado_en.desc()).all()
+
+    snapshots = {}
 
     for r in rows:
-        snaps.setdefault(r.snapshot_id, {
-            "snapshot_id": r.snapshot_id,
-            "snapshot_name": r.snapshot_name,
-            "total": 0
-        })
-        snaps[r.snapshot_id]["total"] += 1
+        if r.snapshot_id not in snapshots:
+            snapshots[r.snapshot_id] = {
+                "snapshot_id": r.snapshot_id,
+                "fecha": r.creado_en.strftime("%Y-%m-%d %H:%M") if r.creado_en else "-",
+                "tipo": r.source_type or "-",
+                "archivo": r.source_filename or "-",
+                "total": 0
+            }
+        snapshots[r.snapshot_id]["total"] += 1
 
     return render_template(
         "inventory/history.html",
-        snapshots=list(snaps.values()),
-        total_pages=1,
-        current_page=1
+        snapshots=list(snapshots.values())
     )
-
-@inventory_bp.route("/history/<snapshot_id>")
-@login_required
-def history_detail(snapshot_id):
-    rows = InventoryHistory.query.filter_by(
-        user_id=current_user.id,
-        snapshot_id=snapshot_id
-    ).all()
-    return render_template("inventory/history_detail.html", rows=rows)
 
 @inventory_bp.route("/history/<snapshot_id>/download")
 @login_required
