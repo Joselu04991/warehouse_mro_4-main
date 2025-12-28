@@ -1,5 +1,5 @@
 # =============================================================================
-# INVENTORY ROUTES – SISTEMA MRO (ESTABLE Y LIMPIO)
+# INVENTORY ROUTES – SISTEMA MRO (COMPATIBLE CON TU MODELO REAL)
 # =============================================================================
 
 from datetime import datetime
@@ -10,38 +10,34 @@ import pandas as pd
 
 from flask import (
     Blueprint, render_template, request,
-    redirect, url_for, flash,
-    send_file, jsonify
+    redirect, url_for, flash, send_file, jsonify
 )
 from flask_login import login_required, current_user
 from openpyxl import Workbook
-from sqlalchemy import func, and_
+from sqlalchemy import func
 
 from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
-
 from utils.excel import (
     load_inventory_historic_excel,
     generate_discrepancies_excel
 )
 
-# =============================================================================
+# -----------------------------------------------------------------------------
 # CONFIG
-# =============================================================================
+# -----------------------------------------------------------------------------
 
 inventory_bp = Blueprint("inventory", __name__, url_prefix="/inventory")
 TZ = ZoneInfo("America/Lima")
 
-
 def now_pe():
     return datetime.now(TZ).replace(tzinfo=None)
 
-
-# =============================================================================
+# -----------------------------------------------------------------------------
 # HELPERS
-# =============================================================================
+# -----------------------------------------------------------------------------
 
 def norm(t):
     if not t:
@@ -49,11 +45,10 @@ def norm(t):
     t = str(t).lower().strip()
     t = re.sub(r"\s+", " ", t)
     return (
-        t.replace("á", "a").replace("é", "e")
-         .replace("í", "i").replace("ó", "o")
-         .replace("ú", "u").replace("ñ", "n")
+        t.replace("á","a").replace("é","e")
+         .replace("í","i").replace("ó","o")
+         .replace("ú","u").replace("ñ","n")
     )
-
 
 def safe_float(v):
     try:
@@ -61,23 +56,19 @@ def safe_float(v):
     except:
         return 0.0
 
-
 def parse_snapshot_from_filename(filename: str):
     base = filename.lower().replace(".xlsx", "").replace(".xls", "")
     match = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", base)
-
     if match:
         y, m, d = match.groups()
         fecha = datetime(int(y), int(m), int(d))
     else:
         fecha = now_pe()
-
     return base, fecha
 
-
-# =============================================================================
+# -----------------------------------------------------------------------------
 # DASHBOARD
-# =============================================================================
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/dashboard")
 @login_required
@@ -94,14 +85,12 @@ def dashboard_inventory():
             "OK": len(items) - crit - bajo,
             "BAJO": bajo,
             "CRITICO": crit
-        },
-        items=items
+        }
     )
 
-
-# =============================================================================
-# LISTADO INVENTARIO
-# =============================================================================
+# -----------------------------------------------------------------------------
+# INVENTARIO ACTUAL
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/list")
 @login_required
@@ -109,10 +98,9 @@ def list_inventory():
     items = InventoryItem.query.filter_by(user_id=current_user.id).all()
     return render_template("inventory/list.html", items=items)
 
-
-# =============================================================================
+# -----------------------------------------------------------------------------
 # UPLOAD INVENTARIO ACTUAL
-# =============================================================================
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -126,11 +114,11 @@ def upload_inventory():
         for _, r in df.iterrows():
             db.session.add(InventoryItem(
                 user_id=current_user.id,
-                material_code=str(r.get("Código del Material", "")).strip(),
-                material_text=str(r.get("Texto breve de material", "")).strip(),
-                base_unit=str(r.get("Unidad Medida", "")).strip(),
-                location=str(r.get("Ubicación", "")).upper().replace(" ", ""),
-                libre_utilizacion=safe_float(r.get("Libre utilización", 0)),
+                material_code=str(r.get("Código del Material","")).strip(),
+                material_text=r.get("Texto breve de material",""),
+                base_unit=r.get("Unidad Medida",""),
+                location=str(r.get("Ubicación","")).upper(),
+                libre_utilizacion=safe_float(r.get("Libre utilización")),
                 creado_en=now_pe()
             ))
 
@@ -140,231 +128,160 @@ def upload_inventory():
 
     return render_template("inventory/upload.html")
 
-
-# =============================================================================
-# UPLOAD HISTÓRICO (GET + POST)
-# =============================================================================
+# -----------------------------------------------------------------------------
+# UPLOAD HISTÓRICO (CLAVE – COMPATIBLE CON TU MODELO)
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/upload-history", methods=["GET"])
 @login_required
 def upload_history_form():
     return render_template("inventory/upload_history.html")
 
-
 @inventory_bp.route("/upload-history", methods=["POST"])
 @login_required
 def upload_history():
-    file = request.files.get("file")
 
+    file = request.files.get("file")
     if not file:
         flash("Debe subir un archivo Excel", "warning")
-        return redirect(url_for("inventory.upload_history_form"))
+        return redirect(url_for("inventory.history_inventory"))
 
     df = load_inventory_historic_excel(file)
     snapshot_name, fecha_archivo = parse_snapshot_from_filename(file.filename)
 
-    snapshot = InventoryHistory(
-        snapshot_name=snapshot_name,
-        source_filename=file.filename,
-        source_type="HISTORICO",
-        creado_en=fecha_archivo,
-        user_id=current_user.id
-    )
+    snapshot_id = f"{snapshot_name}_{int(now_pe().timestamp())}"
 
-    db.session.add(snapshot)
-    db.session.flush()
-
-    for _, r in df.iterrows():
-        db.session.add(InventoryItem(
+    for i, r in df.iterrows():
+        db.session.add(InventoryHistory(
             user_id=current_user.id,
-            snapshot_id=snapshot.snapshot_id,
-            material_code=r["Código del Material"],
-            material_text=r["Texto breve de material"],
-            base_unit=r["Unidad Medida"],
-            location=r["Ubicación"],
-            libre_utilizacion=safe_float(r.get("Fisico", 0))
+            snapshot_id=snapshot_id,
+            snapshot_name=snapshot_name,
+            item_n=i + 1,
+            material_code=r.get("Código del Material"),
+            material_text=r.get("Texto breve de material"),
+            base_unit=r.get("Unidad Medida"),
+            location=r.get("Ubicación"),
+            fisico=safe_float(r.get("Fisico")),
+            stock_sap=safe_float(r.get("Stock")),
+            difere=safe_float(r.get("Difere")),
+            observacion=r.get("Obs"),
+            creado_en=fecha_archivo,
+            source_type="HISTORICO",
+            source_filename=file.filename
         ))
 
     db.session.commit()
     flash("Inventario histórico cargado correctamente", "success")
     return redirect(url_for("inventory.history_inventory"))
 
-
-# =============================================================================
-# HISTORY
-# =============================================================================
+# -----------------------------------------------------------------------------
+# HISTORY (AGRUPADO POR SNAPSHOT_ID)
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    snapshots = (
-        InventoryHistory.query
-        .filter_by(user_id=current_user.id)
+
+    page = int(request.args.get("page", 1))
+    per_page = 10
+
+    q = (
+        db.session.query(
+            InventoryHistory.snapshot_id,
+            InventoryHistory.snapshot_name,
+            InventoryHistory.source_filename,
+            InventoryHistory.creado_en,
+            func.count().label("total")
+        )
+        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(
+            InventoryHistory.snapshot_id,
+            InventoryHistory.snapshot_name,
+            InventoryHistory.source_filename,
+            InventoryHistory.creado_en
+        )
         .order_by(InventoryHistory.creado_en.desc())
-        .all()
     )
 
-    return render_template("inventory/history.html", snapshots=snapshots)
+    total = q.count()
+    pages = max(1, (total + per_page - 1) // per_page)
 
+    snapshots = q.offset((page-1)*per_page).limit(per_page).all()
 
-# =============================================================================
+    return render_template(
+        "inventory/history.html",
+        snapshots=snapshots,
+        page=page,
+        total_pages=pages
+    )
+
+# -----------------------------------------------------------------------------
+# DOWNLOAD HISTÓRICO
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/history/<snapshot_id>/download")
+@login_required
+def history_download(snapshot_id):
+
+    rows = InventoryHistory.query.filter_by(
+        user_id=current_user.id,
+        snapshot_id=snapshot_id
+    ).all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["Código","Texto","Unidad","Ubicación","Físico","Stock","Difere","Obs"])
+
+    for r in rows:
+        ws.append([
+            r.material_code,
+            r.material_text,
+            r.base_unit,
+            r.location,
+            r.fisico,
+            r.stock_sap,
+            r.difere,
+            r.observacion
+        ])
+
+    out = BytesIO()
+    wb.save(out)
+    out.seek(0)
+
+    return send_file(out, as_attachment=True, download_name="historico.xlsx")
+
+# -----------------------------------------------------------------------------
 # LIMPIAR DUPLICADOS
-# =============================================================================
+# -----------------------------------------------------------------------------
 
 @inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
 @login_required
 def cleanup_duplicates():
-    duplicates = (
+
+    sub = (
         db.session.query(
-            InventoryHistory.source_filename
+            InventoryHistory.snapshot_name,
+            func.max(InventoryHistory.creado_en).label("max_fecha")
         )
-        .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(InventoryHistory.source_filename)
-        .having(func.count() > 1)
+        .group_by(InventoryHistory.snapshot_name)
+        .subquery()
+    )
+
+    to_delete = (
+        InventoryHistory.query
+        .join(
+            sub,
+            (InventoryHistory.snapshot_name == sub.c.snapshot_name) &
+            (InventoryHistory.creado_en < sub.c.max_fecha)
+        )
         .all()
     )
 
-    deleted = 0
+    deleted = len(to_delete)
 
-    for (filename,) in duplicates:
-        snaps = (
-            InventoryHistory.query
-            .filter_by(user_id=current_user.id, source_filename=filename)
-            .order_by(InventoryHistory.creado_en.desc())
-            .all()
-        )
-
-        for s in snaps[1:]:
-            InventoryItem.query.filter_by(snapshot_id=s.snapshot_id).delete()
-            db.session.delete(s)
-            deleted += 1
+    for r in to_delete:
+        db.session.delete(r)
 
     db.session.commit()
-    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
+    flash(f"Se eliminaron {deleted} registros duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
-
-
-# =============================================================================
-# CONTEO
-# =============================================================================
-
-@inventory_bp.route("/count")
-@login_required
-def count_inventory():
-    rows = (
-        db.session.query(
-            InventoryItem,
-            InventoryCount.real_count
-        )
-        .outerjoin(
-            InventoryCount,
-            and_(
-                InventoryItem.user_id == InventoryCount.user_id,
-                InventoryItem.material_code == InventoryCount.material_code,
-                InventoryItem.location == InventoryCount.location
-            )
-        )
-        .filter(InventoryItem.user_id == current_user.id)
-        .order_by(InventoryItem.location)
-        .all()
-    )
-
-    data = []
-    for item, real in rows:
-        real = real or 0
-        estado = "Pendiente" if real == 0 else "OK" if real == item.libre_utilizacion else "Diferencia"
-
-        data.append({
-            "material_code": item.material_code,
-            "material_text": item.material_text,
-            "base_unit": item.base_unit,
-            "location": item.location,
-            "stock": item.libre_utilizacion,
-            "real_count": real,
-            "estado": estado
-        })
-
-    return render_template("inventory/count.html", items=data)
-
-
-# =============================================================================
-# GUARDAR CONTEO
-# =============================================================================
-
-@inventory_bp.route("/save-count", methods=["POST"])
-@login_required
-def save_count():
-    data = request.get_json()
-
-    for d in data:
-        row = InventoryCount.query.filter_by(
-            user_id=current_user.id,
-            material_code=d["material_code"],
-            location=d["location"]
-        ).first()
-
-        if not row:
-            row = InventoryCount(
-                user_id=current_user.id,
-                material_code=d["material_code"],
-                location=d["location"]
-            )
-            db.session.add(row)
-
-        row.real_count = safe_float(d["real_count"])
-        row.contado_en = now_pe()
-
-    db.session.commit()
-    return jsonify(success=True)
-
-
-# =============================================================================
-# EXCEL DISCREPANCIAS
-# =============================================================================
-
-@inventory_bp.route("/discrepancias/excel")
-@login_required
-def download_discrepancies_excel():
-    rows = (
-        db.session.query(
-            InventoryItem.material_code,
-            InventoryItem.material_text,
-            InventoryItem.base_unit,
-            InventoryItem.location,
-            InventoryItem.libre_utilizacion,
-            InventoryCount.real_count
-        )
-        .outerjoin(
-            InventoryCount,
-            and_(
-                InventoryItem.user_id == InventoryCount.user_id,
-                InventoryItem.material_code == InventoryCount.material_code,
-                InventoryItem.location == InventoryCount.location
-            )
-        )
-        .filter(InventoryItem.user_id == current_user.id)
-        .all()
-    )
-
-    df = pd.DataFrame([{
-        "Código Material": r.material_code,
-        "Descripción": r.material_text,
-        "Unidad": r.base_unit,
-        "Ubicación": r.location,
-        "Stock sistema": r.libre_utilizacion or 0,
-        "Stock contado": r.real_count or 0,
-        "Diferencia": (r.real_count or 0) - (r.libre_utilizacion or 0)
-    } for r in rows])
-
-    meta = {
-        "generado_por": getattr(current_user, "username", "Usuario"),
-        "generado_en": now_pe().strftime("%Y-%m-%d %H:%M")
-    }
-
-    output = generate_discrepancies_excel(df, meta)
-
-    return send_file(
-        output,
-        as_attachment=True,
-        download_name="discrepancias_inventario.xlsx"
-    )
