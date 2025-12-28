@@ -229,6 +229,11 @@ def upload_inventory():
 # -----------------------------------------------------------------------------
 # UPLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
+@inventory_bp.route("/upload-history", methods=["GET"])
+@login_required
+def upload_history_form():
+    return render_template("inventory/upload_history.html")
+
 @inventory_bp.route("/upload-history", methods=["POST"])
 @login_required
 def upload_history():
