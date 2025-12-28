@@ -21,8 +21,12 @@ from models import db
 from models.inventory import InventoryItem
 from models.inventory_history import InventoryHistory
 from models.inventory_count import InventoryCount
-from utils.excel import generate_discrepancies_excel
-
+from utils.excel import (
+    load_inventory_excel,
+    load_inventory_historic_excel,   # 👈 ESTE FALTABA
+    generate_discrepancies_excel,
+    generate_history_snapshot_excel
+)
 # -----------------------------------------------------------------------------
 # CONFIG
 # -----------------------------------------------------------------------------
@@ -213,44 +217,41 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
-
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Debe subir un archivo", "danger")
+            flash("Debes subir un archivo", "danger")
             return redirect(request.url)
-
-        filename = file.filename
-        snapshot_name = filename.replace(".xlsx", "").replace(".xls", "")
 
         df = load_inventory_historic_excel(file)
 
         snapshot_id = str(uuid.uuid4())
-        now = now_pe()
+
+        # 🔥 nombre REAL del archivo
+        filename = file.filename or "inventario_historico.xlsx"
+
+        snapshot_name = filename.replace(".xlsx", "").replace(".xls", "")
+        creado_en = now_pe()
 
         for _, r in df.iterrows():
             db.session.add(InventoryHistory(
                 user_id=current_user.id,
                 snapshot_id=snapshot_id,
-                snapshot_name=snapshot_name,
-
+                snapshot_name=snapshot_name,     # 👈 NOMBRE CORRECTO
                 material_code=r["Código del Material"],
                 material_text=r["Texto breve de material"],
                 base_unit=r["Unidad Medida"],
                 location=r["Ubicación"],
-
                 fisico=r["Fisico"],
                 stock_sap=r["STOCK"],
                 difere=r["Difere"],
                 observacion=r["Observac."],
-
-                creado_en=now,
-                source_type="HISTORICO",
-                source_filename=filename
+                creado_en=creado_en,             # 👈 FECHA REAL
+                source_type="HISTORICO",         # 👈 TIPO
+                source_filename=filename         # 👈 ARCHIVO
             ))
 
         db.session.commit()
-
         flash("Inventario histórico cargado correctamente", "success")
         return redirect(url_for("inventory.history_inventory"))
 
