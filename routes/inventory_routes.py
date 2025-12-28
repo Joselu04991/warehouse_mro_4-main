@@ -213,20 +213,18 @@ def upload_inventory():
 @inventory_bp.route("/upload-history", methods=["GET", "POST"])
 @login_required
 def upload_history():
+
     if request.method == "POST":
         file = request.files.get("file")
         if not file:
-            flash("Debes subir un archivo", "danger")
+            flash("Selecciona un archivo Excel", "warning")
             return redirect(request.url)
 
         df = load_inventory_historic_excel(file)
 
-        snapshot_id = str(uuid.uuid4())
+        sid = str(uuid.uuid4())
+        snapshot_name = f"inventario_{datetime.now().strftime('%Y_%m_%d')}"
 
-        # 🔥 nombre REAL del archivo
-        filename = request.files["file"].filename
-        snapshot_name = filename.replace(".xlsx", "")
-        
         for _, r in df.iterrows():
             db.session.add(InventoryHistory(
                 user_id=current_user.id,
@@ -240,10 +238,11 @@ def upload_history():
                 stock_sap=r["STOCK"],
                 difere=r["Difere"],
                 observacion=r["Observac."],
-                creado_en=now_pe(),
                 source_type="HISTORICO",
-                source_filename=filename,
+                source_filename=file.filename,
+                creado_en=now_pe()
             ))
+
         db.session.commit()
         flash("Inventario histórico cargado correctamente", "success")
         return redirect(url_for("inventory.history_inventory"))
@@ -255,57 +254,54 @@ def upload_history():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-    # -------- filtros ----------
-    desde = request.args.get("desde")
-    hasta = request.args.get("hasta")
+
     page = int(request.args.get("page", 1))
     per_page = 10
 
-    q = InventoryHistory.query.filter_by(user_id=current_user.id)
+    desde = request.args.get("desde")
+    hasta = request.args.get("hasta")
+
+    q = (
+        db.session.query(
+            InventoryHistory.snapshot_id,
+            InventoryHistory.snapshot_name,
+            InventoryHistory.source_type,
+            InventoryHistory.source_filename,
+            InventoryHistory.creado_en,
+            func.count().label("total")
+        )
+        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(
+            InventoryHistory.snapshot_id,
+            InventoryHistory.snapshot_name,
+            InventoryHistory.source_type,
+            InventoryHistory.source_filename,
+            InventoryHistory.creado_en
+        )
+        .order_by(InventoryHistory.creado_en.desc())
+    )
 
     if desde:
         q = q.filter(InventoryHistory.creado_en >= desde)
+
     if hasta:
         q = q.filter(InventoryHistory.creado_en <= hasta)
 
-    q = q.order_by(InventoryHistory.creado_en.desc())
+    total_snapshots = q.count()
+    total_pages = max(1, (total_snapshots + per_page - 1) // per_page)
 
-    total_snapshots = (
-        q.with_entities(InventoryHistory.snapshot_id)
-        .distinct()
-        .count()
+    snapshots = (
+        q.offset((page - 1) * per_page)
+         .limit(per_page)
+         .all()
     )
-
-    rows = q.all()
-
-    # -------- agrupar snapshots ----------
-    snapshots_map = {}
-    for r in rows:
-        if r.snapshot_id not in snapshots_map:
-            snapshots_map[r.snapshot_id] = {
-                "snapshot_id": r.snapshot_id,
-                "snapshot_name": r.snapshot_name,
-                "creado_en": r.creado_en,
-                "source_type": r.source_type,
-                "source_filename": r.source_filename,
-                "total": 0
-            }
-        snapshots_map[r.snapshot_id]["total"] += 1
-
-    snapshots = list(snapshots_map.values())
-
-    # -------- paginación segura ----------
-    total_pages = max(1, (len(snapshots) + per_page - 1) // per_page)
-    start = (page - 1) * per_page
-    end = start + per_page
-    snapshots_page = snapshots[start:end]
 
     return render_template(
         "inventory/history.html",
-        snapshots=snapshots_page,
-        total_snapshots=total_snapshots,
-        total_pages=total_pages,
+        snapshots=snapshots,
         page=page,
+        total_pages=total_pages,
+        total_snapshots=total_snapshots,
         desde=desde,
         hasta=hasta
     )
