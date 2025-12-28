@@ -255,12 +255,11 @@ def upload_history():
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-
-    page = int(request.args.get("page", 1))
-    per_page = 10
-
+    # -------- filtros ----------
     desde = request.args.get("desde")
     hasta = request.args.get("hasta")
+    page = int(request.args.get("page", 1))
+    per_page = 10
 
     q = InventoryHistory.query.filter_by(user_id=current_user.id)
 
@@ -271,32 +270,44 @@ def history_inventory():
 
     q = q.order_by(InventoryHistory.creado_en.desc())
 
-    total = q.count()
-    total_pages = max(1, (total + per_page - 1) // per_page)
+    total_snapshots = (
+        q.with_entities(InventoryHistory.snapshot_id)
+        .distinct()
+        .count()
+    )
 
-    rows = q.offset((page - 1) * per_page).limit(per_page).all()
+    rows = q.all()
 
-    snapshots = {}
+    # -------- agrupar snapshots ----------
+    snapshots_map = {}
     for r in rows:
-        if r.snapshot_id not in snapshots:
-            snapshots[r.snapshot_id] = {
+        if r.snapshot_id not in snapshots_map:
+            snapshots_map[r.snapshot_id] = {
                 "snapshot_id": r.snapshot_id,
                 "snapshot_name": r.snapshot_name,
                 "creado_en": r.creado_en,
                 "source_type": r.source_type,
                 "source_filename": r.source_filename,
-                "total": 0,
+                "total": 0
             }
-        snapshots[r.snapshot_id]["total"] += 1
+        snapshots_map[r.snapshot_id]["total"] += 1
+
+    snapshots = list(snapshots_map.values())
+
+    # -------- paginación segura ----------
+    total_pages = max(1, (len(snapshots) + per_page - 1) // per_page)
+    start = (page - 1) * per_page
+    end = start + per_page
+    snapshots_page = snapshots[start:end]
 
     return render_template(
         "inventory/history.html",
-        snapshots=list(snapshots.values()),
-        total_snapshots=total,
-        page=page,
+        snapshots=snapshots_page,
+        total_snapshots=total_snapshots,
         total_pages=total_pages,
+        page=page,
         desde=desde,
-        hasta=hasta,
+        hasta=hasta
     )
 
 @inventory_bp.route("/history/<snapshot_id>/download")
