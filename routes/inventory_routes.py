@@ -214,28 +214,42 @@ def upload_inventory():
 @login_required
 def upload_history():
     if request.method == "POST":
-        df = read_inventory_history_excel(request.files["file"])
-        sid = str(uuid.uuid4())
-        name = f"Inventario Histórico {now_pe():%Y-%m-%d %H:%M}"
+        file = request.files.get("file")
+        if not file:
+            flash("Debe seleccionar un archivo", "danger")
+            return redirect(request.url)
+
+        # 🔹 nombre REAL del archivo
+        original_name = file.filename
+
+        # 🔹 leer excel histórico
+        df = load_inventory_historic_excel(file)
+
+        snapshot_id = str(uuid.uuid4())
+        snapshot_name = original_name  # 👈 AQUÍ ESTÁ LA CLAVE
+        creado_en = now_pe()
 
         for _, r in df.iterrows():
             db.session.add(InventoryHistory(
                 user_id=current_user.id,
-                snapshot_id=sid,
-                snapshot_name=name,
-                material_code=r["codigo"],
-                material_text=r["texto"],
-                base_unit=r["unidad"],
-                location=r["ubicacion"],
-                fisico=r["fisico"],
-                stock_sap=r["stock"],
-                difere=r["difere"],
-                observacion=r["obs"],
-                creado_en=now_pe()
+                snapshot_id=snapshot_id,
+                snapshot_name=snapshot_name,
+                material_code=r["Código del Material"],
+                material_text=r["Texto breve de material"],
+                base_unit=r["Unidad Medida"],
+                location=r["Ubicación"],
+                fisico=r["Fisico"],
+                stock_sap=r["STOCK"],
+                difere=r["Difere"],
+                observacion=r["Observac."],
+                creado_en=creado_en,
+                source_type="HISTORICO",
+                source_filename=snapshot_name
             ))
 
         db.session.commit()
-        flash("Inventario histórico cargado", "success")
+
+        flash(f"Inventario histórico '{snapshot_name}' cargado correctamente", "success")
         return redirect(url_for("inventory.history_inventory"))
 
     return render_template("inventory/upload_history.html")
