@@ -467,7 +467,6 @@ def download_discrepancies():
     return send_file(
         output,
         as_attachment=True,
-,
         download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
