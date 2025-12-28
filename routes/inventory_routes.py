@@ -400,7 +400,6 @@ def save_count():
 # -----------------------------------------------------------------------------
 # DESCARGA DE DISCREPANCIAS (EXCEL)
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/discrepancies/download")
 @login_required
 def download_discrepancies():
@@ -470,6 +469,7 @@ def download_discrepancies():
         download_name=f"discrepancias_{datetime.now():%Y%m%d_%H%M}.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    
 @inventory_bp.route("/count/discrepancias")
 @login_required
 def download_discrepancias():
