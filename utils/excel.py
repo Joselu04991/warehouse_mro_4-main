@@ -135,6 +135,9 @@ def generate_discrepancies_excel(df, meta=None):
     output = BytesIO()
     wb = Workbook()
 
+    # =========================
+    # Validación
+    # =========================
     if df is None or df.empty:
         ws = wb.active
         ws.title = "DISCREPANCIAS"
@@ -145,6 +148,9 @@ def generate_discrepancies_excel(df, meta=None):
 
     df = df.copy()
 
+    # =========================
+    # Columnas estándar
+    # =========================
     columnas = [
         "Código Material",
         "Descripción",
@@ -155,92 +161,45 @@ def generate_discrepancies_excel(df, meta=None):
         "Diferencia",
         "Estado",
     ]
+
     for c in columnas:
         if c not in df.columns:
-            df[c] = ""
+            df[c] = 0 if "Stock" in c or c == "Diferencia" else ""
+
+    # Normalización numérica
+    df["Stock sistema"] = df["Stock sistema"].astype(float)
+    df["Stock contado"] = df["Stock contado"].astype(float)
+
+    # Diferencia SIEMPRE recalculada
+    df["Diferencia"] = df["Stock contado"] - df["Stock sistema"]
+
+    # Estado automático
+    def estado(row):
+        if row["Stock contado"] == 0:
+            return "NO CONTADO"
+        if row["Diferencia"] == 0:
+            return "OK"
+        if row["Diferencia"] < 0:
+            return "FALTA" if abs(row["Diferencia"]) < 5 else "CRÍTICO"
+        return "SOBRA"
+
+    df["Estado"] = df.apply(estado, axis=1)
 
     df = df[columnas]
 
     # =========================
-    # Hoja 1: RESUMEN
+    # ESTILOS
     # =========================
-    ws0 = wb.active
-    ws0.title = "RESUMEN"
-
-    title_fill = PatternFill("solid", fgColor="1F4E78")
-    title_font = Font(bold=True, color="FFFFFF", size=14)
+    header_fill = PatternFill("solid", fgColor="1F4E78")
+    header_font = Font(bold=True, color="FFFFFF")
+    title_font = Font(bold=True, size=14, color="FFFFFF")
     bold = Font(bold=True)
-    center = Alignment(horizontal="center", vertical="center")
+
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left = Alignment(horizontal="left", vertical="center")
 
-    ws0["A1"] = "REPORTE DE DISCREPANCIAS - WAREHOUSE MRO"
-    ws0["A1"].fill = title_fill
-    ws0["A1"].font = title_font
-    ws0["A1"].alignment = left
-    ws0.merge_cells("A1:F1")
-
-    generado_por = (meta or {}).get("generado_por", "Sistema")
-    generado_en = (meta or {}).get("generado_en", "")
-
-    ws0["A3"] = "Generado por:"
-    ws0["B3"] = generado_por
-    ws0["A4"] = "Generado en (Perú):"
-    ws0["B4"] = generado_en
-
-    ws0["A3"].font = bold
-    ws0["A4"].font = bold
-
-    # Conteos por estado
-    estados = df["Estado"].value_counts().to_dict()
-    ws0["A6"] = "Resumen por Estado"
-    ws0["A6"].font = Font(bold=True, size=12)
-
-    ws0.append(["Estado", "Cantidad"])
-    ws0["A7"].font = bold
-    ws0["B7"].font = bold
-
-    row = 8
-    for k in ["OK", "FALTA", "CRÍTICO", "SOBRA", "NO CONTADO"]:
-        ws0[f"A{row}"] = k
-        ws0[f"B{row}"] = int(estados.get(k, 0))
-        row += 1
-
-    ws0["D3"] = "Total items:"
-    ws0["E3"] = int(len(df))
-    ws0["D3"].font = bold
-
-    # Ajuste ancho
-    for col in range(1, 7):
-        ws0.column_dimensions[get_column_letter(col)].width = 22
-
-    # =========================
-    # Hoja 2: DISCREPANCIAS
-    # =========================
-    ws = wb.create_sheet("DISCREPANCIAS")
-    ws.append(columnas)
-
-    for _, r in df.iterrows():
-        ws.append(list(r))
-
-    header = PatternFill("solid", fgColor="1F4E78")
-    font = Font(bold=True, color="FFFFFF")
-    thin = Side(border_style="thin", color="000000")
+    thin = Side(style="thin")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-    # Header style
-    for cell in ws[1]:
-        cell.fill = header
-        cell.font = font
-        cell.alignment = center
-        cell.border = border
-
-    # Column widths
-    widths = [18, 45, 10, 14, 14, 14, 12, 12]
-    for i, w in enumerate(widths, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = w
-
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions
 
     fill_ok = PatternFill("solid", fgColor="C6EFCE")
     fill_falta = PatternFill("solid", fgColor="FFEB9C")
@@ -248,24 +207,100 @@ def generate_discrepancies_excel(df, meta=None):
     fill_sobra = PatternFill("solid", fgColor="BFEFFF")
     fill_nocont = PatternFill("solid", fgColor="E7E6E6")
 
-    # Body style + colores por Estado
+    # =========================
+    # HOJA 1 – RESUMEN
+    # =========================
+    ws0 = wb.active
+    ws0.title = "RESUMEN"
+
+    ws0["A1"] = "REPORTE DE DISCREPANCIAS – WAREHOUSE MRO"
+    ws0.merge_cells("A1:F1")
+    ws0["A1"].font = title_font
+    ws0["A1"].fill = header_fill
+    ws0["A1"].alignment = left
+
+    generado_por = (meta or {}).get("generado_por", "Sistema MRO")
+    generado_en = (meta or {}).get(
+        "generado_en",
+        datetime.now().strftime("%Y-%m-%d %H:%M")
+    )
+
+    ws0["A3"] = "Generado por:"
+    ws0["B3"] = generado_por
+    ws0["A4"] = "Generado en:"
+    ws0["B4"] = generado_en
+
+    ws0["A3"].font = bold
+    ws0["A4"].font = bold
+
+    total = len(df)
+    ok = (df["Estado"] == "OK").sum()
+    exactitud = round((ok / total) * 100, 2) if total else 0
+
+    ws0["D3"] = "Total ítems:"
+    ws0["E3"] = total
+    ws0["D4"] = "Exactitud:"
+    ws0["E4"] = f"{exactitud}%"
+
+    ws0["D3"].font = bold
+    ws0["D4"].font = bold
+
+    ws0["A6"] = "Resumen por Estado"
+    ws0["A6"].font = Font(bold=True, size=12)
+
+    ws0.append(["Estado", "Cantidad"])
+    ws0["A7"].font = bold
+    ws0["B7"].font = bold
+
+    fila = 8
+    for estado_lbl in ["OK", "FALTA", "CRÍTICO", "SOBRA", "NO CONTADO"]:
+        ws0[f"A{fila}"] = estado_lbl
+        ws0[f"B{fila}"] = int((df["Estado"] == estado_lbl).sum())
+        fila += 1
+
+    for col in range(1, 7):
+        ws0.column_dimensions[get_column_letter(col)].width = 22
+
+    # =========================
+    # HOJA 2 – DETALLE
+    # =========================
+    ws = wb.create_sheet("DISCREPANCIAS")
+    ws.append(columnas)
+
+    for r in df.itertuples(index=False):
+        ws.append(list(r))
+
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
+    widths = [20, 45, 10, 14, 16, 16, 12, 14]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-        estado_val = str(row[7].value).upper() if row[7].value is not None else ""
-        if "CRÍTICO" in estado_val:
-            row_fill = fill_critico
-        elif "FALTA" in estado_val:
-            row_fill = fill_falta
-        elif "SOBRA" in estado_val:
-            row_fill = fill_sobra
-        elif "NO CONTADO" in estado_val:
-            row_fill = fill_nocont
+        estado_val = str(row[7].value)
+
+        if estado_val == "CRÍTICO":
+            fill = fill_critico
+        elif estado_val == "FALTA":
+            fill = fill_falta
+        elif estado_val == "SOBRA":
+            fill = fill_sobra
+        elif estado_val == "NO CONTADO":
+            fill = fill_nocont
         else:
-            row_fill = fill_ok
+            fill = fill_ok
 
         for cell in row:
             cell.border = border
-            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-            cell.fill = row_fill
+            cell.alignment = center
+            cell.fill = fill
 
     wb.save(output)
     output.seek(0)
@@ -306,3 +341,4 @@ def generate_history_snapshot_excel(items, snapshot_name):
     wb.save(output)
     output.seek(0)
     return output
+
