@@ -281,7 +281,12 @@ def cleanup_duplicates():
 
     for r in to_delete:
         db.session.delete(r)
-
+        
     db.session.commit()
     flash(f"Se eliminaron {deleted} registros duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
+    
+@inventory_bp.route("/count")
+@login_required
+def count_inventory():
+    return render_template("inventory/count.html", items=[])
