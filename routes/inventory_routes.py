@@ -224,16 +224,14 @@ def upload_history():
         snapshot_id = str(uuid.uuid4())
 
         # 🔥 nombre REAL del archivo
-        filename = file.filename or "inventario_historico.xlsx"
-
-        snapshot_name = filename.replace(".xlsx", "").replace(".xls", "")
-        creado_en = now_pe()
-
+        filename = request.files["file"].filename
+        snapshot_name = filename.replace(".xlsx", "")
+        
         for _, r in df.iterrows():
             db.session.add(InventoryHistory(
                 user_id=current_user.id,
-                snapshot_id=snapshot_id,
-                snapshot_name=snapshot_name,     # 👈 NOMBRE CORRECTO
+                snapshot_id=sid,
+                snapshot_name=snapshot_name,
                 material_code=r["Código del Material"],
                 material_text=r["Texto breve de material"],
                 base_unit=r["Unidad Medida"],
@@ -242,11 +240,10 @@ def upload_history():
                 stock_sap=r["STOCK"],
                 difere=r["Difere"],
                 observacion=r["Observac."],
-                creado_en=creado_en,             # 👈 FECHA REAL
-                source_type="HISTORICO",         # 👈 TIPO
-                source_filename=filename         # 👈 ARCHIVO
+                creado_en=now_pe(),
+                source_type="HISTORICO",
+                source_filename=filename,
             ))
-
         db.session.commit()
         flash("Inventario histórico cargado correctamente", "success")
         return redirect(url_for("inventory.history_inventory"))
@@ -259,26 +256,47 @@ def upload_history():
 @login_required
 def history_inventory():
 
-    rows = InventoryHistory.query.filter_by(
-        user_id=current_user.id
-    ).order_by(InventoryHistory.creado_en.desc()).all()
+    page = int(request.args.get("page", 1))
+    per_page = 10
+
+    desde = request.args.get("desde")
+    hasta = request.args.get("hasta")
+
+    q = InventoryHistory.query.filter_by(user_id=current_user.id)
+
+    if desde:
+        q = q.filter(InventoryHistory.creado_en >= desde)
+    if hasta:
+        q = q.filter(InventoryHistory.creado_en <= hasta)
+
+    q = q.order_by(InventoryHistory.creado_en.desc())
+
+    total = q.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    rows = q.offset((page - 1) * per_page).limit(per_page).all()
 
     snapshots = {}
-
     for r in rows:
         if r.snapshot_id not in snapshots:
             snapshots[r.snapshot_id] = {
                 "snapshot_id": r.snapshot_id,
-                "fecha": r.creado_en.strftime("%Y-%m-%d %H:%M") if r.creado_en else "-",
-                "tipo": r.source_type or "-",
-                "archivo": r.source_filename or "-",
-                "total": 0
+                "snapshot_name": r.snapshot_name,
+                "creado_en": r.creado_en,
+                "source_type": r.source_type,
+                "source_filename": r.source_filename,
+                "total": 0,
             }
         snapshots[r.snapshot_id]["total"] += 1
 
     return render_template(
         "inventory/history.html",
-        snapshots=list(snapshots.values())
+        snapshots=list(snapshots.values()),
+        total_snapshots=total,
+        page=page,
+        total_pages=total_pages,
+        desde=desde,
+        hasta=hasta,
     )
 
 @inventory_bp.route("/history/<snapshot_id>/download")
@@ -400,49 +418,34 @@ def save_count_row():
 # -----------------------------------------------------------------------------
 # ALIAS PARA COMPATIBILIDAD CON count.html
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/save-count", methods=["POST"])
 @login_required
 def save_count():
-    data = request.get_json() or []
+    data = request.get_json()
 
     if not isinstance(data, list):
-        return jsonify(success=False, msg="Se esperaba lista"), 400
+        return jsonify(success=False, msg="Formato inválido"), 400
 
     for d in data:
-        code = d.get("material_code")
-        loc = d.get("location")
-        real = safe_float(d.get("real_count"))
-
-        item = InventoryItem.query.filter_by(
-            user_id=current_user.id,
-            material_code=code,
-            location=loc
-        ).first()
-
-        if not item:
-            continue
-
         row = InventoryCount.query.filter_by(
             user_id=current_user.id,
-            material_code=code,
-            location=loc
+            material_code=d.get("material_code"),
+            location=d.get("location"),
         ).first()
 
         if not row:
             row = InventoryCount(
                 user_id=current_user.id,
-                material_code=code,
-                location=loc
+                material_code=d.get("material_code"),
+                location=d.get("location"),
             )
             db.session.add(row)
 
-        row.real_count = real
+        row.real_count = safe_float(d.get("real_count"))
         row.contado_en = now_pe()
 
     db.session.commit()
     return jsonify(success=True)
-    
 # =============================================================================
 # DESCARGAR EXCEL DE DISCREPANCIAS  ✅
 # =============================================================================
