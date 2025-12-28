@@ -88,21 +88,22 @@ def read_inventory_history_excel(file):
 
     return out
     
-def parse_snapshot_from_filename(filename: str):
+    def parse_snapshot_from_filename(filename: str):
     """
-    Ejemplo:
     inventario_2025_04_10.xlsx
+    -> name: inventario_2025_04_10
+    -> date: 2025-04-10
     """
-    name = os.path.splitext(filename)[0]
+    base = filename.lower().replace(".xlsx", "").replace(".xls", "")
 
-    m = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", name)
-    if m:
-        y, mth, d = m.groups()
-        fecha = datetime(int(y), int(mth), int(d))
+    match = re.search(r"(\d{4})[_-](\d{2})[_-](\d{2})", base)
+    if match:
+        y, m, d = match.groups()
+        fecha = datetime(int(y), int(m), int(d))
     else:
-        fecha = datetime.utcnow()
+        fecha = None
 
-    return name, fecha
+    return base, fecha
 # -----------------------------------------------------------------------------
 # HELPERS
 # -----------------------------------------------------------------------------
@@ -233,46 +234,38 @@ def upload_history():
 
     file = request.files.get("file")
     if not file:
-        flash("Archivo no válido", "danger")
-        return redirect(url_for("inventory.history_inventory"))
-
-    filename = file.filename
-
-    snapshot_name, snapshot_date = parse_snapshot_from_filename(filename)
-
-    # ⚠️ EVITAR DUPLICADOS
-    exists = InventoryHistory.query.filter_by(
-        user_id=current_user.id,
-        snapshot_name=snapshot_name,
-        source_filename=filename
-    ).first()
-
-    if exists:
-        flash("Este inventario ya fue cargado", "warning")
+        flash("Debe subir un archivo Excel", "warning")
         return redirect(url_for("inventory.history_inventory"))
 
     df = load_inventory_historic_excel(file)
-    snapshot_id = str(uuid.uuid4())
+
+    snapshot_name, fecha_archivo = parse_snapshot_from_filename(file.filename)
+
+    snapshot = InventoryHistory(
+        snapshot_name=snapshot_name,
+        source_filename=file.filename,
+        source_type="HISTORICO",
+        creado_en=fecha_archivo,  # 👈 CLAVE
+        total=len(df),
+        created_by=current_user.id
+    )
+
+    db.session.add(snapshot)
+    db.session.flush()  # 👈 aquí ya existe snapshot.snapshot_id
 
     for _, r in df.iterrows():
-        db.session.add(InventoryHistory(
-            user_id=current_user.id,
-            snapshot_id=snapshot_id,
-            snapshot_name=snapshot_name,
+        item = InventoryItem(
+            snapshot_id=snapshot.snapshot_id,
             material_code=r["Código del Material"],
             material_text=r["Texto breve de material"],
             base_unit=r["Unidad Medida"],
             location=r["Ubicación"],
-            fisico=r["Fisico"],
-            stock_sap=r["STOCK"],
-            difere=r["Difere"],
-            observacion=r["Observac."],
-            creado_en=snapshot_date,
-            source_type="HISTORICO",
-            source_filename=filename
-        ))
+            libre_utilizacion=r["Fisico"]
+        )
+        db.session.add(item)
 
     db.session.commit()
+
     flash("Inventario histórico cargado correctamente", "success")
     return redirect(url_for("inventory.history_inventory"))
 # -----------------------------------------------------------------------------
@@ -358,6 +351,40 @@ def history_download(snapshot_id):
     out.seek(0)
     return send_file(out, as_attachment=True, download_name="historico.xlsx")
 
+@inventory_bp.route("/inventory/history/cleanup-duplicates", methods=["POST"])
+@login_required
+def cleanup_duplicates():
+
+    duplicates = (
+        db.session.query(
+            InventoryHistory.source_filename,
+            func.count(InventoryHistory.snapshot_id)
+        )
+        .group_by(InventoryHistory.source_filename)
+        .having(func.count(InventoryHistory.snapshot_id) > 1)
+        .all()
+    )
+
+    deleted = 0
+
+    for filename, _ in duplicates:
+        records = (
+            InventoryHistory.query
+            .filter_by(source_filename=filename)
+            .order_by(InventoryHistory.creado_en.desc())
+            .all()
+        )
+
+        # Mantener el primero (más reciente)
+        for snap in records[1:]:
+            InventoryItem.query.filter_by(snapshot_id=snap.snapshot_id).delete()
+            db.session.delete(snap)
+            deleted += 1
+
+    db.session.commit()
+
+    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
+    return redirect(url_for("inventory.history_inventory"))
 # -----------------------------------------------------------------------------
 # CONTEO
 # -----------------------------------------------------------------------------
@@ -592,30 +619,3 @@ def download_discrepancias():
         as_attachment=True,
         download_name="discrepancias_conteo.xlsx"
     )
-@inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
-@login_required
-def cleanup_duplicates():
-
-    subq = (
-        db.session.query(
-            InventoryHistory.snapshot_name,
-            func.max(InventoryHistory.creado_en).label("max_fecha")
-        )
-        .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(InventoryHistory.snapshot_name)
-        .subquery()
-    )
-
-    deleted = (
-        InventoryHistory.query
-        .filter(
-            InventoryHistory.user_id == current_user.id,
-            InventoryHistory.snapshot_name == subq.c.snapshot_name,
-            InventoryHistory.creado_en < subq.c.max_fecha
-        )
-        .delete(synchronize_session=False)
-    )
-
-    db.session.commit()
-    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
-    return redirect(url_for("inventory.history_inventory"))
