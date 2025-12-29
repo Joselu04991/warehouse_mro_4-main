@@ -177,7 +177,6 @@ def upload_history():
 # -----------------------------------------------------------------------------
 # HISTORY (AGRUPADO POR SNAPSHOT_ID)
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
@@ -185,19 +184,38 @@ def history_inventory():
     page = int(request.args.get("page", 1))
     per_page = 10
 
+    # SUBQUERY: obtener el snapshot más reciente por FECHA
+    subq = (
+        db.session.query(
+            func.date(InventoryHistory.creado_en).label("fecha"),
+            func.max(InventoryHistory.creado_en).label("max_fecha")
+        )
+        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(func.date(InventoryHistory.creado_en))
+        .subquery()
+    )
+
+    # QUERY FINAL: traer SOLO 1 snapshot por fecha (el más reciente)
     q = (
         db.session.query(
             InventoryHistory.snapshot_id,
             InventoryHistory.snapshot_name,
             InventoryHistory.source_filename,
+            InventoryHistory.source_type,
             InventoryHistory.creado_en,
             func.count().label("total")
+        )
+        .join(
+            subq,
+            (func.date(InventoryHistory.creado_en) == subq.c.fecha) &
+            (InventoryHistory.creado_en == subq.c.max_fecha)
         )
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(
             InventoryHistory.snapshot_id,
             InventoryHistory.snapshot_name,
             InventoryHistory.source_filename,
+            InventoryHistory.source_type,
             InventoryHistory.creado_en
         )
         .order_by(InventoryHistory.creado_en.desc())
@@ -206,15 +224,17 @@ def history_inventory():
     total = q.count()
     pages = max(1, (total + per_page - 1) // per_page)
 
-    snapshots = q.offset((page-1)*per_page).limit(per_page).all()
+    snapshots = q.offset((page - 1) * per_page).limit(per_page).all()
 
     return render_template(
         "inventory/history.html",
         snapshots=snapshots,
         page=page,
-        total_pages=pages
+        total_pages=pages,
+        total_snapshots=total,
+        desde=request.args.get("desde"),
+        hasta=request.args.get("hasta")
     )
-
 # -----------------------------------------------------------------------------
 # DOWNLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
