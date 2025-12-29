@@ -386,3 +386,73 @@ def download_discrepancies_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+@inventory_bp.route("/save-count-row", methods=["POST"])
+@login_required
+def save_count_row():
+
+    data = request.get_json() or {}
+
+    code = data.get("material_code")
+    loc = data.get("location")
+    real = safe_float(data.get("real_count"))
+
+    if not code or not loc:
+        return jsonify(success=False), 400
+
+    row = InventoryCount.query.filter_by(
+        user_id=current_user.id,
+        material_code=code,
+        location=loc
+    ).first()
+
+    if not row:
+        row = InventoryCount(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        )
+        db.session.add(row)
+
+    row.real_count = real
+    row.contado_en = now_pe()
+
+    db.session.commit()
+    return jsonify(success=True)
+
+@inventory_bp.route("/save-count", methods=["POST"])
+@login_required
+def save_count():
+
+    data = request.get_json() or []
+
+    if not isinstance(data, list):
+        return jsonify(success=False), 400
+
+    for d in data:
+        code = d.get("material_code")
+        loc = d.get("location")
+        real = safe_float(d.get("real_count"))
+
+        if not code or not loc:
+            continue
+
+        row = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        ).first()
+
+        if not row:
+            row = InventoryCount(
+                user_id=current_user.id,
+                material_code=code,
+                location=loc
+            )
+            db.session.add(row)
+
+        row.real_count = real
+        row.contado_en = now_pe()
+
+    db.session.commit()
+    return jsonify(success=True)
+
