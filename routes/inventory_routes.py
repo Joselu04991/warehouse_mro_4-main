@@ -253,37 +253,42 @@ def history_download(snapshot_id):
 # -----------------------------------------------------------------------------
 # LIMPIAR DUPLICADOS
 # -----------------------------------------------------------------------------
-
 @inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
 @login_required
 def cleanup_duplicates():
 
-    sub = (
+    duplicates = (
         db.session.query(
-            InventoryHistory.snapshot_name,
-            func.max(InventoryHistory.creado_en).label("max_fecha")
+            InventoryHistory.source_filename,
+            func.count(InventoryHistory.snapshot_id).label("total")
         )
-        .group_by(InventoryHistory.snapshot_name)
-        .subquery()
-    )
-
-    to_delete = (
-        InventoryHistory.query
-        .join(
-            sub,
-            (InventoryHistory.snapshot_name == sub.c.snapshot_name) &
-            (InventoryHistory.creado_en < sub.c.max_fecha)
-        )
+        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(InventoryHistory.source_filename)
+        .having(func.count(InventoryHistory.snapshot_id) > 1)
         .all()
     )
 
-    deleted = len(to_delete)
+    deleted = 0
 
-    for r in to_delete:
-        db.session.delete(r)
-        
+    for filename, _ in duplicates:
+        records = (
+            InventoryHistory.query
+            .filter_by(
+                user_id=current_user.id,
+                source_filename=filename
+            )
+            .order_by(InventoryHistory.creado_en.desc())
+            .all()
+        )
+
+        # Mantener el más reciente, borrar el resto
+        for r in records[1:]:
+            db.session.delete(r)
+            deleted += 1
+
     db.session.commit()
-    flash(f"Se eliminaron {deleted} registros duplicados", "success")
+
+    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
