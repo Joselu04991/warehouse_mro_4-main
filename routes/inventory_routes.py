@@ -277,44 +277,55 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # 1. Obtener TODOS los snapshot_id distintos del usuario
-    snapshots = (
-        db.session.query(
-            InventoryHistory.snapshot_id,
-            func.max(InventoryHistory.id).label("max_id")
-        )
+    # 1. Obtener snapshot_ids duplicados (los que aparecen más de una vez)
+    dup_snapshot_ids = (
+        db.session.query(InventoryHistory.snapshot_id)
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(InventoryHistory.snapshot_id)
+        .having(func.count(InventoryHistory.id) > 1)
         .all()
     )
 
-    # Si solo hay 0 o 1 snapshot, NO hay duplicados
-    if len(snapshots) <= 1:
+    dup_snapshot_ids = [r.snapshot_id for r in dup_snapshot_ids]
+
+    # 2. Si no hay duplicados reales, salir
+    if not dup_snapshot_ids:
         flash("No se encontraron inventarios duplicados", "info")
         return redirect(url_for("inventory.history_inventory"))
 
-    # 2. Conservar SOLO el snapshot más nuevo (ID más alto)
-    snapshots.sort(key=lambda x: x.max_id, reverse=True)
-    snapshot_to_keep = snapshots[0].snapshot_id
-
-    # 3. Todos los demás snapshot_id son DUPLICADOS
-    snapshot_ids_to_delete = [
-        s.snapshot_id for s in snapshots[1:]
-    ]
-
-    # 4. BORRADO REAL (SOLO DUPLICADOS)
-    deleted = (
-        db.session.query(InventoryHistory)
+    # 3. Por cada snapshot duplicado, conservar SOLO el registro más nuevo (id mayor)
+    to_delete_ids = (
+        db.session.query(InventoryHistory.id)
         .filter(
             InventoryHistory.user_id == current_user.id,
-            InventoryHistory.snapshot_id.in_(snapshot_ids_to_delete)
+            InventoryHistory.snapshot_id.in_(dup_snapshot_ids)
         )
-        .delete(synchronize_session=False)
+        .filter(
+            InventoryHistory.id.notin_(
+                db.session.query(func.max(InventoryHistory.id))
+                .filter(
+                    InventoryHistory.user_id == current_user.id,
+                    InventoryHistory.snapshot_id.in_(dup_snapshot_ids)
+                )
+                .group_by(InventoryHistory.snapshot_id)
+            )
+        )
+        .all()
     )
 
-    db.session.commit()
+    to_delete_ids = [r.id for r in to_delete_ids]
 
-    flash(f"🧹 Se eliminaron {deleted} inventarios duplicados", "success")
+    # 4. BORRADO REAL Y CONTROLADO
+    deleted = 0
+    if to_delete_ids:
+        deleted = (
+            db.session.query(InventoryHistory)
+            .filter(InventoryHistory.id.in_(to_delete_ids))
+            .delete(synchronize_session=False)
+        )
+        db.session.commit()
+
+    flash(f"🧹 Se eliminaron {deleted} registros duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
