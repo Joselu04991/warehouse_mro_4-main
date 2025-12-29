@@ -257,30 +257,57 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
+    # 1. Subquery: cantidad de ítems por snapshot + fecha más reciente
     subq = (
         db.session.query(
-            InventoryHistory.snapshot_name,
-            func.max(InventoryHistory.total_items).label("max_items")
+            InventoryHistory.snapshot_name.label("snapshot_name"),
+            InventoryHistory.id.label("history_id"),
+            func.count(InventoryItem.id).label("item_count"),
+            InventoryHistory.creado_en.label("creado_en")
+        )
+        .outerjoin(
+            InventoryItem,
+            InventoryItem.history_id == InventoryHistory.id
         )
         .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(InventoryHistory.snapshot_name)
+        .group_by(InventoryHistory.id)
         .subquery()
     )
 
-    duplicate_ids = (
-        db.session.query(InventoryHistory.id)
-        .join(
-            subq,
-            (InventoryHistory.snapshot_name == subq.c.snapshot_name) &
-            (InventoryHistory.total_items < subq.c.max_items)
+    # 2. Para cada snapshot_name, decidir cuál se conserva:
+    #    - mayor item_count
+    #    - si empata, el más reciente
+    keep_subq = (
+        db.session.query(
+            subq.c.snapshot_name,
+            func.max(subq.c.item_count).label("max_items"),
+            func.max(subq.c.creado_en).label("max_date")
         )
-        .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(subq.c.snapshot_name)
+        .subquery()
+    )
+
+    # 3. IDs que NO cumplen la regla (duplicados reales)
+    duplicate_ids = (
+        db.session.query(subq.c.history_id)
+        .join(
+            keep_subq,
+            (subq.c.snapshot_name == keep_subq.c.snapshot_name)
+        )
+        .filter(
+            (subq.c.item_count < keep_subq.c.max_items) |
+            (
+                (subq.c.item_count == keep_subq.c.max_items) &
+                (subq.c.creado_en < keep_subq.c.max_date)
+            )
+        )
         .all()
     )
 
-    duplicate_ids = [d.id for d in duplicate_ids]
+    duplicate_ids = [d.history_id for d in duplicate_ids]
     deleted = len(duplicate_ids)
 
+    # 4. BORRADO SEGURO (sin cascadas)
     if deleted:
         db.session.query(InventoryHistory)\
             .filter(InventoryHistory.id.in_(duplicate_ids))\
