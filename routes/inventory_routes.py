@@ -257,25 +257,22 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # 1. Subquery: cantidad de ítems por snapshot + fecha más reciente
+    # 1. Subquery: contar ítems reales por snapshot
     subq = (
         db.session.query(
-            InventoryHistory.snapshot_name.label("snapshot_name"),
             InventoryHistory.id.label("history_id"),
+            InventoryHistory.snapshot_name.label("snapshot_name"),
             func.count(InventoryItem.id).label("item_count"),
             InventoryHistory.creado_en.label("creado_en")
         )
-        .outerjoin(
-            InventoryItem,
-            InventoryItem.history_id == InventoryHistory.id
-        )
+        .outerjoin(InventoryHistory.items)
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(InventoryHistory.id)
         .subquery()
     )
 
-    # 2. Para cada snapshot_name, decidir cuál se conserva:
-    #    - mayor item_count
+    # 2. Regla de conservación:
+    #    - más ítems
     #    - si empata, el más reciente
     keep_subq = (
         db.session.query(
@@ -287,12 +284,12 @@ def cleanup_duplicates():
         .subquery()
     )
 
-    # 3. IDs que NO cumplen la regla (duplicados reales)
+    # 3. IDs duplicados reales
     duplicate_ids = (
         db.session.query(subq.c.history_id)
         .join(
             keep_subq,
-            (subq.c.snapshot_name == keep_subq.c.snapshot_name)
+            subq.c.snapshot_name == keep_subq.c.snapshot_name
         )
         .filter(
             (subq.c.item_count < keep_subq.c.max_items) |
@@ -307,7 +304,7 @@ def cleanup_duplicates():
     duplicate_ids = [d.history_id for d in duplicate_ids]
     deleted = len(duplicate_ids)
 
-    # 4. BORRADO SEGURO (sin cascadas)
+    # 4. Borrado seguro (sin cascadas)
     if deleted:
         db.session.query(InventoryHistory)\
             .filter(InventoryHistory.id.in_(duplicate_ids))\
