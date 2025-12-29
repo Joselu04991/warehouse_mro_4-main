@@ -256,39 +256,44 @@ def history_download(snapshot_id):
 @inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
 @login_required
 def cleanup_duplicates():
+    """
+    Elimina SOLO inventarios históricos antiguos,
+    mantiene el más reciente por snapshot_name.
+    NO toca el contenido del Excel original.
+    """
 
-    duplicates = (
+    # 1. Subconsulta: último inventario por snapshot_name
+    subq = (
         db.session.query(
-            InventoryHistory.source_filename,
-            func.count(InventoryHistory.snapshot_id).label("total")
+            InventoryHistory.snapshot_name,
+            func.max(InventoryHistory.creado_en).label("last_date")
         )
         .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(InventoryHistory.source_filename)
-        .having(func.count(InventoryHistory.snapshot_id) > 1)
+        .group_by(InventoryHistory.snapshot_name)
+        .subquery()
+    )
+
+    # 2. Registros antiguos (duplicados reales)
+    duplicates = (
+        InventoryHistory.query
+        .join(
+            subq,
+            (InventoryHistory.snapshot_name == subq.c.snapshot_name) &
+            (InventoryHistory.creado_en < subq.c.last_date)
+        )
+        .filter(InventoryHistory.user_id == current_user.id)
         .all()
     )
 
-    deleted = 0
+    deleted = len(duplicates)
 
-    for filename, _ in duplicates:
-        records = (
-            InventoryHistory.query
-            .filter_by(
-                user_id=current_user.id,
-                source_filename=filename
-            )
-            .order_by(InventoryHistory.creado_en.desc())
-            .all()
-        )
-
-        # Mantener el más reciente, borrar el resto
-        for r in records[1:]:
-            db.session.delete(r)
-            deleted += 1
+    # 3. Eliminar SOLO los antiguos
+    for row in duplicates:
+        db.session.delete(row)
 
     db.session.commit()
 
-    flash(f"Se eliminaron {deleted} inventarios duplicados", "success")
+    flash(f"🧹 Se eliminaron {deleted} inventarios históricos antiguos", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
