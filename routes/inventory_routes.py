@@ -260,7 +260,7 @@ def cleanup_duplicates():
     subq = (
         db.session.query(
             InventoryHistory.snapshot_name,
-            func.max(InventoryHistory.id).label("keep_id")
+            func.max(InventoryHistory.total_items).label("max_items")
         )
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(InventoryHistory.snapshot_name)
@@ -271,12 +271,10 @@ def cleanup_duplicates():
         db.session.query(InventoryHistory.id)
         .join(
             subq,
-            InventoryHistory.snapshot_name == subq.c.snapshot_name
+            (InventoryHistory.snapshot_name == subq.c.snapshot_name) &
+            (InventoryHistory.total_items < subq.c.max_items)
         )
-        .filter(
-            InventoryHistory.user_id == current_user.id,
-            InventoryHistory.id != subq.c.keep_id
-        )
+        .filter(InventoryHistory.user_id == current_user.id)
         .all()
     )
 
