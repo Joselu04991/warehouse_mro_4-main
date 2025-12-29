@@ -257,53 +257,45 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # 1. Agrupar filas por snapshot (esto representa el Excel)
+    # 1. Agrupar por FECHA (un inventario por día)
     subq = (
         db.session.query(
-            InventoryHistory.snapshot_name,
+            func.date(InventoryHistory.creado_en).label("fecha"),
             InventoryHistory.snapshot_id,
-            func.count().label("row_count"),
-            func.max(InventoryHistory.creado_en).label("last_date")
+            func.max(InventoryHistory.creado_en).label("last_time")
         )
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(
-            InventoryHistory.snapshot_name,
+            func.date(InventoryHistory.creado_en),
             InventoryHistory.snapshot_id
         )
         .subquery()
     )
 
-    # 2. Para cada snapshot_name, definir el snapshot correcto
+    # 2. Para cada fecha, quedarse con el snapshot más reciente
     keep_subq = (
         db.session.query(
-            subq.c.snapshot_name,
-            func.max(subq.c.row_count).label("max_rows"),
-            func.max(subq.c.last_date).label("max_date")
+            subq.c.fecha,
+            func.max(subq.c.last_time).label("keep_time")
         )
-        .group_by(subq.c.snapshot_name)
+        .group_by(subq.c.fecha)
         .subquery()
     )
 
-    # 3. Detectar snapshot_ids duplicados
+    # 3. Snapshots que sobran (filas duplicadas visibles)
     duplicate_snapshot_ids = (
         db.session.query(subq.c.snapshot_id)
         .join(
             keep_subq,
-            subq.c.snapshot_name == keep_subq.c.snapshot_name
+            subq.c.fecha == keep_subq.c.fecha
         )
-        .filter(
-            (subq.c.row_count < keep_subq.c.max_rows) |
-            (
-                (subq.c.row_count == keep_subq.c.max_rows) &
-                (subq.c.last_date < keep_subq.c.max_date)
-            )
-        )
+        .filter(subq.c.last_time < keep_subq.c.keep_time)
         .all()
     )
 
     duplicate_snapshot_ids = [r.snapshot_id for r in duplicate_snapshot_ids]
 
-    # 4. Borrado seguro (SQL directo, sin cascadas)
+    # 4. Borrar SOLO esas filas completas
     deleted = 0
     if duplicate_snapshot_ids:
         deleted = (
@@ -316,7 +308,7 @@ def cleanup_duplicates():
         )
         db.session.commit()
 
-    flash(f"🧹 Se eliminaron {deleted} registros históricos duplicados", "success")
+    flash("🧹 Se limpió el inventario duplicado por fecha", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
