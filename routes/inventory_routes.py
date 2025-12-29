@@ -277,36 +277,40 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # Traer TODOS los snapshots del usuario
+    # Traer TODOS los snapshots con ID (para desempate seguro)
     rows = (
         db.session.query(
+            InventoryHistory.id,
             InventoryHistory.snapshot_id,
             InventoryHistory.creado_en
         )
         .filter(InventoryHistory.user_id == current_user.id)
-        .order_by(
-            InventoryHistory.creado_en.desc()
-        )
         .all()
     )
 
-    # Agrupar por FECHA (YYYY-MM-DD)
     from collections import defaultdict
     por_fecha = defaultdict(list)
 
-    for snapshot_id, creado_en in rows:
+    # Agrupar snapshots por fecha
+    for _id, snapshot_id, creado_en in rows:
         fecha = creado_en.date()
-        por_fecha[fecha].append(snapshot_id)
+        por_fecha[fecha].append((_id, snapshot_id))
 
-    # Decidir qué borrar: todos menos 1 por fecha
     snapshot_ids_to_delete = []
 
-    for fecha, snapshots in por_fecha.items():
-        if len(snapshots) > 1:
-            # conservar el primero (más reciente), borrar el resto
-            snapshot_ids_to_delete.extend(snapshots[1:])
+    # Procesar SOLO fechas con duplicados
+    for fecha, snaps in por_fecha.items():
+        if len(snaps) <= 1:
+            continue  # 👉 NO es duplicado, NO se toca
 
-    # 🔴 BORRADO REAL DE FILAS
+        # ordenar por ID DESC (el más nuevo primero)
+        snaps.sort(key=lambda x: x[0], reverse=True)
+
+        # borrar SOLO los duplicados (menos el primero)
+        for _, sid in snaps[1:]:
+            snapshot_ids_to_delete.append(sid)
+
+    # 🔴 Borrado real SOLO de duplicados
     deleted = 0
     if snapshot_ids_to_delete:
         deleted = (
@@ -319,7 +323,7 @@ def cleanup_duplicates():
         )
         db.session.commit()
 
-    flash(f"🧹 Se eliminaron {deleted} filas de inventarios duplicados", "success")
+    flash(f"🧹 Se eliminaron {deleted} inventarios duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
