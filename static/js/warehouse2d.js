@@ -100,8 +100,31 @@ function filterStatus(status) {
 }
 
 document.getElementById("searchBox").addEventListener("input", (e) => {
-    const text = e.target.value.toLowerCase();
-    const filtered = MAP_DATA.filter(x => x.location.toLowerCase().includes(text));
+    const text = e.target.value.toLowerCase().trim();
+
+    if (!text) {
+        renderMap(MAP_DATA);
+        updateCounters(MAP_DATA);
+        updateKpis(MAP_DATA);
+        return;
+    }
+
+    const filtered = MAP_DATA.filter(loc => {
+        // buscar por ubicación
+        if (loc.location.toLowerCase().includes(text)) {
+            return true;
+        }
+
+        // buscar por código de material
+        if (Array.isArray(loc.material_codes)) {
+            return loc.material_codes.some(code =>
+                String(code).toLowerCase().includes(text)
+            );
+        }
+
+        return false;
+    });
+
     renderMap(filtered);
     updateCounters(filtered);
     updateKpis(filtered);
@@ -145,3 +168,4 @@ function zoomOut() {
 }
 
 window.onload = loadMap2D;
+
