@@ -256,44 +256,38 @@ def history_download(snapshot_id):
 @inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
 @login_required
 def cleanup_duplicates():
-    """
-    Elimina SOLO inventarios históricos antiguos,
-    mantiene el más reciente por snapshot_name.
-    NO toca el contenido del Excel original.
-    """
 
-    # 1. Subconsulta: último inventario por snapshot_name
     subq = (
         db.session.query(
             InventoryHistory.snapshot_name,
-            func.max(InventoryHistory.creado_en).label("last_date")
+            func.max(InventoryHistory.id).label("keep_id")
         )
         .filter(InventoryHistory.user_id == current_user.id)
         .group_by(InventoryHistory.snapshot_name)
         .subquery()
     )
 
-    # 2. Registros antiguos (duplicados reales)
     duplicates = (
         InventoryHistory.query
         .join(
             subq,
-            (InventoryHistory.snapshot_name == subq.c.snapshot_name) &
-            (InventoryHistory.creado_en < subq.c.last_date)
+            InventoryHistory.snapshot_name == subq.c.snapshot_name
         )
-        .filter(InventoryHistory.user_id == current_user.id)
+        .filter(
+            InventoryHistory.user_id == current_user.id,
+            InventoryHistory.id != subq.c.keep_id
+        )
         .all()
     )
 
     deleted = len(duplicates)
 
-    # 3. Eliminar SOLO los antiguos
     for row in duplicates:
         db.session.delete(row)
 
     db.session.commit()
 
-    flash(f"🧹 Se eliminaron {deleted} inventarios históricos antiguos", "success")
+    flash(f"🧹 Se eliminaron {deleted} inventarios históricos duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
