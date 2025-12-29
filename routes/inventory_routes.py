@@ -277,58 +277,49 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # 1. Agrupar por FECHA (un inventario por día)
-    subq = (
+    # Traer TODOS los snapshots del usuario
+    rows = (
         db.session.query(
-            func.date(InventoryHistory.creado_en).label("fecha"),
             InventoryHistory.snapshot_id,
-            func.max(InventoryHistory.creado_en).label("last_time")
+            InventoryHistory.creado_en
         )
         .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(
-            func.date(InventoryHistory.creado_en),
-            InventoryHistory.snapshot_id
+        .order_by(
+            InventoryHistory.creado_en.desc()
         )
-        .subquery()
-    )
-
-    # 2. Para cada fecha, quedarse con el snapshot más reciente
-    keep_subq = (
-        db.session.query(
-            subq.c.fecha,
-            func.max(subq.c.last_time).label("keep_time")
-        )
-        .group_by(subq.c.fecha)
-        .subquery()
-    )
-
-    # 3. Snapshots que sobran (filas duplicadas visibles)
-    duplicate_snapshot_ids = (
-        db.session.query(subq.c.snapshot_id)
-        .join(
-            keep_subq,
-            subq.c.fecha == keep_subq.c.fecha
-        )
-        .filter(subq.c.last_time < keep_subq.c.keep_time)
         .all()
     )
 
-    duplicate_snapshot_ids = [r.snapshot_id for r in duplicate_snapshot_ids]
+    # Agrupar por FECHA (YYYY-MM-DD)
+    from collections import defaultdict
+    por_fecha = defaultdict(list)
 
-    # 4. Borrar SOLO esas filas completas
+    for snapshot_id, creado_en in rows:
+        fecha = creado_en.date()
+        por_fecha[fecha].append(snapshot_id)
+
+    # Decidir qué borrar: todos menos 1 por fecha
+    snapshot_ids_to_delete = []
+
+    for fecha, snapshots in por_fecha.items():
+        if len(snapshots) > 1:
+            # conservar el primero (más reciente), borrar el resto
+            snapshot_ids_to_delete.extend(snapshots[1:])
+
+    # 🔴 BORRADO REAL DE FILAS
     deleted = 0
-    if duplicate_snapshot_ids:
+    if snapshot_ids_to_delete:
         deleted = (
             db.session.query(InventoryHistory)
             .filter(
                 InventoryHistory.user_id == current_user.id,
-                InventoryHistory.snapshot_id.in_(duplicate_snapshot_ids)
+                InventoryHistory.snapshot_id.in_(snapshot_ids_to_delete)
             )
             .delete(synchronize_session=False)
         )
         db.session.commit()
 
-    flash("🧹 Se limpió el inventario duplicado por fecha", "success")
+    flash(f"🧹 Se eliminaron {deleted} filas de inventarios duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
