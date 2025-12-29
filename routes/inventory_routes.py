@@ -257,62 +257,66 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # 1. Subquery: contar ítems reales por snapshot
+    # 1. Agrupar filas por snapshot (esto representa el Excel)
     subq = (
         db.session.query(
-            InventoryHistory.id.label("history_id"),
-            InventoryHistory.snapshot_name.label("snapshot_name"),
-            func.count(InventoryItem.id).label("item_count"),
-            InventoryHistory.creado_en.label("creado_en")
+            InventoryHistory.snapshot_name,
+            InventoryHistory.snapshot_id,
+            func.count().label("row_count"),
+            func.max(InventoryHistory.creado_en).label("last_date")
         )
-        .outerjoin(InventoryHistory.items)
         .filter(InventoryHistory.user_id == current_user.id)
-        .group_by(InventoryHistory.id)
+        .group_by(
+            InventoryHistory.snapshot_name,
+            InventoryHistory.snapshot_id
+        )
         .subquery()
     )
 
-    # 2. Regla de conservación:
-    #    - más ítems
-    #    - si empata, el más reciente
+    # 2. Para cada snapshot_name, definir el snapshot correcto
     keep_subq = (
         db.session.query(
             subq.c.snapshot_name,
-            func.max(subq.c.item_count).label("max_items"),
-            func.max(subq.c.creado_en).label("max_date")
+            func.max(subq.c.row_count).label("max_rows"),
+            func.max(subq.c.last_date).label("max_date")
         )
         .group_by(subq.c.snapshot_name)
         .subquery()
     )
 
-    # 3. IDs duplicados reales
-    duplicate_ids = (
-        db.session.query(subq.c.history_id)
+    # 3. Detectar snapshot_ids duplicados
+    duplicate_snapshot_ids = (
+        db.session.query(subq.c.snapshot_id)
         .join(
             keep_subq,
             subq.c.snapshot_name == keep_subq.c.snapshot_name
         )
         .filter(
-            (subq.c.item_count < keep_subq.c.max_items) |
+            (subq.c.row_count < keep_subq.c.max_rows) |
             (
-                (subq.c.item_count == keep_subq.c.max_items) &
-                (subq.c.creado_en < keep_subq.c.max_date)
+                (subq.c.row_count == keep_subq.c.max_rows) &
+                (subq.c.last_date < keep_subq.c.max_date)
             )
         )
         .all()
     )
 
-    duplicate_ids = [d.history_id for d in duplicate_ids]
-    deleted = len(duplicate_ids)
+    duplicate_snapshot_ids = [r.snapshot_id for r in duplicate_snapshot_ids]
 
-    # 4. Borrado seguro (sin cascadas)
-    if deleted:
-        db.session.query(InventoryHistory)\
-            .filter(InventoryHistory.id.in_(duplicate_ids))\
+    # 4. Borrado seguro (SQL directo, sin cascadas)
+    deleted = 0
+    if duplicate_snapshot_ids:
+        deleted = (
+            db.session.query(InventoryHistory)
+            .filter(
+                InventoryHistory.user_id == current_user.id,
+                InventoryHistory.snapshot_id.in_(duplicate_snapshot_ids)
+            )
             .delete(synchronize_session=False)
-
+        )
         db.session.commit()
 
-    flash(f"🧹 Se eliminaron {deleted} inventarios históricos duplicados", "success")
+    flash(f"🧹 Se eliminaron {deleted} registros históricos duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
     
 @inventory_bp.route("/count")
