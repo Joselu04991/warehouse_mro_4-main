@@ -267,8 +267,8 @@ def cleanup_duplicates():
         .subquery()
     )
 
-    duplicates = (
-        InventoryHistory.query
+    duplicate_ids = (
+        db.session.query(InventoryHistory.id)
         .join(
             subq,
             InventoryHistory.snapshot_name == subq.c.snapshot_name
@@ -280,12 +280,15 @@ def cleanup_duplicates():
         .all()
     )
 
-    deleted = len(duplicates)
+    duplicate_ids = [d.id for d in duplicate_ids]
+    deleted = len(duplicate_ids)
 
-    for row in duplicates:
-        db.session.delete(row)
+    if deleted:
+        db.session.query(InventoryHistory)\
+            .filter(InventoryHistory.id.in_(duplicate_ids))\
+            .delete(synchronize_session=False)
 
-    db.session.commit()
+        db.session.commit()
 
     flash(f"🧹 Se eliminaron {deleted} inventarios históricos duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
