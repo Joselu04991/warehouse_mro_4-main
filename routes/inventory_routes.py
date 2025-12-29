@@ -277,51 +277,42 @@ def history_download(snapshot_id):
 @login_required
 def cleanup_duplicates():
 
-    # Traer TODOS los snapshots con ID (para desempate seguro)
-    rows = (
+    # 1. Obtener TODOS los snapshot_id distintos del usuario
+    snapshots = (
         db.session.query(
-            InventoryHistory.id,
             InventoryHistory.snapshot_id,
-            InventoryHistory.creado_en
+            func.max(InventoryHistory.id).label("max_id")
         )
         .filter(InventoryHistory.user_id == current_user.id)
+        .group_by(InventoryHistory.snapshot_id)
         .all()
     )
 
-    from collections import defaultdict
-    por_fecha = defaultdict(list)
+    # Si solo hay 0 o 1 snapshot, NO hay duplicados
+    if len(snapshots) <= 1:
+        flash("No se encontraron inventarios duplicados", "info")
+        return redirect(url_for("inventory.history_inventory"))
 
-    # Agrupar snapshots por fecha
-    for _id, snapshot_id, creado_en in rows:
-        fecha = creado_en.date()
-        por_fecha[fecha].append((_id, snapshot_id))
+    # 2. Conservar SOLO el snapshot más nuevo (ID más alto)
+    snapshots.sort(key=lambda x: x.max_id, reverse=True)
+    snapshot_to_keep = snapshots[0].snapshot_id
 
-    snapshot_ids_to_delete = []
+    # 3. Todos los demás snapshot_id son DUPLICADOS
+    snapshot_ids_to_delete = [
+        s.snapshot_id for s in snapshots[1:]
+    ]
 
-    # Procesar SOLO fechas con duplicados
-    for fecha, snaps in por_fecha.items():
-        if len(snaps) <= 1:
-            continue  # 👉 NO es duplicado, NO se toca
-
-        # ordenar por ID DESC (el más nuevo primero)
-        snaps.sort(key=lambda x: x[0], reverse=True)
-
-        # borrar SOLO los duplicados (menos el primero)
-        for _, sid in snaps[1:]:
-            snapshot_ids_to_delete.append(sid)
-
-    # 🔴 Borrado real SOLO de duplicados
-    deleted = 0
-    if snapshot_ids_to_delete:
-        deleted = (
-            db.session.query(InventoryHistory)
-            .filter(
-                InventoryHistory.user_id == current_user.id,
-                InventoryHistory.snapshot_id.in_(snapshot_ids_to_delete)
-            )
-            .delete(synchronize_session=False)
+    # 4. BORRADO REAL (SOLO DUPLICADOS)
+    deleted = (
+        db.session.query(InventoryHistory)
+        .filter(
+            InventoryHistory.user_id == current_user.id,
+            InventoryHistory.snapshot_id.in_(snapshot_ids_to_delete)
         )
-        db.session.commit()
+        .delete(synchronize_session=False)
+    )
+
+    db.session.commit()
 
     flash(f"🧹 Se eliminaron {deleted} inventarios duplicados", "success")
     return redirect(url_for("inventory.history_inventory"))
