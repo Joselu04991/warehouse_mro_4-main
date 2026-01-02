@@ -2,50 +2,19 @@
 {% block content %}
 
 <style>
-  .gloves * { font-size: 1.15rem !important; }
-  .gloves .btn { padding: 0.9rem 1.1rem !important; }
-  .gloves input.form-control { height: 52px; font-size: 1.2rem !important; }
-  .sticky-tools { position: sticky; top: 10px; z-index: 10; }
   .row-saving { outline: 2px dashed rgba(25,135,84,.35); border-radius: 10px; }
 </style>
 
-<div id="pageRoot" class="container">
+<div class="container">
 
-  <div class="d-flex align-items-center justify-content-between mb-3">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-clipboard-check fs-2 me-3 text-success"></i>
-      <div>
-        <h2 class="fw-bold mb-0">Conteo</h2>
-        <div class="text-muted small">Dictado por voz + guardado automático</div>
-      </div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="fw-bold mb-0">Conteo</h2>
+      <div class="text-muted small">Dictado por voz + guardado automático</div>
     </div>
-
-    <div class="d-flex gap-2">
-      <button id="btnGloves" class="btn btn-outline-dark">
-        <i class="bi bi-hand-index-thumb me-2"></i> Guantes
-      </button>
-      <button id="btnVoice" class="btn btn-outline-primary">
-        <i class="bi bi-mic me-2"></i> Dictado
-      </button>
-    </div>
-  </div>
-
-  <div class="card shadow-sm mb-3 sticky-tools">
-    <div class="card-body d-flex gap-3 align-items-center">
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="toggleContinuous" checked>
-        <label class="form-check-label fw-semibold">Dictado continuo</label>
-      </div>
-
-      <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" id="toggleSpeak" checked>
-        <label class="form-check-label fw-semibold">Confirmación por voz</label>
-      </div>
-
-      <div class="ms-auto text-muted small" id="voiceStatus">
-        <i class="bi bi-info-circle me-1"></i> Micrófono: listo
-      </div>
-    </div>
+    <button id="btnVoice" class="btn btn-outline-primary">
+      <i class="bi bi-mic me-2"></i> Dictado
+    </button>
   </div>
 
   <div class="card shadow-sm">
@@ -57,9 +26,8 @@
             <th>Descripción</th>
             <th>UM</th>
             <th>Ubicación</th>
-            <th>Stock</th>
-            <th style="width:160px;">Conteo</th>
-            <th style="width:120px;">Estado</th>
+            <th>Stock sistema</th>
+            <th style="width:150px;">Conteo</th>
           </tr>
         </thead>
 
@@ -69,42 +37,31 @@
             <td class="fw-semibold">{{ i.material_code }}</td>
 
             <td class="text-muted small">
-              {{ i.material_text }}
+              {{ i.material_text or "—" }}
             </td>
 
             <!-- UNIDAD DE MEDIDA -->
             <td class="text-center fw-semibold">
-              {{ i.base_unit }}
+              {{ i.base_unit or "—" }}
             </td>
 
             <td class="text-center fw-semibold">
               {{ i.location }}
             </td>
 
-            <!-- STOCK REAL -->
+            <!-- STOCK DEL SISTEMA -->
             <td class="text-center fw-semibold">
-              {{ i.libre_utilizacion }}
+              {{ i.stock_sistema }}
             </td>
 
+            <!-- CONTEO FÍSICO -->
             <td>
               <input class="form-control text-center count-input"
-                     inputmode="numeric"
-                     pattern="[0-9]*"
-                     placeholder="0"
+                     type="number"
+                     min="0"
                      value="{{ i.real_count }}"
                      data-code="{{ i.material_code }}"
                      data-loc="{{ i.location }}">
-            </td>
-
-            <!-- ESTADO REAL DEL MODELO -->
-            <td class="text-center">
-              <span class="badge
-                {% if i.status == 'NORMAL' %}bg-success
-                {% elif i.status == 'MEDIO' %}bg-warning
-                {% elif i.status == 'BAJO' %}bg-danger
-                {% else %}bg-dark{% endif %}">
-                {{ i.status }}
-              </span>
             </td>
           </tr>
           {% endfor %}
@@ -118,53 +75,39 @@
 <script>
 (() => {
 
+  const btnVoice = document.getElementById("btnVoice");
   let recognition = null;
   let listening = false;
-  let manualStop = false;
-
-  const btnVoice = document.getElementById("btnVoice");
-  const voiceStatus = document.getElementById("voiceStatus");
-  const toggleContinuous = document.getElementById("toggleContinuous");
-  const toggleSpeak = document.getElementById("toggleSpeak");
-
-  const speak = (txt) => {
-    if (!toggleSpeak.checked) return;
-    const u = new SpeechSynthesisUtterance(txt);
-    u.lang = "es-PE";
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  };
-
-  const setStatus = (msg, ok=true) => {
-    voiceStatus.innerHTML = ok
-      ? `<i class="bi bi-mic me-1"></i> ${msg}`
-      : `<i class="bi bi-exclamation-triangle me-1"></i> ${msg}`;
-  };
 
   const findInputByCode = (code) =>
     document.querySelector(`.count-input[data-code="${code}"]`);
 
-  const saveRow = async (inputEl) => {
-    const val = parseInt(inputEl.value || "0", 10) || 0;
-
+  const saveRow = async (input) => {
     await fetch("{{ url_for('inventory.save_count_row') }}", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        material_code: inputEl.dataset.code,
-        location: inputEl.dataset.loc,
-        real_count: val
+        material_code: input.dataset.code,
+        location: input.dataset.loc,
+        real_count: parseFloat(input.value || 0)
       })
     });
-
-    speak("registrado");
-    setStatus(`Código ${inputEl.dataset.code}, cantidad ${val}`);
   };
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  const startRecognition = () => {
-    if (!SR || listening) return;
+  btnVoice.onclick = () => {
+    if (!SR) {
+      alert("Tu navegador no soporta dictado");
+      return;
+    }
+
+    if (listening) {
+      recognition.stop();
+      listening = false;
+      btnVoice.classList.remove("btn-primary");
+      return;
+    }
 
     recognition = new SR();
     recognition.lang = "es-PE";
@@ -186,27 +129,10 @@
       saveRow(input);
     };
 
-    recognition.onend = () => {
-      if (!manualStop && toggleContinuous.checked) {
-        recognition.start();
-      }
-    };
-
     recognition.start();
     listening = true;
     btnVoice.classList.add("btn-primary");
-    setStatus("Habla: código + cantidad");
   };
-
-  const stopRecognition = () => {
-    manualStop = true;
-    recognition && recognition.stop();
-    listening = false;
-    setStatus("Dictado detenido");
-  };
-
-  btnVoice.onclick = () =>
-    listening ? stopRecognition() : startRecognition();
 
 })();
 </script>
