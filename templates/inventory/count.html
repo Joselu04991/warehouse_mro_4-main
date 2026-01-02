@@ -107,26 +107,22 @@
   let recognition = null;
   let listening = false;
 
-  const setStatus = (txt, ok=true) => {
-    voiceStatus.innerHTML = ok
-      ? `🎙️ ${txt}`
-      : `⚠️ ${txt}`;
+  const setStatus = (t, ok=true) => {
+    voiceStatus.innerHTML = ok ? `🎙️ ${t}` : `⚠️ ${t}`;
   };
 
-  const speak = (text) => {
+  const speak = (t) => {
     if (!toggleSpeak.checked) return;
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "es-PE";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch {}
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "es-PE";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   };
 
   const getRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      alert("Este navegador NO soporta dictado por voz");
+      alert("Este navegador no soporta dictado por voz");
       return null;
     }
     const r = new SR();
@@ -145,7 +141,7 @@
   const startVoice = async () => {
     if (listening) return;
 
-    // 🔴 FORZAR PERMISO DE MICRÓFONO (CLAVE)
+    // 🔥 ESTA LÍNEA ES LA QUE OBLIGA AL POPUP
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
@@ -158,9 +154,8 @@
 
     recognition.onresult = (e) => {
       const text = e.results[e.results.length - 1][0].transcript.toLowerCase();
-      console.log("DICTADO:", text);
-
       const nums = text.match(/\d+/g) || [];
+
       const codes = nums.filter(n => n.length >= 8);
       const qtys  = nums.filter(n => n.length >= 1 && n.length <= 3);
 
@@ -169,32 +164,21 @@
         return;
       }
 
-      const input = activeInput();
-      if (!input) {
+      const inp = activeInput();
+      if (!inp) {
         setStatus("Primero toque el campo de conteo", false);
         return;
       }
 
       const cantidad = qtys[qtys.length - 1];
-      input.value = cantidad;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
+      inp.value = cantidad;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
 
       setStatus(`Registrado: ${cantidad}`);
       speak("registrado");
     };
 
-    recognition.onerror = (e) => {
-      console.error("ERROR MIC:", e);
-      setStatus("Error de micrófono", false);
-    };
-
-    recognition.onend = () => {
-      listening = false;
-      btnVoice.classList.remove("btn-primary");
-      btnVoice.classList.add("btn-outline-primary");
-      btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
-      setStatus("Dictado detenido");
-    };
+    recognition.onerror = () => setStatus("Error de micrófono", false);
 
     recognition.start();
     listening = true;
@@ -208,6 +192,11 @@
 
   const stopVoice = () => {
     try { recognition && recognition.stop(); } catch {}
+    listening = false;
+    btnVoice.classList.remove("btn-primary");
+    btnVoice.classList.add("btn-outline-primary");
+    btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
+    setStatus("Dictado detenido");
   };
 
   btnVoice.addEventListener("click", () => {
@@ -218,4 +207,3 @@
 </script>
 
 {% endblock %}
-
