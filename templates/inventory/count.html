@@ -100,54 +100,79 @@
 <script>
 (() => {
 
-  const btnVoice = document.getElementById("btnVoice");
-  const voiceStatus = document.getElementById("voiceStatus");
-  const toggleSpeak = document.getElementById("toggleSpeak");
-
   let recognition = null;
   let listening = false;
+  let manualStop = false;
 
-  /* =====================
-     UI helpers
-  ===================== */
-  const setStatus = (txt, ok=true) => {
-    voiceStatus.innerHTML = ok
-      ? `🎙️ ${txt}`
-      : `⚠️ ${txt}`;
-  };
+  const btnVoice = document.getElementById("btnVoice");
+  const voiceStatus = document.getElementById("voiceStatus");
+  const toggleContinuous = document.getElementById("toggleContinuous");
+  const toggleSpeak = document.getElementById("toggleSpeak");
 
-  const speak = (t) => {
+  /* ==========================
+     UTILIDADES
+  ========================== */
+  const speak = (txt) => {
     if (!toggleSpeak.checked) return;
     try {
-      const u = new SpeechSynthesisUtterance(t);
+      const u = new SpeechSynthesisUtterance(txt);
       u.lang = "es-PE";
       speechSynthesis.cancel();
       speechSynthesis.speak(u);
     } catch {}
   };
 
-  const showMicHelp = () => {
-    const msg = `
-Para usar el dictado por voz:
-
-1️⃣ Haz clic en el ícono 🔒 de la barra de direcciones  
-2️⃣ Busca **Micrófono**  
-3️⃣ Cambia a **Permitir**  
-4️⃣ Recarga la página (F5)  
-5️⃣ Presiona **Dictado** otra vez
-`;
-    alert(msg);
+  const setStatus = (msg, ok=true) => {
+    voiceStatus.innerHTML = ok
+      ? `<i class="bi bi-mic me-1"></i> ${msg}`
+      : `<i class="bi bi-exclamation-triangle me-1"></i> ${msg}`;
   };
 
-  /* =====================
-     SpeechRecognition
-  ===================== */
+  const findInputByCode = (code) => {
+    return document.querySelector(
+      `.count-input[data-code="${code}"]`
+    );
+  };
+
+  /* ==========================
+     GUARDAR FILA
+  ========================== */
+  const saveRow = async (inputEl) => {
+    const code = inputEl.dataset.code;
+    const loc = inputEl.dataset.loc;
+    const val = parseInt(inputEl.value || "0", 10) || 0;
+
+    const tr = inputEl.closest("tr");
+    tr.classList.add("row-saving");
+
+    try {
+      const res = await fetch("{{ url_for('inventory.save_count_row') }}", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          material_code: code,
+          location: loc,
+          real_count: val
+        })
+      });
+      const j = await res.json();
+      if (j && j.success) {
+        speak("registrado");
+        setStatus(`Código ${code}, cantidad ${val}`);
+      }
+    } catch {
+      setStatus("Error al guardar", false);
+    } finally {
+      tr.classList.remove("row-saving");
+    }
+  };
+
+  /* ==========================
+     SPEECH RECOGNITION
+  ========================== */
   const getRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      alert("Este navegador no soporta dictado por voz");
-      return null;
-    }
+    if (!SR) return null;
     const r = new SR();
     r.lang = "es-PE";
     r.continuous = true;
@@ -155,73 +180,45 @@ Para usar el dictado por voz:
     return r;
   };
 
-  const activeInput = () =>
-    document.activeElement &&
-    document.activeElement.classList.contains("count-input")
-      ? document.activeElement
-      : null;
-
-  /* =====================
-     Permisos micrófono
-  ===================== */
-  const checkMicPermission = async () => {
-    try {
-      const perm = await navigator.permissions.query({ name: "microphone" });
-      return perm.state; // granted | denied | prompt
-    } catch {
-      return "unknown";
-    }
-  };
-
-  /* =====================
-     Start voice
-  ===================== */
-  const startVoice = async () => {
+  const startRecognition = () => {
     if (listening) return;
 
-    const state = await checkMicPermission();
-
-    if (state === "denied") {
-      setStatus("Micrófono bloqueado", false);
-      showMicHelp();
-      return;
-    }
-
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      setStatus("Permiso de micrófono requerido", false);
-      showMicHelp();
-      return;
-    }
-
     recognition = getRecognition();
-    if (!recognition) return;
+    if (!recognition) {
+      setStatus("Dictado no soportado", false);
+      return;
+    }
+
+    manualStop = false;
 
     recognition.onresult = (e) => {
-      const text = e.results[e.results.length - 1][0].transcript.toLowerCase();
+      const text = e.results[e.results.length - 1][0]
+        .transcript.toLowerCase();
+
+      // Extraer números
       const nums = text.match(/\d+/g) || [];
 
-      const codes = nums.filter(n => n.length >= 8);
-      const qtys  = nums.filter(n => n.length >= 1 && n.length <= 3);
+      const code = nums.find(n => n.length >= 8);
+      const qty  = nums.find(n => n.length >= 1 && n.length <= 3);
 
-      if (!codes.length || !qtys.length) {
-        setStatus("Diga código y cantidad", false);
+      if (!code || !qty) {
+        setStatus("Diga: código + cantidad", false);
         return;
       }
 
-      const input = activeInput();
+      const input = findInputByCode(code);
+
       if (!input) {
-        setStatus("Toque el campo de conteo", false);
+        setStatus(`Código ${code} no encontrado`, false);
+        speak("código no encontrado");
         return;
       }
 
-      const cantidad = qtys[qtys.length - 1];
-      input.value = cantidad;
+      input.focus();
+      input.value = qty;
       input.dispatchEvent(new Event("input", { bubbles: true }));
 
-      setStatus(`Registrado: ${cantidad}`);
-      speak("registrado");
+      saveRow(input);
     };
 
     recognition.onerror = () => {
@@ -230,30 +227,47 @@ Para usar el dictado por voz:
 
     recognition.onend = () => {
       listening = false;
-      btnVoice.classList.remove("btn-primary");
-      btnVoice.classList.add("btn-outline-primary");
-      btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
-      setStatus("Dictado detenido");
+      if (!manualStop && toggleContinuous.checked) {
+        setTimeout(() => {
+          try {
+            recognition.start();
+            listening = true;
+            setStatus("Escuchando...");
+          } catch {}
+        }, 300);
+      } else {
+        setStatus("Dictado detenido");
+        btnVoice.classList.remove("btn-primary");
+        btnVoice.classList.add("btn-outline-primary");
+        btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
+      }
     };
 
-    recognition.start();
-    listening = true;
-
-    btnVoice.classList.remove("btn-outline-primary");
-    btnVoice.classList.add("btn-primary");
-    btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
-    setStatus("Hable: código + cantidad");
+    try {
+      recognition.start();
+      listening = true;
+      btnVoice.classList.add("btn-primary");
+      btnVoice.innerHTML =
+        '<i class="bi bi-mic-fill me-2"></i> Dictando...';
+      setStatus("Habla: código + cantidad");
+    } catch {
+      setStatus("No se pudo iniciar micrófono", false);
+    }
   };
 
-  const stopVoice = () => {
+  const stopRecognition = () => {
+    manualStop = true;
     try { recognition && recognition.stop(); } catch {}
+    listening = false;
+    setStatus("Dictado detenido");
   };
 
   btnVoice.addEventListener("click", () => {
-    listening ? stopVoice() : startVoice();
+    listening ? stopRecognition() : startRecognition();
   });
 
 })();
 </script>
 {% endblock %}
+
 
