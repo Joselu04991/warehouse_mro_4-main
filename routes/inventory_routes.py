@@ -338,54 +338,31 @@ def cleanup_duplicates():
     flash(f"🧹 Se eliminó {len(snapshot_ids_to_delete)} inventario duplicado", "success")
     return redirect(url_for("inventory.history_inventory"))
     
-@inventory_bp.route("/count")
+@inventory_bp.route("/upload", methods=["GET", "POST"])
 @login_required
-def count_inventory():
+def upload_inventory():
+    if request.method == "POST":
+        df = pd.read_excel(request.files["file"], dtype=object)
 
-    items = (
-        db.session.query(
-            InventoryItem,
-            InventoryCount.real_count
-        )
-        .outerjoin(
-            InventoryCount,
-            db.and_(
-                InventoryItem.user_id == InventoryCount.user_id,
-                InventoryItem.material_code == InventoryCount.material_code,
-                InventoryItem.location == InventoryCount.location
-            )
-        )
-        .filter(InventoryItem.user_id == current_user.id)
-        .order_by(InventoryItem.location)
-        .all()
-    )
+        InventoryItem.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
 
-    rows = []
+        for _, r in df.iterrows():
+            db.session.add(InventoryItem(
+                user_id=current_user.id,
+                material_code=str(r.get("Código del Material","")).strip(),
+                material_text=str(r.get("Texto breve de material","")).strip(),
+                base_unit=str(r.get("Unidad de medida base","")).strip(),  # ✅ AQUÍ
+                location=str(r.get("Ubicación","")).replace(" ", "").upper(),
+                libre_utilizacion=safe_float(r.get("Libre utilización")),
+                creado_en=now_pe()
+            ))
 
-    for item, real in items:
-        real = real or 0
+        db.session.commit()
+        flash("Inventario diario cargado correctamente", "success")
+        return redirect(url_for("inventory.list_inventory"))
 
-        if real == 0:
-            estado = "Pendiente"
-        elif real == item.libre_utilizacion:
-            estado = "OK"
-        else:
-            estado = "Diferencia"
-
-        rows.append({
-            "material_code": item.material_code,
-            "material_text": item.material_text,
-            "base_unit": item.base_unit or "—",     # 👈 SIEMPRE SALE
-            "location": item.location,
-            "stock": item.libre_utilizacion,
-            "real_count": real,
-            "estado": estado
-        })
-
-    return render_template(
-        "inventory/count.html",
-        items=rows
-    )
+    return render_template("inventory/upload.html")
     
 @inventory_bp.route("/discrepancias/excel")
 @login_required
