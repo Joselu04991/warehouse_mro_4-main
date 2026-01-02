@@ -361,6 +361,7 @@ def count_inventory():
     )
 
     rows = []
+
     for item, real in items:
         real = real or 0
 
@@ -374,14 +375,17 @@ def count_inventory():
         rows.append({
             "material_code": item.material_code,
             "material_text": item.material_text,
-            "base_unit": item.base_unit,
+            "base_unit": item.base_unit or "—",     # 👈 SIEMPRE SALE
             "location": item.location,
             "stock": item.libre_utilizacion,
             "real_count": real,
             "estado": estado
         })
 
-    return render_template("inventory/count.html", items=rows)
+    return render_template(
+        "inventory/count.html",
+        items=rows
+    )
     
 @inventory_bp.route("/discrepancias/excel")
 @login_required
