@@ -31,7 +31,7 @@
   </div>
 
   <div class="card shadow-sm mb-3 sticky-tools">
-    <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+    <div class="card-body d-flex gap-3 align-items-center">
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" id="toggleContinuous" checked>
         <label class="form-check-label fw-semibold">Dictado continuo</label>
@@ -62,6 +62,7 @@
             <th style="width:120px;">Estado</th>
           </tr>
         </thead>
+
         <tbody>
           {% for i in items %}
           <tr>
@@ -71,6 +72,7 @@
               {{ i.material_text }}
             </td>
 
+            <!-- UNIDAD DE MEDIDA -->
             <td class="text-center fw-semibold">
               {{ i.base_unit }}
             </td>
@@ -79,10 +81,9 @@
               {{ i.location }}
             </td>
 
-            <!-- 🔥 STOCK + UNIDAD (CLARO PARA DICTADO) -->
+            <!-- STOCK REAL -->
             <td class="text-center fw-semibold">
-              {{ i.stock }}
-              <span class="text-muted">{{ i.base_unit }}</span>
+              {{ i.libre_utilizacion }}
             </td>
 
             <td>
@@ -95,17 +96,20 @@
                      data-loc="{{ i.location }}">
             </td>
 
+            <!-- ESTADO REAL DEL MODELO -->
             <td class="text-center">
               <span class="badge
-                {% if i.estado == 'OK' %}bg-success
-                {% elif i.estado == 'Diferencia' %}bg-warning
-                {% else %}bg-secondary{% endif %}">
-                {{ i.estado }}
+                {% if i.status == 'NORMAL' %}bg-success
+                {% elif i.status == 'MEDIO' %}bg-warning
+                {% elif i.status == 'BAJO' %}bg-danger
+                {% else %}bg-dark{% endif %}">
+                {{ i.status }}
               </span>
             </td>
           </tr>
           {% endfor %}
         </tbody>
+
       </table>
     </div>
   </div>
@@ -123,17 +127,12 @@
   const toggleContinuous = document.getElementById("toggleContinuous");
   const toggleSpeak = document.getElementById("toggleSpeak");
 
-  /* ==========================
-     UTILIDADES
-  ========================== */
   const speak = (txt) => {
     if (!toggleSpeak.checked) return;
-    try {
-      const u = new SpeechSynthesisUtterance(txt);
-      u.lang = "es-PE";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch {}
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = "es-PE";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   };
 
   const setStatus = (msg, ok=true) => {
@@ -142,147 +141,74 @@
       : `<i class="bi bi-exclamation-triangle me-1"></i> ${msg}`;
   };
 
-  const findInputByCode = (code) => {
-    return document.querySelector(
-      `.count-input[data-code="${code}"]`
-    );
-  };
+  const findInputByCode = (code) =>
+    document.querySelector(`.count-input[data-code="${code}"]`);
 
-  /* ==========================
-     GUARDAR FILA
-  ========================== */
   const saveRow = async (inputEl) => {
-    const code = inputEl.dataset.code;
-    const loc = inputEl.dataset.loc;
     const val = parseInt(inputEl.value || "0", 10) || 0;
 
-    const tr = inputEl.closest("tr");
-    tr.classList.add("row-saving");
+    await fetch("{{ url_for('inventory.save_count_row') }}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        material_code: inputEl.dataset.code,
+        location: inputEl.dataset.loc,
+        real_count: val
+      })
+    });
 
-    try {
-      const res = await fetch("{{ url_for('inventory.save_count_row') }}", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          material_code: code,
-          location: loc,
-          real_count: val
-        })
-      });
-      const j = await res.json();
-      if (j && j.success) {
-        speak("registrado");
-        setStatus(`Código ${code}, cantidad ${val}`);
-      }
-    } catch {
-      setStatus("Error al guardar", false);
-    } finally {
-      tr.classList.remove("row-saving");
-    }
+    speak("registrado");
+    setStatus(`Código ${inputEl.dataset.code}, cantidad ${val}`);
   };
 
-  /* ==========================
-     SPEECH RECOGNITION
-  ========================== */
-  const getRecognition = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
-    const r = new SR();
-    r.lang = "es-PE";
-    r.continuous = true;
-    r.interimResults = false;
-    return r;
-  };
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   const startRecognition = () => {
-    if (listening) return;
+    if (!SR || listening) return;
 
-    recognition = getRecognition();
-    if (!recognition) {
-      setStatus("Dictado no soportado", false);
-      return;
-    }
-
-    manualStop = false;
+    recognition = new SR();
+    recognition.lang = "es-PE";
+    recognition.continuous = true;
 
     recognition.onresult = (e) => {
-      const text = e.results[e.results.length - 1][0]
-        .transcript.toLowerCase();
-
-      // Extraer números
+      const text = e.results[e.results.length - 1][0].transcript;
       const nums = text.match(/\d+/g) || [];
 
       const code = nums.find(n => n.length >= 8);
-      const qty  = nums.find(n => n.length >= 1 && n.length <= 3);
+      const qty  = nums.find(n => n.length <= 3);
 
-      if (!code || !qty) {
-        setStatus("Diga: código + cantidad", false);
-        return;
-      }
+      if (!code || !qty) return;
 
       const input = findInputByCode(code);
+      if (!input) return;
 
-      if (!input) {
-        setStatus(`Código ${code} no encontrado`, false);
-        speak("código no encontrado");
-        return;
-      }
-
-      input.focus();
       input.value = qty;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-
       saveRow(input);
     };
 
-    recognition.onerror = () => {
-      setStatus("Error de micrófono", false);
-    };
-
     recognition.onend = () => {
-      listening = false;
       if (!manualStop && toggleContinuous.checked) {
-        setTimeout(() => {
-          try {
-            recognition.start();
-            listening = true;
-            setStatus("Escuchando...");
-          } catch {}
-        }, 300);
-      } else {
-        setStatus("Dictado detenido");
-        btnVoice.classList.remove("btn-primary");
-        btnVoice.classList.add("btn-outline-primary");
-        btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
+        recognition.start();
       }
     };
 
-    try {
-      recognition.start();
-      listening = true;
-      btnVoice.classList.add("btn-primary");
-      btnVoice.innerHTML =
-        '<i class="bi bi-mic-fill me-2"></i> Dictando...';
-      setStatus("Habla: código + cantidad");
-    } catch {
-      setStatus("No se pudo iniciar micrófono", false);
-    }
+    recognition.start();
+    listening = true;
+    btnVoice.classList.add("btn-primary");
+    setStatus("Habla: código + cantidad");
   };
 
   const stopRecognition = () => {
     manualStop = true;
-    try { recognition && recognition.stop(); } catch {}
+    recognition && recognition.stop();
     listening = false;
     setStatus("Dictado detenido");
   };
 
-  btnVoice.addEventListener("click", () => {
+  btnVoice.onclick = () =>
     listening ? stopRecognition() : startRecognition();
-  });
 
 })();
 </script>
+
 {% endblock %}
-
-
-
