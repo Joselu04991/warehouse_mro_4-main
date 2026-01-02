@@ -112,6 +112,7 @@
 
 <script>
 (() => {
+
   const root = document.getElementById("pageRoot");
   const btnGloves = document.getElementById("btnGloves");
   const btnVoice = document.getElementById("btnVoice");
@@ -120,20 +121,22 @@
   const voiceStatus = document.getElementById("voiceStatus");
   const btnSaveAll = document.getElementById("btnSaveAll");
 
-  // ======================
-  // Modo guantes
-  // ======================
+  /* ======================
+     MODO GUANTES
+  ====================== */
   const glovesKey = "mro_gloves_mode";
   const setGloves = (on) => {
     root.classList.toggle("gloves", on);
     localStorage.setItem(glovesKey, on ? "1" : "0");
   };
   setGloves(localStorage.getItem(glovesKey) === "1");
-  btnGloves.addEventListener("click", () => setGloves(!root.classList.contains("gloves")));
+  btnGloves.addEventListener("click", () =>
+    setGloves(!root.classList.contains("gloves"))
+  );
 
-  // ======================
-  // Voice speak
-  // ======================
+  /* ======================
+     VOZ (SPEAK)
+  ====================== */
   const speak = (text) => {
     if (!toggleSpeak.checked) return;
     try {
@@ -144,51 +147,41 @@
     } catch (e) {}
   };
 
-  // ======================
-  // Autosave por fila
-  // ======================
-  const badgeForRow = (tr, ok, msg) => {
-    const b = tr.querySelector(".status-badge");
-    if (!b) return;
-    if (ok) {
-      b.className = "badge bg-success status-badge";
-      b.textContent = msg || "Guardado";
-    } else {
-      b.className = "badge bg-danger status-badge";
-      b.textContent = msg || "Error";
-    }
-  };
-
+  /* ======================
+     GUARDAR FILA
+  ====================== */
   const saveRow = async (inputEl) => {
     const code = inputEl.dataset.code;
     const loc = inputEl.dataset.loc;
-    const val = parseInt((inputEl.value || "0").replace(/\D+/g, ""), 10) || 0;
+    const val = parseInt(inputEl.value || "0", 10) || 0;
 
     const tr = inputEl.closest("tr");
     tr.classList.add("row-saving");
-    badgeForRow(tr, true, "Guardando...");
 
     try {
       const res = await fetch("{{ url_for('inventory.save_count_row') }}", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ material_code: code, location: loc, real_count: val })
+        body: JSON.stringify({
+          material_code: code,
+          location: loc,
+          real_count: val
+        })
       });
       const j = await res.json();
       if (j && j.success) {
-        badgeForRow(tr, true, "Guardado");
         speak("registrado");
-      } else {
-        badgeForRow(tr, false, "Error");
       }
     } catch (e) {
-      badgeForRow(tr, false, "Error");
+      console.error(e);
     } finally {
       tr.classList.remove("row-saving");
     }
   };
 
-  // debounce por input
+  /* ======================
+     AUTOSAVE (DEBOUNCE)
+  ====================== */
   const timers = new Map();
   document.querySelectorAll(".count-input").forEach(inp => {
     inp.addEventListener("input", () => {
@@ -198,18 +191,20 @@
     });
   });
 
-  // Guardar todo (si quieres)
+  /* ======================
+     BOTÓN GUARDAR TODO
+  ====================== */
   btnSaveAll.addEventListener("click", async () => {
     const data = [];
     document.querySelectorAll(".count-input").forEach(inp => {
-      const code = inp.dataset.code;
-      const loc = inp.dataset.loc;
-      const val = parseInt((inp.value || "0").replace(/\D+/g, ""), 10) || 0;
-      data.push({ material_code: code, location: loc, real_count: val });
+      data.push({
+        material_code: inp.dataset.code,
+        location: inp.dataset.loc,
+        real_count: parseInt(inp.value || "0", 10) || 0
+      });
     });
 
     btnSaveAll.disabled = true;
-    btnSaveAll.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Guardando...';
 
     try {
       const res = await fetch("{{ url_for('inventory.save_count') }}", {
@@ -218,18 +213,15 @@
         body: JSON.stringify(data)
       });
       const j = await res.json();
-      if (j && j.success) {
-        speak("registrado");
-      }
-    } catch(e) {} finally {
+      if (j && j.success) speak("registrado");
+    } catch (e) {} finally {
       btnSaveAll.disabled = false;
-      btnSaveAll.innerHTML = '<i class="bi bi-cloud-check me-2"></i> Guardar todo';
     }
   });
 
-  // ======================
-  // Dictado por voz (Web Speech API)
-  // ======================
+  /* ======================
+     DICTADO POR VOZ (REGLA: CÓDIGO + CANTIDAD)
+  ====================== */
   let rec = null;
   let listening = false;
 
@@ -238,15 +230,18 @@
     if (!SR) return null;
     const r = new SR();
     r.lang = "es-PE";
-    r.interimResults = false;
     r.continuous = true;
+    r.interimResults = false;
     return r;
   };
 
-  const activeInput = () => document.activeElement && document.activeElement.classList &&
-    document.activeElement.classList.contains("count-input") ? document.activeElement : null;
+  const activeInput = () =>
+    document.activeElement &&
+    document.activeElement.classList.contains("count-input")
+      ? document.activeElement
+      : null;
 
-  const setVoiceStatus = (txt, ok=true) => {
+  const setVoiceStatus = (txt, ok = true) => {
     voiceStatus.innerHTML = ok
       ? `<i class="bi bi-mic me-1"></i> ${txt}`
       : `<i class="bi bi-exclamation-triangle me-1"></i> ${txt}`;
@@ -261,27 +256,37 @@
     }
 
     rec.onresult = (ev) => {
-      const text = ev.results[ev.results.length - 1][0].transcript.trim();
-      const nums = text.replace(/[^0-9]/g, "");
-      const inp = activeInput();
+      const text = ev.results[ev.results.length - 1][0].transcript.toLowerCase();
 
-      if (!inp) {
-        setVoiceStatus("Toca un campo de conteo para dictar ahí", false);
+      // 🔑 EXTRAER NÚMEROS
+      const matches = text.match(/\d+/g) || [];
+
+      // Código: 8+ dígitos | Cantidad: 1–3 dígitos
+      const codes = matches.filter(n => n.length >= 8);
+      const quantities = matches.filter(n => n.length >= 1 && n.length <= 3);
+
+      // OBLIGATORIO: código + cantidad
+      if (codes.length === 0 || quantities.length === 0) {
+        setVoiceStatus("Diga código y cantidad", false);
         return;
       }
 
-      if (nums.length > 0) {
-        inp.value = nums;
-        inp.dispatchEvent(new Event("input", {bubbles: true}));
-        setVoiceStatus(`Dictado: ${nums}`);
-      } else {
-        setVoiceStatus(`No entendí número: "${text}"`, false);
+      // Usar la ÚLTIMA cantidad
+      const number = quantities[quantities.length - 1];
+
+      const inp = activeInput();
+      if (!inp) {
+        setVoiceStatus("Toca un campo de conteo", false);
+        return;
       }
+
+      inp.value = number;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      setVoiceStatus(`Registrando: ${number}`);
     };
 
-    rec.onerror = (e) => {
-      setVoiceStatus(`Error mic: ${e.error || "desconocido"}`, false);
-      if (!toggleContinuous.checked) stopVoice();
+    rec.onerror = () => {
+      setVoiceStatus("Error micrófono", false);
     };
 
     rec.onend = () => {
@@ -290,7 +295,6 @@
       btnVoice.classList.add("btn-outline-primary");
       btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
       if (toggleContinuous.checked) {
-        // reintenta continuo
         try { rec.start(); listening = true; } catch(e) {}
       }
     };
@@ -298,29 +302,25 @@
     try {
       rec.start();
       listening = true;
-      btnVoice.classList.remove("btn-outline-primary");
       btnVoice.classList.add("btn-primary");
       btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
-      setVoiceStatus("Activo (toca un campo y dicta números)");
+      setVoiceStatus("Dictado activo (código + cantidad)");
     } catch (e) {
-      setVoiceStatus("No se pudo iniciar el micrófono", false);
+      setVoiceStatus("No se pudo iniciar micrófono", false);
     }
   };
 
   const stopVoice = () => {
     try { if (rec) rec.stop(); } catch(e) {}
     listening = false;
-    setVoiceStatus("Detenido");
+    setVoiceStatus("Dictado detenido");
   };
 
-  btnVoice.addEventListener("click", () => listening ? stopVoice() : startVoice());
+  btnVoice.addEventListener("click", () =>
+    listening ? stopVoice() : startVoice()
+  );
 
 })();
 </script>
 
 {% endblock %}
-
-
-
-
-
