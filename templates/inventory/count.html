@@ -2,41 +2,48 @@
 {% block content %}
 
 <style>
-  .gloves * {
-    font-size: 1.2rem !important;
+  .gloves * { font-size: 1.2rem !important; }
+  .gloves input { height: 56px; font-size: 1.3rem !important; }
+  .gloves .btn { padding: 1rem 1.2rem !important; }
+
+  .sticky-tools {
+    position: sticky;
+    top: 10px;
+    z-index: 10;
   }
-  .gloves input.form-control {
-    height: 56px;
-    font-size: 1.3rem !important;
-  }
-  .gloves .btn {
-    padding: 0.9rem 1.2rem !important;
-  }
+
   .row-saving {
-    outline: 2px dashed rgba(25,135,84,.35);
-    border-radius: 10px;
+    outline: 2px dashed rgba(25,135,84,.5);
+    border-radius: 8px;
   }
 </style>
 
 <div id="pageRoot" class="container">
 
+  <!-- ================= HEADER ================= -->
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-      <h2 class="fw-bold mb-0">Conteo</h2>
-      <div class="text-muted small">Dictado por voz + guardado automático</div>
+    <div class="d-flex align-items-center">
+      <i class="bi bi-clipboard-check fs-2 text-success me-3"></i>
+      <div>
+        <h2 class="fw-bold mb-0">Conteo Físico</h2>
+        <div class="text-muted small">
+          Dictado por voz + guardado automático
+        </div>
+      </div>
     </div>
 
     <div class="d-flex gap-2">
       <button id="btnGloves" class="btn btn-outline-dark">
-        <i class="bi bi-hand-index-thumb me-2"></i> Guantes
+        <i class="bi bi-hand-index-thumb"></i> Guantes
       </button>
       <button id="btnVoice" class="btn btn-outline-primary">
-        <i class="bi bi-mic me-2"></i> Dictado
+        <i class="bi bi-mic"></i> Dictado
       </button>
     </div>
   </div>
 
-  <div class="card shadow-sm mb-3">
+  <!-- ================= TOOLS ================= -->
+  <div class="card shadow-sm mb-3 sticky-tools">
     <div class="card-body d-flex gap-4 align-items-center">
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" id="toggleContinuous" checked>
@@ -49,11 +56,12 @@
       </div>
 
       <div class="ms-auto text-muted small" id="voiceStatus">
-        <i class="bi bi-mic me-1"></i> Micrófono listo
+        <i class="bi bi-info-circle me-1"></i> Micrófono: listo
       </div>
     </div>
   </div>
 
+  <!-- ================= TABLE ================= -->
   <div class="card shadow-sm">
     <div class="card-body table-responsive">
       <table class="table table-hover align-middle">
@@ -63,125 +71,127 @@
             <th>Descripción</th>
             <th>UM</th>
             <th>Ubicación</th>
-            <th>Stock sistema</th>
+            <th>Stock</th>
             <th style="width:160px;">Conteo</th>
+            <th style="width:120px;">Estado</th>
           </tr>
         </thead>
-
         <tbody>
-          {% for i in items %}
-          <tr data-code="{{ i.material_code }}">
-            <td class="fw-semibold">{{ i.material_code }}</td>
-            <td class="text-muted small">{{ i.material_text or "—" }}</td>
-            <td class="text-center fw-semibold">{{ i.base_unit or "—" }}</td>
-            <td class="text-center fw-semibold">{{ i.location }}</td>
-            <td class="text-center fw-semibold">{{ i.stock_sistema }}</td>
+        {% for i in items %}
+          <tr>
+            <td class="fw-bold">{{ i.material_code }}</td>
+            <td class="text-muted small">{{ i.material_text }}</td>
+            <td class="text-center fw-semibold">{{ i.base_unit }}</td>
+            <td class="text-center fw-bold">{{ i.location }}</td>
+            <td class="text-center fw-bold">{{ i.stock }}</td>
 
             <td>
               <input class="form-control text-center count-input"
-                     type="number"
-                     min="0"
                      value="{{ i.real_count }}"
+                     inputmode="numeric"
+                     pattern="[0-9]*"
                      data-code="{{ i.material_code }}"
                      data-loc="{{ i.location }}">
             </td>
+
+            <td class="text-center">
+              <span class="badge
+                {% if i.estado == 'OK' %}bg-success
+                {% elif i.estado == 'Diferencia' %}bg-warning
+                {% else %}bg-secondary{% endif %}">
+                {{ i.estado }}
+              </span>
+            </td>
           </tr>
-          {% endfor %}
+        {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
-
 </div>
 
+<!-- ================= SCRIPT ================= -->
 <script>
 (() => {
 
   const root = document.getElementById("pageRoot");
   const btnGloves = document.getElementById("btnGloves");
   const btnVoice = document.getElementById("btnVoice");
+  const voiceStatus = document.getElementById("voiceStatus");
   const toggleContinuous = document.getElementById("toggleContinuous");
   const toggleSpeak = document.getElementById("toggleSpeak");
-  const voiceStatus = document.getElementById("voiceStatus");
 
-  /* ======================
-     MODO GUANTES
-  ====================== */
+  /* ===== MODO GUANTES ===== */
   const glovesKey = "mro_gloves";
-  const setGloves = (on) => {
+  const setGloves = on => {
     root.classList.toggle("gloves", on);
     localStorage.setItem(glovesKey, on ? "1" : "0");
   };
   setGloves(localStorage.getItem(glovesKey) === "1");
-  btnGloves.onclick = () =>
-    setGloves(!root.classList.contains("gloves"));
+  btnGloves.onclick = () => setGloves(!root.classList.contains("gloves"));
 
-  /* ======================
-     GUARDAR FILA
-  ====================== */
+  /* ===== VOZ ===== */
+  const speak = txt => {
+    if (!toggleSpeak.checked) return;
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = "es-PE";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  };
+
+  const setStatus = txt =>
+    voiceStatus.innerHTML = `<i class="bi bi-mic me-1"></i> ${txt}`;
+
+  /* ===== AUTOSAVE ===== */
   const saveRow = async (input) => {
     const tr = input.closest("tr");
     tr.classList.add("row-saving");
 
     await fetch("{{ url_for('inventory.save_count_row') }}", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
         material_code: input.dataset.code,
         location: input.dataset.loc,
-        real_count: parseFloat(input.value || 0)
+        real_count: parseInt(input.value || "0", 10)
       })
     });
 
     tr.classList.remove("row-saving");
-    if (toggleSpeak.checked) speak("registrado");
+    speak("registrado");
   };
 
   document.querySelectorAll(".count-input").forEach(inp => {
     let t;
-    inp.oninput = () => {
+    inp.addEventListener("input", () => {
       clearTimeout(t);
-      t = setTimeout(() => saveRow(inp), 400);
-    };
+      t = setTimeout(() => saveRow(inp), 500);
+    });
   });
 
-  /* ======================
-     VOZ
-  ====================== */
-  const speak = (txt) => {
-    try {
-      const u = new SpeechSynthesisUtterance(txt);
-      u.lang = "es-PE";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch {}
+  /* ===== DICTADO ===== */
+  let rec = null, listening = false;
+
+  const getRec = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = "es-PE";
+    r.continuous = true;
+    return r;
   };
 
-  let recognition = null;
-  let listening = false;
-  let manualStop = false;
-
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  const findInput = (code) =>
+  const findInput = code =>
     document.querySelector(`.count-input[data-code="${code}"]`);
 
-  const startVoice = () => {
-    if (!SR) {
-      alert("Navegador no soporta dictado");
-      return;
-    }
+  const start = () => {
+    if (listening) return;
+    rec = getRec();
+    if (!rec) return alert("Dictado no soportado");
 
-    recognition = new SR();
-    recognition.lang = "es-PE";
-    recognition.continuous = true;
-
-    manualStop = false;
-
-    recognition.onresult = (e) => {
-      const text = e.results[e.results.length - 1][0].transcript;
+    rec.onresult = e => {
+      const text = e.results[e.results.length-1][0].transcript;
       const nums = text.match(/\d+/g) || [];
-
       const code = nums.find(n => n.length >= 8);
       const qty  = nums.find(n => n.length <= 3);
 
@@ -191,34 +201,32 @@
       if (!input) return;
 
       input.value = qty;
-      saveRow(input);
+      input.dispatchEvent(new Event("input", {bubbles:true}));
+      setStatus(`Código ${code} → ${qty}`);
     };
 
-    recognition.onend = () => {
-      listening = false;
-      if (!manualStop && toggleContinuous.checked) {
-        setTimeout(() => recognition.start(), 300);
-        listening = true;
+    rec.onend = () => {
+      if (toggleContinuous.checked) {
+        setTimeout(() => rec.start(), 300);
       }
     };
 
-    recognition.start();
+    rec.start();
     listening = true;
-    btnVoice.classList.add("btn-primary");
-    voiceStatus.innerHTML = "🎙️ Escuchando...";
+    btnVoice.classList.replace("btn-outline-primary","btn-primary");
+    btnVoice.innerHTML = '<i class="bi bi-mic-fill"></i> Dictando';
+    setStatus("Habla: código + cantidad");
   };
 
-  const stopVoice = () => {
-    manualStop = true;
-    recognition && recognition.stop();
+  const stop = () => {
     listening = false;
-    btnVoice.classList.remove("btn-primary");
-    voiceStatus.innerHTML = "🎤 Dictado detenido";
+    rec && rec.stop();
+    btnVoice.classList.replace("btn-primary","btn-outline-primary");
+    btnVoice.innerHTML = '<i class="bi bi-mic"></i> Dictado';
+    setStatus("Dictado detenido");
   };
 
-  btnVoice.onclick = () => {
-    listening ? stopVoice() : startVoice();
-  };
+  btnVoice.onclick = () => listening ? stop() : start();
 
 })();
 </script>
