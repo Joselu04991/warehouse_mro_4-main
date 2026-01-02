@@ -114,121 +114,132 @@
 <script>
 (() => {
 
-  const root = document.getElementById("pageRoot");
-  const btnGloves = document.getElementById("btnGloves");
+  let recognition = null;
+  let listening = false;
+
   const btnVoice = document.getElementById("btnVoice");
   const voiceStatus = document.getElementById("voiceStatus");
+
   const toggleContinuous = document.getElementById("toggleContinuous");
   const toggleSpeak = document.getElementById("toggleSpeak");
 
-  /* ===== MODO GUANTES ===== */
-  const glovesKey = "mro_gloves";
-  const setGloves = on => {
-    root.classList.toggle("gloves", on);
-    localStorage.setItem(glovesKey, on ? "1" : "0");
-  };
-  setGloves(localStorage.getItem(glovesKey) === "1");
-  btnGloves.onclick = () => setGloves(!root.classList.contains("gloves"));
-
-  /* ===== VOZ ===== */
-  const speak = txt => {
+  const speak = (txt) => {
     if (!toggleSpeak.checked) return;
-    const u = new SpeechSynthesisUtterance(txt);
-    u.lang = "es-PE";
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
+    try {
+      const u = new SpeechSynthesisUtterance(txt);
+      u.lang = "es-PE";
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch {}
   };
 
-  const setStatus = txt =>
-    voiceStatus.innerHTML = `<i class="bi bi-mic me-1"></i> ${txt}`;
+  const setStatus = (msg, ok = true) => {
+    voiceStatus.innerHTML = ok
+      ? `<i class="bi bi-mic me-1"></i> ${msg}`
+      : `<i class="bi bi-exclamation-triangle me-1"></i> ${msg}`;
+  };
 
-  /* ===== AUTOSAVE ===== */
+  const findInputByCode = (code) => {
+    return document.querySelector(`.count-input[data-code="${code}"]`);
+  };
+
   const saveRow = async (input) => {
-    const tr = input.closest("tr");
-    tr.classList.add("row-saving");
+    const val = parseInt(input.value || "0", 10) || 0;
 
     await fetch("{{ url_for('inventory.save_count_row') }}", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
+      headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         material_code: input.dataset.code,
         location: input.dataset.loc,
-        real_count: parseInt(input.value || "0", 10)
+        real_count: val
       })
     });
 
-    tr.classList.remove("row-saving");
     speak("registrado");
   };
 
-  document.querySelectorAll(".count-input").forEach(inp => {
-    let t;
-    inp.addEventListener("input", () => {
-      clearTimeout(t);
-      t = setTimeout(() => saveRow(inp), 500);
-    });
-  });
-
-  /* ===== DICTADO ===== */
-  let rec = null, listening = false;
-
-  const getRec = () => {
+  const getRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return null;
+
     const r = new SR();
     r.lang = "es-PE";
-    r.continuous = true;
+    r.interimResults = false;
+    r.continuous = false; // 🔥 CLAVE PARA CELULAR
     return r;
   };
 
-  const findInput = code =>
-    document.querySelector(`.count-input[data-code="${code}"]`);
-
-  const start = () => {
+  const startRecognition = () => {
     if (listening) return;
-    rec = getRec();
-    if (!rec) return alert("Dictado no soportado");
 
-    rec.onresult = e => {
-      const text = e.results[e.results.length-1][0].transcript;
+    recognition = getRecognition();
+    if (!recognition) {
+      setStatus("Dictado no soportado", false);
+      return;
+    }
+
+    listening = true;
+    setStatus("Habla: código y cantidad");
+
+    recognition.onresult = (e) => {
+      const text = e.results[0][0].transcript.toLowerCase();
       const nums = text.match(/\d+/g) || [];
+
       const code = nums.find(n => n.length >= 8);
       const qty  = nums.find(n => n.length <= 3);
 
-      if (!code || !qty) return;
+      if (!code || !qty) {
+        setStatus("No entendí código y cantidad", false);
+        return;
+      }
 
-      const input = findInput(code);
-      if (!input) return;
+      const input = findInputByCode(code);
+      if (!input) {
+        setStatus(`Código ${code} no encontrado`, false);
+        speak("código no encontrado");
+        return;
+      }
 
       input.value = qty;
-      input.dispatchEvent(new Event("input", {bubbles:true}));
-      setStatus(`Código ${code} → ${qty}`);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      saveRow(input);
+
+      setStatus(`Código ${code}, ${qty}`);
     };
 
-    rec.onend = () => {
+    recognition.onerror = () => {
+      setStatus("Error de micrófono", false);
+    };
+
+    recognition.onend = () => {
+      listening = false;
+
+      // 🔥 REINICIO AUTOMÁTICO (CELULAR)
       if (toggleContinuous.checked) {
-        setTimeout(() => rec.start(), 300);
+        setTimeout(() => startRecognition(), 400);
+      } else {
+        setStatus("Dictado detenido");
+        btnVoice.classList.remove("btn-primary");
+        btnVoice.classList.add("btn-outline-primary");
       }
     };
 
-    rec.start();
-    listening = true;
-    btnVoice.classList.replace("btn-outline-primary","btn-primary");
-    btnVoice.innerHTML = '<i class="bi bi-mic-fill"></i> Dictando';
-    setStatus("Habla: código + cantidad");
+    try {
+      recognition.start();
+      btnVoice.classList.add("btn-primary");
+      btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
+    } catch {
+      setStatus("No se pudo iniciar micrófono", false);
+    }
   };
 
-  const stop = () => {
-    listening = false;
-    rec && rec.stop();
-    btnVoice.classList.replace("btn-primary","btn-outline-primary");
-    btnVoice.innerHTML = '<i class="bi bi-mic"></i> Dictado';
-    setStatus("Dictado detenido");
-  };
-
-  btnVoice.onclick = () => listening ? stop() : start();
+  btnVoice.addEventListener("click", () => {
+    if (listening) return;
+    startRecognition();
+  });
 
 })();
 </script>
-
 {% endblock %}
+
