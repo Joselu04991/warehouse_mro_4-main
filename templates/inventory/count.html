@@ -104,27 +104,29 @@
   const voiceStatus = document.getElementById("voiceStatus");
   const toggleSpeak = document.getElementById("toggleSpeak");
 
-  const speak = (t) => {
-    if (!toggleSpeak.checked) return;
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang = "es-PE";
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  };
-
-  let rec = null;
+  let recognition = null;
   let listening = false;
 
-  const setStatus = (t, ok=true) => {
+  const setStatus = (txt, ok=true) => {
     voiceStatus.innerHTML = ok
-      ? `<i class="bi bi-mic me-1"></i> ${t}`
-      : `<i class="bi bi-exclamation-triangle me-1"></i> ${t}`;
+      ? `🎙️ ${txt}`
+      : `⚠️ ${txt}`;
+  };
+
+  const speak = (text) => {
+    if (!toggleSpeak.checked) return;
+    try {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "es-PE";
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+    } catch {}
   };
 
   const getRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      alert("Este navegador no soporta dictado por voz");
+      alert("Este navegador NO soporta dictado por voz");
       return null;
     }
     const r = new SR();
@@ -143,21 +145,22 @@
   const startVoice = async () => {
     if (listening) return;
 
-    // 🔴 FORZAR PERMISO DE MICRÓFONO
+    // 🔴 FORZAR PERMISO DE MICRÓFONO (CLAVE)
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      alert("Debes permitir el micrófono");
+      alert("Debes permitir el micrófono para usar dictado");
       return;
     }
 
-    rec = getRecognition();
-    if (!rec) return;
+    recognition = getRecognition();
+    if (!recognition) return;
 
-    rec.onresult = (e) => {
+    recognition.onresult = (e) => {
       const text = e.results[e.results.length - 1][0].transcript.toLowerCase();
-      const nums = text.match(/\d+/g) || [];
+      console.log("DICTADO:", text);
 
+      const nums = text.match(/\d+/g) || [];
       const codes = nums.filter(n => n.length >= 8);
       const qtys  = nums.filter(n => n.length >= 1 && n.length <= 3);
 
@@ -166,39 +169,53 @@
         return;
       }
 
-      const inp = activeInput();
-      if (!inp) {
-        setStatus("Toca el campo de conteo", false);
+      const input = activeInput();
+      if (!input) {
+        setStatus("Primero toque el campo de conteo", false);
         return;
       }
 
-      const q = qtys[qtys.length - 1];
-      inp.value = q;
-      inp.dispatchEvent(new Event("input", { bubbles: true }));
-      setStatus(`Registrado: ${q}`);
+      const cantidad = qtys[qtys.length - 1];
+      input.value = cantidad;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+
+      setStatus(`Registrado: ${cantidad}`);
       speak("registrado");
     };
 
-    rec.onerror = () => setStatus("Error de micrófono", false);
+    recognition.onerror = (e) => {
+      console.error("ERROR MIC:", e);
+      setStatus("Error de micrófono", false);
+    };
 
-    rec.start();
+    recognition.onend = () => {
+      listening = false;
+      btnVoice.classList.remove("btn-primary");
+      btnVoice.classList.add("btn-outline-primary");
+      btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
+      setStatus("Dictado detenido");
+    };
+
+    recognition.start();
     listening = true;
-    btnVoice.classList.replace("btn-outline-primary", "btn-primary");
+
+    btnVoice.classList.remove("btn-outline-primary");
+    btnVoice.classList.add("btn-primary");
     btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
-    setStatus("Dictado activo (código + cantidad)");
+
+    setStatus("Hable: código + cantidad");
   };
 
   const stopVoice = () => {
-    try { rec && rec.stop(); } catch {}
-    listening = false;
-    btnVoice.classList.replace("btn-primary", "btn-outline-primary");
-    btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
-    setStatus("Dictado detenido");
+    try { recognition && recognition.stop(); } catch {}
   };
 
-  btnVoice.onclick = () => listening ? stopVoice() : startVoice();
+  btnVoice.addEventListener("click", () => {
+    listening ? stopVoice() : startVoice();
+  });
 
 })();
 </script>
 
 {% endblock %}
+
