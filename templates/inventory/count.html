@@ -66,10 +66,24 @@
           {% for i in items %}
           <tr>
             <td class="fw-semibold">{{ i.material_code }}</td>
-            <td class="text-muted small">{{ i.material_text }}</td>
-            <td class="text-center">{{ i.base_unit }}</td>
-            <td class="text-center fw-semibold">{{ i.location }}</td>
-            <td class="text-center fw-semibold">{{ i.stock }}</td>
+
+            <td class="text-muted small">
+              {{ i.material_text }}
+            </td>
+
+            <td class="text-center fw-semibold">
+              {{ i.base_unit }}
+            </td>
+
+            <td class="text-center fw-semibold">
+              {{ i.location }}
+            </td>
+
+            <!-- 🔥 STOCK + UNIDAD (CLARO PARA DICTADO) -->
+            <td class="text-center fw-semibold">
+              {{ i.stock }}
+              <span class="text-muted">{{ i.base_unit }}</span>
+            </td>
 
             <td>
               <input class="form-control text-center count-input"
@@ -269,5 +283,6 @@
 })();
 </script>
 {% endblock %}
+
 
 
