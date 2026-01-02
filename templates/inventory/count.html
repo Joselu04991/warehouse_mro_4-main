@@ -16,7 +16,7 @@
       <i class="bi bi-clipboard-check fs-2 me-3 text-success"></i>
       <div>
         <h2 class="fw-bold mb-0">Conteo</h2>
-        <div class="text-muted small">Dictado + guardado automático por fila</div>
+        <div class="text-muted small">Dictado por voz + guardado automático</div>
       </div>
     </div>
 
@@ -34,12 +34,12 @@
     <div class="card-body d-flex flex-wrap gap-3 align-items-center">
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" id="toggleContinuous" checked>
-        <label class="form-check-label fw-semibold" for="toggleContinuous">Dictado continuo</label>
+        <label class="form-check-label fw-semibold">Dictado continuo</label>
       </div>
 
       <div class="form-check form-switch">
         <input class="form-check-input" type="checkbox" id="toggleSpeak" checked>
-        <label class="form-check-label fw-semibold" for="toggleSpeak">Confirmación por voz (“registrado”)</label>
+        <label class="form-check-label fw-semibold">Confirmación por voz</label>
       </div>
 
       <div class="ms-auto text-muted small" id="voiceStatus">
@@ -58,13 +58,13 @@
             <th>UM</th>
             <th>Ubicación</th>
             <th>Stock</th>
-            <th style="width: 170px;">Conteo</th>
-            <th style="width: 130px;">Estado</th>
+            <th style="width:160px;">Conteo</th>
+            <th style="width:120px;">Estado</th>
           </tr>
         </thead>
         <tbody>
           {% for i in items %}
-          <tr data-code="{{ i.material_code }}" data-loc="{{ i.location }}">
+          <tr>
             <td class="fw-semibold">{{ i.material_code }}</td>
             <td class="text-muted small">{{ i.material_text }}</td>
             <td class="text-center">{{ i.base_unit }}</td>
@@ -83,151 +83,50 @@
 
             <td class="text-center">
               <span class="badge
-              {% if i.estado == 'OK' %}bg-success
-              {% elif i.estado == 'Diferencia' %}bg-warning
-              {% else %}bg-secondary{% endif %}
-            ">
-              {{ i.estado }}
-            </span>
+                {% if i.estado == 'OK' %}bg-success
+                {% elif i.estado == 'Diferencia' %}bg-warning
+                {% else %}bg-secondary{% endif %}">
+                {{ i.estado }}
+              </span>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-
-      <div class="d-flex justify-content-end gap-2 mt-3">
-        <button id="btnSaveAll" class="btn btn-success">
-          <i class="bi bi-cloud-check me-2"></i> Guardar todo
-        </button>
-        <a href="{{ url_for('inventory.download_discrepancies_excel') }}"
-           class="btn btn-outline-danger">
-          <i class="bi bi-file-earmark-excel me-2"></i>
-          Descargar discrepancias
-        </a>
-      </div>
     </div>
   </div>
-
 </div>
 
 <script>
 (() => {
 
-  const root = document.getElementById("pageRoot");
-  const btnGloves = document.getElementById("btnGloves");
   const btnVoice = document.getElementById("btnVoice");
-  const toggleContinuous = document.getElementById("toggleContinuous");
-  const toggleSpeak = document.getElementById("toggleSpeak");
   const voiceStatus = document.getElementById("voiceStatus");
-  const btnSaveAll = document.getElementById("btnSaveAll");
+  const toggleSpeak = document.getElementById("toggleSpeak");
 
-  /* ======================
-     MODO GUANTES
-  ====================== */
-  const glovesKey = "mro_gloves_mode";
-  const setGloves = (on) => {
-    root.classList.toggle("gloves", on);
-    localStorage.setItem(glovesKey, on ? "1" : "0");
-  };
-  setGloves(localStorage.getItem(glovesKey) === "1");
-  btnGloves.addEventListener("click", () =>
-    setGloves(!root.classList.contains("gloves"))
-  );
-
-  /* ======================
-     VOZ (SPEAK)
-  ====================== */
-  const speak = (text) => {
+  const speak = (t) => {
     if (!toggleSpeak.checked) return;
-    try {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "es-PE";
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-    } catch (e) {}
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "es-PE";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
   };
 
-  /* ======================
-     GUARDAR FILA
-  ====================== */
-  const saveRow = async (inputEl) => {
-    const code = inputEl.dataset.code;
-    const loc = inputEl.dataset.loc;
-    const val = parseInt(inputEl.value || "0", 10) || 0;
-
-    const tr = inputEl.closest("tr");
-    tr.classList.add("row-saving");
-
-    try {
-      const res = await fetch("{{ url_for('inventory.save_count_row') }}", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-          material_code: code,
-          location: loc,
-          real_count: val
-        })
-      });
-      const j = await res.json();
-      if (j && j.success) {
-        speak("registrado");
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      tr.classList.remove("row-saving");
-    }
-  };
-
-  /* ======================
-     AUTOSAVE (DEBOUNCE)
-  ====================== */
-  const timers = new Map();
-  document.querySelectorAll(".count-input").forEach(inp => {
-    inp.addEventListener("input", () => {
-      const key = inp.dataset.code + "|" + inp.dataset.loc;
-      clearTimeout(timers.get(key));
-      timers.set(key, setTimeout(() => saveRow(inp), 450));
-    });
-  });
-
-  /* ======================
-     BOTÓN GUARDAR TODO
-  ====================== */
-  btnSaveAll.addEventListener("click", async () => {
-    const data = [];
-    document.querySelectorAll(".count-input").forEach(inp => {
-      data.push({
-        material_code: inp.dataset.code,
-        location: inp.dataset.loc,
-        real_count: parseInt(inp.value || "0", 10) || 0
-      });
-    });
-
-    btnSaveAll.disabled = true;
-
-    try {
-      const res = await fetch("{{ url_for('inventory.save_count') }}", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
-      });
-      const j = await res.json();
-      if (j && j.success) speak("registrado");
-    } catch (e) {} finally {
-      btnSaveAll.disabled = false;
-    }
-  });
-
-  /* ======================
-     DICTADO POR VOZ (REGLA: CÓDIGO + CANTIDAD)
-  ====================== */
   let rec = null;
   let listening = false;
 
+  const setStatus = (t, ok=true) => {
+    voiceStatus.innerHTML = ok
+      ? `<i class="bi bi-mic me-1"></i> ${t}`
+      : `<i class="bi bi-exclamation-triangle me-1"></i> ${t}`;
+  };
+
   const getRecognition = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return null;
+    if (!SR) {
+      alert("Este navegador no soporta dictado por voz");
+      return null;
+    }
     const r = new SR();
     r.lang = "es-PE";
     r.continuous = true;
@@ -241,84 +140,63 @@
       ? document.activeElement
       : null;
 
-  const setVoiceStatus = (txt, ok = true) => {
-    voiceStatus.innerHTML = ok
-      ? `<i class="bi bi-mic me-1"></i> ${txt}`
-      : `<i class="bi bi-exclamation-triangle me-1"></i> ${txt}`;
-  };
-
-  const startVoice = () => {
+  const startVoice = async () => {
     if (listening) return;
-    rec = getRecognition();
-    if (!rec) {
-      setVoiceStatus("Tu navegador no soporta dictado", false);
+
+    // 🔴 FORZAR PERMISO DE MICRÓFONO
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      alert("Debes permitir el micrófono");
       return;
     }
 
-    rec.onresult = (ev) => {
-      const text = ev.results[ev.results.length - 1][0].transcript.toLowerCase();
+    rec = getRecognition();
+    if (!rec) return;
 
-      // 🔑 EXTRAER NÚMEROS
-      const matches = text.match(/\d+/g) || [];
+    rec.onresult = (e) => {
+      const text = e.results[e.results.length - 1][0].transcript.toLowerCase();
+      const nums = text.match(/\d+/g) || [];
 
-      // Código: 8+ dígitos | Cantidad: 1–3 dígitos
-      const codes = matches.filter(n => n.length >= 8);
-      const quantities = matches.filter(n => n.length >= 1 && n.length <= 3);
+      const codes = nums.filter(n => n.length >= 8);
+      const qtys  = nums.filter(n => n.length >= 1 && n.length <= 3);
 
-      // OBLIGATORIO: código + cantidad
-      if (codes.length === 0 || quantities.length === 0) {
-        setVoiceStatus("Diga código y cantidad", false);
+      if (!codes.length || !qtys.length) {
+        setStatus("Diga código y cantidad", false);
         return;
       }
-
-      // Usar la ÚLTIMA cantidad
-      const number = quantities[quantities.length - 1];
 
       const inp = activeInput();
       if (!inp) {
-        setVoiceStatus("Toca un campo de conteo", false);
+        setStatus("Toca el campo de conteo", false);
         return;
       }
 
-      inp.value = number;
+      const q = qtys[qtys.length - 1];
+      inp.value = q;
       inp.dispatchEvent(new Event("input", { bubbles: true }));
-      setVoiceStatus(`Registrando: ${number}`);
+      setStatus(`Registrado: ${q}`);
+      speak("registrado");
     };
 
-    rec.onerror = () => {
-      setVoiceStatus("Error micrófono", false);
-    };
+    rec.onerror = () => setStatus("Error de micrófono", false);
 
-    rec.onend = () => {
-      listening = false;
-      btnVoice.classList.remove("btn-primary");
-      btnVoice.classList.add("btn-outline-primary");
-      btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
-      if (toggleContinuous.checked) {
-        try { rec.start(); listening = true; } catch(e) {}
-      }
-    };
-
-    try {
-      rec.start();
-      listening = true;
-      btnVoice.classList.add("btn-primary");
-      btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
-      setVoiceStatus("Dictado activo (código + cantidad)");
-    } catch (e) {
-      setVoiceStatus("No se pudo iniciar micrófono", false);
-    }
+    rec.start();
+    listening = true;
+    btnVoice.classList.replace("btn-outline-primary", "btn-primary");
+    btnVoice.innerHTML = '<i class="bi bi-mic-fill me-2"></i> Dictando...';
+    setStatus("Dictado activo (código + cantidad)");
   };
 
   const stopVoice = () => {
-    try { if (rec) rec.stop(); } catch(e) {}
+    try { rec && rec.stop(); } catch {}
     listening = false;
-    setVoiceStatus("Dictado detenido");
+    btnVoice.classList.replace("btn-primary", "btn-outline-primary");
+    btnVoice.innerHTML = '<i class="bi bi-mic me-2"></i> Dictado';
+    setStatus("Dictado detenido");
   };
 
-  btnVoice.addEventListener("click", () =>
-    listening ? stopVoice() : startVoice()
-  );
+  btnVoice.onclick = () => listening ? stopVoice() : startVoice();
 
 })();
 </script>
