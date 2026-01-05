@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Subir Layout 2D{% endblock %}
+{% block title %}Subir Layout 2D del Almacén{% endblock %}
 
 {% block content %}
 
@@ -25,7 +25,7 @@
             </p>
 
             <!-- FORMULARIO -->
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('warehouse2d.upload_file') }}" enctype="multipart/form-data">
 
                 <!-- CARGA DE ARCHIVO -->
                 <div class="mb-3">
@@ -34,19 +34,19 @@
                     <input type="file"
                            name="file"
                            class="form-control"
-                           accept=".xlsx,.xls"
+                           accept=".xlsx,.xls,.csv"
                            required>
 
                     <div class="form-text mt-1">
-                        El archivo debe contener las columnas:
-                        <code>Código del Material</code>,
+                        <strong>Columnas requeridas:</strong>
+                        <code>Ubicación</code>,
+                        <code>Código del Material</code>
+                        <br>
+                        <strong>Columnas opcionales:</strong>
                         <code>Texto breve de material</code>,
                         <code>Unidad de medida base</code>,
-                        <code>Ubicación</code>,
                         <code>Stock máximo</code>,
-                        <code>Consumo mes actual</code>,
-                        <code>Libre utilización</code>,
-                        <code>Tamaño de lote mínimo</code>.
+                        <code>Libre utilización</code>
                     </div>
                 </div>
 
@@ -55,6 +55,29 @@
                     <i class="bi bi-upload me-1"></i> Cargar Layout 2D
                 </button>
             </form>
+
+            <!-- INFORMACIÓN ADICIONAL -->
+            <div class="mt-4">
+                <div class="alert alert-info">
+                    <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Instrucciones:</h5>
+                    <ul class="mb-0">
+                        <li>El archivo debe ser Excel (.xlsx, .xls) o CSV</li>
+                        <li>La columna <strong>"Ubicación"</strong> debe seguir el formato: <code>Zona-Fila-Columna</code> (ej: A-01-01)</li>
+                        <li>Si no tienes un archivo, descarga la plantilla de ejemplo</li>
+                        <li>Después de cargar el archivo, serás redirigido al mapa 2D</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ACCIONES -->
+            <div class="d-flex gap-2 mt-3">
+                <a href="{{ url_for('warehouse2d.download_template') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-download"></i> Descargar Plantilla
+                </a>
+                <a href="{{ url_for('warehouse2d.index') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-grid-3x3-gap"></i> Ir al Mapa
+                </a>
+            </div>
 
         </div>
     </div>
