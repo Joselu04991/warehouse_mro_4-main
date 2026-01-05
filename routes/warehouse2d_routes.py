@@ -1,4 +1,4 @@
-# routes/warehouse2d_routes.py - VERSIÓN COMPLETA Y CORREGIDA
+# routes/warehouse2d_routes.py - VERSIÓN CORREGIDA
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from flask_login import login_required
@@ -30,12 +30,12 @@ def index():
         materiales = set()
         for item in warehouse_data:
             # Buscar ubicación
-            ubicacion = item.get('ubicacion') or item.get('Ubicacion') or item.get('ubicación') or item.get('location')
+            ubicacion = item.get('ubicacion') or item.get('Ubicacion') or item.get('ubicación') or item.get('Ubicación') or item.get('location')
             if ubicacion:
                 ubicaciones.add(str(ubicacion))
             
             # Buscar material
-            material = item.get('material') or item.get('Material') or item.get('codigo_material')
+            material = item.get('material') or item.get('Material') or item.get('codigo_material') or item.get('Código del Material')
             if material:
                 materiales.add(str(material))
         
@@ -59,12 +59,17 @@ def map_view():
 
 # ================= RUTAS DE SUBIDA DE ARCHIVOS =================
 
-@warehouse2d_bp.route('/upload')
-@warehouse2d_bp.route('/upload-warehouse2d')  # DOS RUTAS PARA LA MISMA FUNCIÓN
+@warehouse2d_bp.route('/upload', methods=['GET'])
 @login_required
-def upload_warehouse2d():  # NOMBRE QUE COINCIDE CON TU TEMPLATE
-    """Página para subir archivo Excel - compatible con map.html"""
+def upload_view():
+    """Página para subir archivo Excel"""
     return render_template('warehouse2d/upload.html')
+
+@warehouse2d_bp.route('/upload-warehouse2d')
+@login_required
+def upload_warehouse2d():
+    """Alias para compatibilidad"""
+    return redirect(url_for('warehouse2d.upload_view'))
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
@@ -76,13 +81,13 @@ def upload_file():
     """Procesar archivo Excel subido"""
     if 'file' not in request.files:
         flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('warehouse2d.upload_warehouse2d'))
+        return redirect(url_for('warehouse2d.upload_view'))
     
     file = request.files['file']
     
     if file.filename == '':
         flash('No se seleccionó ningún archivo', 'error')
-        return redirect(url_for('warehouse2d.upload_warehouse2d'))
+        return redirect(url_for('warehouse2d.upload_view'))
     
     if file and allowed_file(file.filename):
         try:
@@ -92,10 +97,13 @@ def upload_file():
             else:
                 df = pd.read_excel(file)
             
-            # Verificar que tenga las columnas correctas
-            if 'Ubicación' not in df.columns or 'Código del Material' not in df.columns:
-                flash('El archivo debe contener las columnas "Ubicación" y "Código del Material"', 'error')
-                return redirect(url_for('warehouse2d.upload_warehouse2d'))
+            # Verificar que tenga las columnas mínimas requeridas
+            required_columns = ['Ubicación', 'Código del Material']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            
+            if missing_columns:
+                flash(f'El archivo debe contener las columnas: {", ".join(missing_columns)}', 'error')
+                return redirect(url_for('warehouse2d.upload_view'))
             
             # Guardar datos procesados
             session['warehouse_data'] = df.to_dict('records')
@@ -107,10 +115,10 @@ def upload_file():
             
         except Exception as e:
             flash(f'Error al procesar el archivo: {str(e)}', 'error')
-            return redirect(url_for('warehouse2d.upload_warehouse2d'))
+            return redirect(url_for('warehouse2d.upload_view'))
     
     flash('Tipo de archivo no permitido', 'error')
-    return redirect(url_for('warehouse2d.upload_warehouse2d'))
+    return redirect(url_for('warehouse2d.upload_view'))
 
 # ================= RUTAS DE API Y DATOS =================
 
@@ -142,29 +150,76 @@ def map_data():
         if not data:
             return jsonify({'success': True, 'locations': [], 'stats': {}})
         
-        # Procesar datos para el mapa (simplificado)
-        locations = []
-        for item in data:
-            ubicacion = item.get('Ubicación', '')
-            if ubicacion:
-                locations.append({
-                    'code': ubicacion,
-                    'material': item.get('Código del Material', ''),
-                    'description': item.get('Texto breve de material', ''),
-                    'quantity': item.get('Libre utilización', 0),
-                    'capacity': item.get('Stock máximo', 1000)
-                })
+        # Procesar datos para el mapa
+        locations = process_for_map(data)
         
         return jsonify({
             'success': True,
             'locations': locations,
-            'stats': {'total': len(locations)}
+            'stats': {
+                'total': len(locations),
+                'max_row': max([loc['row'] for loc in locations], default=0),
+                'max_col': max([loc['col'] for loc in locations], default=0),
+                'zones': list(set([loc['zone'] for loc in locations]))
+            }
         })
     except Exception as e:
         return jsonify({
             'success': False,
             'message': f'Error: {str(e)}'
         }), 500
+
+def process_for_map(data):
+    """Procesar datos para el mapa"""
+    locations = []
+    
+    for item in data:
+        # Obtener ubicación con diferentes nombres posibles
+        ubicacion = item.get('Ubicación') or item.get('ubicacion') or item.get('ubicación') or item.get('location')
+        
+        if not ubicacion:
+            continue
+            
+        # Extraer zona, fila y columna
+        zona = 'A'
+        fila = 1
+        columna = 1
+        
+        try:
+            # Intentar parsear formato como A-01-01
+            if '-' in str(ubicacion):
+                parts = str(ubicacion).split('-')
+                if len(parts) >= 1:
+                    zona = parts[0]
+                if len(parts) >= 2:
+                    # Extraer números de la fila
+                    fila_str = parts[1]
+                    fila = int(''.join(filter(str.isdigit, fila_str))) if any(c.isdigit() for c in fila_str) else 1
+                if len(parts) >= 3:
+                    # Extraer números de la columna
+                    col_str = parts[2]
+                    columna = int(''.join(filter(str.isdigit, col_str))) if any(c.isdigit() for c in col_str) else 1
+        except (ValueError, IndexError) as e:
+            print(f"Error procesando ubicación {ubicacion}: {e}")
+        
+        # Obtener datos del material
+        material = item.get('Código del Material') or item.get('Material') or item.get('material')
+        cantidad = float(item.get('Libre utilización') or item.get('Cantidad') or item.get('cantidad') or 0)
+        capacidad = float(item.get('Stock máximo') or item.get('Capacidad') or item.get('capacidad') or 100)
+        
+        locations.append({
+            'code': str(ubicacion),
+            'zone': zona,
+            'row': fila,
+            'col': columna,
+            'material': str(material) if material else '',
+            'description': item.get('Texto breve de material') or item.get('Descripción') or '',
+            'quantity': cantidad,
+            'capacity': capacidad,
+            'unit': item.get('Unidad de medida base') or item.get('Unidad') or 'UN'
+        })
+    
+    return locations
 
 @warehouse2d_bp.route('/download-template')
 @login_required
@@ -251,40 +306,3 @@ def clear_data():
         return jsonify({'success': True, 'message': 'Datos eliminados'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
-
-# ================= FUNCIONES SIMPLIFICADAS =================
-
-def process_for_map(data):
-    """Procesar datos para el mapa (versión simplificada)"""
-    locations = []
-    for item in data:
-        ubicacion = item.get('Ubicación', '')
-        if ubicacion:
-            # Intentar extraer coordenadas
-            fila = 1
-            columna = 1
-            zona = 'A'
-            
-            try:
-                if '-' in ubicacion:
-                    parts = ubicacion.split('-')
-                    if len(parts) > 0:
-                        zona = parts[0]
-                    if len(parts) > 1:
-                        fila = int(parts[1])
-                    if len(parts) > 2:
-                        columna = int(parts[2])
-            except:
-                pass
-            
-            locations.append({
-                'code': ubicacion,
-                'zone': zona,
-                'row': fila,
-                'col': columna,
-                'material': item.get('Código del Material', ''),
-                'quantity': float(item.get('Libre utilización', 0)),
-                'capacity': float(item.get('Stock máximo', 1000))
-            })
-    
-    return locations
