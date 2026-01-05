@@ -53,8 +53,8 @@ def index():
 
 @warehouse2d_bp.route('/map_view')
 @login_required
-def map_view_alias():
-    """Alias para compatibilidad"""
+def map_view():  # ¡IMPORTANTE! Este nombre debe coincidir con tu base.html
+    """Alias para compatibilidad - redirige a la página principal"""
     return redirect(url_for('warehouse2d.index'))
 
 # ================= RUTAS DE SUBIDA DE ARCHIVOS =================
