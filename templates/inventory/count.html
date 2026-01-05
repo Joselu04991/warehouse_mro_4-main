@@ -296,6 +296,15 @@
             Dictado por voz • Guardado automático • Modo guantes
           </p>
         </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-2"></i>
+            <span class="fw-semibold">JCASTILLO</span>
+            <span class="opacity-75">(OWNER)</span>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light ms-2">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+          </a>
         </div>
       </div>
     </div>
@@ -479,45 +488,37 @@
   </div>
 </div>
 
-<!-- ================= OPTIMIZED SCRIPT ================= -->
+<!-- ================= SCRIPT CORREGIDO - DICTADO FUNCIONAL ================= -->
 <script>
 /**
- * Sistema de Conteo Físico - Optimizado para Producción Industrial
- * Compatible con Android Chrome y dispositivos móviles
+ * Sistema de Conteo Físico - Dictado por Voz Funcional para Android
+ * Versión simplificada y probada
  */
 
 (function() {
   'use strict';
   
-  // ================= CONFIGURATION =================
+  // ================= CONFIGURACIÓN =================
   const CONFIG = {
     DEBOUNCE_DELAY: 800,
-    VOICE_RESTART_DELAY: 300,
-    MAX_RESTART_ATTEMPTS: 3,
-    SPEECH_LANG: 'es-PE',  // Cambiado a es-PE para Perú
-    COMMAND_TIMEOUT: 5000
+    SPEECH_LANG: 'es-PE'
   };
   
-  // ================= STATE MANAGEMENT =================
+  // ================= ESTADO =================
   const State = {
     voice: {
       recognition: null,
       isListening: false,
-      isAvailable: false,
       continuous: true,
-      feedback: true,
-      errorCount: 0,
-      restartCount: 0
+      feedback: true
     },
     ui: {
       glovesMode: false,
-      savingRows: new Set(),
-      lastCommand: null
-    },
-    debug: false
+      savingRows: new Set()
+    }
   };
   
-  // ================= DOM REFERENCES =================
+  // ================= ELEMENTOS DOM =================
   const DOM = {
     btnVoice: document.getElementById('btnVoice'),
     btnGloves: document.getElementById('btnGloves'),
@@ -526,43 +527,31 @@
     voiceInstructions: document.getElementById('voiceInstructions'),
     toggleContinuous: document.getElementById('toggleContinuous'),
     toggleSpeak: document.getElementById('toggleSpeak'),
-    lastCommandBadge: document.getElementById('lastCommand'),
-    commandText: document.getElementById('commandText'),
     pageContainer: document.querySelector('.page-container')
   };
   
-  // ================= UTILITY FUNCTIONS =================
+  // ================= FUNCIONES UTILITARIAS =================
   
   /**
-   * Actualiza la UI del estado de voz
+   * Actualiza la interfaz de voz
    */
   function updateVoiceUI(state, message = '') {
     const states = {
       idle: {
         icon: 'bi-mic',
         btnClass: 'btn-primary',
-        statusClass: '',
         defaultMsg: 'Preparado para dictado',
         instructions: 'Di "código" seguido de números y "cantidad" seguido de números'
       },
       listening: {
         icon: 'bi-mic-fill',
         btnClass: 'btn-danger voice-active',
-        statusClass: 'bg-warning bg-opacity-10 border-warning',
         defaultMsg: 'Escuchando... Habla ahora',
         instructions: 'Habla claramente cerca del micrófono'
-      },
-      processing: {
-        icon: 'bi-soundwave',
-        btnClass: 'btn-primary',
-        statusClass: 'bg-info bg-opacity-10 border-info',
-        defaultMsg: 'Procesando comando...',
-        instructions: 'Procesando tu voz...'
       },
       error: {
         icon: 'bi-exclamation-triangle',
         btnClass: 'btn-outline-danger',
-        statusClass: 'bg-danger bg-opacity-10 border-danger text-danger',
         defaultMsg: 'Error de micrófono',
         instructions: 'Verifica los permisos del micrófono'
       }
@@ -578,32 +567,15 @@
     // Actualizar estado
     DOM.statusText.textContent = message || config.defaultMsg;
     DOM.voiceInstructions.textContent = config.instructions;
-    DOM.voiceStatus.className = `voice-status ${config.statusClass}`;
     
-    // Instrucciones específicas para móvil
+    // Para móviles
     if (/Mobi|Android/i.test(navigator.userAgent) && state === 'idle') {
       DOM.voiceInstructions.textContent = 'Toca el botón de dictado y habla claramente';
     }
   }
   
   /**
-   * Muestra el último comando reconocido
-   */
-  function showLastCommand(command, success = true) {
-    if (!DOM.lastCommandBadge) return;
-    
-    DOM.commandText.textContent = command.substring(0, 30);
-    DOM.lastCommandBadge.className = `badge ${success ? 'bg-success text-white' : 'bg-danger text-white'} border d-inline-flex align-items-center`;
-    DOM.lastCommandBadge.classList.remove('d-none');
-    
-    // Ocultar después de 3 segundos
-    setTimeout(() => {
-      DOM.lastCommandBadge.classList.add('d-none');
-    }, 3000);
-  }
-  
-  /**
-   * Feedback de voz sintetizado
+   * Síntesis de voz para confirmación
    */
   function speak(text) {
     if (!State.voice.feedback || !window.speechSynthesis) return;
@@ -616,16 +588,6 @@
       utterance.rate = 1.0;
       utterance.volume = 0.9;
       
-      // Optimizar para móvil
-      if (/Mobi|Android/i.test(navigator.userAgent)) {
-        utterance.rate = 1.1;
-        utterance.pitch = 1.0;
-      }
-      
-      utterance.onerror = () => {
-        console.warn('Error en síntesis de voz');
-      };
-      
       setTimeout(() => {
         speechSynthesis.speak(utterance);
       }, 50);
@@ -635,14 +597,14 @@
   }
   
   /**
-   * Encuentra input por código de material
+   * Busca input por código de material
    */
   function findInputByCode(code) {
     return document.querySelector(`.count-input[data-code="${code}"]`);
   }
   
   /**
-   * Muestra feedback visual de guardado
+   * Muestra feedback visual al guardar
    */
   function showSaveFeedback(input, success = true) {
     const code = input.dataset.code;
@@ -651,32 +613,19 @@
     
     if (!row) return;
     
-    // Remover estados anteriores
-    row.classList.remove('row-saving', 'row-saved', 'table-warning', 'table-success');
+    row.classList.remove('row-saving', 'row-saved');
     
     const count = parseInt(input.value) || 0;
     const stock = parseInt(input.dataset.stock) || 0;
     
     if (success) {
-      // Estado de guardado
       row.classList.add('row-saving');
       
       setTimeout(() => {
         row.classList.remove('row-saving');
         row.classList.add('row-saved');
         
-        // Actualizar estado basado en conteo vs stock
-        if (count === 0) {
-          row.classList.remove('table-success', 'table-warning');
-        } else if (count === stock) {
-          row.classList.add('table-success');
-          row.classList.remove('table-warning');
-        } else {
-          row.classList.add('table-warning');
-          row.classList.remove('table-success');
-        }
-        
-        // Actualizar badge de estado
+        // Actualizar estado visual
         const badge = row.querySelector('.status-badge');
         if (badge) {
           if (count === 0) {
@@ -692,7 +641,6 @@
         }
       }, 600);
       
-      // Limpiar animación
       setTimeout(() => row.classList.remove('row-saved'), 2000);
     }
   }
@@ -704,10 +652,7 @@
     const value = parseInt(input.value || "0", 10) || 0;
     const code = input.dataset.code;
     
-    // Prevenir guardados duplicados
-    if (State.ui.savingRows.has(code)) {
-      return;
-    }
+    if (State.ui.savingRows.has(code)) return;
     
     State.ui.savingRows.add(code);
     
@@ -725,16 +670,10 @@
         })
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
-      const data = await response.json();
-      
-      // Feedback visual
       showSaveFeedback(input, true);
       
-      // Feedback de voz si es diferente de 0
       if (value > 0) {
         speak(`Registrado ${value} para ${code}`);
       }
@@ -742,16 +681,7 @@
     } catch (error) {
       console.error('Error guardando fila:', error);
       showSaveFeedback(input, false);
-      speak('Error al guardar, reintentando');
-      
-      // Reintentar una vez
-      if (!input.hasAttribute('data-retry')) {
-        input.setAttribute('data-retry', '1');
-        setTimeout(() => {
-          input.removeAttribute('data-retry');
-          saveRow(input);
-        }, 2000);
-      }
+      speak('Error al guardar');
     } finally {
       setTimeout(() => {
         State.ui.savingRows.delete(code);
@@ -759,18 +689,17 @@
     }
   }
   
-  // ================= VOICE RECOGNITION =================
+  // ================= RECONOCIMIENTO DE VOZ SIMPLIFICADO =================
   
   /**
    * Inicializa el reconocimiento de voz
    */
   function initVoiceRecognition() {
-    // Verificar compatibilidad del navegador
+    // Verificar compatibilidad
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-      State.voice.isAvailable = false;
-      updateVoiceUI('error', 'Navegador no compatible con dictado por voz');
+      updateVoiceUI('error', 'Navegador no compatible');
       DOM.btnVoice.disabled = true;
       DOM.btnVoice.innerHTML = '<i class="bi bi-mic-mute me-1"></i><span>No compatible</span>';
       return false;
@@ -780,287 +709,111 @@
       State.voice.recognition = new SpeechRecognition();
       State.voice.recognition.lang = CONFIG.SPEECH_LANG;
       State.voice.recognition.interimResults = false;
-      State.voice.recognition.continuous = false;  // Importante para móviles
+      State.voice.recognition.continuous = false; // Importante para Android
       State.voice.recognition.maxAlternatives = 1;
       
-      setupVoiceEvents();
-      State.voice.isAvailable = true;
+      // Configurar eventos
+      State.voice.recognition.onstart = () => {
+        State.voice.isListening = true;
+        updateVoiceUI('listening');
+      };
+      
+      State.voice.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log('Voz reconocida:', transcript);
+        
+        // Buscar números en el texto
+        const numbers = transcript.match(/\d+/g) || [];
+        
+        if (numbers.length >= 2) {
+          // El número más largo es el código, el más corto es la cantidad
+          const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
+          const quantity = numbers.find(n => n !== code) || numbers[1];
+          
+          const input = findInputByCode(code);
+          
+          if (input) {
+            input.value = quantity;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            saveRow(input);
+            speak(`Registrado ${quantity} para código ${code}`);
+            updateVoiceUI('listening', `Registrado ${quantity} para ${code}`);
+          } else {
+            updateVoiceUI('error', `Código ${code} no encontrado`);
+            speak(`Código ${code} no existe`);
+          }
+        } else {
+          updateVoiceUI('error', 'No se entendió código y cantidad');
+          speak('Por favor di código y cantidad');
+        }
+        
+        // Reiniciar si está en modo continuo
+        if (State.voice.continuous && State.voice.isListening) {
+          setTimeout(() => {
+            if (State.voice.isListening) {
+              State.voice.recognition.start();
+            }
+          }, 500);
+        }
+      };
+      
+      State.voice.recognition.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+        
+        switch (event.error) {
+          case 'not-allowed':
+          case 'permission-denied':
+            updateVoiceUI('error', 'Permiso de micrófono denegado');
+            break;
+          case 'no-speech':
+            updateVoiceUI('error', 'No se detectó voz');
+            break;
+          default:
+            updateVoiceUI('error', 'Error de reconocimiento');
+        }
+        
+        State.voice.isListening = false;
+        updateVoiceUI('idle');
+      };
+      
+      State.voice.recognition.onend = () => {
+        State.voice.isListening = false;
+        updateVoiceUI('idle');
+      };
+      
       return true;
       
     } catch (error) {
       console.error('Error inicializando reconocimiento:', error);
-      State.voice.isAvailable = false;
-      updateVoiceUI('error', 'No se pudo acceder al micrófono');
+      updateVoiceUI('error', 'Error al acceder al micrófono');
       return false;
     }
   }
   
   /**
-   * Configura eventos del reconocimiento de voz
+   * Inicia el reconocimiento de voz
    */
-  function setupVoiceEvents() {
-    const rec = State.voice.recognition;
+  function startVoiceRecognition() {
+    if (State.voice.isListening) return;
     
-    rec.onstart = () => {
-      State.voice.isListening = true;
-      State.voice.errorCount = 0;
-      State.voice.restartCount = 0;
-      updateVoiceUI('listening');
-    };
-    
-    rec.onresult = (event) => {
-      updateVoiceUI('processing');
-      
-      const result = event.results[0];
-      const transcript = result[0].transcript.toLowerCase().trim();
-      
-      console.log('Texto reconocido:', transcript);
-      showLastCommand(transcript, true);
-      
-      // Parsear comando de voz
-      const parsed = parseVoiceCommand(transcript);
-      
-      if (parsed.success && parsed.code && parsed.quantity !== null) {
-        processVoiceCommand(parsed.code, parsed.quantity);
-      } else {
-        updateVoiceUI('error', 'No se entendió el comando');
-        speak('No entendí, por favor repite código y cantidad');
-      }
-    };
-    
-    rec.onerror = (event) => {
-      console.error('Error en reconocimiento:', event.error);
-      State.voice.errorCount++;
-      
-      switch (event.error) {
-        case 'not-allowed':
-        case 'permission-denied':
-          updateVoiceUI('error', 'Permiso de micrófono denegado');
-          speak('Por favor, permite el acceso al micrófono en ajustes');
-          stopVoiceRecognition();
-          break;
-          
-        case 'no-speech':
-          if (State.voice.continuous) {
-            updateVoiceUI('idle', 'No se detectó voz. Reintentando...');
-            setTimeout(restartVoiceRecognition, 1000);
-          }
-          break;
-          
-        case 'audio-capture':
-          updateVoiceUI('error', 'No se detectó micrófono');
-          speak('No se encontró micrófono');
-          break;
-          
-        case 'network':
-          updateVoiceUI('error', 'Error de red en reconocimiento');
-          break;
-          
-        case 'aborted':
-          // Ignorar, usualmente ocurre cuando se detiene manualmente
-          break;
-          
-        default:
-          console.warn('Error de reconocimiento no manejado:', event.error);
-          if (State.voice.errorCount < 3) {
-            updateVoiceUI('error', `Error ${event.error}. Reintentando...`);
-            setTimeout(restartVoiceRecognition, 1000);
-          } else {
-            updateVoiceUI('error', 'Demasiados errores. Reinicia el dictado');
-            stopVoiceRecognition();
-          }
-      }
-    };
-    
-    rec.onend = () => {
-      State.voice.isListening = false;
-      
-      // Reinicio automático en modo continuo
-      if (State.voice.continuous && State.voice.restartCount < CONFIG.MAX_RESTART_ATTEMPTS) {
-        State.voice.restartCount++;
-        console.log(`Reinicio automático ${State.voice.restartCount}/${CONFIG.MAX_RESTART_ATTEMPTS}`);
-        
-        setTimeout(() => {
-          if (!State.voice.isListening && State.voice.continuous) {
-            startVoiceRecognition();
-          }
-        }, CONFIG.VOICE_RESTART_DELAY);
-      } else {
-        updateVoiceUI('idle');
-        State.voice.restartCount = 0;
-      }
-    };
-  }
-  
-  /**
-   * Parsea comandos de voz - MEJORADO PARA ANDROID
-   */
-  function parseVoiceCommand(transcript) {
-    console.log('Procesando comando:', transcript);
-    
-    // Limpiar y normalizar texto
-    const cleanTranscript = transcript
-      .toLowerCase()
-      .replace(/[.,]/g, ' ')  // Reemplazar puntuación por espacios
-      .replace(/\s+/g, ' ')   // Normalizar espacios múltiples
-      .trim();
-    
-    // Patrones de reconocimiento mejorados para español
-    const patterns = [
-      // "código 12345678 cantidad 10"
-      /c[óo]digo\s+(\d{4,})\s+cantidad\s+(\d+)/i,
-      // "12345678 cantidad 10"
-      /(\d{6,})\s+cantidad\s+(\d+)/i,
-      // "código 12345678 10 unidades"
-      /c[óo]digo\s+(\d+)\s+(\d+)\s+unidades/i,
-      // "para el código 12345678 10"
-      /para el c[óo]digo\s+(\d+)\s+(\d+)/i,
-      // "12345678 10"
-      /(\d{6,})\s+(\d{1,4})/,
-      // "poner 10 en 12345678"
-      /poner\s+(\d+)\s+en\s+(\d{4,})/i,
-      // "material 12345678 10"
-      /material\s+(\d+)\s+(\d+)/i,
-      // "10 para 12345678"
-      /(\d+)\s+para\s+(\d+)/i
-    ];
-    
-    for (const pattern of patterns) {
-      const match = cleanTranscript.match(pattern);
-      if (match) {
-        console.log('Patrón encontrado:', pattern, match);
-        
-        // Determinar qué grupo es código (normalmente el más largo)
-        const group1 = match[1];
-        const group2 = match[2];
-        
-        let code, quantity;
-        
-        if (group1.length >= 6 && group2.length <= 4) {
-          // group1 es código, group2 es cantidad
-          code = group1;
-          quantity = parseInt(group2, 10);
-        } else if (group2.length >= 6 && group1.length <= 4) {
-          // group2 es código, group1 es cantidad
-          code = group2;
-          quantity = parseInt(group1, 10);
-        } else {
-          // Por defecto, el primero es código
-          code = group1;
-          quantity = parseInt(group2, 10);
-        }
-        
-        return {
-          success: true,
-          code: code,
-          quantity: quantity
-        };
-      }
-    }
-    
-    // Fallback: extraer todos los números
-    const numbers = cleanTranscript.match(/\d+/g) || [];
-    console.log('Números encontrados:', numbers);
-    
-    if (numbers.length >= 2) {
-      // El número más largo es probablemente el código
-      const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
-      const quantity = parseInt(numbers.find(n => n !== code) || numbers[1], 10);
-      
-      return {
-        success: true,
-        code: code,
-        quantity: quantity
-      };
-    }
-    
-    return { success: false };
-  }
-  
-  /**
-   * Procesa un comando de voz válido
-   */
-  function processVoiceCommand(code, quantity) {
-    console.log('Procesando comando:', code, quantity);
-    
-    const input = findInputByCode(code);
-    
-    if (!input) {
-      updateVoiceUI('error', `Código ${code} no encontrado`);
-      speak(`Código ${code} no existe en la lista`);
-      return;
-    }
-    
-    // Actualizar valor
-    input.value = quantity;
-    
-    // Disparar eventos
-    const inputEvent = new Event('input', { bubbles: true });
-    const changeEvent = new Event('change', { bubbles: true });
-    input.dispatchEvent(inputEvent);
-    input.dispatchEvent(changeEvent);
-    
-    // Guardar automáticamente
-    saveRow(input);
-    
-    // Feedback
-    const stock = parseInt(input.dataset.stock) || 0;
-    let feedback = `Registrado ${quantity} para ${code}`;
-    
-    if (quantity === stock) {
-      feedback += ', coincide con stock';
-    } else if (quantity > stock) {
-      feedback += `, mayor que stock de ${stock}`;
-    } else {
-      feedback += `, menor que stock de ${stock}`;
-    }
-    
-    updateVoiceUI('listening', feedback);
-  }
-  
-  /**
-   * Inicia el reconocimiento de voz con manejo de permisos
-   */
-  async function startVoiceRecognition() {
-    if (State.voice.isListening || !State.voice.isAvailable) return;
-    
-    // Para Android/Chrome Mobile, verificar permisos primero
+    // Para Android, verificar permisos de micrófono
     if (/Mobi|Android/i.test(navigator.userAgent) && navigator.mediaDevices) {
-      try {
-        // Verificar permisos de micrófono
-        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
-        
-        if (permissionStatus.state === 'denied') {
-          updateVoiceUI('error', 'Permiso de micrófono denegado');
-          speak('Por favor, activa el micrófono en ajustes del navegador');
-          return;
-        }
-        
-        // Solicitar acceso al micrófono
-        await navigator.mediaDevices.getUserMedia({ audio: true });
-        
-        // Iniciar reconocimiento
-        State.voice.recognition.start();
-        
-      } catch (error) {
-        console.error('Error de permisos de micrófono:', error);
-        updateVoiceUI('error', 'No se pudo acceder al micrófono');
-        
-        if (error.name === 'NotAllowedError') {
-          speak('Permiso de micrófono denegado. Actívalo en ajustes');
-        } else if (error.name === 'NotFoundError') {
-          speak('No se encontró micrófono');
-        } else {
-          speak('Error al acceder al micrófono');
-        }
-        return;
-      }
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          try {
+            State.voice.recognition.start();
+          } catch (error) {
+            updateVoiceUI('error', 'Error iniciando micrófono');
+          }
+        })
+        .catch(error => {
+          updateVoiceUI('error', 'Permiso de micrófono requerido');
+          speak('Por favor, permite el acceso al micrófono');
+        });
     } else {
-      // Para desktop u otros navegadores
       try {
         State.voice.recognition.start();
       } catch (error) {
-        console.error('Error iniciando reconocimiento:', error);
         updateVoiceUI('error', 'No se pudo iniciar el dictado');
       }
     }
@@ -1075,21 +828,10 @@
         State.voice.recognition.stop();
       } catch (error) {
         // Ignorar errores al detener
-        console.warn('Error deteniendo reconocimiento:', error);
       }
     }
     State.voice.isListening = false;
     updateVoiceUI('idle');
-  }
-  
-  /**
-   * Reinicia el reconocimiento de voz
-   */
-  function restartVoiceRecognition() {
-    if (State.voice.isListening) {
-      stopVoiceRecognition();
-    }
-    setTimeout(startVoiceRecognition, CONFIG.VOICE_RESTART_DELAY);
   }
   
   /**
@@ -1103,7 +845,7 @@
     }
   }
   
-  // ================= GLOVES MODE =================
+  // ================= MODO GUANTES =================
   
   /**
    * Alterna el modo guantes
@@ -1125,16 +867,15 @@
     }
   }
   
-  // ================= INPUT HANDLING =================
+  // ================= MANEJO DE INPUTS =================
   
   /**
-   * Configura handlers para inputs
+   * Configura los handlers para inputs
    */
   function setupInputHandlers() {
     let saveTimer;
     
     document.querySelectorAll('.count-input').forEach(input => {
-      // Validar entrada
       input.addEventListener('input', function() {
         clearTimeout(saveTimer);
         
@@ -1147,7 +888,7 @@
           row.classList.add('row-saving');
         }
         
-        // Programar guardado (si hay valor)
+        // Programar guardado
         if (this.value && this.value !== '0') {
           saveTimer = setTimeout(() => {
             saveRow(this);
@@ -1155,7 +896,6 @@
         }
       });
       
-      // Limpiar feedback al perder foco
       input.addEventListener('blur', function() {
         const row = this.closest('tr');
         if (row) {
@@ -1167,7 +907,7 @@
     });
   }
   
-  // ================= INITIALIZATION =================
+  // ================= INICIALIZACIÓN =================
   
   /**
    * Inicializa la aplicación
@@ -1184,11 +924,9 @@
     DOM.btnVoice.addEventListener('click', toggleVoiceRecognition);
     DOM.toggleContinuous.addEventListener('change', function() {
       State.voice.continuous = this.checked;
-      console.log('Modo continuo:', this.checked);
     });
     DOM.toggleSpeak.addEventListener('change', function() {
       State.voice.feedback = this.checked;
-      console.log('Confirmación por voz:', this.checked);
     });
     
     // Configurar modo guantes
@@ -1197,56 +935,23 @@
     // Configurar handlers de inputs
     setupInputHandlers();
     
-    // Manejar visibilidad de la página
+    // Pausar dictado cuando la página no es visible
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && State.voice.isListening) {
-        console.log('Página oculta, deteniendo dictado');
         stopVoiceRecognition();
       }
     });
     
-    // Optimizaciones para móvil
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      console.log('Dispositivo móvil detectado, aplicando optimizaciones');
-      
-      // Prevenir zoom en inputs en iOS
-      document.addEventListener('touchstart', function(e) {
-        if (e.target.matches('.count-input')) {
-          e.target.style.fontSize = '16px';
-        }
-      }, { passive: true });
-      
-      // Ajustar altura para evitar teclado
-      window.addEventListener('resize', () => {
-        if (document.activeElement.matches('.count-input')) {
-          document.activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
-        }
-      });
-      
-      // Mejorar rendimiento táctil
-      document.documentElement.style.touchAction = 'manipulation';
-    }
-    
     console.log('Sistema de conteo inicializado correctamente');
   }
   
-  // Iniciar aplicación
+  // Iniciar aplicación cuando el DOM esté listo
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {
     initApp();
   }
   
-  // Exportar para debugging
-  window.CountSystem = {
-    toggleVoice: toggleVoiceRecognition,
-    toggleGloves: toggleGlovesMode,
-    startVoice: startVoiceRecognition,
-    stopVoice: stopVoiceRecognition,
-    getState: () => State
-  };
-  
 })();
 </script>
 {% endblock %}
-
