@@ -2,86 +2,314 @@
 {% block title %}Subir Layout 2D del Almacén{% endblock %}
 
 {% block content %}
-
 <div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- TÍTULO -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-cloud-upload me-2"></i>Importar Layout 2D del Almacén
+                </h2>
+                <a href="{{ url_for('warehouse2d.index') }}" class="btn btn-success">
+                    <i class="bi bi-map me-1"></i> Ver Mapa 2D
+                </a>
+            </div>
 
-    <!-- TÍTULO -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">📐 Importar Layout 2D del Almacén</h2>
+            <!-- TARJETA PRINCIPAL -->
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-file-earmark-spreadsheet"></i> Cargar Archivo Excel</h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <!-- ALERTA DE CAPACIDAD -->
+                    <div class="alert alert-info mb-4">
+                        <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Información Importante</h5>
+                        <ul class="mb-0">
+                            <li><strong>Capacidad máxima:</strong> Archivos de hasta 50MB</li>
+                            <li><strong>Formatos soportados:</strong> .xlsx, .xls, .csv</li>
+                            <li><strong>Límite de registros:</strong> Hasta 100,000 ubicaciones</li>
+                            <li>Los datos se almacenan temporalmente por 24 horas</li>
+                        </ul>
+                    </div>
 
-        <!-- BOTÓN PARA IR AL MAPA -->
-        <a href="{{ url_for('warehouse2d.map_view') }}" class="btn btn-success">
-            🗺️ Ver Mapa 2D
-        </a>
-    </div>
+                    <!-- FORMULARIO -->
+                    <form method="POST" action="{{ url_for('warehouse2d.upload_file') }}" enctype="multipart/form-data" id="uploadForm">
+                        <!-- CARGA DE ARCHIVO -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold fs-5">
+                                <i class="bi bi-file-earmark-excel text-success me-2"></i>Seleccionar Archivo
+                            </label>
+                            
+                            <div class="file-upload-area border rounded p-4 text-center">
+                                <input type="file" 
+                                       name="file" 
+                                       id="fileInput"
+                                       class="form-control"
+                                       accept=".xlsx,.xls,.csv"
+                                       required
+                                       onchange="previewFileName()">
+                                
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Arrastra y suelta tu archivo aquí o haz clic para seleccionar
+                                    </small>
+                                </div>
+                                
+                                <div id="fileNamePreview" class="mt-2 text-success fw-bold" style="display: none;"></div>
+                                <div id="fileSizePreview" class="mt-1 text-muted small" style="display: none;"></div>
+                            </div>
+                            
+                            <div class="form-text mt-2">
+                                <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                                El procesamiento de archivos grandes puede tardar unos segundos
+                            </div>
+                        </div>
 
-    <!-- TARJETA -->
-    <div class="card shadow-sm">
-        <div class="card-body">
+                        <!-- PROGRESS BAR (oculta inicialmente) -->
+                        <div id="uploadProgress" class="mb-4" style="display: none;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Procesando archivo...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
 
-            <p class="text-muted mb-4">
-                Seleccione el Excel del layout del almacén.  
-                El sistema generará automáticamente los anaqueles y ubicaciones.
-            </p>
+                        <!-- BOTÓN ENVIAR -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="bi bi-upload me-1"></i> Cargar Archivo
+                            </button>
+                        </div>
+                    </form>
 
-            <!-- FORMULARIO -->
-            <form method="POST" action="{{ url_for('warehouse2d.upload_file') }}" enctype="multipart/form-data">
+                    <!-- INFORMACIÓN DE FORMATO -->
+                    <div class="mt-5">
+                        <h5 class="border-bottom pb-2">
+                            <i class="bi bi-card-checklist text-primary me-2"></i>Formato Requerido del Archivo
+                        </h5>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="bi bi-check-circle text-success me-2"></i>Columnas Obligatorias</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Columna</th>
+                                                    <th>Descripción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td><code>Ubicación</code></td>
+                                                    <td>Código de ubicación (ej: A-01-01)</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><code>Código del Material</code></td>
+                                                    <td>Identificador único del material</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="bi bi-plus-circle text-info me-2"></i>Columnas Opcionales</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-dot text-primary"></i> <code>Stock máximo</code> - Capacidad de la ubicación</li>
+                                            <li><i class="bi bi-dot text-primary"></i> <code>Libre utilización</code> - Cantidad actual</li>
+                                            <li><i class="bi bi-dot text-primary"></i> <code>Texto breve de material</code> - Descripción</li>
+                                            <li><i class="bi bi-dot text-primary"></i> <code>Unidad de medida base</code> - Unidad (UN, KG, etc.)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- EJEMPLOS -->
+                        <div class="card mt-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-table text-secondary me-2"></i>Ejemplo de Estructura</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Ubicación</th>
+                                                <th>Código del Material</th>
+                                                <th>Texto breve de material</th>
+                                                <th>Unidad</th>
+                                                <th>Stock máximo</th>
+                                                <th>Libre utilización</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>A-01-01</td>
+                                                <td>MAT-001</td>
+                                                <td>Tornillo M8 x 20mm</td>
+                                                <td>UN</td>
+                                                <td>1000</td>
+                                                <td>150</td>
+                                            </tr>
+                                            <tr>
+                                                <td>A-01-02</td>
+                                                <td>MAT-002</td>
+                                                <td>Tuerca M8</td>
+                                                <td>UN</td>
+                                                <td>800</td>
+                                                <td>65</td>
+                                            </tr>
+                                            <tr>
+                                                <td>B-02-01</td>
+                                                <td>MAT-003</td>
+                                                <td>Arandela plana 8mm</td>
+                                                <td>UN</td>
+                                                <td>5000</td>
+                                                <td>1200</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- CARGA DE ARCHIVO -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Archivo Excel de Layout 2D</label>
-
-                    <input type="file"
-                           name="file"
-                           class="form-control"
-                           accept=".xlsx,.xls,.csv"
-                           required>
-
-                    <div class="form-text mt-1">
-                        <strong>Columnas requeridas:</strong>
-                        <code>Ubicación</code>,
-                        <code>Código del Material</code>
-                        <br>
-                        <strong>Columnas opcionales:</strong>
-                        <code>Texto breve de material</code>,
-                        <code>Unidad de medida base</code>,
-                        <code>Stock máximo</code>,
-                        <code>Libre utilización</code>
+                    <!-- ACCIONES -->
+                    <div class="mt-4 d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('warehouse2d.download_template') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-download me-1"></i> Descargar Plantilla Completa
+                        </a>
+                        <a href="{{ url_for('warehouse2d.index') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-grid-3x3-gap me-1"></i> Ver Mapa Actual
+                        </a>
+                        <button type="button" class="btn btn-outline-info" onclick="showAdvancedOptions()">
+                            <i class="bi bi-gear me-1"></i> Opciones Avanzadas
+                        </button>
                     </div>
                 </div>
-
-                <!-- BOTÓN ENVIAR -->
-                <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-upload me-1"></i> Cargar Layout 2D
-                </button>
-            </form>
-
-            <!-- INFORMACIÓN ADICIONAL -->
-            <div class="mt-4">
-                <div class="alert alert-info">
-                    <h5 class="alert-heading"><i class="bi bi-info-circle"></i> Instrucciones:</h5>
-                    <ul class="mb-0">
-                        <li>El archivo debe ser Excel (.xlsx, .xls) o CSV</li>
-                        <li>La columna <strong>"Ubicación"</strong> debe seguir el formato: <code>Zona-Fila-Columna</code> (ej: A-01-01)</li>
-                        <li>Si no tienes un archivo, descarga la plantilla de ejemplo</li>
-                        <li>Después de cargar el archivo, serás redirigido al mapa 2D</li>
-                    </ul>
-                </div>
             </div>
-
-            <!-- ACCIONES -->
-            <div class="d-flex gap-2 mt-3">
-                <a href="{{ url_for('warehouse2d.download_template') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-download"></i> Descargar Plantilla
-                </a>
-                <a href="{{ url_for('warehouse2d.index') }}" class="btn btn-outline-primary">
-                    <i class="bi bi-grid-3x3-gap"></i> Ir al Mapa
-                </a>
-            </div>
-
         </div>
     </div>
-
 </div>
 
+<!-- SCRIPT PARA MEJORAR LA EXPERIENCIA DE CARGA -->
+<script>
+function previewFileName() {
+    const fileInput = document.getElementById('fileInput');
+    const fileNamePreview = document.getElementById('fileNamePreview');
+    const fileSizePreview = document.getElementById('fileSizePreview');
+    
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileNamePreview.textContent = `Archivo seleccionado: ${file.name}`;
+        fileNamePreview.style.display = 'block';
+        
+        // Mostrar tamaño del archivo
+        const fileSize = file.size;
+        let sizeText = '';
+        
+        if (fileSize < 1024) {
+            sizeText = `${fileSize} bytes`;
+        } else if (fileSize < 1024 * 1024) {
+            sizeText = `${(fileSize / 1024).toFixed(2)} KB`;
+        } else {
+            sizeText = `${(fileSize / (1024 * 1024)).toFixed(2)} MB`;
+        }
+        
+        fileSizePreview.textContent = `Tamaño: ${sizeText}`;
+        fileSizePreview.style.display = 'block';
+        
+        // Verificar tamaño máximo (50MB)
+        const maxSize = 50 * 1024 * 1024; // 50MB en bytes
+        if (fileSize > maxSize) {
+            alert('El archivo es demasiado grande. El tamaño máximo permitido es 50MB.');
+            fileInput.value = '';
+            fileNamePreview.style.display = 'none';
+            fileSizePreview.style.display = 'none';
+        }
+    } else {
+        fileNamePreview.style.display = 'none';
+        fileSizePreview.style.display = 'none';
+    }
+}
+
+function showAdvancedOptions() {
+    alert('Opciones avanzadas:\n\n' +
+          '1. CSV Encoding: UTF-8\n' +
+          '2. Separador decimal: punto (.)\n' +
+          '3. Separador de columnas: coma (,)\n' +
+          '4. Formato de fecha: YYYY-MM-DD\n\n' +
+          'Para archivos muy grandes (>10MB), se recomienda usar formato .xlsx');
+}
+
+// Mejorar experiencia de envío del formulario
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercent = document.getElementById('progressPercent');
+    
+    // Mostrar barra de progreso
+    progressDiv.style.display = 'block';
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Procesando...';
+    
+    // Simular progreso (en producción esto debería ser real con AJAX)
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 10;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = `${progress}%`;
+        progressPercent.textContent = `${progress}%`;
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 500);
+});
+</script>
+
+<style>
+.file-upload-area {
+    border: 2px dashed #ced4da;
+    transition: all 0.3s;
+    background: #f8f9fa;
+}
+
+.file-upload-area:hover {
+    border-color: #0d6efd;
+    background: #e7f1ff;
+}
+
+.progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 0.5s ease;
+}
+
+.table th {
+    font-weight: 600;
+}
+</style>
 {% endblock %}
