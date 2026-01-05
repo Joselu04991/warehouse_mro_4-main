@@ -10,8 +10,10 @@ import xlsxwriter
 
 warehouse2d_bp = Blueprint('warehouse2d', __name__, template_folder='templates')
 
-# Rutas principales
+# ================= RUTAS PRINCIPALES =================
+
 @warehouse2d_bp.route('/')
+@warehouse2d_bp.route('/map')
 @login_required
 def index():
     """Página principal del mapa 2D"""
@@ -26,13 +28,24 @@ def index():
         ubicaciones = set()
         materiales = set()
         for item in warehouse_data:
-            ubicacion = item.get('Ubicación') or item.get('ubicacion') or item.get('UBICACION')
-            material = item.get('Material') or item.get('material') or item.get('MATERIAL')
+            # Buscar ubicación en diferentes formatos
+            ubicacion = None
+            for key in ['ubicacion', 'Ubicacion', 'ubicación', 'Ubicación', 'UBICACION']:
+                if key in item and item[key]:
+                    ubicacion = str(item[key])
+                    break
+            
+            # Buscar material en diferentes formatos
+            material = None
+            for key in ['material', 'Material', 'MATERIAL']:
+                if key in item and item[key]:
+                    material = str(item[key])
+                    break
             
             if ubicacion:
-                ubicaciones.add(str(ubicacion))
+                ubicaciones.add(ubicacion)
             if material:
-                materiales.add(str(material))
+                materiales.add(material)
         
         total_locations = len(ubicaciones)
         total_materials = len(materiales)
@@ -44,19 +57,15 @@ def index():
                          total_locations=total_locations,
                          total_materials=total_materials)
 
-@warehouse2d_bp.route('/map')
-@login_required
-def map_view():
-    """Vista del mapa (alias de index)"""
-    return redirect(url_for('warehouse2d.index'))
+# ================= RUTAS DE SUBIDA DE ARCHIVOS =================
 
 @warehouse2d_bp.route('/upload')
+@warehouse2d_bp.route('/upload-warehouse2d')  # Ruta alternativa para compatibilidad
 @login_required
 def upload_view():
     """Página para subir archivo Excel"""
     return render_template('warehouse2d/upload.html')
 
-# Función para verificar extensiones de archivo
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -77,22 +86,35 @@ def upload_file():
     
     if file and allowed_file(file.filename):
         try:
-            # Leer el archivo Excel
+            # Leer el archivo
             if file.filename.endswith('.csv'):
-                df = pd.read_csv(file)
+                df = pd.read_csv(file, encoding='utf-8')
             else:
                 df = pd.read_excel(file)
+            
+            # Guardar columnas originales
+            original_columns = list(df.columns)
             
             # Convertir a lista de diccionarios
             data = df.where(pd.notnull(df), None).to_dict('records')
             
-            # Normalizar nombres de columnas (minúsculas, sin espacios)
+            # Normalizar nombres de columnas
             normalized_data = []
             for row in data:
                 normalized_row = {}
                 for key, value in row.items():
-                    # Normalizar key
-                    norm_key = str(key).strip().lower().replace(' ', '_').replace('á', 'a').replace('é', 'e').replace('í', 'i').replace('ó', 'o').replace('ú', 'u')
+                    if pd.isna(value):
+                        value = None
+                    
+                    # Normalizar nombre de columna
+                    norm_key = str(key).strip().lower()
+                    # Reemplazar caracteres especiales
+                    norm_key = norm_key.replace(' ', '_').replace('á', 'a').replace('é', 'e')\
+                                      .replace('í', 'i').replace('ó', 'o').replace('ú', 'u')\
+                                      .replace('ñ', 'n').replace('Á', 'a').replace('É', 'e')\
+                                      .replace('Í', 'i').replace('Ó', 'o').replace('Ú', 'u')\
+                                      .replace('Ñ', 'n')
+                    
                     normalized_row[norm_key] = value
                 normalized_data.append(normalized_row)
             
@@ -100,17 +122,63 @@ def upload_file():
             session['warehouse_data'] = normalized_data
             session['file_name'] = file.filename
             session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            session['raw_columns'] = list(df.columns)  # Guardar columnas originales
+            session['raw_columns'] = original_columns
             
-            flash(f'Archivo "{file.filename}" cargado exitosamente. {len(data)} registros procesados.', 'success')
+            flash(f'✓ Archivo "{file.filename}" cargado exitosamente', 'success')
+            flash(f'✓ {len(data)} registros procesados', 'success')
+            flash(f'✓ {len(set(str(row.get("ubicacion", "")) for row in normalized_data if row.get("ubicacion")))} ubicaciones identificadas', 'info')
+            
             return redirect(url_for('warehouse2d.index'))
             
+        except UnicodeDecodeError:
+            # Intentar con diferentes encodings para CSV
+            try:
+                file.stream.seek(0)  # Resetear stream
+                df = pd.read_csv(file, encoding='latin-1')
+                
+                # Guardar columnas originales
+                original_columns = list(df.columns)
+                
+                # Convertir a lista de diccionarios
+                data = df.where(pd.notnull(df), None).to_dict('records')
+                
+                # Normalizar nombres de columnas
+                normalized_data = []
+                for row in data:
+                    normalized_row = {}
+                    for key, value in row.items():
+                        if pd.isna(value):
+                            value = None
+                        
+                        norm_key = str(key).strip().lower()
+                        norm_key = norm_key.replace(' ', '_').replace('á', 'a').replace('é', 'e')\
+                                          .replace('í', 'i').replace('ó', 'o').replace('ú', 'u')\
+                                          .replace('ñ', 'n')
+                        
+                        normalized_row[norm_key] = value
+                    normalized_data.append(normalized_row)
+                
+                # Guardar en sesión
+                session['warehouse_data'] = normalized_data
+                session['file_name'] = file.filename
+                session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                session['raw_columns'] = original_columns
+                
+                flash(f'✓ Archivo "{file.filename}" cargado exitosamente (encoding: latin-1)', 'success')
+                return redirect(url_for('warehouse2d.index'))
+                
+            except Exception as e2:
+                flash(f'Error al procesar el archivo: {str(e2)}', 'error')
+                return redirect(url_for('warehouse2d.upload_view'))
+                
         except Exception as e:
             flash(f'Error al procesar el archivo: {str(e)}', 'error')
             return redirect(url_for('warehouse2d.upload_view'))
     
     flash('Tipo de archivo no permitido. Use .xlsx, .xls o .csv', 'error')
     return redirect(url_for('warehouse2d.upload_view'))
+
+# ================= RUTAS DE API =================
 
 @warehouse2d_bp.route('/get-data')
 @login_required
@@ -133,6 +201,75 @@ def get_warehouse_data():
             'success': False,
             'message': f'Error: {str(e)}'
         }), 500
+
+@warehouse2d_bp.route('/map-data')
+@login_required
+def map_data():
+    """Obtener datos procesados para el mapa"""
+    try:
+        data = session.get('warehouse_data', [])
+        
+        if not data:
+            return jsonify({
+                'success': True,
+                'locations': [],
+                'stats': {
+                    'total_locations': 0,
+                    'total_materials': 0,
+                    'occupied_locations': 0,
+                    'empty_locations': 0,
+                    'total_capacity': 0,
+                    'used_capacity': 0
+                }
+            })
+        
+        # Procesar datos para el mapa
+        locations = process_for_map(data)
+        
+        # Calcular estadísticas
+        stats = calculate_map_statistics(locations)
+        
+        return jsonify({
+            'success': True,
+            'locations': locations,
+            'stats': stats,
+            'dimensions': get_warehouse_dimensions(locations)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+@warehouse2d_bp.route('/api/location/<location_code>')
+@login_required
+def get_location_details(location_code):
+    """Obtener detalles específicos de una ubicación"""
+    try:
+        data = session.get('warehouse_data', [])
+        locations = process_for_map(data)
+        
+        location = next((loc for loc in locations if loc['code'] == location_code), None)
+        
+        if not location:
+            return jsonify({
+                'success': False,
+                'message': 'Ubicación no encontrada'
+            }), 404
+        
+        return jsonify({
+            'success': True,
+            'location': location
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'message': f'Error: {str(e)}'
+        }), 500
+
+# ================= RUTAS DE GESTIÓN =================
 
 @warehouse2d_bp.route('/clear-data', methods=['POST'])
 @login_required
@@ -213,7 +350,9 @@ def download_template():
         # Crear plantilla
         output = BytesIO()
         workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet('Plantilla')
+        
+        # Hoja de instrucciones
+        worksheet = workbook.add_worksheet('Instrucciones')
         
         # Formato para encabezados
         header_format = workbook.add_format({
@@ -236,58 +375,29 @@ def download_template():
         # Instrucciones
         worksheet.merge_range('A1:E1', 'PLANTILLA PARA CARGA DE DATOS DE ALMACÉN 2D', header_format)
         worksheet.merge_range('A2:E2', 'Complete los datos según su estructura de almacén', example_format)
-        worksheet.write('A3', 'NOTA: Las columnas marcadas con * son requeridas', example_format)
-        worksheet.write('A4', 'Las demás columnas son opcionales pero recomendadas', example_format)
         
-        # Encabezados principales
+        # Encabezados de la tabla
         headers = [
             ['COLUMNA', 'DESCRIPCIÓN', 'EJEMPLO', 'TIPO', 'REQUERIDO'],
-            ['ubicacion', 'Código único de ubicación', 'A-01-01, B-02-03, C-01-05', 'Texto', '*'],
-            ['zona', 'Zona del almacén', 'A, B, C, PASILLO, RECEPCION', 'Texto', ''],
-            ['fila', 'Número de fila', '1, 2, 3, 10, 15', 'Número', '*'],
-            ['columna', 'Número de columna', '1, 2, 3, 10, 20', 'Número', '*'],
-            ['material', 'Código del material', 'MAT-001, TORN-005, PROD-100', 'Texto', '*'],
-            ['descripcion', 'Descripción del material', 'Tornillo M8, Tuerca, Arandela', 'Texto', ''],
-            ['cantidad', 'Cantidad en stock', '100, 250, 500.5, 1000', 'Número', '*'],
-            ['unidad', 'Unidad de medida', 'UN, KG, M, L, PZA', 'Texto', ''],
-            ['capacidad', 'Capacidad máxima', '1000, 2000, 5000', 'Número', ''],
-            ['valor_unitario', 'Valor por unidad', '0.50, 1.25, 10.99', 'Número', ''],
-            ['estado', 'Estado del material', 'ACTIVO, INACTIVO, RESERVADO', 'Texto', ''],
-            ['categoria', 'Categoría del material', 'HERRAMIENTA, MATERIA_PRIMA, PRODUCTO_TERMINADO', 'Texto', '']
+            ['ubicacion', 'Código único de ubicación', 'A-01-01, B-02-03', 'Texto', 'Sí'],
+            ['zona', 'Zona del almacén', 'A, B, C, PASILLO', 'Texto', 'No'],
+            ['fila', 'Número de fila', '1, 2, 3, 10', 'Número', 'Sí'],
+            ['columna', 'Número de columna', '1, 2, 3, 20', 'Número', 'Sí'],
+            ['material', 'Código del material', 'MAT-001, TORN-005', 'Texto', 'Sí'],
+            ['descripcion', 'Descripción del material', 'Tornillo M8, Tuerca', 'Texto', 'No'],
+            ['cantidad', 'Cantidad en stock', '100, 250, 500.5', 'Número', 'Sí'],
+            ['unidad', 'Unidad de medida', 'UN, KG, M, L', 'Texto', 'No'],
+            ['capacidad', 'Capacidad máxima', '1000, 2000, 5000', 'Número', 'No'],
+            ['valor_unitario', 'Valor por unidad', '0.50, 1.25, 10.99', 'Número', 'No']
         ]
         
-        # Escribir encabezados y ejemplos
+        # Escribir encabezados
         for row_num, row_data in enumerate(headers):
             for col_num, cell_data in enumerate(row_data):
                 if row_num == 0:
-                    worksheet.write(row_num + 5, col_num, cell_data, header_format)
+                    worksheet.write(row_num + 4, col_num, cell_data, header_format)
                 else:
-                    worksheet.write(row_num + 5, col_num, cell_data, example_format)
-        
-        # Ejemplos de datos reales
-        worksheet.merge_range('A20:E20', 'EJEMPLOS DE DATOS COMPLETOS', header_format)
-        
-        examples = [
-            ['ubicacion', 'zona', 'fila', 'columna', 'material', 'descripcion', 'cantidad', 'unidad', 'capacidad', 'valor_unitario', 'estado', 'categoria'],
-            ['A-01-01', 'A', 1, 1, 'MAT-001', 'Tornillo M8', 100, 'UN', 1000, 0.50, 'ACTIVO', 'MATERIA_PRIMA'],
-            ['A-01-02', 'A', 1, 2, 'MAT-002', 'Tuerca M8', 150, 'UN', 1000, 0.25, 'ACTIVO', 'MATERIA_PRIMA'],
-            ['B-01-01', 'B', 1, 1, 'MAT-003', 'Arandela plana', 500, 'UN', 2000, 0.10, 'ACTIVO', 'MATERIA_PRIMA'],
-            ['C-02-03', 'C', 2, 3, 'PROD-100', 'Producto terminado X', 50, 'PZA', 100, 25.99, 'ACTIVO', 'PRODUCTO_TERMINADO']
-        ]
-        
-        for row_num, row_data in enumerate(examples):
-            for col_num, cell_data in enumerate(row_data):
-                if row_num == 0:
-                    worksheet.write(row_num + 21, col_num, cell_data, header_format)
-                else:
-                    worksheet.write(row_num + 21, col_num, cell_data, example_format)
-        
-        # Ajustar ancho de columnas
-        worksheet.set_column('A:A', 15)
-        worksheet.set_column('B:B', 25)
-        worksheet.set_column('C:C', 20)
-        worksheet.set_column('D:D', 10)
-        worksheet.set_column('E:E', 15)
+                    worksheet.write(row_num + 4, col_num, cell_data, example_format)
         
         # Hoja para datos
         worksheet2 = workbook.add_worksheet('Datos')
@@ -296,6 +406,27 @@ def download_template():
         data_headers = ['ubicacion', 'zona', 'fila', 'columna', 'material', 'descripcion', 'cantidad', 'unidad', 'capacidad', 'valor_unitario']
         for col_num, header in enumerate(data_headers):
             worksheet2.write(0, col_num, header, header_format)
+        
+        # Ejemplos de datos
+        examples = [
+            ['A-01-01', 'A', 1, 1, 'MAT-001', 'Tornillo M8', 100, 'UN', 1000, 0.50],
+            ['A-01-02', 'A', 1, 2, 'MAT-002', 'Tuerca M8', 150, 'UN', 1000, 0.25],
+            ['B-01-01', 'B', 1, 1, 'MAT-003', 'Arandela plana', 500, 'UN', 2000, 0.10],
+            ['C-02-03', 'C', 2, 3, 'PROD-100', 'Producto X', 50, 'PZA', 100, 25.99]
+        ]
+        
+        for row_num, row_data in enumerate(examples, start=1):
+            for col_num, cell_data in enumerate(row_data):
+                worksheet2.write(row_num, col_num, cell_data)
+        
+        # Ajustar ancho de columnas
+        worksheet.set_column('A:A', 15)
+        worksheet.set_column('B:B', 25)
+        worksheet.set_column('C:C', 20)
+        worksheet.set_column('D:D', 10)
+        worksheet.set_column('E:E', 15)
+        
+        worksheet2.set_column('A:J', 15)
         
         workbook.close()
         output.seek(0)
@@ -311,72 +442,77 @@ def download_template():
         flash(f'Error al generar plantilla: {str(e)}', 'error')
         return redirect(url_for('warehouse2d.index'))
 
-@warehouse2d_bp.route('/map-data')
-@login_required
-def map_data():
-    """Obtener datos procesados para el mapa"""
-    try:
-        data = session.get('warehouse_data', [])
-        
-        if not data:
-            return jsonify({
-                'success': True,
-                'locations': [],
-                'stats': {
-                    'total_locations': 0,
-                    'total_materials': 0,
-                    'occupied_locations': 0,
-                    'empty_locations': 0,
-                    'total_capacity': 0,
-                    'used_capacity': 0
-                }
-            })
-        
-        # Procesar datos para el mapa
-        locations = process_for_map(data)
-        
-        # Calcular estadísticas
-        stats = calculate_map_statistics(locations)
-        
-        return jsonify({
-            'success': True,
-            'locations': locations,
-            'stats': stats,
-            'dimensions': get_warehouse_dimensions(locations)
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error: {str(e)}'
-        }), 500
+# ================= FUNCIONES AUXILIARES =================
 
 def process_for_map(data):
     """Procesar datos crudos para el mapa"""
     location_map = {}
     
     for row in data:
-        ubicacion = row.get('ubicacion') or row.get('Ubicacion') or row.get('ubicación')
-        zona = row.get('zona') or row.get('Zona') or ''
-        fila = row.get('fila') or row.get('Fila') or 1
-        columna = row.get('columna') or row.get('Columna') or 1
-        material = row.get('material') or row.get('Material') or ''
-        descripcion = row.get('descripcion') or row.get('descripción') or row.get('Descripcion') or material
-        cantidad = float(row.get('cantidad') or row.get('Cantidad') or 0)
-        capacidad = float(row.get('capacidad') or row.get('Capacidad') or 1000)
-        unidad = row.get('unidad') or row.get('Unidad') or 'UN'
-        valor_unitario = float(row.get('valor_unitario') or row.get('valor unitario') or row.get('valor') or 0)
+        # Buscar ubicación en diferentes formatos
+        ubicacion = None
+        for key in ['ubicacion', 'ubicación']:
+            if key in row and row[key]:
+                ubicacion = str(row[key])
+                break
         
         if not ubicacion:
             continue
         
-        # Convertir fila y columna a enteros
+        # Buscar otros campos
+        zona = row.get('zona', '')
+        if not zona:
+            # Intentar extraer zona del código de ubicación
+            if '-' in ubicacion:
+                zona = ubicacion.split('-')[0]
+        
+        # Obtener fila y columna
+        fila = row.get('fila', 1)
+        columna = row.get('columna', 1)
+        
+        # Convertir a enteros
         try:
-            fila = int(float(fila))
-            columna = int(float(columna))
+            fila = int(float(fila)) if fila else 1
         except:
             fila = 1
+        
+        try:
+            columna = int(float(columna)) if columna else 1
+        except:
             columna = 1
+        
+        # Buscar material
+        material = None
+        for key in ['material', 'codigo_material', 'codigo']:
+            if key in row and row[key]:
+                material = str(row[key])
+                break
+        
+        if not material:
+            continue
+        
+        # Obtener cantidad
+        cantidad = 0
+        for key in ['cantidad', 'stock', 'existencia']:
+            if key in row and row[key]:
+                try:
+                    cantidad = float(row[key])
+                    break
+                except:
+                    cantidad = 0
+        
+        # Obtener capacidad
+        capacidad = 1000  # Valor por defecto
+        for key in ['capacidad', 'capacidad_max', 'max_capacidad']:
+            if key in row and row[key]:
+                try:
+                    capacidad = float(row[key])
+                    break
+                except:
+                    capacidad = 1000
+        
+        # Obtener descripción
+        descripcion = row.get('descripcion', row.get('descripción', material))
         
         if ubicacion not in location_map:
             location_map[ubicacion] = {
@@ -386,31 +522,30 @@ def process_for_map(data):
                 'col': columna,
                 'capacity': capacidad,
                 'used_capacity': 0,
-                'materials': [],
-                'materials_map': set()  # Para evitar duplicados
+                'materials': []
             }
         
         location = location_map[ubicacion]
         
-        # Agregar material si no está duplicado
-        if material and material not in location['materials_map']:
-            location['materials'].append({
-                'code': material,
-                'description': descripcion,
-                'quantity': cantidad,
-                'unit': unidad,
-                'unit_value': valor_unitario,
-                'total_value': cantidad * valor_unitario
-            })
-            location['materials_map'].add(material)
-            location['used_capacity'] += cantidad
+        # Agregar material
+        location['materials'].append({
+            'code': material,
+            'description': descripcion,
+            'quantity': cantidad,
+            'unit': row.get('unidad', 'UN'),
+            'unit_value': float(row.get('valor_unitario', 0) or 0)
+        })
+        
+        location['used_capacity'] += cantidad
     
     # Convertir a lista y calcular ocupación
     locations_list = []
     for loc in location_map.values():
-        ocupation_percent = (loc['used_capacity'] / loc['capacity'] * 100) if loc['capacity'] > 0 else 0
+        ocupation_percent = 0
+        if loc['capacity'] > 0:
+            ocupation_percent = (loc['used_capacity'] / loc['capacity']) * 100
         
-        # Determinar estado basado en ocupación
+        # Determinar estado
         status = 'vacio'
         if loc['used_capacity'] > 0:
             if ocupation_percent < 20:
@@ -420,11 +555,22 @@ def process_for_map(data):
             else:
                 status = 'normal'
         
+        # Calcular valor total
+        total_value = sum(mat['quantity'] * mat['unit_value'] for mat in loc['materials'])
+        
         locations_list.append({
-            **loc,
+            'code': loc['code'],
+            'zone': loc['zone'],
+            'row': loc['row'],
+            'col': loc['col'],
+            'capacity': loc['capacity'],
+            'used_capacity': loc['used_capacity'],
+            'free_capacity': loc['capacity'] - loc['used_capacity'],
             'ocupation_percent': round(ocupation_percent, 1),
             'status': status,
-            'free_capacity': loc['capacity'] - loc['used_capacity']
+            'materials': loc['materials'],
+            'materials_count': len(loc['materials']),
+            'total_value': round(total_value, 2)
         })
     
     return locations_list
@@ -438,6 +584,7 @@ def calculate_map_statistics(locations):
         'empty_locations': 0,
         'total_capacity': 0,
         'used_capacity': 0,
+        'total_value': 0,
         'by_status': {
             'normal': 0,
             'bajo': 0,
@@ -451,6 +598,7 @@ def calculate_map_statistics(locations):
     for loc in locations:
         stats['total_capacity'] += loc['capacity']
         stats['used_capacity'] += loc['used_capacity']
+        stats['total_value'] += loc.get('total_value', 0)
         
         if loc['used_capacity'] > 0:
             stats['occupied_locations'] += 1
@@ -472,8 +620,8 @@ def get_warehouse_dimensions(locations):
     if not locations:
         return {'max_row': 0, 'max_col': 0, 'zones': []}
     
-    max_row = max(loc['row'] for loc in locations)
-    max_col = max(loc['col'] for loc in locations)
+    max_row = max((loc['row'] for loc in locations), default=1)
+    max_col = max((loc['col'] for loc in locations), default=1)
     zones = list(set(loc['zone'] for loc in locations if loc['zone']))
     
     return {
@@ -481,30 +629,3 @@ def get_warehouse_dimensions(locations):
         'max_col': max_col,
         'zones': zones
     }
-
-@warehouse2d_bp.route('/api/location/<location_code>')
-@login_required
-def get_location_details(location_code):
-    """Obtener detalles específicos de una ubicación"""
-    try:
-        data = session.get('warehouse_data', [])
-        locations = process_for_map(data)
-        
-        location = next((loc for loc in locations if loc['code'] == location_code), None)
-        
-        if not location:
-            return jsonify({
-                'success': False,
-                'message': 'Ubicación no encontrada'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'location': location
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'message': f'Error: {str(e)}'
-        }), 500
