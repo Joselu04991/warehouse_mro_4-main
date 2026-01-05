@@ -14,6 +14,7 @@ warehouse2d_bp = Blueprint('warehouse2d', __name__, template_folder='templates')
 
 @warehouse2d_bp.route('/')
 @warehouse2d_bp.route('/map')
+@warehouse2d_bp.route('/map-view')
 @login_required
 def index():
     """Página principal del mapa 2D"""
@@ -629,3 +630,4 @@ def get_warehouse_dimensions(locations):
         'max_col': max_col,
         'zones': zones
     }
+
