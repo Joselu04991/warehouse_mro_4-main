@@ -1,57 +1,153 @@
 {% extends "base.html" %}
-{% block title %}Mapa 2D del Almacén - Vista Inteligente{% endblock %}
+{% block title %}Mapa 2D Inteligente del Almacén - Sistema de Gestión{% endblock %}
 
 {% block content %}
 <style>
-    /* ================= VARIABLES Y CONFIGURACIÓN ================= */
+    /* ================= VARIABLES CSS ================= */
     :root {
+        --color-primary: #2c3e50;
+        --color-secondary: #3498db;
+        --color-success: #28a745;
+        --color-warning: #ffc107;
+        --color-danger: #dc3545;
+        --color-info: #17a2b8;
+        --color-light: #f8f9fa;
+        --color-dark: #343a40;
+        --color-gray: #6c757d;
+        
         --color-normal: #28a745;
         --color-bajo: #ffc107;
         --color-critico: #dc3545;
         --color-vacio: #6c757d;
-        --color-hover: #007bff;
-        --grid-size: 40px;
-        --border-radius: 6px;
+        --color-reservado: #6f42c1;
+        
+        --grid-size: 45px;
+        --border-radius: 8px;
         --transition-speed: 0.3s;
+        --shadow-light: 0 4px 6px rgba(0,0,0,0.1);
+        --shadow-medium: 0 6px 12px rgba(0,0,0,0.15);
+        --shadow-heavy: 0 10px 20px rgba(0,0,0,0.2);
     }
 
-    /* ================= DISEÑO GENERAL ================= */
+    /* ================= RESET Y CONFIGURACIÓN BASE ================= */
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f7fa;
+        color: #333;
+        line-height: 1.6;
+    }
+
+    /* ================= CONTENEDOR PRINCIPAL ================= */
     .warehouse-container {
-        background-color: #f8f9fa;
         min-height: 100vh;
-        padding-bottom: 2rem;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+        padding-bottom: 3rem;
     }
 
+    /* ================= HEADER PRINCIPAL ================= */
     .header-section {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        background: linear-gradient(135deg, var(--color-primary) 0%, #1a2530 100%);
         color: white;
-        padding: 1.5rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0 0 15px 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        padding: 1.8rem 0;
+        margin-bottom: 2.5rem;
+        border-radius: 0 0 20px 20px;
+        box-shadow: var(--shadow-medium);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+        opacity: 0.1;
     }
 
     .title-main {
-        font-weight: 700;
-        font-size: 1.8rem;
-        letter-spacing: 0.5px;
+        font-weight: 800;
+        font-size: 2.2rem;
+        letter-spacing: -0.5px;
         margin-bottom: 0.5rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: relative;
+        display: inline-block;
+    }
+
+    .title-main::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        width: 60px;
+        height: 4px;
+        background: var(--color-secondary);
+        border-radius: 2px;
     }
 
     .subtitle {
-        font-size: 1rem;
+        font-size: 1.1rem;
         opacity: 0.9;
         font-weight: 300;
+        margin-bottom: 0;
+    }
+
+    .upload-btn {
+        background: linear-gradient(135deg, var(--color-secondary) 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        padding: 0.9rem 2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all var(--transition-speed) ease;
+        box-shadow: var(--shadow-light);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .upload-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.7s ease;
+    }
+
+    .upload-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-medium);
+        background: linear-gradient(135deg, #2980b9 0%, var(--color-secondary) 100%);
+    }
+
+    .upload-btn:hover::before {
+        left: 100%;
     }
 
     /* ================= PANEL DE CONTROL ================= */
     .control-panel {
         background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        border: 1px solid #e9ecef;
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: var(--shadow-light);
+        border: 1px solid #e1e5eb;
+        position: relative;
     }
 
     .search-container {
@@ -60,106 +156,261 @@
 
     .search-icon {
         position: absolute;
-        left: 15px;
+        left: 20px;
         top: 50%;
         transform: translateY(-50%);
-        color: #6c757d;
+        color: var(--color-gray);
         z-index: 10;
+        font-size: 1.2rem;
     }
 
     .search-input {
-        padding-left: 45px;
+        padding: 1rem 1rem 1rem 3.5rem;
         border-radius: 50px;
-        border: 2px solid #dee2e6;
-        height: 48px;
-        font-size: 1rem;
+        border: 2px solid #e1e5eb;
+        height: 56px;
+        font-size: 1.1rem;
         transition: all var(--transition-speed) ease;
+        background: white;
+        width: 100%;
     }
 
     .search-input:focus {
-        border-color: #4dabf7;
-        box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+        border-color: var(--color-secondary);
+        box-shadow: 0 0 0 0.3rem rgba(52, 152, 219, 0.2);
+        outline: none;
+    }
+
+    .search-input::placeholder {
+        color: #a0a7b3;
     }
 
     .filter-buttons {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 0.75rem;
         justify-content: center;
-        margin-top: 1rem;
+        margin-top: 1.5rem;
     }
 
     .filter-btn {
-        min-width: 100px;
-        border-radius: 25px;
-        font-weight: 500;
-        padding: 0.5rem 1.2rem;
+        min-width: 120px;
+        border-radius: 30px;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
         transition: all var(--transition-speed) ease;
         border-width: 2px;
+        font-size: 0.95rem;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .filter-btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .filter-btn:hover::before {
+        width: 300px;
+        height: 300px;
     }
 
     .filter-btn.active {
         transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: var(--shadow-medium);
     }
 
-    .btn-todos { border-color: #6c757d; color: #6c757d; }
-    .btn-todos.active { background-color: #6c757d; color: white; }
+    .btn-todos { 
+        border-color: var(--color-gray); 
+        color: var(--color-gray);
+        background: white;
+    }
+    .btn-todos.active { 
+        background-color: var(--color-gray); 
+        color: white;
+        border-color: var(--color-gray);
+    }
 
-    .btn-normal { border-color: var(--color-normal); color: var(--color-normal); }
-    .btn-normal.active { background-color: var(--color-normal); color: white; }
+    .btn-normal { 
+        border-color: var(--color-normal); 
+        color: var(--color-normal);
+        background: white;
+    }
+    .btn-normal.active { 
+        background-color: var(--color-normal); 
+        color: white;
+        border-color: var(--color-normal);
+    }
 
-    .btn-bajo { border-color: var(--color-bajo); color: var(--color-bajo); }
-    .btn-bajo.active { background-color: var(--color-bajo); color: #212529; }
+    .btn-bajo { 
+        border-color: var(--color-bajo); 
+        color: var(--color-bajo);
+        background: white;
+    }
+    .btn-bajo.active { 
+        background-color: var(--color-bajo); 
+        color: #212529;
+        border-color: var(--color-bajo);
+    }
 
-    .btn-critico { border-color: var(--color-critico); color: var(--color-critico); }
-    .btn-critico.active { background-color: var(--color-critico); color: white; }
+    .btn-critico { 
+        border-color: var(--color-critico); 
+        color: var(--color-critico);
+        background: white;
+    }
+    .btn-critico.active { 
+        background-color: var(--color-critico); 
+        color: white;
+        border-color: var(--color-critico);
+    }
 
-    .btn-vacio { border-color: var(--color-vacio); color: var(--color-vacio); }
-    .btn-vacio.active { background-color: var(--color-vacio); color: white; }
+    .btn-vacio { 
+        border-color: var(--color-vacio); 
+        color: var(--color-vacio);
+        background: white;
+    }
+    .btn-vacio.active { 
+        background-color: var(--color-vacio); 
+        color: white;
+        border-color: var(--color-vacio);
+    }
 
-    /* ================= CONTROLES DE ZOOM ================= */
+    /* ================= CONTROLES DE VISTA ================= */
+    .view-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e1e5eb;
+    }
+
     .zoom-controls {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        justify-content: center;
-        margin-top: 1rem;
+        gap: 0.75rem;
     }
 
     .zoom-btn {
-        width: 44px;
-        height: 44px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         background: white;
-        border: 2px solid #dee2e6;
+        border: 2px solid #e1e5eb;
         transition: all var(--transition-speed) ease;
+        color: var(--color-dark);
+        cursor: pointer;
     }
 
     .zoom-btn:hover {
-        background-color: #f8f9fa;
-        border-color: var(--color-hover);
+        background-color: var(--color-light);
+        border-color: var(--color-secondary);
+        color: var(--color-secondary);
+        transform: scale(1.05);
     }
 
     .zoom-level {
-        font-weight: 600;
-        color: #495057;
-        min-width: 60px;
+        font-weight: 700;
+        color: var(--color-primary);
+        min-width: 70px;
         text-align: center;
+        font-size: 1.1rem;
+    }
+
+    .view-options {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .view-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        border: 2px solid #e1e5eb;
+        background: white;
+        color: var(--color-dark);
+        font-weight: 500;
+        transition: all var(--transition-speed) ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .view-btn.active {
+        background: var(--color-secondary);
+        color: white;
+        border-color: var(--color-secondary);
+    }
+
+    .view-btn:hover:not(.active) {
+        border-color: var(--color-secondary);
+        color: var(--color-secondary);
+    }
+
+    /* ================= LEYENDA ================= */
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+        padding: 1.2rem;
+        background: rgba(255,255,255,0.9);
+        border-radius: var(--border-radius);
+        border: 1px solid #e1e5eb;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--color-dark);
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .legend-text {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .legend-range {
+        font-size: 0.8rem;
+        color: var(--color-gray);
+        font-weight: normal;
     }
 
     /* ================= MAPA 2D ================= */
     .map-container-wrapper {
         background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
+        border-radius: var(--border-radius);
+        padding: 1.8rem;
+        box-shadow: var(--shadow-light);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 2rem;
         overflow: hidden;
     }
 
@@ -167,125 +418,209 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
         border-bottom: 2px solid #f1f3f4;
     }
 
     .map-title {
-        font-weight: 600;
-        color: #2c3e50;
-        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--color-primary);
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .map-title i {
+        color: var(--color-secondary);
     }
 
     .map-stats {
-        font-size: 0.9rem;
-        color: #6c757d;
+        font-size: 1rem;
+        color: var(--color-gray);
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .stat-value {
+        font-weight: 700;
+        color: var(--color-primary);
+        font-size: 1.2rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--color-gray);
     }
 
     .map-grid-container {
         overflow: auto;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-        background: #f8f9fa;
-        min-height: 500px;
+        border-radius: var(--border-radius);
+        border: 1px solid #e1e5eb;
+        background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%),
+                    linear-gradient(-45deg, #f8f9fa 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #f8f9fa 75%),
+                    linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        min-height: 600px;
         position: relative;
+        max-height: 70vh;
     }
 
     .map-grid {
         display: grid;
-        gap: 2px;
-        padding: 15px;
+        gap: 3px;
+        padding: 20px;
         transition: transform 0.3s ease;
         min-width: min-content;
+        position: relative;
     }
 
     /* ================= CELDAS DEL MAPA ================= */
     .location-cell {
         width: var(--grid-size);
         height: var(--grid-size);
-        border-radius: var(--border-radius);
+        border-radius: 6px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        font-size: 0.7rem;
+        font-weight: 700;
+        font-size: 0.75rem;
         cursor: pointer;
         transition: all var(--transition-speed) ease;
         position: relative;
         overflow: hidden;
         border: 2px solid transparent;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        user-select: none;
+    }
+
+    .location-cell::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: rgba(255,255,255,0.5);
     }
 
     .location-cell:hover {
-        transform: scale(1.1);
-        z-index: 10;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: scale(1.15);
+        z-index: 100;
+        box-shadow: var(--shadow-heavy);
     }
 
     .location-cell.normal { 
-        background-color: var(--color-normal); 
+        background: linear-gradient(135deg, var(--color-normal) 0%, #218838 100%);
         color: white;
     }
     .location-cell.bajo { 
-        background-color: var(--color-bajo); 
+        background: linear-gradient(135deg, var(--color-bajo) 0%, #e0a800 100%);
         color: #212529;
     }
     .location-cell.critico { 
-        background-color: var(--color-critico); 
+        background: linear-gradient(135deg, var(--color-critico) 0%, #c82333 100%);
         color: white;
     }
     .location-cell.vacio { 
-        background-color: var(--color-vacio); 
+        background: linear-gradient(135deg, var(--color-vacio) 0%, #5a6268 100%);
+        color: white;
+    }
+    .location-cell.reservado { 
+        background: linear-gradient(135deg, var(--color-reservado) 0%, #593196 100%);
         color: white;
     }
 
     .location-cell.highlighted {
-        animation: pulse-highlight 1.5s infinite;
-        border-color: #007bff;
+        animation: pulse-highlight 2s infinite;
+        border-color: var(--color-secondary);
+        z-index: 50;
     }
 
     @keyframes pulse-highlight {
-        0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
-        70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        0% { 
+            box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7),
+                        0 4px 8px rgba(0,0,0,0.2);
+        }
+        70% { 
+            box-shadow: 0 0 0 12px rgba(52, 152, 219, 0),
+                        0 4px 8px rgba(0,0,0,0.2);
+        }
+        100% { 
+            box-shadow: 0 0 0 0 rgba(52, 152, 219, 0),
+                        0 4px 8px rgba(0,0,0,0.2);
+        }
+    }
+
+    .location-cell.selected {
+        border-color: var(--color-primary);
+        border-width: 3px;
+        box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
     }
 
     .location-code {
-        font-size: 0.6rem;
-        font-weight: 700;
+        font-size: 0.7rem;
+        font-weight: 800;
         text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        letter-spacing: 0.5px;
     }
 
-    /* ================= PANEL LATERAL (KPIs) ================= */
+    .location-percent {
+        font-size: 0.6rem;
+        opacity: 0.9;
+        margin-top: 1px;
+    }
+
+    /* ================= SIDEBAR/KPIs ================= */
     .sidebar-card {
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
-        border: 1px solid #e9ecef;
-        margin-bottom: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-light);
+        border: 1px solid #e1e5eb;
+        margin-bottom: 1.8rem;
         overflow: hidden;
         transition: transform 0.3s ease;
+        height: 100%;
     }
 
     .sidebar-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-medium);
     }
 
     .card-header-custom {
-        background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+        background: linear-gradient(135deg, var(--color-primary) 0%, #3a506b 100%);
         color: white;
-        padding: 1rem 1.25rem;
-        font-weight: 600;
-        font-size: 1rem;
+        padding: 1.2rem 1.5rem;
+        font-weight: 700;
+        font-size: 1.1rem;
         border-bottom: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .card-header-custom i {
+        font-size: 1.2rem;
     }
 
     .kpi-item {
-        padding: 0.75rem;
+        padding: 1.2rem 1.5rem;
         border-bottom: 1px solid #f1f3f4;
         transition: background-color 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .kpi-item:hover {
@@ -296,135 +631,492 @@
         border-bottom: none;
     }
 
+    .kpi-info {
+        flex: 1;
+    }
+
     .kpi-label {
-        font-weight: 500;
-        color: #495057;
-        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-dark);
+        font-size: 0.95rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-subtext {
+        font-size: 0.85rem;
+        color: var(--color-gray);
     }
 
     .kpi-value {
-        font-weight: 700;
-        font-size: 1.2rem;
-        color: #2c3e50;
+        font-weight: 800;
+        font-size: 1.5rem;
+        color: var(--color-primary);
+        text-align: right;
+        min-width: 80px;
     }
 
     .kpi-trend {
-        font-size: 0.8rem;
-        border-radius: 12px;
-        padding: 0.15rem 0.5rem;
-        font-weight: 500;
+        font-size: 0.85rem;
+        border-radius: 15px;
+        padding: 0.3rem 0.8rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+        display: inline-block;
     }
 
     .trend-up { background-color: #d4edda; color: #155724; }
     .trend-down { background-color: #f8d7da; color: #721c24; }
     .trend-neutral { background-color: #e2e3e5; color: #383d41; }
+    .trend-excellent { background-color: #c3e6cb; color: #155724; }
+    .trend-warning { background-color: #ffeaa7; color: #856404; }
 
     /* ================= CONTADORES ================= */
     .counter-item {
         display: flex;
         align-items: center;
-        padding: 0.75rem;
+        padding: 1rem 1.2rem;
         border-radius: 8px;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
         transition: all 0.3s ease;
+        cursor: pointer;
+        border: 1px solid transparent;
     }
 
     .counter-item:hover {
-        transform: translateX(5px);
-        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        transform: translateX(8px);
+        box-shadow: var(--shadow-light);
+        border-color: #e1e5eb;
+        background: white;
+    }
+
+    .counter-item.active {
+        background: white;
+        border-color: var(--color-secondary);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
     }
 
     .counter-color {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        margin-right: 12px;
-        border: 2px solid white;
+        margin-right: 15px;
+        border: 3px solid white;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex-shrink: 0;
     }
 
     .counter-label {
         flex-grow: 1;
-        font-weight: 500;
-        color: #495057;
+        font-weight: 600;
+        color: var(--color-dark);
+        font-size: 1rem;
     }
 
     .counter-value {
-        font-weight: 700;
-        font-size: 1.1rem;
-        min-width: 40px;
+        font-weight: 800;
+        font-size: 1.3rem;
+        min-width: 45px;
         text-align: right;
+        color: var(--color-primary);
+    }
+
+    .counter-percent {
+        font-size: 0.85rem;
+        color: var(--color-gray);
+        margin-left: 0.5rem;
+        font-weight: normal;
     }
 
     .color-normal { background-color: var(--color-normal); }
     .color-bajo { background-color: var(--color-bajo); }
     .color-critico { background-color: var(--color-critico); }
     .color-vacio { background-color: var(--color-vacio); }
+    .color-reservado { background-color: var(--color-reservado); }
 
-    /* ================= BOTÓN DE CARGAR EXCEL ================= */
-    .upload-btn {
-        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+    /* ================= FILTROS RÁPIDOS ================= */
+    .filter-section {
+        padding: 1.2rem 1.5rem;
+    }
+
+    .filter-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-group:last-child {
+        margin-bottom: 0;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: var(--color-dark);
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-label i {
+        color: var(--color-secondary);
+    }
+
+    .form-select {
+        border-radius: 8px;
+        border: 2px solid #e1e5eb;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all var(--transition-speed) ease;
+        height: auto;
+    }
+
+    .form-select:focus {
+        border-color: var(--color-secondary);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+
+    .btn-apply-filters {
+        background: linear-gradient(135deg, var(--color-secondary) 0%, #2980b9 100%);
         color: white;
         border: none;
         border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-        display: inline-flex;
+        padding: 0.9rem 1.5rem;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 100%;
+        transition: all var(--transition-speed) ease;
+        display: flex;
         align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        justify-content: center;
+        gap: 0.75rem;
     }
 
-    .upload-btn:hover {
+    .btn-apply-filters:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
-        color: white;
+        box-shadow: var(--shadow-medium);
+        background: linear-gradient(135deg, #2980b9 0%, var(--color-secondary) 100%);
     }
 
     /* ================= MODAL MEJORADO ================= */
     .modal-custom .modal-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+        background: linear-gradient(135deg, var(--color-primary) 0%, #3a506b 100%);
         color: white;
         border-radius: 12px 12px 0 0;
-        padding: 1.25rem 1.5rem;
+        padding: 1.5rem 2rem;
+        border-bottom: none;
     }
 
     .modal-custom .modal-title {
-        font-weight: 600;
-        font-size: 1.2rem;
+        font-weight: 700;
+        font-size: 1.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .location-badge {
         display: inline-block;
         background: rgba(255,255,255,0.15);
-        padding: 0.3rem 0.8rem;
+        padding: 0.4rem 1rem;
         border-radius: 20px;
-        font-weight: 500;
+        font-weight: 600;
         margin-left: 10px;
-        font-size: 0.9rem;
+        font-size: 1rem;
+        font-family: 'Monaco', 'Consolas', monospace;
+        letter-spacing: 1px;
     }
 
-    .material-row {
-        transition: background-color 0.2s ease;
+    .modal-custom .modal-body {
+        padding: 2rem;
     }
 
-    .material-row:hover {
+    .modal-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid #e1e5eb;
+    }
+
+    .modal-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .modal-section-title {
+        font-weight: 700;
+        color: var(--color-primary);
+        font-size: 1.1rem;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .modal-section-title i {
+        color: var(--color-secondary);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e1e5eb;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px dashed #dee2e6;
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--color-dark);
+        font-size: 0.95rem;
+    }
+
+    .info-value {
+        font-weight: 700;
+        color: var(--color-primary);
+        font-size: 1.1rem;
+    }
+
+    .progress-custom {
+        height: 10px;
+        border-radius: 5px;
+        background: #e9ecef;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .progress-custom .progress-bar {
+        border-radius: 5px;
+        transition: width 1s ease;
+    }
+
+    .materials-table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e1e5eb;
+    }
+
+    .materials-table thead {
+        background: #f8f9fa;
+    }
+
+    .materials-table th {
+        font-weight: 600;
+        color: var(--color-dark);
+        padding: 1rem;
+        border-bottom: 2px solid #dee2e6;
+        white-space: nowrap;
+    }
+
+    .materials-table td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #e1e5eb;
+    }
+
+    .materials-table tbody tr:hover {
         background-color: #f8f9fa;
     }
 
+    .materials-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
     .status-badge {
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
+        padding: 0.35rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .bg-normal { background-color: var(--color-normal); color: white; }
+    .bg-bajo { background-color: var(--color-bajo); color: #212529; }
+    .bg-critico { background-color: var(--color-critico); color: white; }
+    .bg-vacio { background-color: var(--color-vacio); color: white; }
+    .bg-reservado { background-color: var(--color-reservado); color: white; }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #e1e5eb;
+        background: white;
+        color: var(--color-dark);
+        transition: all var(--transition-speed) ease;
+        cursor: pointer;
+    }
+
+    .btn-action:hover {
+        border-color: var(--color-secondary);
+        color: var(--color-secondary);
+        transform: scale(1.1);
+    }
+
+    .btn-action-primary:hover {
+        background: var(--color-secondary);
+        color: white;
+        border-color: var(--color-secondary);
+    }
+
+    .modal-custom .modal-footer {
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #e1e5eb;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .modal-custom .btn {
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    /* ================= LOADING Y ESTADOS ================= */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.9);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-spinner {
+        width: 80px;
+        height: 80px;
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid var(--color-secondary);
+        border-radius: 50%;
+        animation: spin 1.5s linear infinite;
+        margin-bottom: 2rem;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        color: var(--color-primary);
+        font-weight: 600;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--color-gray);
+        font-size: 1.2rem;
+    }
+
+    .no-results i {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.3;
+        display: block;
+    }
+
+    .no-results h4 {
+        font-weight: 700;
+        color: var(--color-dark);
+        margin-bottom: 1rem;
+    }
+
+    .no-results p {
+        color: var(--color-gray);
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* ================= TOOLTIPS ================= */
+    .tooltip-custom {
+        position: absolute;
+        background: var(--color-primary);
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
         font-weight: 500;
-        font-size: 0.8rem;
+        z-index: 1000;
+        box-shadow: var(--shadow-heavy);
+        pointer-events: none;
+        max-width: 300px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .tooltip-custom::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 20px;
+        border-width: 8px 8px 0;
+        border-style: solid;
+        border-color: var(--color-primary) transparent transparent;
     }
 
     /* ================= RESPONSIVE ================= */
-    @media (max-width: 768px) {
+    @media (max-width: 1200px) {
+        :root {
+            --grid-size: 40px;
+        }
+        
         .title-main {
-            font-size: 1.4rem;
+            font-size: 1.8rem;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .header-section {
+            padding: 1.5rem 0;
+        }
+        
+        .control-panel {
+            padding: 1.5rem;
         }
         
         .filter-buttons {
@@ -434,86 +1126,220 @@
         
         .filter-btn {
             width: 100%;
-            margin-bottom: 0.5rem;
+        }
+        
+        .view-controls {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: stretch;
+        }
+        
+        .view-options {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        :root {
+            --grid-size: 35px;
+        }
+        
+        .title-main {
+            font-size: 1.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+        }
+        
+        .upload-btn {
+            width: 100%;
+            justify-content: center;
+            margin-top: 1rem;
         }
         
         .map-grid-container {
-            min-height: 350px;
+            min-height: 400px;
+            max-height: 50vh;
         }
         
         .location-cell {
-            width: 35px;
-            height: 35px;
-            font-size: 0.6rem;
+            font-size: 0.65rem;
         }
         
-        .zoom-controls {
+        .map-stats {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        
+        .modal-custom .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .modal-custom .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .action-buttons {
             flex-wrap: wrap;
+            justify-content: center;
         }
     }
 
     @media (max-width: 576px) {
+        :root {
+            --grid-size: 30px;
+        }
+        
         .header-section {
-            padding: 1rem 0;
+            padding: 1.2rem 0;
         }
         
         .control-panel {
-            padding: 1rem;
+            padding: 1.2rem;
+        }
+        
+        .search-input {
+            height: 48px;
+            font-size: 1rem;
+            padding: 0.75rem 0.75rem 0.75rem 3rem;
+        }
+        
+        .legend {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
         }
         
         .location-cell {
-            width: 30px;
-            height: 30px;
-            font-size: 0.5rem;
+            font-size: 0.6rem;
+        }
+        
+        .kpi-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .kpi-value {
+            text-align: left;
+        }
+        
+        .modal-custom .modal-body {
+            padding: 1rem;
+        }
+        
+        .materials-table {
+            display: block;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
     }
 
+    /* ================= ANIMACIONES ================= */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(-20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes scaleIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease forwards;
+    }
+
+    .slide-in {
+        animation: slideIn 0.4s ease forwards;
+    }
+
+    .scale-in {
+        animation: scaleIn 0.3s ease forwards;
+    }
+
     /* ================= UTILIDADES ================= */
-    .loading-spinner {
-        display: inline-block;
-        width: 1.5rem;
-        height: 1.5rem;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-right: 10px;
+    .cursor-pointer {
+        cursor: pointer;
     }
 
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    .text-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    .no-results {
-        text-align: center;
-        padding: 3rem;
-        color: #6c757d;
-        font-size: 1.1rem;
+    .text-ellipsis-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1rem;
-        padding: 1rem;
-        background: rgba(255,255,255,0.8);
-        border-radius: 8px;
+    .opacity-hover {
+        transition: opacity 0.3s ease;
     }
 
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
+    .opacity-hover:hover {
+        opacity: 0.8;
     }
 
-    .legend-color {
-        width: 16px;
-        height: 16px;
-        border-radius: 4px;
+    .bg-blur {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .gradient-text {
+        background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* ================= SCROLLBAR PERSONALIZADO ================= */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-gray);
+        border-radius: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-dark);
+    }
+
+    .map-grid-container::-webkit-scrollbar {
+        width: 12px;
+        height: 12px;
+    }
+
+    .map-grid-container::-webkit-scrollbar-track {
+        background: #e9ecef;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .map-grid-container::-webkit-scrollbar-thumb {
+        background: var(--color-secondary);
+        border-radius: 6px;
+    }
+
+    .map-grid-container::-webkit-scrollbar-thumb:hover {
+        background: #2980b9;
     }
 </style>
 
@@ -522,18 +1348,25 @@
     <div class="header-section">
         <div class="container">
             <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="title-main">
-                        <i class="bi bi-grid-3x3-gap-fill me-2"></i>Mapa 2D del Almacén
+                <div class="col-lg-8 col-md-7">
+                    <h1 class="title-main fade-in">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> Mapa 2D Inteligente del Almacén
                     </h1>
-                    <p class="subtitle mb-0">
-                        Vista inteligente del inventario • Estado por ubicación • Monitoreo en tiempo real
+                    <p class="subtitle slide-in">
+                        Visualización avanzada del inventario • Monitoreo en tiempo real • Gestión eficiente de espacios
                     </p>
                 </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="upload-btn">
-                        <i class="bi bi-cloud-upload-fill"></i> Cargar Excel 2D
-                    </a>
+                <div class="col-lg-4 col-md-5">
+                    <div class="d-flex flex-column flex-md-row gap-2">
+                        <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="upload-btn scale-in">
+                            <i class="bi bi-cloud-upload-fill"></i> 
+                            <span>Cargar Excel 2D</span>
+                        </a>
+                        <button class="upload-btn scale-in" onclick="exportToPDF()" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                            <span>Exportar PDF</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -542,35 +1375,44 @@
     <div class="container">
         <div class="row">
             <!-- ================= PANEL PRINCIPAL (MAPA) ================= -->
-            <div class="col-lg-9">
-                <!-- Panel de Control -->
-                <div class="control-panel">
-                    <div class="row align-items-center">
-                        <!-- Buscador -->
-                        <div class="col-md-6 mb-3 mb-md-0">
+            <div class="col-xl-9 col-lg-8">
+                <!-- Panel de Control Avanzado -->
+                <div class="control-panel scale-in">
+                    <div class="row align-items-center g-3">
+                        <!-- Buscador Avanzado -->
+                        <div class="col-md-6">
                             <div class="search-container">
                                 <i class="bi bi-search search-icon"></i>
                                 <input type="text" 
                                        class="form-control search-input" 
                                        id="searchBox" 
-                                       placeholder="Buscar ubicación o material..."
-                                       aria-label="Buscar ubicación">
+                                       placeholder="Buscar ubicación, material o código..."
+                                       aria-label="Buscar en el almacén"
+                                       autocomplete="off">
+                                <div class="dropdown-menu w-100" id="searchDropdown" style="display: none;">
+                                    <div class="p-2 border-bottom">
+                                        <small class="text-muted">Resultados de búsqueda:</small>
+                                    </div>
+                                    <div id="searchResults" class="p-2"></div>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Controles de Zoom -->
+                        <!-- Controles Avanzados -->
                         <div class="col-md-6">
-                            <div class="zoom-controls">
-                                <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">
-                                    <i class="bi bi-dash-lg"></i>
-                                </button>
-                                <span class="zoom-level" id="zoomLevel">100%</span>
-                                <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                                <button class="zoom-btn" onclick="resetZoom()" title="Reset zoom">
-                                    <i class="bi bi-arrow-counterclockwise"></i>
-                                </button>
+                            <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2">
+                                <div class="zoom-controls">
+                                    <button class="zoom-btn" onclick="zoomOut()" title="Alejar (Ctrl -)" aria-label="Alejar vista">
+                                        <i class="bi bi-dash-lg"></i>
+                                    </button>
+                                    <span class="zoom-level" id="zoomLevel">100%</span>
+                                    <button class="zoom-btn" onclick="zoomIn()" title="Acercar (Ctrl +)" aria-label="Acercar vista">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    <button class="zoom-btn" onclick="resetZoom()" title="Restablecer zoom (Ctrl 0)" aria-label="Restablecer zoom">
+                                        <i class="bi bi-zoom-out"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -578,151 +1420,310 @@
                     <!-- Filtros por Estado -->
                     <div class="filter-buttons">
                         <button class="filter-btn btn-todos active" onclick="filterStatus('todos')" data-status="todos">
-                            <i class="bi bi-grid-fill me-1"></i> Todos
+                            <i class="bi bi-grid-fill"></i> Todas
                         </button>
                         <button class="filter-btn btn-normal" onclick="filterStatus('normal')" data-status="normal">
-                            <i class="bi bi-check-circle me-1"></i> Normal
+                            <i class="bi bi-check-circle-fill"></i> Normal
                         </button>
                         <button class="filter-btn btn-bajo" onclick="filterStatus('bajo')" data-status="bajo">
-                            <i class="bi bi-exclamation-triangle me-1"></i> Bajo
+                            <i class="bi bi-exclamation-triangle-fill"></i> Bajo
                         </button>
                         <button class="filter-btn btn-critico" onclick="filterStatus('critico')" data-status="critico">
-                            <i class="bi bi-x-circle me-1"></i> Crítico
+                            <i class="bi bi-x-circle-fill"></i> Crítico
                         </button>
                         <button class="filter-btn btn-vacio" onclick="filterStatus('vacio')" data-status="vacio">
-                            <i class="bi bi-dash-circle me-1"></i> Vacío
+                            <i class="bi bi-dash-circle-fill"></i> Vacío
+                        </button>
+                        <button class="filter-btn" style="border-color: #6f42c1; color: #6f42c1;" onclick="filterStatus('reservado')" data-status="reservado">
+                            <i class="bi bi-lock-fill"></i> Reservado
                         </button>
                     </div>
 
-                    <!-- Leyenda -->
-                    <div class="legend">
+                    <!-- Controles de Vista -->
+                    <div class="view-controls">
+                        <div class="view-options">
+                            <button class="view-btn active" onclick="setViewMode('grid')" data-view="grid">
+                                <i class="bi bi-grid-3x3"></i> Vista Grid
+                            </button>
+                            <button class="view-btn" onclick="setViewMode('list')" data-view="list">
+                                <i class="bi bi-list-ul"></i> Vista Lista
+                            </button>
+                            <button class="view-btn" onclick="setViewMode('heatmap')" data-view="heatmap">
+                                <i class="bi bi-thermometer-half"></i> Mapa Calor
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
+                                <i class="bi bi-arrow-clockwise"></i> Auto-refresh
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshData()">
+                                <i class="bi bi-arrow-repeat"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Leyenda Avanzada -->
+                    <div class="legend fade-in">
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: var(--color-normal);"></div>
-                            <span>Normal ≥ 50%</span>
+                            <div class="legend-text">
+                                <span>Normal</span>
+                                <span class="legend-range">≥ 50% ocupación</span>
+                            </div>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: var(--color-bajo);"></div>
-                            <span>Bajo 20-49%</span>
+                            <div class="legend-text">
+                                <span>Stock Bajo</span>
+                                <span class="legend-range">20% - 49%</span>
+                            </div>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: var(--color-critico);"></div>
-                            <span>Crítico 1-19%</span>
+                            <div class="legend-text">
+                                <span>Crítico</span>
+                                <span class="legend-range">1% - 19%</span>
+                            </div>
                         </div>
                         <div class="legend-item">
                             <div class="legend-color" style="background-color: var(--color-vacio);"></div>
-                            <span>Vacío 0%</span>
+                            <div class="legend-text">
+                                <span>Vacío</span>
+                                <span class="legend-range">0% ocupación</span>
+                            </div>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #6f42c1;"></div>
+                            <div class="legend-text">
+                                <span>Reservado</span>
+                                <span class="legend-range">Ubicación bloqueada</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Contenedor del Mapa -->
-                <div class="map-container-wrapper">
+                <div class="map-container-wrapper scale-in">
                     <div class="map-header">
                         <div class="map-title">
-                            <i class="bi bi-map-fill me-2"></i> Distribución del Almacén
+                            <i class="bi bi-map"></i> Distribución 2D del Almacén
+                            <span class="badge bg-secondary ms-2" id="currentView">Vista Grid</span>
                         </div>
                         <div class="map-stats">
-                            <span id="total-locations">0</span> ubicaciones • 
-                            <span id="visible-locations">0</span> visibles
+                            <div class="stat-item">
+                                <span class="stat-value" id="total-locations">0</span>
+                                <span class="stat-label">Ubicaciones</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="visible-locations">0</span>
+                                <span class="stat-label">Visibles</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="selected-locations">0</span>
+                                <span class="stat-label">Seleccionadas</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="ocupation-rate">0%</span>
+                                <span class="stat-label">Ocupación</span>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="map-grid-container">
+                    <div class="map-grid-container" id="map-container">
                         <div id="map-grid" class="map-grid"></div>
                         <div id="no-results" class="no-results d-none">
-                            <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
-                            <p>No se encontraron ubicaciones con los filtros actuales</p>
+                            <i class="bi bi-inboxes"></i>
+                            <h4>No se encontraron ubicaciones</h4>
+                            <p>Intenta cambiar los filtros o ajustar la búsqueda para ver los resultados.</p>
+                            <button class="btn btn-primary mt-3" onclick="resetAllFilters()">
+                                <i class="bi bi-filter-circle"></i> Restablecer filtros
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="showLabels" checked onchange="toggleLabels()">
+                            <label class="form-check-label" for="showLabels">
+                                Mostrar etiquetas
+                            </label>
+                        </div>
+                        <div class="text-muted small">
+                            <i class="bi bi-info-circle"></i> Haz clic en una celda para ver detalles
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- ================= PANEL LATERAL (KPIs) ================= -->
-            <div class="col-lg-3">
-                <!-- Panel de KPIs -->
-                <div class="sidebar-card">
+            <div class="col-xl-3 col-lg-4">
+                <!-- Panel de KPIs Avanzados -->
+                <div class="sidebar-card fade-in">
                     <div class="card-header-custom">
-                        <i class="bi bi-graph-up me-2"></i> Indicadores Clave (KPIs)
+                        <i class="bi bi-graph-up-arrow"></i> KPIs del Almacén
                     </div>
                     <div class="card-body p-0">
                         <div class="kpi-item">
-                            <div class="kpi-label">Ocupación Total</div>
+                            <div class="kpi-info">
+                                <div class="kpi-label">Ocupación Total</div>
+                                <div class="kpi-subtext">Capacidad utilizada</div>
+                                <div class="kpi-trend trend-up" id="kpi-trend-ocupacion">+2.5%</div>
+                            </div>
                             <div class="kpi-value" id="kpi-ocupacion">0%</div>
-                            <div class="kpi-trend trend-up" id="kpi-trend-ocupacion">+0%</div>
                         </div>
                         <div class="kpi-item">
-                            <div class="kpi-label">Ubicaciones Críticas</div>
+                            <div class="kpi-info">
+                                <div class="kpi-label">Ubicaciones Críticas</div>
+                                <div class="kpi-subtext">Requieren atención</div>
+                                <div class="kpi-trend trend-down" id="kpi-trend-criticas">-15%</div>
+                            </div>
                             <div class="kpi-value" id="kpi-criticas">0</div>
-                            <div class="kpi-trend trend-down" id="kpi-trend-criticas">-0%</div>
                         </div>
                         <div class="kpi-item">
-                            <div class="kpi-label">Espacio Disponible</div>
+                            <div class="kpi-info">
+                                <div class="kpi-label">Espacio Disponible</div>
+                                <div class="kpi-subtext">Capacidad libre</div>
+                                <div class="kpi-trend trend-neutral" id="kpi-trend-espacio">0%</div>
+                            </div>
                             <div class="kpi-value" id="kpi-espacio">0</div>
-                            <div class="kpi-trend trend-neutral" id="kpi-trend-espacio">0%</div>
                         </div>
                         <div class="kpi-item">
-                            <div class="kpi-label">Rotación Promedio</div>
+                            <div class="kpi-info">
+                                <div class="kpi-label">Eficiencia Almacén</div>
+                                <div class="kpi-subtext">Score general</div>
+                                <div class="kpi-trend trend-excellent" id="kpi-trend-eficiencia">Excelente</div>
+                            </div>
+                            <div class="kpi-value" id="kpi-eficiencia">0%</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Rotación Promedio</div>
+                                <div class="kpi-subtext">Movimiento mensual</div>
+                                <div class="kpi-trend trend-up" id="kpi-trend-rotacion">+8.3%</div>
+                            </div>
                             <div class="kpi-value" id="kpi-rotacion">0%</div>
-                            <div class="kpi-trend trend-up" id="kpi-trend-rotacion">+0%</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Contadores por Estado -->
-                <div class="sidebar-card">
+                <div class="sidebar-card fade-in">
                     <div class="card-header-custom">
-                        <i class="bi bi-pie-chart-fill me-2"></i> Estado por Categoría
+                        <i class="bi bi-pie-chart-fill"></i> Distribución por Estado
                     </div>
-                    <div class="card-body">
-                        <div class="counter-item" data-status="normal">
+                    <div class="card-body p-0">
+                        <div class="counter-item" data-status="normal" onclick="filterStatus('normal')">
                             <div class="counter-color color-normal"></div>
                             <div class="counter-label">Normal</div>
-                            <div class="counter-value" id="count-normal">0</div>
+                            <div class="counter-value">
+                                <span id="count-normal">0</span>
+                                <span class="counter-percent" id="percent-normal">0%</span>
+                            </div>
                         </div>
-                        <div class="counter-item" data-status="bajo">
+                        <div class="counter-item" data-status="bajo" onclick="filterStatus('bajo')">
                             <div class="counter-color color-bajo"></div>
                             <div class="counter-label">Stock Bajo</div>
-                            <div class="counter-value" id="count-bajo">0</div>
+                            <div class="counter-value">
+                                <span id="count-bajo">0</span>
+                                <span class="counter-percent" id="percent-bajo">0%</span>
+                            </div>
                         </div>
-                        <div class="counter-item" data-status="critico">
+                        <div class="counter-item" data-status="critico" onclick="filterStatus('critico')">
                             <div class="counter-color color-critico"></div>
                             <div class="counter-label">Crítico</div>
-                            <div class="counter-value" id="count-critico">0</div>
+                            <div class="counter-value">
+                                <span id="count-critico">0</span>
+                                <span class="counter-percent" id="percent-critico">0%</span>
+                            </div>
                         </div>
-                        <div class="counter-item" data-status="vacio">
+                        <div class="counter-item" data-status="vacio" onclick="filterStatus('vacio')">
                             <div class="counter-color color-vacio"></div>
                             <div class="counter-label">Vacío</div>
-                            <div class="counter-value" id="count-vacio">0</div>
+                            <div class="counter-value">
+                                <span id="count-vacio">0</span>
+                                <span class="counter-percent" id="percent-vacio">0%</span>
+                            </div>
+                        </div>
+                        <div class="counter-item" data-status="reservado" onclick="filterStatus('reservado')">
+                            <div class="counter-color color-reservado"></div>
+                            <div class="counter-label">Reservado</div>
+                            <div class="counter-value">
+                                <span id="count-reservado">0</span>
+                                <span class="counter-percent" id="percent-reservado">0%</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Filtro Rápido -->
-                <div class="sidebar-card">
+                <!-- Filtros Avanzados -->
+                <div class="sidebar-card fade-in">
                     <div class="card-header-custom">
-                        <i class="bi bi-funnel-fill me-2"></i> Filtro Rápido
+                        <i class="bi bi-funnel-fill"></i> Filtros Avanzados
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Zona del Almacén</label>
-                            <select class="form-select form-select-sm" id="filter-zone">
-                                <option value="all">Todas las zonas</option>
-                                <option value="A">Zona A</option>
-                                <option value="B">Zona B</option>
-                                <option value="C">Zona C</option>
+                    <div class="filter-section">
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-compass"></i> Zona del Almacén
+                            </label>
+                            <select class="form-select" id="filter-zone" multiple size="3">
+                                <option value="all" selected>Todas las zonas</option>
+                                <option value="A">Zona A (Alta Rotación)</option>
+                                <option value="B">Zona B (Media Rotación)</option>
+                                <option value="C">Zona C (Baja Rotación)</option>
+                                <option value="D">Zona D (Almacenamiento)</option>
+                                <option value="E">Zona E (Especial)</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">Nivel de Stock</label>
-                            <select class="form-select form-select-sm" id="filter-stock-level">
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-thermometer-half"></i> Nivel de Stock
+                            </label>
+                            <select class="form-select" id="filter-stock-level">
                                 <option value="all">Todos los niveles</option>
-                                <option value="high">Alto (>75%)</option>
+                                <option value="very-high">Muy Alto (>90%)</option>
+                                <option value="high">Alto (75-90%)</option>
                                 <option value="medium">Medio (25-75%)</option>
-                                <option value="low">Bajo (<25%)</option>
+                                <option value="low">Bajo (10-25%)</option>
+                                <option value="very-low">Muy Bajo (<10%)</option>
+                                <option value="empty">Vacío (0%)</option>
                             </select>
                         </div>
-                        <button class="btn btn-sm btn-outline-primary w-100" onclick="applyQuickFilters()">
-                            <i class="bi bi-filter me-1"></i> Aplicar Filtros
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-calendar"></i> Última Movimiento
+                            </label>
+                            <select class="form-select" id="filter-last-movement">
+                                <option value="all">Cualquier fecha</option>
+                                <option value="today">Hoy</option>
+                                <option value="week">Esta semana</option>
+                                <option value="month">Este mes</option>
+                                <option value="quarter">Este trimestre</option>
+                                <option value="year">Este año</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">
+                                <i class="bi bi-box-seam"></i> Tipo de Material
+                            </label>
+                            <select class="form-select" id="filter-material-type">
+                                <option value="all">Todos los tipos</option>
+                                <option value="raw">Materia Prima</option>
+                                <option value="component">Componentes</option>
+                                <option value="finished">Producto Terminado</option>
+                                <option value="spare">Repuestos</option>
+                                <option value="tool">Herramientas</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn-apply-filters mt-3" onclick="applyAdvancedFilters()">
+                            <i class="bi bi-filter-circle"></i> Aplicar Filtros
+                        </button>
+                        <button class="btn btn-outline-secondary w-100 mt-2" onclick="resetAdvancedFilters()">
+                            <i class="bi bi-x-circle"></i> Limpiar Filtros
                         </button>
                     </div>
                 </div>
@@ -731,427 +1732,785 @@
     </div>
 </div>
 
-<!-- ================= MODAL DE DETALLES ================= -->
+<!-- ================= MODAL AVANZADO DE DETALLES ================= -->
 <div class="modal fade modal-custom" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xxl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="locationModalLabel">
-                    <i class="bi bi-info-circle me-2"></i> Detalles de Ubicación
-                    <span class="location-badge" id="modal-location-code"></span>
+                    <i class="bi bi-info-circle-fill"></i> Detalles Completo de Ubicación
+                    <span class="location-badge" id="modal-location-code">A-01-01</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             
             <div class="modal-body">
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light">
-                                <i class="bi bi-geo-alt me-2"></i> Información de Ubicación
+                <!-- Información General -->
+                <div class="modal-section">
+                    <h6 class="modal-section-title">
+                        <i class="bi bi-geo-alt-fill"></i> Información General
+                    </h6>
+                    <div class="info-grid">
+                        <div class="info-card">
+                            <div class="info-item">
+                                <span class="info-label">Código Ubicación:</span>
+                                <span class="info-value" id="modal-location">A-01-01</span>
                             </div>
-                            <div class="card-body">
-                                <table class="table table-sm table-borderless">
-                                    <tr>
-                                        <th width="40%">Ubicación:</th>
-                                        <td id="modal-location" class="fw-bold"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Estado:</th>
-                                        <td>
-                                            <span class="status-badge" id="modal-status"></span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>Capacidad:</th>
-                                        <td id="modal-capacity"></td>
-                                    </tr>
-                                    <tr>
-                                        <th>Ocupación:</th>
-                                        <td>
-                                            <div class="progress" style="height: 8px;">
-                                                <div id="modal-ocupation-bar" class="progress-bar" role="progressbar"></div>
-                                            </div>
-                                            <small id="modal-ocupation-text" class="text-muted"></small>
-                                        </td>
-                                    </tr>
-                                </table>
+                            <div class="info-item">
+                                <span class="info-label">Zona:</span>
+                                <span class="info-value" id="modal-zone">A - Alta Rotación</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Tipo:</span>
+                                <span class="info-value" id="modal-type">Estantería</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Estado:</span>
+                                <span class="info-value">
+                                    <span class="status-badge" id="modal-status">Normal</span>
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-item">
+                                <span class="info-label">Capacidad Total:</span>
+                                <span class="info-value" id="modal-capacity">1,000 unidades</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Ocupación Actual:</span>
+                                <span class="info-value" id="modal-ocupation">75%</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Espacio Libre:</span>
+                                <span class="info-value" id="modal-free-space">250 unidades</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Última Actualización:</span>
+                                <span class="info-value" id="modal-last-update">2024-01-15 14:30</span>
+                            </div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-item">
+                                <span class="info-label">Temperatura:</span>
+                                <span class="info-value" id="modal-temperature">22°C</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Humedad:</span>
+                                <span class="info-value" id="modal-humidity">45%</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Acceso:</span>
+                                <span class="info-value" id="modal-access">Público</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Prioridad:</span>
+                                <span class="info-value" id="modal-priority">Alta</span>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-light">
-                                <i class="bi bi-box-seam me-2"></i> Resumen de Stock
+                    <!-- Barra de Progreso -->
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Ocupación de la Ubicación</span>
+                            <span id="modal-ocupation-text">750 / 1,000 unidades (75%)</span>
+                        </div>
+                        <div class="progress-custom">
+                            <div id="modal-ocupation-bar" class="progress-bar" style="width: 75%; background-color: var(--color-normal);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de Stock -->
+                <div class="modal-section">
+                    <h6 class="modal-section-title">
+                        <i class="bi bi-bar-chart-fill"></i> Estadísticas de Stock
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="info-card text-center">
+                                <div class="info-label">Materiales Totales</div>
+                                <div class="info-value" id="modal-materials-count" style="font-size: 2rem;">5</div>
+                                <small class="text-muted">diferentes SKUs</small>
                             </div>
-                            <div class="card-body">
-                                <table class="table table-sm table-borderless">
-                                    <tr>
-                                        <th width="40%">Materiales:</th>
-                                        <td id="modal-materials-count">0</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Stock Total:</th>
-                                        <td id="modal-total-stock">0</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Stock Mínimo:</th>
-                                        <td id="modal-min-stock">0</td>
-                                    </tr>
-                                    <tr>
-                                        <th>Stock Máximo:</th>
-                                        <td id="modal-max-stock">0</td>
-                                    </tr>
-                                </table>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-card text-center">
+                                <div class="info-label">Stock Total</div>
+                                <div class="info-value" id="modal-total-stock" style="font-size: 2rem;">750</div>
+                                <small class="text-muted">unidades</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-card text-center">
+                                <div class="info-label">Valor Estimado</div>
+                                <div class="info-value" id="modal-total-value" style="font-size: 2rem;">$15,250</div>
+                                <small class="text-muted">USD</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-card text-center">
+                                <div class="info-label">Rotación Mensual</div>
+                                <div class="info-value" id="modal-rotation" style="font-size: 2rem;">2.3x</div>
+                                <small class="text-muted">veces al mes</small>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <h6 class="border-bottom pb-2 mb-3">
-                    <i class="bi bi-list-ul me-2"></i> Materiales en esta Ubicación
-                </h6>
-                
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Código</th>
-                                <th>Descripción</th>
-                                <th>Unidad</th>
-                                <th>Stock Actual</th>
-                                <th>Stock Mínimo</th>
-                                <th>Stock Máximo</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="location-details"></tbody>
-                    </table>
+                <!-- Materiales en la Ubicación -->
+                <div class="modal-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="modal-section-title mb-0">
+                            <i class="bi bi-box-seam-fill"></i> Materiales en esta Ubicación
+                        </h6>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="exportMaterialsCSV()">
+                                <i class="bi bi-download"></i> Exportar CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table materials-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-materials"></th>
+                                    <th>Código SKU</th>
+                                    <th>Descripción</th>
+                                    <th>Unidad</th>
+                                    <th>Stock Actual</th>
+                                    <th>Stock Mínimo</th>
+                                    <th>Stock Máximo</th>
+                                    <th>Valor Unitario</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="location-details">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Historial de Movimientos -->
+                <div class="modal-section">
+                    <h6 class="modal-section-title">
+                        <i class="bi bi-clock-history"></i> Historial Reciente
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Tipo</th>
+                                    <th>Cantidad</th>
+                                    <th>Material</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="location-history">
+                                <!-- El historial se cargará dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i> Cerrar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="exportLocationData()">
-                    <i class="bi bi-download me-1"></i> Exportar Datos
-                </button>
+                <div class="d-flex justify-content-between w-100">
+                    <div>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg"></i> Cerrar
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="printLocationDetails()">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" onclick="editLocation()">
+                            <i class="bi bi-pencil-square"></i> Editar Ubicación
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="transferMaterials()">
+                            <i class="bi bi-arrow-left-right"></i> Transferir
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ================= SCRIPT MEJORADO ================= -->
+<!-- ================= TOOLTIP DINÁMICO ================= -->
+<div id="dynamic-tooltip" class="tooltip-custom" style="display: none;"></div>
+
+<!-- ================= OVERLAY DE CARGA ================= -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando datos del almacén...</div>
+</div>
+
+<!-- ================= SCRIPT AVANZADO ================= -->
 <script>
 /**
- * Mapa 2D del Almacén - Versión Mejorada
- * Sistema de visualización de inventario con filtros inteligentes
+ * SISTEMA DE MAPA 2D INTELIGENTE PARA ALMACÉN
+ * Versión Avanzada - Más de 1500 líneas de código
+ * Características:
+ * - Visualización 2D en tiempo real
+ * - Filtros avanzados y búsqueda inteligente
+ * - KPIs y métricas en tiempo real
+ * - Sistema de zoom y navegación
+ * - Exportación de datos
+ * - Interfaz responsive y accesible
  */
 
-(function() {
-    'use strict';
+// ================= CONFIGURACIÓN GLOBAL =================
+const WarehouseConfig = {
+    // Configuración de zoom
+    ZOOM_LEVELS: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0],
+    DEFAULT_ZOOM_INDEX: 2, // 1.0x
+    MIN_ZOOM: 0.5,
+    MAX_ZOOM: 2.0,
     
-    // ================= CONFIGURACIÓN =================
-    const CONFIG = {
-        ZOOM_STEP: 0.1,
-        MIN_ZOOM: 0.5,
-        MAX_ZOOM: 2.0,
-        DEFAULT_ZOOM: 1.0,
-        GRID_SIZE: 40,
-        GRID_GAP: 2
-    };
+    // Configuración de grid
+    GRID_SIZE: 45,
+    GRID_GAP: 3,
+    CELL_BORDER_RADIUS: 6,
     
-    // ================= ESTADO GLOBAL =================
-    const State = {
-        locations: [],
-        filteredLocations: [],
-        currentFilter: 'todos',
-        searchQuery: '',
-        zoomLevel: CONFIG.DEFAULT_ZOOM,
-        selectedLocation: null,
-        gridData: {
-            rows: 0,
-            cols: 0,
-            minRow: Infinity,
-            maxRow: 0,
-            minCol: Infinity,
-            maxCol: 0
+    // Colores por estado
+    STATUS_COLORS: {
+        normal: '#28a745',
+        bajo: '#ffc107',
+        critico: '#dc3545',
+        vacio: '#6c757d',
+        reservado: '#6f42c1'
+    },
+    
+    // Configuración de actualización
+    AUTO_REFRESH_INTERVAL: 30000, // 30 segundos
+    DEBOUNCE_DELAY: 300,
+    
+    // Configuración de datos
+    MAX_LOCATIONS: 200,
+    MAX_MATERIALS_PER_LOCATION: 10,
+    
+    // Configuración de rendimiento
+    BATCH_SIZE: 50,
+    ANIMATION_DURATION: 300
+};
+
+// ================= ESTADO GLOBAL =================
+const WarehouseState = {
+    // Datos
+    locations: [],
+    materials: [],
+    filteredLocations: [],
+    selectedLocations: new Set(),
+    
+    // Filtros
+    currentFilter: 'todos',
+    searchQuery: '',
+    advancedFilters: {
+        zone: 'all',
+        stockLevel: 'all',
+        lastMovement: 'all',
+        materialType: 'all'
+    },
+    
+    // Vista
+    viewMode: 'grid', // grid, list, heatmap
+    zoomIndex: WarehouseConfig.DEFAULT_ZOOM_INDEX,
+    showLabels: true,
+    
+    // Configuración UI
+    autoRefresh: false,
+    refreshInterval: null,
+    
+    // Selección
+    selectedLocation: null,
+    hoveredLocation: null,
+    
+    // Estadísticas
+    stats: {
+        totalLocations: 0,
+        occupiedLocations: 0,
+        criticalLocations: 0,
+        emptyLocations: 0,
+        totalCapacity: 0,
+        usedCapacity: 0,
+        averageOcupation: 0
+    },
+    
+    // Cache
+    cache: {
+        searchResults: null,
+        filteredCache: null,
+        kpisCache: null
+    },
+    
+    // Performance
+    lastRenderTime: 0,
+    renderQueue: [],
+    isRendering: false
+};
+
+// ================= ELEMENTOS DOM =================
+const DOMElements = {
+    // Contenedores principales
+    mapGrid: document.getElementById('map-grid'),
+    mapContainer: document.getElementById('map-container'),
+    noResults: document.getElementById('no-results'),
+    
+    // Buscador
+    searchBox: document.getElementById('searchBox'),
+    searchDropdown: document.getElementById('searchDropdown'),
+    searchResults: document.getElementById('searchResults'),
+    
+    // Zoom y controles
+    zoomLevel: document.getElementById('zoomLevel'),
+    currentView: document.getElementById('currentView'),
+    
+    // Estadísticas
+    totalLocations: document.getElementById('total-locations'),
+    visibleLocations: document.getElementById('visible-locations'),
+    selectedLocations: document.getElementById('selected-locations'),
+    ocupationRate: document.getElementById('ocupation-rate'),
+    
+    // KPIs
+    kpiOcupacion: document.getElementById('kpi-ocupacion'),
+    kpiCriticas: document.getElementById('kpi-criticas'),
+    kpiEspacio: document.getElementById('kpi-espacio'),
+    kpiEficiencia: document.getElementById('kpi-eficiencia'),
+    kpiRotacion: document.getElementById('kpi-rotacion'),
+    
+    // Contadores
+    countNormal: document.getElementById('count-normal'),
+    countBajo: document.getElementById('count-bajo'),
+    countCritico: document.getElementById('count-critico'),
+    countVacio: document.getElementById('count-vacio'),
+    countReservado: document.getElementById('count-reservado'),
+    
+    percentNormal: document.getElementById('percent-normal'),
+    percentBajo: document.getElementById('percent-bajo'),
+    percentCritico: document.getElementById('percent-critico'),
+    percentVacio: document.getElementById('percent-vacio'),
+    percentReservado: document.getElementById('percent-reservado'),
+    
+    // Filtros
+    filterZone: document.getElementById('filter-zone'),
+    filterStockLevel: document.getElementById('filter-stock-level'),
+    filterLastMovement: document.getElementById('filter-last-movement'),
+    filterMaterialType: document.getElementById('filter-material-type'),
+    
+    // Modal
+    modal: new bootstrap.Modal(document.getElementById('locationModal')),
+    modalLocationCode: document.getElementById('modal-location-code'),
+    modalLocation: document.getElementById('modal-location'),
+    modalZone: document.getElementById('modal-zone'),
+    modalType: document.getElementById('modal-type'),
+    modalStatus: document.getElementById('modal-status'),
+    modalCapacity: document.getElementById('modal-capacity'),
+    modalOcupation: document.getElementById('modal-ocupation'),
+    modalFreeSpace: document.getElementById('modal-free-space'),
+    modalLastUpdate: document.getElementById('modal-last-update'),
+    modalTemperature: document.getElementById('modal-temperature'),
+    modalHumidity: document.getElementById('modal-humidity'),
+    modalAccess: document.getElementById('modal-access'),
+    modalPriority: document.getElementById('modal-priority'),
+    modalOcupationBar: document.getElementById('modal-ocupation-bar'),
+    modalOcupationText: document.getElementById('modal-ocupation-text'),
+    modalMaterialsCount: document.getElementById('modal-materials-count'),
+    modalTotalStock: document.getElementById('modal-total-stock'),
+    modalTotalValue: document.getElementById('modal-total-value'),
+    modalRotation: document.getElementById('modal-rotation'),
+    locationDetails: document.getElementById('location-details'),
+    locationHistory: document.getElementById('location-history'),
+    
+    // Tooltip
+    tooltip: document.getElementById('dynamic-tooltip'),
+    
+    // Loading
+    loadingOverlay: document.getElementById('loading-overlay'),
+    
+    // Checkboxes
+    showLabels: document.getElementById('showLabels'),
+    selectAllMaterials: document.getElementById('select-all-materials'),
+    
+    // Botones
+    autoRefreshBtn: document.getElementById('autoRefreshBtn')
+};
+
+// ================= UTILIDADES AVANZADAS =================
+class WarehouseUtils {
+    static formatNumber(num) {
+        if (num >= 1000000) {
+            return (num / 1000000).toFixed(2) + 'M';
         }
-    };
-    
-    // ================= ELEMENTOS DOM =================
-    const DOM = {
-        mapGrid: document.getElementById('map-grid'),
-        searchBox: document.getElementById('searchBox'),
-        zoomLevel: document.getElementById('zoomLevel'),
-        noResults: document.getElementById('no-results'),
-        totalLocations: document.getElementById('total-locations'),
-        visibleLocations: document.getElementById('visible-locations'),
-        
-        // KPIs
-        kpiOcupacion: document.getElementById('kpi-ocupacion'),
-        kpiCriticas: document.getElementById('kpi-criticas'),
-        kpiEspacio: document.getElementById('kpi-espacio'),
-        kpiRotacion: document.getElementById('kpi-rotacion'),
-        
-        // Contadores
-        countNormal: document.getElementById('count-normal'),
-        countBajo: document.getElementById('count-bajo'),
-        countCritico: document.getElementById('count-critico'),
-        countVacio: document.getElementById('count-vacio'),
-        
-        // Filtros rápidos
-        filterZone: document.getElementById('filter-zone'),
-        filterStockLevel: document.getElementById('filter-stock-level'),
-        
-        // Modal
-        modal: new bootstrap.Modal(document.getElementById('locationModal')),
-        modalLocationCode: document.getElementById('modal-location-code'),
-        modalLocation: document.getElementById('modal-location'),
-        modalStatus: document.getElementById('modal-status'),
-        modalCapacity: document.getElementById('modal-capacity'),
-        modalOcupationBar: document.getElementById('modal-ocupation-bar'),
-        modalOcupationText: document.getElementById('modal-ocupation-text'),
-        modalMaterialsCount: document.getElementById('modal-materials-count'),
-        modalTotalStock: document.getElementById('modal-total-stock'),
-        modalMinStock: document.getElementById('modal-min-stock'),
-        modalMaxStock: document.getElementById('modal-max-stock'),
-        locationDetails: document.getElementById('location-details')
-    };
-    
-    // ================= FUNCIONES UTILITARIAS =================
-    
-    /**
-     * Calcula el estado de stock basado en porcentaje
-     */
-    function calculateStockStatus(ocupationPercent) {
-        if (ocupationPercent === 0) return 'vacio';
-        if (ocupationPercent < 20) return 'critico';
-        if (ocupationPercent < 50) return 'bajo';
-        return 'normal';
-    }
-    
-    /**
-     * Formatea números con separadores de miles
-     */
-    function formatNumber(num) {
+        if (num >= 1000) {
+            return (num / 1000).toFixed(1) + 'K';
+        }
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
     
-    /**
-     * Calcula porcentaje
-     */
-    function calculatePercentage(part, total) {
+    static calculatePercentage(part, total) {
         if (total === 0) return 0;
         return Math.round((part / total) * 100);
     }
     
-    // ================= MANEJO DE DATOS =================
-    
-    /**
-     * Carga los datos del almacén desde el servidor
-     */
-    async function loadWarehouseData() {
-        try {
-            showLoading(true);
-            
-            // En producción, esto sería una llamada a la API
-            // const response = await fetch('/api/warehouse2d/data');
-            // const data = await response.json();
-            
-            // Datos de ejemplo para demostración
-            const mockData = generateMockData();
-            State.locations = mockData.locations;
-            State.filteredLocations = [...State.locations];
-            
-            analyzeGridStructure();
-            renderMap();
-            updateKPIs();
-            updateCounters();
-            
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            showError('No se pudieron cargar los datos del almacén');
-        } finally {
-            showLoading(false);
-        }
+    static getStatusByOcupation(ocupationPercent) {
+        if (ocupationPercent === 0) return 'vacio';
+        if (ocupationPercent < 20) return 'critico';
+        if (ocupationPercent < 50) return 'bajo';
+        if (ocupationPercent < 90) return 'normal';
+        return 'reservado';
     }
     
-    /**
-     * Analiza la estructura de la cuadrícula
-     */
-    function analyzeGridStructure() {
-        State.gridData = {
-            rows: 0,
-            cols: 0,
-            minRow: Infinity,
-            maxRow: 0,
-            minCol: Infinity,
-            maxCol: 0
-        };
-        
-        State.locations.forEach(loc => {
-            const coords = parseLocationCoordinates(loc.location);
-            if (coords) {
-                State.gridData.minRow = Math.min(State.gridData.minRow, coords.row);
-                State.gridData.maxRow = Math.max(State.gridData.maxRow, coords.row);
-                State.gridData.minCol = Math.min(State.gridData.minCol, coords.col);
-                State.gridData.maxCol = Math.max(State.gridData.maxCol, coords.col);
-            }
-        });
-        
-        State.gridData.rows = State.gridData.maxRow - State.gridData.minRow + 1;
-        State.gridData.cols = State.gridData.maxCol - State.gridData.minCol + 1;
+    static generateLocationId(zone, row, col) {
+        return `${zone}-${String(row).padStart(2, '0')}-${String(col).padStart(2, '0')}`;
     }
     
-    /**
-     * Parsea coordenadas de ubicación (ej: "A-01-02" → row: 1, col: 2)
-     */
-    function parseLocationCoordinates(locationCode) {
-        // Implementar lógica de parseo según formato de ubicaciones
-        // Esto es un ejemplo básico
-        const match = locationCode.match(/[A-Z]-(\d+)-(\d+)/);
+    static parseLocationId(locationId) {
+        const match = locationId.match(/([A-Z])-(\d{2})-(\d{2})/);
         if (match) {
             return {
-                row: parseInt(match[1]),
-                col: parseInt(match[2])
+                zone: match[1],
+                row: parseInt(match[2]),
+                col: parseInt(match[3])
             };
         }
         return null;
     }
     
-    // ================= RENDERIZADO DEL MAPA =================
+    static debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
     
-    /**
-     * Renderiza el mapa 2D
-     */
-    function renderMap() {
-        DOM.mapGrid.innerHTML = '';
-        
-        if (State.filteredLocations.length === 0) {
-            DOM.noResults.classList.remove('d-none');
-            DOM.mapGrid.style.display = 'none';
-            return;
-        }
-        
-        DOM.noResults.classList.add('d-none');
-        DOM.mapGrid.style.display = 'grid';
-        
-        // Configurar grid
-        DOM.mapGrid.style.gridTemplateColumns = `repeat(${State.gridData.cols}, ${CONFIG.GRID_SIZE}px)`;
-        DOM.mapGrid.style.gridTemplateRows = `repeat(${State.gridData.rows}, ${CONFIG.GRID_SIZE}px)`;
-        DOM.mapGrid.style.gap = `${CONFIG.GRID_GAP}px`;
-        
-        // Aplicar zoom
-        DOM.mapGrid.style.transform = `scale(${State.zoomLevel})`;
-        DOM.mapGrid.style.transformOrigin = 'top left';
-        
-        // Crear celdas vacías primero
-        for (let row = State.gridData.minRow; row <= State.gridData.maxRow; row++) {
-            for (let col = State.gridData.minCol; col <= State.gridData.maxCol; col++) {
-                const cell = document.createElement('div');
-                cell.className = 'location-cell empty';
-                cell.dataset.row = row;
-                cell.dataset.col = col;
-                cell.title = `Fila ${row}, Columna ${col}`;
-                DOM.mapGrid.appendChild(cell);
+    static throttle(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
             }
+        };
+    }
+    
+    static createElement(tag, className, text = '') {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text) element.textContent = text;
+        return element;
+    }
+    
+    static showLoading(show) {
+        if (show) {
+            DOMElements.loadingOverlay.style.display = 'flex';
+        } else {
+            DOMElements.loadingOverlay.style.display = 'none';
         }
+    }
+    
+    static showNotification(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
         
-        // Colocar ubicaciones reales
-        State.filteredLocations.forEach(location => {
-            const coords = parseLocationCoordinates(location.location);
-            if (coords) {
-                const gridRow = coords.row - State.gridData.minRow;
-                const gridCol = coords.col - State.gridData.minCol;
-                
-                const index = (gridRow * State.gridData.cols) + gridCol;
-                const cell = DOM.mapGrid.children[index];
-                
-                if (cell) {
-                    cell.className = `location-cell ${location.status}`;
-                    cell.innerHTML = `<div class="location-code">${location.location}</div>`;
-                    cell.title = `${location.location} - ${location.status.toUpperCase()}`;
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        
+        const container = document.getElementById('toast-container') || (() => {
+            const div = document.createElement('div');
+            div.id = 'toast-container';
+            div.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(div);
+            return div;
+        })();
+        
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+}
+
+// ================= GENERACIÓN DE DATOS DE EJEMPLO =================
+class DataGenerator {
+    static generateMockData() {
+        const locations = [];
+        const zones = ['A', 'B', 'C', 'D', 'E'];
+        const zoneNames = {
+            'A': 'Alta Rotación',
+            'B': 'Media Rotación',
+            'C': 'Baja Rotación',
+            'D': 'Almacenamiento',
+            'E': 'Especial'
+        };
+        
+        const materialTypes = ['raw', 'component', 'finished', 'spare', 'tool'];
+        const materialNames = {
+            'raw': ['Acero Inoxidable', 'Plástico ABS', 'Madera Contrachapada', 'Vidrio Templado', 'Aluminio'],
+            'component': ['Motor 5HP', 'Controlador PLC', 'Sensor Proximidad', 'Válvula Neumática', 'Cilindro Hidráulico'],
+            'finished': ['Producto X-100', 'Kit Montaje Y', 'Paquete Premium', 'Equipo Completo', 'Sistema Z'],
+            'spare': ['Rodamiento 6205', 'Correa Trapezoidal', 'Fusible 10A', 'Junta Estanqueidad', 'Tornillo M8'],
+            'tool': ['Taladro Percutor', 'Sierra Circular', 'Soldadora MIG', 'Pistola Silicona', 'Nivel Láser']
+        };
+        
+        let locationId = 1;
+        
+        zones.forEach(zone => {
+            const rows = zone === 'A' ? 12 : 10;
+            const cols = zone === 'A' ? 15 : 12;
+            
+            for (let row = 1; row <= rows; row++) {
+                for (let col = 1; col <= cols; col++) {
+                    const locationCode = WarehouseUtils.generateLocationId(zone, row, col);
+                    const capacity = Math.floor(Math.random() * 1000) + 100;
+                    const usedCapacity = Math.floor(Math.random() * capacity);
+                    const ocupationPercent = WarehouseUtils.calculatePercentage(usedCapacity, capacity);
+                    const status = WarehouseUtils.getStatusByOcupation(ocupationPercent);
                     
-                    // Añadir eventos
-                    cell.onclick = () => showLocationDetails(location);
-                    cell.onmouseenter = () => highlightRelatedLocations(location);
-                    cell.onmouseleave = () => removeHighlights();
-                    
-                    // Marcar si es la ubicación seleccionada
-                    if (State.selectedLocation && State.selectedLocation.id === location.id) {
-                        cell.classList.add('highlighted');
+                    // Generar materiales para esta ubicación
+                    const materials = [];
+                    if (status !== 'vacio') {
+                        const numMaterials = Math.floor(Math.random() * 5) + 1;
+                        for (let i = 0; i < numMaterials; i++) {
+                            const materialType = materialTypes[Math.floor(Math.random() * materialTypes.length)];
+                            const materialName = materialNames[materialType][Math.floor(Math.random() * materialNames[materialType].length)];
+                            
+                            const maxStock = Math.floor(Math.random() * 200) + 50;
+                            const currentStock = Math.floor(Math.random() * maxStock);
+                            const minStock = Math.floor(maxStock * 0.1);
+                            const unitValue = Math.random() * 100 + 10;
+                            
+                            materials.push({
+                                id: `MAT-${1000 + i}`,
+                                code: `${zone}-${materialType.toUpperCase().substring(0,3)}-${Math.floor(Math.random() * 1000)}`,
+                                description: materialName,
+                                unit: 'UN',
+                                type: materialType,
+                                currentStock: currentStock,
+                                minStock: minStock,
+                                maxStock: maxStock,
+                                unitValue: unitValue,
+                                totalValue: currentStock * unitValue,
+                                status: WarehouseUtils.getStatusByOcupation(WarehouseUtils.calculatePercentage(currentStock, maxStock))
+                            });
+                        }
                     }
+                    
+                    // Última actualización (en los últimos 30 días)
+                    const lastUpdate = new Date();
+                    lastUpdate.setDate(lastUpdate.getDate() - Math.floor(Math.random() * 30));
+                    
+                    locations.push({
+                        id: locationId++,
+                        code: locationCode,
+                        zone: zone,
+                        zoneName: zoneNames[zone],
+                        row: row,
+                        col: col,
+                        type: ['Estantería', 'Palet', 'Caja', 'Rack', 'Suelo'][Math.floor(Math.random() * 5)],
+                        capacity: capacity,
+                        usedCapacity: usedCapacity,
+                        freeCapacity: capacity - usedCapacity,
+                        ocupationPercent: ocupationPercent,
+                        status: status,
+                        materials: materials,
+                        temperature: 20 + Math.floor(Math.random() * 10),
+                        humidity: 40 + Math.floor(Math.random() * 20),
+                        access: Math.random() > 0.7 ? 'Restringido' : 'Público',
+                        priority: ['Alta', 'Media', 'Baja'][Math.floor(Math.random() * 3)],
+                        lastUpdate: lastUpdate.toISOString(),
+                        lastMovement: new Date(lastUpdate.getTime() - Math.floor(Math.random() * 86400000)).toISOString(),
+                        efficiency: 70 + Math.floor(Math.random() * 30),
+                        rotation: Math.random() * 3 + 0.5
+                    });
                 }
             }
         });
         
-        updateMapStats();
+        return locations;
     }
     
-    /**
-     * Actualiza las estadísticas del mapa
-     */
-    function updateMapStats() {
-        DOM.totalLocations.textContent = State.locations.length;
-        DOM.visibleLocations.textContent = State.filteredLocations.length;
-    }
-    
-    /**
-     * Resalta ubicaciones relacionadas
-     */
-    function highlightRelatedLocations(location) {
-        // Implementar lógica de resaltado según necesidades
-        // Por ejemplo, resaltar ubicaciones con el mismo material
-    }
-    
-    /**
-     * Remueve resaltados
-     */
-    function removeHighlights() {
-        document.querySelectorAll('.location-cell.highlighted').forEach(cell => {
-            cell.classList.remove('highlighted');
-        });
-    }
-    
-    // ================= FILTROS Y BÚSQUEDA =================
-    
-    /**
-     * Filtra ubicaciones por estado
-     */
-    function filterStatus(status) {
-        State.currentFilter = status;
+    static generateLocationHistory(locationId) {
+        const history = [];
+        const actions = ['ENTRADA', 'SALIDA', 'AJUSTE', 'INVENTARIO', 'TRANSFERENCIA'];
+        const users = ['admin', 'operador1', 'operador2', 'supervisor', 'sistema'];
         
-        // Actualizar botones activos
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.status === status) {
-                btn.classList.add('active');
-            }
-        });
-        
-        applyFilters();
-    }
-    
-    /**
-     * Aplica todos los filtros activos
-     */
-    function applyFilters() {
-        let filtered = [...State.locations];
-        
-        // Filtro por estado
-        if (State.currentFilter !== 'todos') {
-            filtered = filtered.filter(loc => loc.status === State.currentFilter);
+        for (let i = 0; i < 10; i++) {
+            const date = new Date();
+            date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+            date.setHours(Math.floor(Math.random() * 24));
+            date.setMinutes(Math.floor(Math.random() * 60));
+            
+            const action = actions[Math.floor(Math.random() * actions.length)];
+            const quantity = Math.floor(Math.random() * 100) + 1;
+            const materialCode = `MAT-${1000 + Math.floor(Math.random() * 100)}`;
+            
+            history.push({
+                id: i + 1,
+                timestamp: date.toISOString(),
+                user: users[Math.floor(Math.random() * users.length)],
+                action: action,
+                quantity: quantity,
+                materialCode: materialCode,
+                observation: action === 'ENTRADA' ? 'Recepción de proveedor' :
+                            action === 'SALIDA' ? 'Envío a producción' :
+                            action === 'AJUSTE' ? 'Ajuste de inventario' :
+                            action === 'INVENTARIO' ? 'Conteo físico' : 'Transferencia entre ubicaciones'
+            });
         }
         
-        // Filtro por búsqueda
-        if (State.searchQuery) {
-            const query = State.searchQuery.toLowerCase();
+        return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    }
+}
+
+// ================= GESTIÓN DE DATOS =================
+class DataManager {
+    static async loadData() {
+        try {
+            WarehouseUtils.showLoading(true);
+            
+            // En producción, aquí iría la llamada a la API
+            // const response = await fetch('/api/warehouse2d/data');
+            // const data = await response.json();
+            
+            // Datos de ejemplo
+            WarehouseState.locations = DataGenerator.generateMockData();
+            WarehouseState.filteredLocations = [...WarehouseState.locations];
+            
+            // Calcular estadísticas iniciales
+            this.calculateStatistics();
+            
+            // Renderizar
+            this.applyCurrentFilters();
+            
+            WarehouseUtils.showNotification('Datos cargados correctamente', 'success');
+            
+        } catch (error) {
+            console.error('Error cargando datos:', error);
+            WarehouseUtils.showNotification('Error al cargar los datos', 'error');
+        } finally {
+            WarehouseUtils.showLoading(false);
+        }
+    }
+    
+    static calculateStatistics() {
+        const stats = {
+            totalLocations: WarehouseState.locations.length,
+            occupiedLocations: 0,
+            criticalLocations: 0,
+            emptyLocations: 0,
+            totalCapacity: 0,
+            usedCapacity: 0,
+            averageOcupation: 0,
+            byStatus: {
+                normal: 0,
+                bajo: 0,
+                critico: 0,
+                vacio: 0,
+                reservado: 0
+            }
+        };
+        
+        WarehouseState.locations.forEach(location => {
+            stats.totalCapacity += location.capacity;
+            stats.usedCapacity += location.usedCapacity;
+            
+            if (location.status !== 'vacio') {
+                stats.occupiedLocations++;
+            }
+            
+            if (location.status === 'critico') {
+                stats.criticalLocations++;
+            }
+            
+            if (location.status === 'vacio') {
+                stats.emptyLocations++;
+            }
+            
+            stats.byStatus[location.status]++;
+        });
+        
+        stats.averageOcupation = WarehouseUtils.calculatePercentage(stats.usedCapacity, stats.totalCapacity);
+        
+        WarehouseState.stats = stats;
+        this.updateUIStats();
+    }
+    
+    static updateUIStats() {
+        const stats = WarehouseState.stats;
+        
+        // Estadísticas principales
+        DOMElements.totalLocations.textContent = WarehouseUtils.formatNumber(stats.totalLocations);
+        DOMElements.ocupationRate.textContent = `${stats.averageOcupation}%`;
+        
+        // KPIs
+        DOMElements.kpiOcupacion.textContent = `${stats.averageOcupation}%`;
+        DOMElements.kpiCriticas.textContent = WarehouseUtils.formatNumber(stats.criticalLocations);
+        DOMElements.kpiEspacio.textContent = WarehouseUtils.formatNumber(stats.totalCapacity - stats.usedCapacity);
+        DOMElements.kpiEficiencia.textContent = `${Math.floor(Math.random() * 30) + 70}%`;
+        DOMElements.kpiRotacion.textContent = `${Math.floor(Math.random() * 50) + 50}%`;
+        
+        // Contadores por estado
+        DOMElements.countNormal.textContent = WarehouseUtils.formatNumber(stats.byStatus.normal);
+        DOMElements.countBajo.textContent = WarehouseUtils.formatNumber(stats.byStatus.bajo);
+        DOMElements.countCritico.textContent = WarehouseUtils.formatNumber(stats.byStatus.critico);
+        DOMElements.countVacio.textContent = WarehouseUtils.formatNumber(stats.byStatus.vacio);
+        DOMElements.countReservado.textContent = WarehouseUtils.formatNumber(stats.byStatus.reservado || 0);
+        
+        // Porcentajes
+        DOMElements.percentNormal.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.normal, stats.totalLocations)}%)`;
+        DOMElements.percentBajo.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.bajo, stats.totalLocations)}%)`;
+        DOMElements.percentCritico.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.critico, stats.totalLocations)}%)`;
+        DOMElements.percentVacio.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.vacio, stats.totalLocations)}%)`;
+        DOMElements.percentReservado.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.reservado || 0, stats.totalLocations)}%)`;
+    }
+}
+
+// ================= FILTROS Y BÚSQUEDA =================
+class FilterManager {
+    static applyCurrentFilters() {
+        let filtered = [...WarehouseState.locations];
+        
+        // Filtro por estado
+        if (WarehouseState.currentFilter !== 'todos') {
+            filtered = filtered.filter(loc => loc.status === WarehouseState.currentFilter);
+        }
+        
+        // Búsqueda
+        if (WarehouseState.searchQuery) {
+            const query = WarehouseState.searchQuery.toLowerCase();
             filtered = filtered.filter(loc => 
-                loc.location.toLowerCase().includes(query) ||
+                loc.code.toLowerCase().includes(query) ||
+                loc.zone.toLowerCase().includes(query) ||
                 loc.materials.some(m => 
                     m.code.toLowerCase().includes(query) ||
                     m.description.toLowerCase().includes(query)
@@ -1159,370 +2518,969 @@
             );
         }
         
-        // Filtros rápidos
-        const zoneFilter = DOM.filterZone.value;
-        const stockFilter = DOM.filterStockLevel.value;
+        // Filtros avanzados
+        filtered = this.applyAdvancedFilters(filtered);
         
-        if (zoneFilter !== 'all') {
-            filtered = filtered.filter(loc => loc.zone === zoneFilter);
+        WarehouseState.filteredLocations = filtered;
+        this.updateFilterUI();
+        GridRenderer.render();
+    }
+    
+    static applyAdvancedFilters(locations) {
+        let filtered = [...locations];
+        const filters = WarehouseState.advancedFilters;
+        
+        // Filtro por zona
+        if (filters.zone !== 'all') {
+            filtered = filtered.filter(loc => loc.zone === filters.zone);
         }
         
-        if (stockFilter !== 'all') {
+        // Filtro por nivel de stock
+        if (filters.stockLevel !== 'all') {
             filtered = filtered.filter(loc => {
-                const percent = calculateOcupationPercent(loc);
-                switch(stockFilter) {
-                    case 'high': return percent > 75;
-                    case 'medium': return percent >= 25 && percent <= 75;
-                    case 'low': return percent < 25;
+                switch(filters.stockLevel) {
+                    case 'very-high': return loc.ocupationPercent > 90;
+                    case 'high': return loc.ocupationPercent >= 75 && loc.ocupationPercent <= 90;
+                    case 'medium': return loc.ocupationPercent >= 25 && loc.ocupationPercent < 75;
+                    case 'low': return loc.ocupationPercent >= 10 && loc.ocupationPercent < 25;
+                    case 'very-low': return loc.ocupationPercent < 10 && loc.ocupationPercent > 0;
+                    case 'empty': return loc.ocupationPercent === 0;
                     default: return true;
                 }
             });
         }
         
-        State.filteredLocations = filtered;
-        renderMap();
-        updateCounters();
-    }
-    
-    /**
-     * Aplica filtros rápidos
-     */
-    function applyQuickFilters() {
-        applyFilters();
-    }
-    
-    /**
-     * Calcula porcentaje de ocupación
-     */
-    function calculateOcupationPercent(location) {
-        if (!location.capacity || location.capacity === 0) return 0;
-        const used = location.materials.reduce((sum, m) => sum + m.quantity, 0);
-        return Math.round((used / location.capacity) * 100);
-    }
-    
-    // ================= ZOOM =================
-    
-    /**
-     * Aumenta el zoom
-     */
-    function zoomIn() {
-        if (State.zoomLevel < CONFIG.MAX_ZOOM) {
-            State.zoomLevel += CONFIG.ZOOM_STEP;
-            updateZoom();
+        // Filtro por último movimiento
+        if (filters.lastMovement !== 'all') {
+            const now = new Date();
+            filtered = filtered.filter(loc => {
+                const lastMove = new Date(loc.lastMovement);
+                const diffDays = Math.floor((now - lastMove) / (1000 * 60 * 60 * 24));
+                
+                switch(filters.lastMovement) {
+                    case 'today': return diffDays === 0;
+                    case 'week': return diffDays <= 7;
+                    case 'month': return diffDays <= 30;
+                    case 'quarter': return diffDays <= 90;
+                    case 'year': return diffDays <= 365;
+                    default: return true;
+                }
+            });
         }
-    }
-    
-    /**
-     * Disminuye el zoom
-     */
-    function zoomOut() {
-        if (State.zoomLevel > CONFIG.MIN_ZOOM) {
-            State.zoomLevel -= CONFIG.ZOOM_STEP;
-            updateZoom();
+        
+        // Filtro por tipo de material
+        if (filters.materialType !== 'all') {
+            filtered = filtered.filter(loc => 
+                loc.materials.some(m => m.type === filters.materialType)
+            );
         }
+        
+        return filtered;
     }
     
-    /**
-     * Reinicia el zoom
-     */
-    function resetZoom() {
-        State.zoomLevel = CONFIG.DEFAULT_ZOOM;
-        updateZoom();
-    }
-    
-    /**
-     * Actualiza la visualización del zoom
-     */
-    function updateZoom() {
-        DOM.zoomLevel.textContent = `${Math.round(State.zoomLevel * 100)}%`;
-        renderMap();
-    }
-    
-    // ================= KPIs Y CONTADORES =================
-    
-    /**
-     * Actualiza los KPIs
-     */
-    function updateKPIs() {
-        const totalLocations = State.locations.length;
-        const occupiedLocations = State.locations.filter(loc => loc.status !== 'vacio').length;
-        const criticalLocations = State.locations.filter(loc => loc.status === 'critico').length;
-        const totalCapacity = State.locations.reduce((sum, loc) => sum + (loc.capacity || 0), 0);
-        const usedCapacity = State.locations.reduce((sum, loc) => 
-            sum + loc.materials.reduce((s, m) => s + m.quantity, 0), 0
-        );
-        
-        // Ocupación total
-        const ocupationPercent = calculatePercentage(occupiedLocations, totalLocations);
-        DOM.kpiOcupacion.textContent = `${ocupationPercent}%`;
-        
-        // Ubicaciones críticas
-        DOM.kpiCriticas.textContent = criticalLocations;
-        
-        // Espacio disponible
-        const availableSpace = totalCapacity - usedCapacity;
-        DOM.kpiEspacio.textContent = formatNumber(availableSpace);
-        
-        // Rotación (ejemplo)
-        const rotationPercent = calculatePercentage(usedCapacity, totalCapacity);
-        DOM.kpiRotacion.textContent = `${rotationPercent}%`;
-    }
-    
-    /**
-     * Actualiza los contadores por estado
-     */
-    function updateCounters() {
-        const counts = {
-            normal: 0,
-            bajo: 0,
-            critico: 0,
-            vacio: 0
-        };
-        
-        State.locations.forEach(loc => {
-            if (counts.hasOwnProperty(loc.status)) {
-                counts[loc.status]++;
-            }
+    static updateFilterUI() {
+        // Actualizar botones de filtro
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const status = btn.dataset.status;
+            btn.classList.toggle('active', status === WarehouseState.currentFilter);
         });
         
-        DOM.countNormal.textContent = counts.normal;
-        DOM.countBajo.textContent = counts.bajo;
-        DOM.countCritico.textContent = counts.critico;
-        DOM.countVacio.textContent = counts.vacio;
+        // Actualizar contadores
+        DOMElements.visibleLocations.textContent = WarehouseUtils.formatNumber(WarehouseState.filteredLocations.length);
+        DOMElements.selectedLocations.textContent = WarehouseState.selectedLocations.size;
+        
+        // Mostrar/ocultar mensaje de no resultados
+        if (WarehouseState.filteredLocations.length === 0) {
+            DOMElements.noResults.classList.remove('d-none');
+            DOMElements.mapGrid.style.display = 'none';
+        } else {
+            DOMElements.noResults.classList.add('d-none');
+            DOMElements.mapGrid.style.display = 'grid';
+        }
     }
     
-    // ================= MODAL DE DETALLES =================
+    static filterStatus(status) {
+        WarehouseState.currentFilter = status;
+        this.applyCurrentFilters();
+        
+        // Actualizar contadores en sidebar
+        const counterItems = document.querySelectorAll('.counter-item');
+        counterItems.forEach(item => {
+            item.classList.toggle('active', item.dataset.status === status);
+        });
+    }
     
-    /**
-     * Muestra detalles de una ubicación
-     */
-    function showLocationDetails(location) {
-        State.selectedLocation = location;
+    static async performSearch(query) {
+        WarehouseState.searchQuery = query;
         
-        // Actualizar información general
-        DOM.modalLocationCode.textContent = location.location;
-        DOM.modalLocation.textContent = location.location;
+        if (query.length < 2) {
+            DOMElements.searchDropdown.style.display = 'none';
+            this.applyCurrentFilters();
+            return;
+        }
         
-        // Estado
-        const statusText = {
-            normal: 'Normal',
-            bajo: 'Stock Bajo',
-            critico: 'Crítico',
-            vacio: 'Vacío'
+        // Simular búsqueda asíncrona
+        setTimeout(() => {
+            const results = WarehouseState.locations.filter(loc => 
+                loc.code.toLowerCase().includes(query.toLowerCase()) ||
+                loc.materials.some(m => 
+                    m.code.toLowerCase().includes(query.toLowerCase()) ||
+                    m.description.toLowerCase().includes(query.toLowerCase())
+                )
+            ).slice(0, 10); // Limitar a 10 resultados
+            
+            this.displaySearchResults(results, query);
+        }, 300);
+    }
+    
+    static displaySearchResults(results, query) {
+        DOMElements.searchResults.innerHTML = '';
+        
+        if (results.length === 0) {
+            DOMElements.searchResults.innerHTML = `
+                <div class="p-3 text-center text-muted">
+                    <i class="bi bi-search me-2"></i>
+                    No se encontraron resultados para "${query}"
+                </div>
+            `;
+        } else {
+            results.forEach(location => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item p-2 border-bottom cursor-pointer';
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${location.code}</strong>
+                            <div class="small text-muted">
+                                ${location.zoneName} • ${location.materials.length} materiales
+                            </div>
+                        </div>
+                        <span class="badge bg-${location.status}">${location.status.toUpperCase()}</span>
+                    </div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    this.selectSearchResult(location);
+                });
+                
+                DOMElements.searchResults.appendChild(item);
+            });
+            
+            // Añadir opción para ver todos los resultados
+            const viewAll = document.createElement('div');
+            viewAll.className = 'p-2 text-center bg-light cursor-pointer';
+            viewAll.innerHTML = `
+                <small class="text-primary">
+                    <i class="bi bi-arrow-right-circle me-1"></i>
+                    Ver todos los resultados (${results.length})
+                </small>
+            `;
+            
+            viewAll.addEventListener('click', () => {
+                this.applyCurrentFilters();
+                DOMElements.searchDropdown.style.display = 'none';
+            });
+            
+            DOMElements.searchResults.appendChild(viewAll);
+        }
+        
+        DOMElements.searchDropdown.style.display = 'block';
+    }
+    
+    static selectSearchResult(location) {
+        // Filtrar para mostrar solo esta ubicación
+        WarehouseState.filteredLocations = [location];
+        WarehouseState.selectedLocation = location;
+        
+        // Actualizar UI
+        this.updateFilterUI();
+        GridRenderer.render();
+        
+        // Mostrar detalles
+        setTimeout(() => {
+            this.showLocationDetails(location);
+        }, 100);
+        
+        DOMElements.searchDropdown.style.display = 'none';
+        DOMElements.searchBox.value = '';
+        WarehouseState.searchQuery = '';
+    }
+}
+
+// ================= RENDERIZADO DEL GRID =================
+class GridRenderer {
+    static render() {
+        if (WarehouseState.isRendering) return;
+        WarehouseState.isRendering = true;
+        
+        const startTime = performance.now();
+        
+        // Limpiar grid
+        DOMElements.mapGrid.innerHTML = '';
+        
+        if (WarehouseState.filteredLocations.length === 0) {
+            WarehouseState.isRendering = false;
+            return;
+        }
+        
+        // Calcular dimensiones del grid
+        const gridInfo = this.calculateGridDimensions();
+        
+        // Configurar grid
+        DOMElements.mapGrid.style.gridTemplateColumns = `repeat(${gridInfo.cols}, ${WarehouseConfig.GRID_SIZE}px)`;
+        DOMElements.mapGrid.style.gridTemplateRows = `repeat(${gridInfo.rows}, ${WarehouseConfig.GRID_SIZE}px)`;
+        DOMElements.mapGrid.style.gap = `${WarehouseConfig.GRID_GAP}px`;
+        DOMElements.mapGrid.style.width = `${gridInfo.totalWidth}px`;
+        DOMElements.mapGrid.style.height = `${gridInfo.totalHeight}px`;
+        
+        // Aplicar zoom
+        const zoom = WarehouseConfig.ZOOM_LEVELS[WarehouseState.zoomIndex];
+        DOMElements.mapGrid.style.transform = `scale(${zoom})`;
+        DOMElements.zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+        
+        // Crear fragmento para renderizado eficiente
+        const fragment = document.createDocumentFragment();
+        
+        // Crear celdas
+        for (let row = gridInfo.minRow; row <= gridInfo.maxRow; row++) {
+            for (let col = gridInfo.minCol; col <= gridInfo.maxCol; col++) {
+                const location = this.findLocationAt(row, col);
+                const cell = this.createGridCell(row, col, location);
+                fragment.appendChild(cell);
+            }
+        }
+        
+        // Añadir fragmento al DOM
+        DOMElements.mapGrid.appendChild(fragment);
+        
+        // Actualizar tiempo de renderizado
+        const endTime = performance.now();
+        WarehouseState.lastRenderTime = endTime - startTime;
+        WarehouseState.isRendering = false;
+        
+        console.log(`Grid renderizado en ${WarehouseState.lastRenderTime.toFixed(2)}ms`);
+    }
+    
+    static calculateGridDimensions() {
+        let minRow = Infinity, maxRow = 0, minCol = Infinity, maxCol = 0;
+        
+        WarehouseState.filteredLocations.forEach(location => {
+            if (location.row < minRow) minRow = location.row;
+            if (location.row > maxRow) maxRow = location.row;
+            if (location.col < minCol) minCol = location.col;
+            if (location.col > maxCol) maxCol = location.col;
+        });
+        
+        // Añadir márgenes
+        minRow = Math.max(1, minRow - 1);
+        maxRow = maxRow + 1;
+        minCol = Math.max(1, minCol - 1);
+        maxCol = maxCol + 1;
+        
+        const rows = maxRow - minRow + 1;
+        const cols = maxCol - minCol + 1;
+        
+        return {
+            minRow, maxRow, minCol, maxCol,
+            rows, cols,
+            totalWidth: cols * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP,
+            totalHeight: rows * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP
         };
+    }
+    
+    static findLocationAt(row, col) {
+        return WarehouseState.filteredLocations.find(loc => 
+            loc.row === row && loc.col === col
+        );
+    }
+    
+    static createGridCell(row, col, location) {
+        const cell = document.createElement('div');
+        cell.className = 'location-cell';
         
-        DOM.modalStatus.textContent = statusText[location.status] || location.status;
-        DOM.modalStatus.className = `status-badge bg-${location.status}`;
+        if (location) {
+            // Celda con ubicación
+            cell.classList.add(location.status);
+            cell.dataset.locationId = location.id;
+            cell.dataset.code = location.code;
+            cell.dataset.status = location.status;
+            cell.dataset.ocupation = location.ocupationPercent;
+            
+            // Contenido
+            if (WarehouseState.showLabels) {
+                cell.innerHTML = `
+                    <div class="location-code">${location.code.split('-')[1]}${location.code.split('-')[2]}</div>
+                    <div class="location-percent">${location.ocupationPercent}%</div>
+                `;
+            } else {
+                cell.innerHTML = `<div class="location-percent">${location.ocupationPercent}%</div>`;
+            }
+            
+            // Tooltip
+            cell.title = `${location.code}\nEstado: ${location.status}\nOcupación: ${location.ocupationPercent}%\nMateriales: ${location.materials.length}`;
+            
+            // Eventos
+            cell.addEventListener('click', (e) => this.handleCellClick(e, location));
+            cell.addEventListener('mouseenter', (e) => this.handleCellMouseEnter(e, location));
+            cell.addEventListener('mouseleave', () => this.handleCellMouseLeave());
+            
+            // Selección
+            if (WarehouseState.selectedLocations.has(location.id)) {
+                cell.classList.add('selected');
+            }
+            
+            if (WarehouseState.selectedLocation && WarehouseState.selectedLocation.id === location.id) {
+                cell.classList.add('highlighted');
+            }
+        } else {
+            // Celda vacía
+            cell.classList.add('empty');
+            cell.style.backgroundColor = '#f8f9fa';
+            cell.style.border = '1px dashed #dee2e6';
+            cell.style.opacity = '0.5';
+            
+            if (WarehouseState.showLabels) {
+                cell.innerHTML = `<div class="location-code text-muted">${row}-${col}</div>`;
+            }
+            
+            cell.title = `Espacio disponible: Fila ${row}, Columna ${col}`;
+        }
         
-        // Capacidad y ocupación
-        const ocupationPercent = calculateOcupationPercent(location);
-        DOM.modalCapacity.textContent = `${formatNumber(location.capacity || 0)} unidades`;
-        DOM.modalOcupationBar.style.width = `${ocupationPercent}%`;
-        DOM.modalOcupationBar.className = `progress-bar bg-${location.status}`;
-        DOM.modalOcupationText.textContent = `${ocupationPercent}% ocupado`;
+        return cell;
+    }
+    
+    static handleCellClick(event, location) {
+        // Ctrl+Click para selección múltiple
+        if (event.ctrlKey || event.metaKey) {
+            if (WarehouseState.selectedLocations.has(location.id)) {
+                WarehouseState.selectedLocations.delete(location.id);
+            } else {
+                WarehouseState.selectedLocations.add(location.id);
+            }
+        } else {
+            // Click simple: seleccionar una sola ubicación
+            WarehouseState.selectedLocations.clear();
+            WarehouseState.selectedLocations.add(location.id);
+            WarehouseState.selectedLocation = location;
+            
+            // Mostrar detalles
+            this.showLocationDetails(location);
+        }
         
-        // Resumen de stock
-        const materialsCount = location.materials.length;
-        const totalStock = location.materials.reduce((sum, m) => sum + m.quantity, 0);
-        const minStock = location.materials.reduce((sum, m) => sum + (m.min_stock || 0), 0);
-        const maxStock = location.materials.reduce((sum, m) => sum + (m.max_stock || 0), 0);
+        // Actualizar UI
+        DOMElements.selectedLocations.textContent = WarehouseState.selectedLocations.size;
+        this.render();
+    }
+    
+    static handleCellMouseEnter(event, location) {
+        WarehouseState.hoveredLocation = location;
         
-        DOM.modalMaterialsCount.textContent = materialsCount;
-        DOM.modalTotalStock.textContent = formatNumber(totalStock);
-        DOM.modalMinStock.textContent = formatNumber(minStock);
-        DOM.modalMaxStock.textContent = formatNumber(maxStock);
+        // Mostrar tooltip mejorado
+        const tooltip = DOMElements.tooltip;
+        tooltip.innerHTML = `
+            <strong>${location.code}</strong><br>
+            <small>Zona: ${location.zoneName}</small><br>
+            <small>Estado: <span class="text-${location.status}">${location.status.toUpperCase()}</span></small><br>
+            <small>Ocupación: ${location.ocupationPercent}% (${location.usedCapacity}/${location.capacity})</small><br>
+            <small>Materiales: ${location.materials.length}</small>
+        `;
         
-        // Tabla de materiales
-        DOM.locationDetails.innerHTML = '';
+        tooltip.style.left = `${event.pageX + 15}px`;
+        tooltip.style.top = `${event.pageY - 15}px`;
+        tooltip.style.opacity = '1';
+        tooltip.style.display = 'block';
         
-        location.materials.forEach(material => {
+        // Resaltar ubicaciones relacionadas
+        this.highlightRelatedLocations(location);
+    }
+    
+    static handleCellMouseLeave() {
+        const tooltip = DOMElements.tooltip;
+        tooltip.style.opacity = '0';
+        setTimeout(() => {
+            tooltip.style.display = 'none';
+        }, 300);
+        
+        // Quitar resaltados
+        this.removeHighlights();
+    }
+    
+    static highlightRelatedLocations(location) {
+        // Resaltar ubicaciones con el mismo material
+        const relatedLocations = WarehouseState.filteredLocations.filter(loc => 
+            loc.id !== location.id &&
+            loc.materials.some(m1 => 
+                location.materials.some(m2 => m1.code === m2.code)
+            )
+        );
+        
+        relatedLocations.forEach(related => {
+            const cell = document.querySelector(`[data-location-id="${related.id}"]`);
+            if (cell) {
+                cell.style.boxShadow = '0 0 0 3px #3498db';
+                cell.style.zIndex = '10';
+            }
+        });
+    }
+    
+    static removeHighlights() {
+        document.querySelectorAll('.location-cell').forEach(cell => {
+            cell.style.boxShadow = '';
+            cell.style.zIndex = '';
+        });
+    }
+    
+    static showLocationDetails(location) {
+        // Actualizar información general
+        DOMElements.modalLocationCode.textContent = location.code;
+        DOMElements.modalLocation.textContent = location.code;
+        DOMElements.modalZone.textContent = `${location.zone} - ${location.zoneName}`;
+        DOMElements.modalType.textContent = location.type;
+        DOMElements.modalStatus.textContent = location.status;
+        DOMElements.modalStatus.className = `status-badge bg-${location.status}`;
+        DOMElements.modalCapacity.textContent = `${WarehouseUtils.formatNumber(location.capacity)} unidades`;
+        DOMElements.modalOcupation.textContent = `${location.ocupationPercent}%`;
+        DOMElements.modalFreeSpace.textContent = `${WarehouseUtils.formatNumber(location.freeCapacity)} unidades`;
+        DOMElements.modalLastUpdate.textContent = new Date(location.lastUpdate).toLocaleString();
+        DOMElements.modalTemperature.textContent = `${location.temperature}°C`;
+        DOMElements.modalHumidity.textContent = `${location.humidity}%`;
+        DOMElements.modalAccess.textContent = location.access;
+        DOMElements.modalPriority.textContent = location.priority;
+        
+        // Barra de progreso
+        DOMElements.modalOcupationBar.style.width = `${location.ocupationPercent}%`;
+        DOMElements.modalOcupationBar.style.backgroundColor = WarehouseConfig.STATUS_COLORS[location.status];
+        DOMElements.modalOcupationText.textContent = 
+            `${WarehouseUtils.formatNumber(location.usedCapacity)} / ${WarehouseUtils.formatNumber(location.capacity)} unidades (${location.ocupationPercent}%)`;
+        
+        // Estadísticas
+        const totalStock = location.materials.reduce((sum, m) => sum + m.currentStock, 0);
+        const totalValue = location.materials.reduce((sum, m) => sum + m.totalValue, 0);
+        
+        DOMElements.modalMaterialsCount.textContent = location.materials.length;
+        DOMElements.modalTotalStock.textContent = WarehouseUtils.formatNumber(totalStock);
+        DOMElements.modalTotalValue.textContent = `$${WarehouseUtils.formatNumber(totalValue)}`;
+        DOMElements.modalRotation.textContent = location.rotation.toFixed(1);
+        
+        // Materiales
+        this.renderLocationMaterials(location.materials);
+        
+        // Historial
+        this.renderLocationHistory(location.id);
+        
+        // Mostrar modal
+        DOMElements.modal.show();
+    }
+    
+    static renderLocationMaterials(materials) {
+        const tbody = DOMElements.locationDetails;
+        tbody.innerHTML = '';
+        
+        materials.forEach(material => {
             const row = document.createElement('tr');
             row.className = 'material-row';
             
-            const status = calculateStockStatus(
-                calculatePercentage(material.quantity, material.max_stock || 1)
-            );
+            // Calcular porcentaje de stock
+            const stockPercent = WarehouseUtils.calculatePercentage(material.currentStock, material.maxStock);
             
             row.innerHTML = `
-                <td><code>${material.code}</code></td>
-                <td>${material.description}</td>
-                <td>${material.unit}</td>
-                <td class="fw-bold">${formatNumber(material.quantity)}</td>
-                <td>${formatNumber(material.min_stock || 0)}</td>
-                <td>${formatNumber(material.max_stock || 0)}</td>
-                <td><span class="status-badge bg-${status}">${status.toUpperCase()}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary" title="Ver detalles">
-                        <i class="bi bi-eye"></i>
-                    </button>
+                    <input type="checkbox" class="material-checkbox" data-material-id="${material.id}">
+                </td>
+                <td><code>${material.code}</code></td>
+                <td class="text-ellipsis-2" title="${material.description}">${material.description}</td>
+                <td>${material.unit}</td>
+                <td class="fw-bold">${WarehouseUtils.formatNumber(material.currentStock)}</td>
+                <td>${WarehouseUtils.formatNumber(material.minStock)}</td>
+                <td>${WarehouseUtils.formatNumber(material.maxStock)}</td>
+                <td>$${material.unitValue.toFixed(2)}</td>
+                <td>
+                    <span class="status-badge bg-${material.status}">
+                        ${material.status.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action btn-action-primary" title="Ver detalles" onclick="showMaterialDetails('${material.id}')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn-action" title="Editar" onclick="editMaterial('${material.id}')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn-action" title="Transferir" onclick="transferMaterial('${material.id}')">
+                            <i class="bi bi-arrow-left-right"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             
-            DOM.locationDetails.appendChild(row);
+            tbody.appendChild(row);
         });
         
-        // Mostrar modal
-        DOM.modal.show();
-        
-        // Re-renderizar mapa para resaltar ubicación seleccionada
-        renderMap();
+        // Configurar checkbox "seleccionar todos"
+        DOMElements.selectAllMaterials.onchange = function() {
+            const checkboxes = document.querySelectorAll('.material-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        };
     }
     
-    /**
-     * Exporta datos de la ubicación
-     */
-    function exportLocationData() {
-        if (!State.selectedLocation) return;
+    static renderLocationHistory(locationId) {
+        const history = DataGenerator.generateLocationHistory(locationId);
+        const tbody = DOMElements.locationHistory;
+        tbody.innerHTML = '';
         
-        const data = {
-            location: State.selectedLocation.location,
-            status: State.selectedLocation.status,
-            materials: State.selectedLocation.materials
-        };
+        history.forEach(record => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(record.timestamp).toLocaleString()}</td>
+                <td><span class="badge bg-secondary">${record.user}</span></td>
+                <td>
+                    <span class="badge ${record.action === 'ENTRADA' ? 'bg-success' : record.action === 'SALIDA' ? 'bg-danger' : 'bg-warning'}">
+                        ${record.action}
+                    </span>
+                </td>
+                <td class="${record.action === 'ENTRADA' ? 'text-success' : 'text-danger'} fw-bold">
+                    ${record.action === 'ENTRADA' ? '+' : '-'}${record.quantity}
+                </td>
+                <td><code>${record.materialCode}</code></td>
+                <td><small class="text-muted">${record.observation}</small></td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+}
+
+// ================= GESTIÓN DE ZOOM Y VISTA =================
+class ViewManager {
+    static zoomIn() {
+        if (WarehouseState.zoomIndex < WarehouseConfig.ZOOM_LEVELS.length - 1) {
+            WarehouseState.zoomIndex++;
+            GridRenderer.render();
+        }
+    }
+    
+    static zoomOut() {
+        if (WarehouseState.zoomIndex > 0) {
+            WarehouseState.zoomIndex--;
+            GridRenderer.render();
+        }
+    }
+    
+    static resetZoom() {
+        WarehouseState.zoomIndex = WarehouseConfig.DEFAULT_ZOOM_INDEX;
+        GridRenderer.render();
+    }
+    
+    static setViewMode(mode) {
+        WarehouseState.viewMode = mode;
+        DOMElements.currentView.textContent = 
+            mode === 'grid' ? 'Vista Grid' : 
+            mode === 'list' ? 'Vista Lista' : 'Mapa de Calor';
         
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        // Actualizar botones
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.view === mode);
+        });
+        
+        // Cambiar renderizado según modo
+        this.updateView();
+    }
+    
+    static updateView() {
+        // Por ahora solo implementamos vista grid
+        // En una implementación completa, aquí cambiaríamos entre diferentes tipos de visualización
+        GridRenderer.render();
+    }
+    
+    static toggleLabels() {
+        WarehouseState.showLabels = DOMElements.showLabels.checked;
+        GridRenderer.render();
+    }
+}
+
+// ================= GESTIÓN DE ACTUALIZACIÓN AUTOMÁTICA =================
+class RefreshManager {
+    static toggleAutoRefresh() {
+        WarehouseState.autoRefresh = !WarehouseState.autoRefresh;
+        const btn = DOMElements.autoRefreshBtn;
+        
+        if (WarehouseState.autoRefresh) {
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-success');
+            btn.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar auto-refresh';
+            this.startAutoRefresh();
+        } else {
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-secondary');
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Auto-refresh';
+            this.stopAutoRefresh();
+        }
+    }
+    
+    static startAutoRefresh() {
+        if (WarehouseState.refreshInterval) {
+            clearInterval(WarehouseState.refreshInterval);
+        }
+        
+        WarehouseState.refreshInterval = setInterval(() => {
+            this.refreshData();
+        }, WarehouseConfig.AUTO_REFRESH_INTERVAL);
+    }
+    
+    static stopAutoRefresh() {
+        if (WarehouseState.refreshInterval) {
+            clearInterval(WarehouseState.refreshInterval);
+            WarehouseState.refreshInterval = null;
+        }
+    }
+    
+    static async refreshData() {
+        try {
+            // Simular actualización de datos
+            WarehouseUtils.showNotification('Actualizando datos...', 'info');
+            
+            // En producción, aquí iría la llamada a la API
+            // await DataManager.loadData();
+            
+            // Simular pequeños cambios
+            WarehouseState.locations.forEach(location => {
+                // Pequeñas variaciones en los datos
+                if (Math.random() > 0.7) {
+                    location.usedCapacity += Math.floor(Math.random() * 10) - 5;
+                    location.usedCapacity = Math.max(0, Math.min(location.capacity, location.usedCapacity));
+                    location.ocupationPercent = WarehouseUtils.calculatePercentage(location.usedCapacity, location.capacity);
+                    location.status = WarehouseUtils.getStatusByOcupation(location.ocupationPercent);
+                }
+            });
+            
+            // Recalcular estadísticas
+            DataManager.calculateStatistics();
+            FilterManager.applyCurrentFilters();
+            
+            WarehouseUtils.showNotification('Datos actualizados', 'success');
+            
+        } catch (error) {
+            console.error('Error actualizando datos:', error);
+            WarehouseUtils.showNotification('Error al actualizar datos', 'error');
+        }
+    }
+}
+
+// ================= FUNCIONES DE EXPORTACIÓN =================
+class ExportManager {
+    static exportToPDF() {
+        WarehouseUtils.showNotification('Generando PDF...', 'info');
+        
+        // Simular generación de PDF
+        setTimeout(() => {
+            WarehouseUtils.showNotification('PDF generado correctamente', 'success');
+            
+            // En producción, aquí iría la lógica real de generación de PDF
+            const data = {
+                title: 'Reporte de Almacén 2D',
+                date: new Date().toLocaleDateString(),
+                locations: WarehouseState.filteredLocations,
+                stats: WarehouseState.stats
+            };
+            
+            console.log('Datos para PDF:', data);
+            
+            // Simular descarga
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte-almacen-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+        }, 2000);
+    }
+    
+    static exportMaterialsCSV() {
+        if (!WarehouseState.selectedLocation) return;
+        
+        const materials = WarehouseState.selectedLocation.materials;
+        if (materials.length === 0) {
+            WarehouseUtils.showNotification('No hay materiales para exportar', 'warning');
+            return;
+        }
+        
+        // Crear contenido CSV
+        let csv = 'Código,Descripción,Unidad,Stock Actual,Stock Mínimo,Stock Máximo,Valor Unitario,Estado\n';
+        
+        materials.forEach(material => {
+            csv += `"${material.code}","${material.description}","${material.unit}",${material.currentStock},${material.minStock},${material.maxStock},${material.unitValue.toFixed(2)},"${material.status}"\n`;
+        });
+        
+        // Descargar
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ubicacion-${State.selectedLocation.location}.json`;
+        a.download = `materiales-${WarehouseState.selectedLocation.code}-${new Date().toISOString().split('T')[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-    }
-    
-    // ================= UI/UX =================
-    
-    /**
-     * Muestra estado de carga
-     */
-    function showLoading(show) {
-        // Implementar spinner de carga
-    }
-    
-    /**
-     * Muestra mensaje de error
-     */
-    function showError(message) {
-        // Implementar toast de error
-        console.error(message);
-    }
-    
-    // ================= DATOS DE EJEMPLO =================
-    
-    /**
-     * Genera datos de ejemplo para demostración
-     */
-    function generateMockData() {
-        const zones = ['A', 'B', 'C'];
-        const statuses = ['normal', 'bajo', 'critico', 'vacio'];
-        const materials = [
-            { code: 'MAT-001', description: 'Tornillo hexagonal', unit: 'UN', min_stock: 10, max_stock: 100 },
-            { code: 'MAT-002', description: 'Arandela plana', unit: 'UN', min_stock: 50, max_stock: 500 },
-            { code: 'MAT-003', description: 'Tuerca de seguridad', unit: 'UN', min_stock: 20, max_stock: 200 },
-            { code: 'MAT-004', description: 'Rodamiento 6205', unit: 'UN', min_stock: 5, max_stock: 50 },
-            { code: 'MAT-005', description: 'Correa trapezoidal', unit: 'UN', min_stock: 10, max_stock: 100 }
-        ];
         
-        const locations = [];
-        let id = 1;
+        WarehouseUtils.showNotification('CSV exportado correctamente', 'success');
+    }
+}
+
+// ================= FUNCIONES DE INTERFAZ =================
+// Funciones globales para acceso desde HTML
+function zoomIn() { ViewManager.zoomIn(); }
+function zoomOut() { ViewManager.zoomOut(); }
+function resetZoom() { ViewManager.resetZoom(); }
+function filterStatus(status) { FilterManager.filterStatus(status); }
+function setViewMode(mode) { ViewManager.setViewMode(mode); }
+function toggleLabels() { ViewManager.toggleLabels(); }
+function toggleAutoRefresh() { RefreshManager.toggleAutoRefresh(); }
+function refreshData() { RefreshManager.refreshData(); }
+function applyAdvancedFilters() {
+    WarehouseState.advancedFilters = {
+        zone: DOMElements.filterZone.value,
+        stockLevel: DOMElements.filterStockLevel.value,
+        lastMovement: DOMElements.filterLastMovement.value,
+        materialType: DOMElements.filterMaterialType.value
+    };
+    FilterManager.applyCurrentFilters();
+}
+function resetAdvancedFilters() {
+    DOMElements.filterZone.value = 'all';
+    DOMElements.filterStockLevel.value = 'all';
+    DOMElements.filterLastMovement.value = 'all';
+    DOMElements.filterMaterialType.value = 'all';
+    WarehouseState.advancedFilters = {
+        zone: 'all',
+        stockLevel: 'all',
+        lastMovement: 'all',
+        materialType: 'all'
+    };
+    FilterManager.applyCurrentFilters();
+}
+function resetAllFilters() {
+    WarehouseState.currentFilter = 'todos';
+    WarehouseState.searchQuery = '';
+    DOMElements.searchBox.value = '';
+    resetAdvancedFilters();
+}
+function exportToPDF() { ExportManager.exportToPDF(); }
+function exportMaterialsCSV() { ExportManager.exportMaterialsCSV(); }
+function printLocationDetails() { window.print(); }
+function editLocation() { WarehouseUtils.showNotification('Función de edición en desarrollo', 'info'); }
+function transferMaterials() { WarehouseUtils.showNotification('Función de transferencia en desarrollo', 'info'); }
+function showMaterialDetails(materialId) { WarehouseUtils.showNotification(`Detalles del material ${materialId}`, 'info'); }
+function editMaterial(materialId) { WarehouseUtils.showNotification(`Editando material ${materialId}`, 'info'); }
+function transferMaterial(materialId) { WarehouseUtils.showNotification(`Transferiendo material ${materialId}`, 'info'); }
+
+// ================= INICIALIZACIÓN =================
+class WarehouseApp {
+    static async init() {
+        console.log('Inicializando Sistema de Mapa 2D del Almacén...');
         
-        // Generar ubicaciones
-        for (let zone of zones) {
-            for (let row = 1; row <= 10; row++) {
-                for (let col = 1; col <= 15; col++) {
-                    const locationCode = `${zone}-${String(row).padStart(2, '0')}-${String(col).padStart(2, '0')}`;
-                    const status = statuses[Math.floor(Math.random() * statuses.length)];
-                    const capacity = Math.floor(Math.random() * 1000) + 100;
-                    
-                    // Materiales en esta ubicación
-                    const locMaterials = [];
-                    if (status !== 'vacio') {
-                        const numMaterials = Math.floor(Math.random() * 3) + 1;
-                        for (let i = 0; i < numMaterials; i++) {
-                            const material = { ...materials[Math.floor(Math.random() * materials.length)] };
-                            material.quantity = Math.floor(Math.random() * material.max_stock);
-                            locMaterials.push(material);
-                        }
-                    }
-                    
-                    locations.push({
-                        id: id++,
-                        location: locationCode,
-                        zone: zone,
-                        status: status,
-                        capacity: capacity,
-                        materials: locMaterials
-                    });
+        // Cargar datos
+        await DataManager.loadData();
+        
+        // Configurar eventos
+        this.setupEventListeners();
+        
+        // Configurar atajos de teclado
+        this.setupKeyboardShortcuts();
+        
+        // Iniciar con vista por defecto
+        GridRenderer.render();
+        
+        console.log('Sistema inicializado correctamente');
+    }
+    
+    static setupEventListeners() {
+        // Buscador
+        DOMElements.searchBox.addEventListener('input', 
+            WarehouseUtils.debounce((e) => {
+                FilterManager.performSearch(e.target.value);
+            }, WarehouseConfig.DEBOUNDE_DELAY)
+        );
+        
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!DOMElements.searchBox.contains(e.target) && !DOMElements.searchDropdown.contains(e.target)) {
+                DOMElements.searchDropdown.style.display = 'none';
+            }
+        });
+        
+        // Zoom con rueda del mouse
+        DOMElements.mapContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.ctrlKey) {
+                if (e.deltaY < 0) {
+                    ViewManager.zoomIn();
+                } else {
+                    ViewManager.zoomOut();
                 }
             }
+        });
+        
+        // Redimensionar ventana
+        window.addEventListener('resize', 
+            WarehouseUtils.throttle(() => {
+                GridRenderer.render();
+            }, 250)
+        );
+    }
+    
+    static setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ignorar si está en un input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            // Ctrl + +/- para zoom
+            if (e.ctrlKey) {
+                switch(e.key) {
+                    case '+':
+                    case '=':
+                        e.preventDefault();
+                        ViewManager.zoomIn();
+                        break;
+                    case '-':
+                    case '_':
+                        e.preventDefault();
+                        ViewManager.zoomOut();
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        ViewManager.resetZoom();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        DOMElements.searchBox.focus();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        RefreshManager.refreshData();
+                        break;
+                }
+            }
+            
+            // Escape para limpiar
+            if (e.key === 'Escape') {
+                if (DOMElements.searchBox.value) {
+                    DOMElements.searchBox.value = '';
+                    WarehouseState.searchQuery = '';
+                    FilterManager.applyCurrentFilters();
+                }
+                if (DOMElements.modal._isShown) {
+                    DOMElements.modal.hide();
+                }
+            }
+            
+            // Navegación con flechas
+            if (WarehouseState.selectedLocation && !DOMElements.modal._isShown) {
+                switch(e.key) {
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        this.navigateSelection('up');
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        this.navigateSelection('down');
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        this.navigateSelection('left');
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        this.navigateSelection('right');
+                        break;
+                }
+            }
+        });
+    }
+    
+    static navigateSelection(direction) {
+        if (!WarehouseState.selectedLocation) return;
+        
+        let targetRow = WarehouseState.selectedLocation.row;
+        let targetCol = WarehouseState.selectedLocation.col;
+        
+        switch(direction) {
+            case 'up': targetRow--; break;
+            case 'down': targetRow++; break;
+            case 'left': targetCol--; break;
+            case 'right': targetCol++; break;
         }
         
-        return { locations };
+        const targetLocation = WarehouseState.filteredLocations.find(loc => 
+            loc.row === targetRow && loc.col === targetCol
+        );
+        
+        if (targetLocation) {
+            WarehouseState.selectedLocation = targetLocation;
+            WarehouseState.selectedLocations.clear();
+            WarehouseState.selectedLocations.add(targetLocation.id);
+            
+            GridRenderer.render();
+            GridRenderer.showLocationDetails(targetLocation);
+            
+            // Scroll a la ubicación
+            const cell = document.querySelector(`[data-location-id="${targetLocation.id}"]`);
+            if (cell) {
+                cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        }
     }
-    
-    // ================= INICIALIZACIÓN =================
-    
-    /**
-     * Inicializa la aplicación
-     */
-    function initApp() {
-        // Cargar datos
-        loadWarehouseData();
+}
+
+// ================= INICIAR APLICACIÓN =================
+document.addEventListener('DOMContentLoaded', () => {
+    WarehouseApp.init();
+});
+
+// ================= MÉTODOS ADICIONALES PARA PRUEBAS =================
+// Estos métodos pueden ser útiles para pruebas y desarrollo
+window.WarehouseDebug = {
+    getState: () => ({ ...WarehouseState }),
+    getStats: () => ({ ...WarehouseState.stats }),
+    reloadData: () => DataManager.loadData(),
+    addTestLocation: (zone, row, col) => {
+        const locationCode = WarehouseUtils.generateLocationId(zone, row, col);
+        const newLocation = {
+            id: WarehouseState.locations.length + 1,
+            code: locationCode,
+            zone: zone,
+            zoneName: 'Test Zone',
+            row: row,
+            col: col,
+            type: 'Estantería',
+            capacity: 1000,
+            usedCapacity: 500,
+            freeCapacity: 500,
+            ocupationPercent: 50,
+            status: 'normal',
+            materials: [],
+            temperature: 22,
+            humidity: 50,
+            access: 'Público',
+            priority: 'Media',
+            lastUpdate: new Date().toISOString(),
+            lastMovement: new Date().toISOString(),
+            efficiency: 85,
+            rotation: 1.5
+        };
         
-        // Configurar búsqueda
-        DOM.searchBox.addEventListener('input', (e) => {
-            State.searchQuery = e.target.value;
-            applyFilters();
-        });
-        
-        // Configurar filtros rápidos
-        DOM.filterZone.addEventListener('change', applyFilters);
-        DOM.filterStockLevel.addEventListener('change', applyFilters);
-        
-        // Configurar eventos de teclado
-        document.addEventListener('keydown', (e) => {
-            // Ctrl + F para buscar
-            if (e.ctrlKey && e.key === 'f') {
-                e.preventDefault();
-                DOM.searchBox.focus();
-            }
-            
-            // + para zoom in
-            if (e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                zoomIn();
-            }
-            
-            // - para zoom out
-            if (e.key === '-' || e.key === '_') {
-                e.preventDefault();
-                zoomOut();
-            }
-            
-            // 0 para reset zoom
-            if (e.key === '0') {
-                resetZoom();
-            }
-            
-            // Escape para limpiar búsqueda
-            if (e.key === 'Escape') {
-                DOM.searchBox.value = '';
-                State.searchQuery = '';
-                applyFilters();
-            }
-        });
-        
-        console.log('Mapa 2D del Almacén inicializado');
+        WarehouseState.locations.push(newLocation);
+        DataManager.calculateStatistics();
+        FilterManager.applyCurrentFilters();
+    },
+    clearAllSelections: () => {
+        WarehouseState.selectedLocations.clear();
+        WarehouseState.selectedLocation = null;
+        GridRenderer.render();
     }
-    
-    // Iniciar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initApp);
-    } else {
-        initApp();
-    }
-    
-})();
+};
 </script>
 {% endblock %}
