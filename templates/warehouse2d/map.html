@@ -1,128 +1,1528 @@
 {% extends "base.html" %}
-{% block title %}Mapa 2D del Almacén{% endblock %}
+{% block title %}Mapa 2D del Almacén - Vista Inteligente{% endblock %}
 
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/warehouse2d.css') }}">
+<style>
+    /* ================= VARIABLES Y CONFIGURACIÓN ================= */
+    :root {
+        --color-normal: #28a745;
+        --color-bajo: #ffc107;
+        --color-critico: #dc3545;
+        --color-vacio: #6c757d;
+        --color-hover: #007bff;
+        --grid-size: 40px;
+        --border-radius: 6px;
+        --transition-speed: 0.3s;
+    }
 
-<div class="container-fluid mt-4">
-    <h2 class="text-center fw-bold mb-2" style="letter-spacing:1px;">
-        🏭 Panel General del Almacén – Vista 2D
-    </h2>
+    /* ================= DISEÑO GENERAL ================= */
+    .warehouse-container {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+        padding-bottom: 2rem;
+    }
 
-    <p class="text-center text-muted mb-4">
-        Estado general de las ubicaciones según el nivel de stock (Normal, Bajo, Crítico y Vacío).
-    </p>
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="btn btn-dark shadow-sm">
-            📤 Cargar nuevo Excel 2D
-        </a>
+    .header-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 1.5rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .title-main {
+        font-weight: 700;
+        font-size: 1.8rem;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+        font-size: 1rem;
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    /* ================= PANEL DE CONTROL ================= */
+    .control-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+    }
+
+    .search-container {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+
+    .search-input {
+        padding-left: 45px;
+        border-radius: 50px;
+        border: 2px solid #dee2e6;
+        height: 48px;
+        font-size: 1rem;
+        transition: all var(--transition-speed) ease;
+    }
+
+    .search-input:focus {
+        border-color: #4dabf7;
+        box-shadow: 0 0 0 0.25rem rgba(77, 171, 247, 0.25);
+    }
+
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .filter-btn {
+        min-width: 100px;
+        border-radius: 25px;
+        font-weight: 500;
+        padding: 0.5rem 1.2rem;
+        transition: all var(--transition-speed) ease;
+        border-width: 2px;
+    }
+
+    .filter-btn.active {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .btn-todos { border-color: #6c757d; color: #6c757d; }
+    .btn-todos.active { background-color: #6c757d; color: white; }
+
+    .btn-normal { border-color: var(--color-normal); color: var(--color-normal); }
+    .btn-normal.active { background-color: var(--color-normal); color: white; }
+
+    .btn-bajo { border-color: var(--color-bajo); color: var(--color-bajo); }
+    .btn-bajo.active { background-color: var(--color-bajo); color: #212529; }
+
+    .btn-critico { border-color: var(--color-critico); color: var(--color-critico); }
+    .btn-critico.active { background-color: var(--color-critico); color: white; }
+
+    .btn-vacio { border-color: var(--color-vacio); color: var(--color-vacio); }
+    .btn-vacio.active { background-color: var(--color-vacio); color: white; }
+
+    /* ================= CONTROLES DE ZOOM ================= */
+    .zoom-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .zoom-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        background: white;
+        border: 2px solid #dee2e6;
+        transition: all var(--transition-speed) ease;
+    }
+
+    .zoom-btn:hover {
+        background-color: #f8f9fa;
+        border-color: var(--color-hover);
+    }
+
+    .zoom-level {
+        font-weight: 600;
+        color: #495057;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    /* ================= MAPA 2D ================= */
+    .map-container-wrapper {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .map-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f1f3f4;
+    }
+
+    .map-title {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 1.1rem;
+    }
+
+    .map-stats {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .map-grid-container {
+        overflow: auto;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        background: #f8f9fa;
+        min-height: 500px;
+        position: relative;
+    }
+
+    .map-grid {
+        display: grid;
+        gap: 2px;
+        padding: 15px;
+        transition: transform 0.3s ease;
+        min-width: min-content;
+    }
+
+    /* ================= CELDAS DEL MAPA ================= */
+    .location-cell {
+        width: var(--grid-size);
+        height: var(--grid-size);
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.7rem;
+        cursor: pointer;
+        transition: all var(--transition-speed) ease;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid transparent;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .location-cell:hover {
+        transform: scale(1.1);
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .location-cell.normal { 
+        background-color: var(--color-normal); 
+        color: white;
+    }
+    .location-cell.bajo { 
+        background-color: var(--color-bajo); 
+        color: #212529;
+    }
+    .location-cell.critico { 
+        background-color: var(--color-critico); 
+        color: white;
+    }
+    .location-cell.vacio { 
+        background-color: var(--color-vacio); 
+        color: white;
+    }
+
+    .location-cell.highlighted {
+        animation: pulse-highlight 1.5s infinite;
+        border-color: #007bff;
+    }
+
+    @keyframes pulse-highlight {
+        0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+    }
+
+    .location-code {
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* ================= PANEL LATERAL (KPIs) ================= */
+    .sidebar-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+        border: 1px solid #e9ecef;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .sidebar-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .card-header-custom {
+        background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+        color: white;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        font-size: 1rem;
+        border-bottom: none;
+    }
+
+    .kpi-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f1f3f4;
+        transition: background-color 0.2s ease;
+    }
+
+    .kpi-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .kpi-item:last-child {
+        border-bottom: none;
+    }
+
+    .kpi-label {
+        font-weight: 500;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .kpi-value {
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #2c3e50;
+    }
+
+    .kpi-trend {
+        font-size: 0.8rem;
+        border-radius: 12px;
+        padding: 0.15rem 0.5rem;
+        font-weight: 500;
+    }
+
+    .trend-up { background-color: #d4edda; color: #155724; }
+    .trend-down { background-color: #f8d7da; color: #721c24; }
+    .trend-neutral { background-color: #e2e3e5; color: #383d41; }
+
+    /* ================= CONTADORES ================= */
+    .counter-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .counter-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .counter-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 12px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .counter-label {
+        flex-grow: 1;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .counter-value {
+        font-weight: 700;
+        font-size: 1.1rem;
+        min-width: 40px;
+        text-align: right;
+    }
+
+    .color-normal { background-color: var(--color-normal); }
+    .color-bajo { background-color: var(--color-bajo); }
+    .color-critico { background-color: var(--color-critico); }
+    .color-vacio { background-color: var(--color-vacio); }
+
+    /* ================= BOTÓN DE CARGAR EXCEL ================= */
+    .upload-btn {
+        background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .upload-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+        color: white;
+    }
+
+    /* ================= MODAL MEJORADO ================= */
+    .modal-custom .modal-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+        padding: 1.25rem 1.5rem;
+    }
+
+    .modal-custom .modal-title {
+        font-weight: 600;
+        font-size: 1.2rem;
+    }
+
+    .location-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.15);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+        margin-left: 10px;
+        font-size: 0.9rem;
+    }
+
+    .material-row {
+        transition: background-color 0.2s ease;
+    }
+
+    .material-row:hover {
+        background-color: #f8f9fa;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 500;
+        font-size: 0.8rem;
+    }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 768px) {
+        .title-main {
+            font-size: 1.4rem;
+        }
+        
+        .filter-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .map-grid-container {
+            min-height: 350px;
+        }
+        
+        .location-cell {
+            width: 35px;
+            height: 35px;
+            font-size: 0.6rem;
+        }
+        
+        .zoom-controls {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .header-section {
+            padding: 1rem 0;
+        }
+        
+        .control-panel {
+            padding: 1rem;
+        }
+        
+        .location-cell {
+            width: 30px;
+            height: 30px;
+            font-size: 0.5rem;
+        }
+    }
+
+    /* ================= UTILIDADES ================= */
+    .loading-spinner {
+        display: inline-block;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(255,255,255,0.8);
+        border-radius: 8px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="warehouse-container">
+    <!-- ================= HEADER PRINCIPAL ================= -->
+    <div class="header-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="title-main">
+                        <i class="bi bi-grid-3x3-gap-fill me-2"></i>Mapa 2D del Almacén
+                    </h1>
+                    <p class="subtitle mb-0">
+                        Vista inteligente del inventario • Estado por ubicación • Monitoreo en tiempo real
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="upload-btn">
+                        <i class="bi bi-cloud-upload-fill"></i> Cargar Excel 2D
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="row">
-        <!-- Panel principal: mapa -->
-        <div class="col-lg-9">
-
-            <!-- Buscador -->
-            <div class="row mb-3 justify-content-center">
-                <div class="col-md-6">
-                    <input class="form-control" id="searchBox" placeholder="🔍 Buscar ubicación...">
-                </div>
-            </div>
-
-            <!-- Filtros -->
-            <div class="text-center mb-3">
-                <button class="btn btn-outline-secondary me-2" onclick="filterStatus('todos')">Todos</button>
-                <button class="btn btn-outline-success me-2" onclick="filterStatus('normal')">Normal</button>
-                <button class="btn btn-outline-warning me-2" onclick="filterStatus('bajo')">Bajo</button>
-                <button class="btn btn-outline-danger me-2" onclick="filterStatus('crítico')">Crítico</button>
-                <button class="btn btn-outline-dark" onclick="filterStatus('vacío')">Vacío</button>
-            </div>
-
-            <!-- Zoom -->
-            <div class="text-center mb-3">
-                <button class="btn btn-primary me-2" onclick="zoomIn()">🔍+</button>
-                <button class="btn btn-primary" onclick="zoomOut()">🔍−</button>
-            </div>
-
-            <!-- Mapa -->
-            <div id="map-container" class="map-grid"></div>
-        </div>
-
-        <!-- Panel lateral KPIs -->
-        <div class="col-lg-3">
-            <div class="card shadow-sm mb-3">
-                <div class="card-header bg-dark text-white">
-                    Indicadores clave (KPIs)
-                </div>
-                <div class="card-body" id="kpi-panel">
-                    <p class="text-muted mb-1">Cargando KPIs...</p>
-                </div>
-            </div>
-
-            <!-- Contadores por estado -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-secondary text-white">
-                    Estado de las ubicaciones
-                </div>
-                <div class="card-body" id="counters">
-                    <div class="counter-box normal mb-2">
-                        Normal: <span id="count-normal">0</span>
+    <div class="container">
+        <div class="row">
+            <!-- ================= PANEL PRINCIPAL (MAPA) ================= -->
+            <div class="col-lg-9">
+                <!-- Panel de Control -->
+                <div class="control-panel">
+                    <div class="row align-items-center">
+                        <!-- Buscador -->
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="search-container">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" 
+                                       class="form-control search-input" 
+                                       id="searchBox" 
+                                       placeholder="Buscar ubicación o material..."
+                                       aria-label="Buscar ubicación">
+                            </div>
+                        </div>
+                        
+                        <!-- Controles de Zoom -->
+                        <div class="col-md-6">
+                            <div class="zoom-controls">
+                                <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">
+                                    <i class="bi bi-dash-lg"></i>
+                                </button>
+                                <span class="zoom-level" id="zoomLevel">100%</span>
+                                <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <button class="zoom-btn" onclick="resetZoom()" title="Reset zoom">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="counter-box bajo mb-2">
-                        Bajo: <span id="count-bajo">0</span>
+
+                    <!-- Filtros por Estado -->
+                    <div class="filter-buttons">
+                        <button class="filter-btn btn-todos active" onclick="filterStatus('todos')" data-status="todos">
+                            <i class="bi bi-grid-fill me-1"></i> Todos
+                        </button>
+                        <button class="filter-btn btn-normal" onclick="filterStatus('normal')" data-status="normal">
+                            <i class="bi bi-check-circle me-1"></i> Normal
+                        </button>
+                        <button class="filter-btn btn-bajo" onclick="filterStatus('bajo')" data-status="bajo">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Bajo
+                        </button>
+                        <button class="filter-btn btn-critico" onclick="filterStatus('critico')" data-status="critico">
+                            <i class="bi bi-x-circle me-1"></i> Crítico
+                        </button>
+                        <button class="filter-btn btn-vacio" onclick="filterStatus('vacio')" data-status="vacio">
+                            <i class="bi bi-dash-circle me-1"></i> Vacío
+                        </button>
                     </div>
-                    <div class="counter-box critico mb-2">
-                        Crítico: <span id="count-critico">0</span>
+
+                    <!-- Leyenda -->
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--color-normal);"></div>
+                            <span>Normal ≥ 50%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--color-bajo);"></div>
+                            <span>Bajo 20-49%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--color-critico);"></div>
+                            <span>Crítico 1-19%</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: var(--color-vacio);"></div>
+                            <span>Vacío 0%</span>
+                        </div>
                     </div>
-                    <div class="counter-box vacio">
-                        Vacío: <span id="count-vacio">0</span>
+                </div>
+
+                <!-- Contenedor del Mapa -->
+                <div class="map-container-wrapper">
+                    <div class="map-header">
+                        <div class="map-title">
+                            <i class="bi bi-map-fill me-2"></i> Distribución del Almacén
+                        </div>
+                        <div class="map-stats">
+                            <span id="total-locations">0</span> ubicaciones • 
+                            <span id="visible-locations">0</span> visibles
+                        </div>
+                    </div>
+                    
+                    <div class="map-grid-container">
+                        <div id="map-grid" class="map-grid"></div>
+                        <div id="no-results" class="no-results d-none">
+                            <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+                            <p>No se encontraron ubicaciones con los filtros actuales</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- ================= PANEL LATERAL (KPIs) ================= -->
+            <div class="col-lg-3">
+                <!-- Panel de KPIs -->
+                <div class="sidebar-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-graph-up me-2"></i> Indicadores Clave (KPIs)
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="kpi-item">
+                            <div class="kpi-label">Ocupación Total</div>
+                            <div class="kpi-value" id="kpi-ocupacion">0%</div>
+                            <div class="kpi-trend trend-up" id="kpi-trend-ocupacion">+0%</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-label">Ubicaciones Críticas</div>
+                            <div class="kpi-value" id="kpi-criticas">0</div>
+                            <div class="kpi-trend trend-down" id="kpi-trend-criticas">-0%</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-label">Espacio Disponible</div>
+                            <div class="kpi-value" id="kpi-espacio">0</div>
+                            <div class="kpi-trend trend-neutral" id="kpi-trend-espacio">0%</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-label">Rotación Promedio</div>
+                            <div class="kpi-value" id="kpi-rotacion">0%</div>
+                            <div class="kpi-trend trend-up" id="kpi-trend-rotacion">+0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contadores por Estado -->
+                <div class="sidebar-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-pie-chart-fill me-2"></i> Estado por Categoría
+                    </div>
+                    <div class="card-body">
+                        <div class="counter-item" data-status="normal">
+                            <div class="counter-color color-normal"></div>
+                            <div class="counter-label">Normal</div>
+                            <div class="counter-value" id="count-normal">0</div>
+                        </div>
+                        <div class="counter-item" data-status="bajo">
+                            <div class="counter-color color-bajo"></div>
+                            <div class="counter-label">Stock Bajo</div>
+                            <div class="counter-value" id="count-bajo">0</div>
+                        </div>
+                        <div class="counter-item" data-status="critico">
+                            <div class="counter-color color-critico"></div>
+                            <div class="counter-label">Crítico</div>
+                            <div class="counter-value" id="count-critico">0</div>
+                        </div>
+                        <div class="counter-item" data-status="vacio">
+                            <div class="counter-color color-vacio"></div>
+                            <div class="counter-label">Vacío</div>
+                            <div class="counter-value" id="count-vacio">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtro Rápido -->
+                <div class="sidebar-card">
+                    <div class="card-header-custom">
+                        <i class="bi bi-funnel-fill me-2"></i> Filtro Rápido
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Zona del Almacén</label>
+                            <select class="form-select form-select-sm" id="filter-zone">
+                                <option value="all">Todas las zonas</option>
+                                <option value="A">Zona A</option>
+                                <option value="B">Zona B</option>
+                                <option value="C">Zona C</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nivel de Stock</label>
+                            <select class="form-select form-select-sm" id="filter-stock-level">
+                                <option value="all">Todos los niveles</option>
+                                <option value="high">Alto (>75%)</option>
+                                <option value="medium">Medio (25-75%)</option>
+                                <option value="low">Bajo (<25%)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="applyQuickFilters()">
+                            <i class="bi bi-filter me-1"></i> Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Detalles -->
-<div class="modal fade" id="locationModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- ================= MODAL DE DETALLES ================= -->
+<div class="modal fade modal-custom" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
-
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">Detalles de la Ubicación</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalLabel">
+                    <i class="bi bi-info-circle me-2"></i> Detalles de Ubicación
+                    <span class="location-badge" id="modal-location-code"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
-
+            
             <div class="modal-body">
-                <h4 id="modal-location" class="fw-bold mb-3"></h4>
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <i class="bi bi-geo-alt me-2"></i> Información de Ubicación
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th width="40%">Ubicación:</th>
+                                        <td id="modal-location" class="fw-bold"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Estado:</th>
+                                        <td>
+                                            <span class="status-badge" id="modal-status"></span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Capacidad:</th>
+                                        <td id="modal-capacity"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Ocupación:</th>
+                                        <td>
+                                            <div class="progress" style="height: 8px;">
+                                                <div id="modal-ocupation-bar" class="progress-bar" role="progressbar"></div>
+                                            </div>
+                                            <small id="modal-ocupation-text" class="text-muted"></small>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <i class="bi bi-box-seam me-2"></i> Resumen de Stock
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <th width="40%">Materiales:</th>
+                                        <td id="modal-materials-count">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Stock Total:</th>
+                                        <td id="modal-total-stock">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Stock Mínimo:</th>
+                                        <td id="modal-min-stock">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Stock Máximo:</th>
+                                        <td id="modal-max-stock">0</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <h6 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-list-ul me-2"></i> Materiales en esta Ubicación
+                </h6>
+                
                 <div class="table-responsive">
-                    <table class="table table-sm table-striped">
-                        <thead class="table-dark">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
                             <tr>
                                 <th>Código</th>
                                 <th>Descripción</th>
                                 <th>Unidad</th>
-                                <th>Seguridad</th>
-                                <th>Máximo</th>
-                                <th>Libre</th>
+                                <th>Stock Actual</th>
+                                <th>Stock Mínimo</th>
+                                <th>Stock Máximo</th>
                                 <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="location-details"></tbody>
                     </table>
                 </div>
-
             </div>
-
+            
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i> Cerrar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="exportLocationData()">
+                    <i class="bi bi-download me-1"></i> Exportar Datos
+                </button>
             </div>
-
         </div>
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/warehouse2d.js') }}"></script>
+<!-- ================= SCRIPT MEJORADO ================= -->
+<script>
+/**
+ * Mapa 2D del Almacén - Versión Mejorada
+ * Sistema de visualización de inventario con filtros inteligentes
+ */
+
+(function() {
+    'use strict';
+    
+    // ================= CONFIGURACIÓN =================
+    const CONFIG = {
+        ZOOM_STEP: 0.1,
+        MIN_ZOOM: 0.5,
+        MAX_ZOOM: 2.0,
+        DEFAULT_ZOOM: 1.0,
+        GRID_SIZE: 40,
+        GRID_GAP: 2
+    };
+    
+    // ================= ESTADO GLOBAL =================
+    const State = {
+        locations: [],
+        filteredLocations: [],
+        currentFilter: 'todos',
+        searchQuery: '',
+        zoomLevel: CONFIG.DEFAULT_ZOOM,
+        selectedLocation: null,
+        gridData: {
+            rows: 0,
+            cols: 0,
+            minRow: Infinity,
+            maxRow: 0,
+            minCol: Infinity,
+            maxCol: 0
+        }
+    };
+    
+    // ================= ELEMENTOS DOM =================
+    const DOM = {
+        mapGrid: document.getElementById('map-grid'),
+        searchBox: document.getElementById('searchBox'),
+        zoomLevel: document.getElementById('zoomLevel'),
+        noResults: document.getElementById('no-results'),
+        totalLocations: document.getElementById('total-locations'),
+        visibleLocations: document.getElementById('visible-locations'),
+        
+        // KPIs
+        kpiOcupacion: document.getElementById('kpi-ocupacion'),
+        kpiCriticas: document.getElementById('kpi-criticas'),
+        kpiEspacio: document.getElementById('kpi-espacio'),
+        kpiRotacion: document.getElementById('kpi-rotacion'),
+        
+        // Contadores
+        countNormal: document.getElementById('count-normal'),
+        countBajo: document.getElementById('count-bajo'),
+        countCritico: document.getElementById('count-critico'),
+        countVacio: document.getElementById('count-vacio'),
+        
+        // Filtros rápidos
+        filterZone: document.getElementById('filter-zone'),
+        filterStockLevel: document.getElementById('filter-stock-level'),
+        
+        // Modal
+        modal: new bootstrap.Modal(document.getElementById('locationModal')),
+        modalLocationCode: document.getElementById('modal-location-code'),
+        modalLocation: document.getElementById('modal-location'),
+        modalStatus: document.getElementById('modal-status'),
+        modalCapacity: document.getElementById('modal-capacity'),
+        modalOcupationBar: document.getElementById('modal-ocupation-bar'),
+        modalOcupationText: document.getElementById('modal-ocupation-text'),
+        modalMaterialsCount: document.getElementById('modal-materials-count'),
+        modalTotalStock: document.getElementById('modal-total-stock'),
+        modalMinStock: document.getElementById('modal-min-stock'),
+        modalMaxStock: document.getElementById('modal-max-stock'),
+        locationDetails: document.getElementById('location-details')
+    };
+    
+    // ================= FUNCIONES UTILITARIAS =================
+    
+    /**
+     * Calcula el estado de stock basado en porcentaje
+     */
+    function calculateStockStatus(ocupationPercent) {
+        if (ocupationPercent === 0) return 'vacio';
+        if (ocupationPercent < 20) return 'critico';
+        if (ocupationPercent < 50) return 'bajo';
+        return 'normal';
+    }
+    
+    /**
+     * Formatea números con separadores de miles
+     */
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    
+    /**
+     * Calcula porcentaje
+     */
+    function calculatePercentage(part, total) {
+        if (total === 0) return 0;
+        return Math.round((part / total) * 100);
+    }
+    
+    // ================= MANEJO DE DATOS =================
+    
+    /**
+     * Carga los datos del almacén desde el servidor
+     */
+    async function loadWarehouseData() {
+        try {
+            showLoading(true);
+            
+            // En producción, esto sería una llamada a la API
+            // const response = await fetch('/api/warehouse2d/data');
+            // const data = await response.json();
+            
+            // Datos de ejemplo para demostración
+            const mockData = generateMockData();
+            State.locations = mockData.locations;
+            State.filteredLocations = [...State.locations];
+            
+            analyzeGridStructure();
+            renderMap();
+            updateKPIs();
+            updateCounters();
+            
+        } catch (error) {
+            console.error('Error cargando datos:', error);
+            showError('No se pudieron cargar los datos del almacén');
+        } finally {
+            showLoading(false);
+        }
+    }
+    
+    /**
+     * Analiza la estructura de la cuadrícula
+     */
+    function analyzeGridStructure() {
+        State.gridData = {
+            rows: 0,
+            cols: 0,
+            minRow: Infinity,
+            maxRow: 0,
+            minCol: Infinity,
+            maxCol: 0
+        };
+        
+        State.locations.forEach(loc => {
+            const coords = parseLocationCoordinates(loc.location);
+            if (coords) {
+                State.gridData.minRow = Math.min(State.gridData.minRow, coords.row);
+                State.gridData.maxRow = Math.max(State.gridData.maxRow, coords.row);
+                State.gridData.minCol = Math.min(State.gridData.minCol, coords.col);
+                State.gridData.maxCol = Math.max(State.gridData.maxCol, coords.col);
+            }
+        });
+        
+        State.gridData.rows = State.gridData.maxRow - State.gridData.minRow + 1;
+        State.gridData.cols = State.gridData.maxCol - State.gridData.minCol + 1;
+    }
+    
+    /**
+     * Parsea coordenadas de ubicación (ej: "A-01-02" → row: 1, col: 2)
+     */
+    function parseLocationCoordinates(locationCode) {
+        // Implementar lógica de parseo según formato de ubicaciones
+        // Esto es un ejemplo básico
+        const match = locationCode.match(/[A-Z]-(\d+)-(\d+)/);
+        if (match) {
+            return {
+                row: parseInt(match[1]),
+                col: parseInt(match[2])
+            };
+        }
+        return null;
+    }
+    
+    // ================= RENDERIZADO DEL MAPA =================
+    
+    /**
+     * Renderiza el mapa 2D
+     */
+    function renderMap() {
+        DOM.mapGrid.innerHTML = '';
+        
+        if (State.filteredLocations.length === 0) {
+            DOM.noResults.classList.remove('d-none');
+            DOM.mapGrid.style.display = 'none';
+            return;
+        }
+        
+        DOM.noResults.classList.add('d-none');
+        DOM.mapGrid.style.display = 'grid';
+        
+        // Configurar grid
+        DOM.mapGrid.style.gridTemplateColumns = `repeat(${State.gridData.cols}, ${CONFIG.GRID_SIZE}px)`;
+        DOM.mapGrid.style.gridTemplateRows = `repeat(${State.gridData.rows}, ${CONFIG.GRID_SIZE}px)`;
+        DOM.mapGrid.style.gap = `${CONFIG.GRID_GAP}px`;
+        
+        // Aplicar zoom
+        DOM.mapGrid.style.transform = `scale(${State.zoomLevel})`;
+        DOM.mapGrid.style.transformOrigin = 'top left';
+        
+        // Crear celdas vacías primero
+        for (let row = State.gridData.minRow; row <= State.gridData.maxRow; row++) {
+            for (let col = State.gridData.minCol; col <= State.gridData.maxCol; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'location-cell empty';
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                cell.title = `Fila ${row}, Columna ${col}`;
+                DOM.mapGrid.appendChild(cell);
+            }
+        }
+        
+        // Colocar ubicaciones reales
+        State.filteredLocations.forEach(location => {
+            const coords = parseLocationCoordinates(location.location);
+            if (coords) {
+                const gridRow = coords.row - State.gridData.minRow;
+                const gridCol = coords.col - State.gridData.minCol;
+                
+                const index = (gridRow * State.gridData.cols) + gridCol;
+                const cell = DOM.mapGrid.children[index];
+                
+                if (cell) {
+                    cell.className = `location-cell ${location.status}`;
+                    cell.innerHTML = `<div class="location-code">${location.location}</div>`;
+                    cell.title = `${location.location} - ${location.status.toUpperCase()}`;
+                    
+                    // Añadir eventos
+                    cell.onclick = () => showLocationDetails(location);
+                    cell.onmouseenter = () => highlightRelatedLocations(location);
+                    cell.onmouseleave = () => removeHighlights();
+                    
+                    // Marcar si es la ubicación seleccionada
+                    if (State.selectedLocation && State.selectedLocation.id === location.id) {
+                        cell.classList.add('highlighted');
+                    }
+                }
+            }
+        });
+        
+        updateMapStats();
+    }
+    
+    /**
+     * Actualiza las estadísticas del mapa
+     */
+    function updateMapStats() {
+        DOM.totalLocations.textContent = State.locations.length;
+        DOM.visibleLocations.textContent = State.filteredLocations.length;
+    }
+    
+    /**
+     * Resalta ubicaciones relacionadas
+     */
+    function highlightRelatedLocations(location) {
+        // Implementar lógica de resaltado según necesidades
+        // Por ejemplo, resaltar ubicaciones con el mismo material
+    }
+    
+    /**
+     * Remueve resaltados
+     */
+    function removeHighlights() {
+        document.querySelectorAll('.location-cell.highlighted').forEach(cell => {
+            cell.classList.remove('highlighted');
+        });
+    }
+    
+    // ================= FILTROS Y BÚSQUEDA =================
+    
+    /**
+     * Filtra ubicaciones por estado
+     */
+    function filterStatus(status) {
+        State.currentFilter = status;
+        
+        // Actualizar botones activos
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.status === status) {
+                btn.classList.add('active');
+            }
+        });
+        
+        applyFilters();
+    }
+    
+    /**
+     * Aplica todos los filtros activos
+     */
+    function applyFilters() {
+        let filtered = [...State.locations];
+        
+        // Filtro por estado
+        if (State.currentFilter !== 'todos') {
+            filtered = filtered.filter(loc => loc.status === State.currentFilter);
+        }
+        
+        // Filtro por búsqueda
+        if (State.searchQuery) {
+            const query = State.searchQuery.toLowerCase();
+            filtered = filtered.filter(loc => 
+                loc.location.toLowerCase().includes(query) ||
+                loc.materials.some(m => 
+                    m.code.toLowerCase().includes(query) ||
+                    m.description.toLowerCase().includes(query)
+                )
+            );
+        }
+        
+        // Filtros rápidos
+        const zoneFilter = DOM.filterZone.value;
+        const stockFilter = DOM.filterStockLevel.value;
+        
+        if (zoneFilter !== 'all') {
+            filtered = filtered.filter(loc => loc.zone === zoneFilter);
+        }
+        
+        if (stockFilter !== 'all') {
+            filtered = filtered.filter(loc => {
+                const percent = calculateOcupationPercent(loc);
+                switch(stockFilter) {
+                    case 'high': return percent > 75;
+                    case 'medium': return percent >= 25 && percent <= 75;
+                    case 'low': return percent < 25;
+                    default: return true;
+                }
+            });
+        }
+        
+        State.filteredLocations = filtered;
+        renderMap();
+        updateCounters();
+    }
+    
+    /**
+     * Aplica filtros rápidos
+     */
+    function applyQuickFilters() {
+        applyFilters();
+    }
+    
+    /**
+     * Calcula porcentaje de ocupación
+     */
+    function calculateOcupationPercent(location) {
+        if (!location.capacity || location.capacity === 0) return 0;
+        const used = location.materials.reduce((sum, m) => sum + m.quantity, 0);
+        return Math.round((used / location.capacity) * 100);
+    }
+    
+    // ================= ZOOM =================
+    
+    /**
+     * Aumenta el zoom
+     */
+    function zoomIn() {
+        if (State.zoomLevel < CONFIG.MAX_ZOOM) {
+            State.zoomLevel += CONFIG.ZOOM_STEP;
+            updateZoom();
+        }
+    }
+    
+    /**
+     * Disminuye el zoom
+     */
+    function zoomOut() {
+        if (State.zoomLevel > CONFIG.MIN_ZOOM) {
+            State.zoomLevel -= CONFIG.ZOOM_STEP;
+            updateZoom();
+        }
+    }
+    
+    /**
+     * Reinicia el zoom
+     */
+    function resetZoom() {
+        State.zoomLevel = CONFIG.DEFAULT_ZOOM;
+        updateZoom();
+    }
+    
+    /**
+     * Actualiza la visualización del zoom
+     */
+    function updateZoom() {
+        DOM.zoomLevel.textContent = `${Math.round(State.zoomLevel * 100)}%`;
+        renderMap();
+    }
+    
+    // ================= KPIs Y CONTADORES =================
+    
+    /**
+     * Actualiza los KPIs
+     */
+    function updateKPIs() {
+        const totalLocations = State.locations.length;
+        const occupiedLocations = State.locations.filter(loc => loc.status !== 'vacio').length;
+        const criticalLocations = State.locations.filter(loc => loc.status === 'critico').length;
+        const totalCapacity = State.locations.reduce((sum, loc) => sum + (loc.capacity || 0), 0);
+        const usedCapacity = State.locations.reduce((sum, loc) => 
+            sum + loc.materials.reduce((s, m) => s + m.quantity, 0), 0
+        );
+        
+        // Ocupación total
+        const ocupationPercent = calculatePercentage(occupiedLocations, totalLocations);
+        DOM.kpiOcupacion.textContent = `${ocupationPercent}%`;
+        
+        // Ubicaciones críticas
+        DOM.kpiCriticas.textContent = criticalLocations;
+        
+        // Espacio disponible
+        const availableSpace = totalCapacity - usedCapacity;
+        DOM.kpiEspacio.textContent = formatNumber(availableSpace);
+        
+        // Rotación (ejemplo)
+        const rotationPercent = calculatePercentage(usedCapacity, totalCapacity);
+        DOM.kpiRotacion.textContent = `${rotationPercent}%`;
+    }
+    
+    /**
+     * Actualiza los contadores por estado
+     */
+    function updateCounters() {
+        const counts = {
+            normal: 0,
+            bajo: 0,
+            critico: 0,
+            vacio: 0
+        };
+        
+        State.locations.forEach(loc => {
+            if (counts.hasOwnProperty(loc.status)) {
+                counts[loc.status]++;
+            }
+        });
+        
+        DOM.countNormal.textContent = counts.normal;
+        DOM.countBajo.textContent = counts.bajo;
+        DOM.countCritico.textContent = counts.critico;
+        DOM.countVacio.textContent = counts.vacio;
+    }
+    
+    // ================= MODAL DE DETALLES =================
+    
+    /**
+     * Muestra detalles de una ubicación
+     */
+    function showLocationDetails(location) {
+        State.selectedLocation = location;
+        
+        // Actualizar información general
+        DOM.modalLocationCode.textContent = location.location;
+        DOM.modalLocation.textContent = location.location;
+        
+        // Estado
+        const statusText = {
+            normal: 'Normal',
+            bajo: 'Stock Bajo',
+            critico: 'Crítico',
+            vacio: 'Vacío'
+        };
+        
+        DOM.modalStatus.textContent = statusText[location.status] || location.status;
+        DOM.modalStatus.className = `status-badge bg-${location.status}`;
+        
+        // Capacidad y ocupación
+        const ocupationPercent = calculateOcupationPercent(location);
+        DOM.modalCapacity.textContent = `${formatNumber(location.capacity || 0)} unidades`;
+        DOM.modalOcupationBar.style.width = `${ocupationPercent}%`;
+        DOM.modalOcupationBar.className = `progress-bar bg-${location.status}`;
+        DOM.modalOcupationText.textContent = `${ocupationPercent}% ocupado`;
+        
+        // Resumen de stock
+        const materialsCount = location.materials.length;
+        const totalStock = location.materials.reduce((sum, m) => sum + m.quantity, 0);
+        const minStock = location.materials.reduce((sum, m) => sum + (m.min_stock || 0), 0);
+        const maxStock = location.materials.reduce((sum, m) => sum + (m.max_stock || 0), 0);
+        
+        DOM.modalMaterialsCount.textContent = materialsCount;
+        DOM.modalTotalStock.textContent = formatNumber(totalStock);
+        DOM.modalMinStock.textContent = formatNumber(minStock);
+        DOM.modalMaxStock.textContent = formatNumber(maxStock);
+        
+        // Tabla de materiales
+        DOM.locationDetails.innerHTML = '';
+        
+        location.materials.forEach(material => {
+            const row = document.createElement('tr');
+            row.className = 'material-row';
+            
+            const status = calculateStockStatus(
+                calculatePercentage(material.quantity, material.max_stock || 1)
+            );
+            
+            row.innerHTML = `
+                <td><code>${material.code}</code></td>
+                <td>${material.description}</td>
+                <td>${material.unit}</td>
+                <td class="fw-bold">${formatNumber(material.quantity)}</td>
+                <td>${formatNumber(material.min_stock || 0)}</td>
+                <td>${formatNumber(material.max_stock || 0)}</td>
+                <td><span class="status-badge bg-${status}">${status.toUpperCase()}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            `;
+            
+            DOM.locationDetails.appendChild(row);
+        });
+        
+        // Mostrar modal
+        DOM.modal.show();
+        
+        // Re-renderizar mapa para resaltar ubicación seleccionada
+        renderMap();
+    }
+    
+    /**
+     * Exporta datos de la ubicación
+     */
+    function exportLocationData() {
+        if (!State.selectedLocation) return;
+        
+        const data = {
+            location: State.selectedLocation.location,
+            status: State.selectedLocation.status,
+            materials: State.selectedLocation.materials
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ubicacion-${State.selectedLocation.location}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // ================= UI/UX =================
+    
+    /**
+     * Muestra estado de carga
+     */
+    function showLoading(show) {
+        // Implementar spinner de carga
+    }
+    
+    /**
+     * Muestra mensaje de error
+     */
+    function showError(message) {
+        // Implementar toast de error
+        console.error(message);
+    }
+    
+    // ================= DATOS DE EJEMPLO =================
+    
+    /**
+     * Genera datos de ejemplo para demostración
+     */
+    function generateMockData() {
+        const zones = ['A', 'B', 'C'];
+        const statuses = ['normal', 'bajo', 'critico', 'vacio'];
+        const materials = [
+            { code: 'MAT-001', description: 'Tornillo hexagonal', unit: 'UN', min_stock: 10, max_stock: 100 },
+            { code: 'MAT-002', description: 'Arandela plana', unit: 'UN', min_stock: 50, max_stock: 500 },
+            { code: 'MAT-003', description: 'Tuerca de seguridad', unit: 'UN', min_stock: 20, max_stock: 200 },
+            { code: 'MAT-004', description: 'Rodamiento 6205', unit: 'UN', min_stock: 5, max_stock: 50 },
+            { code: 'MAT-005', description: 'Correa trapezoidal', unit: 'UN', min_stock: 10, max_stock: 100 }
+        ];
+        
+        const locations = [];
+        let id = 1;
+        
+        // Generar ubicaciones
+        for (let zone of zones) {
+            for (let row = 1; row <= 10; row++) {
+                for (let col = 1; col <= 15; col++) {
+                    const locationCode = `${zone}-${String(row).padStart(2, '0')}-${String(col).padStart(2, '0')}`;
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    const capacity = Math.floor(Math.random() * 1000) + 100;
+                    
+                    // Materiales en esta ubicación
+                    const locMaterials = [];
+                    if (status !== 'vacio') {
+                        const numMaterials = Math.floor(Math.random() * 3) + 1;
+                        for (let i = 0; i < numMaterials; i++) {
+                            const material = { ...materials[Math.floor(Math.random() * materials.length)] };
+                            material.quantity = Math.floor(Math.random() * material.max_stock);
+                            locMaterials.push(material);
+                        }
+                    }
+                    
+                    locations.push({
+                        id: id++,
+                        location: locationCode,
+                        zone: zone,
+                        status: status,
+                        capacity: capacity,
+                        materials: locMaterials
+                    });
+                }
+            }
+        }
+        
+        return { locations };
+    }
+    
+    // ================= INICIALIZACIÓN =================
+    
+    /**
+     * Inicializa la aplicación
+     */
+    function initApp() {
+        // Cargar datos
+        loadWarehouseData();
+        
+        // Configurar búsqueda
+        DOM.searchBox.addEventListener('input', (e) => {
+            State.searchQuery = e.target.value;
+            applyFilters();
+        });
+        
+        // Configurar filtros rápidos
+        DOM.filterZone.addEventListener('change', applyFilters);
+        DOM.filterStockLevel.addEventListener('change', applyFilters);
+        
+        // Configurar eventos de teclado
+        document.addEventListener('keydown', (e) => {
+            // Ctrl + F para buscar
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                DOM.searchBox.focus();
+            }
+            
+            // + para zoom in
+            if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                zoomIn();
+            }
+            
+            // - para zoom out
+            if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                zoomOut();
+            }
+            
+            // 0 para reset zoom
+            if (e.key === '0') {
+                resetZoom();
+            }
+            
+            // Escape para limpiar búsqueda
+            if (e.key === 'Escape') {
+                DOM.searchBox.value = '';
+                State.searchQuery = '';
+                applyFilters();
+            }
+        });
+        
+        console.log('Mapa 2D del Almacén inicializado');
+    }
+    
+    // Iniciar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+        initApp();
+    }
+    
+})();
+</script>
 {% endblock %}
