@@ -3,283 +3,441 @@
 
 <style>
   /* ================= MODE STYLES ================= */
-  .gloves-mode * { font-size: 1.2rem !important; }
+  .gloves-mode * { 
+    font-size: 1.1rem !important; 
+  }
   .gloves-mode input { 
-    height: 56px; 
-    font-size: 1.3rem !important;
-    min-width: 100px;
+    height: 50px; 
+    font-size: 1.2rem !important;
+    min-width: 90px;
+    border-width: 2px;
   }
   .gloves-mode .btn { 
-    padding: 1rem 1.2rem !important;
-    min-height: 56px;
+    padding: 0.8rem 1rem !important;
+    min-height: 50px;
+    font-size: 1.1rem !important;
   }
   .gloves-mode .table td, .gloves-mode .table th {
-    padding: 1rem 0.75rem;
+    padding: 0.8rem 0.5rem;
+  }
+  .gloves-mode .badge {
+    font-size: 0.9rem !important;
+    padding: 0.5rem 0.7rem !important;
   }
 
-  /* ================= STICKY TOOLBAR ================= */
-  .sticky-tools {
-    position: sticky;
-    top: 0;
-    z-index: 1020;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 1rem;
-  }
-
-  /* ================= VISUAL STATES ================= */
-  .row-saving {
-    outline: 3px dashed rgba(25,135,84,0.6);
-    outline-offset: -2px;
-    transition: outline 0.3s ease;
-    position: relative;
+  /* ================= LAYOUT STYLES ================= */
+  .page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 10px;
   }
   
-  .row-saved {
-    animation: saved-pulse 1.5s ease-out;
+  .header-section {
+    background: linear-gradient(135deg, #1a5f7a 0%, #0d4c6e 100%);
+    color: white;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
   
-  @keyframes saved-pulse {
-    0% { background-color: rgba(25,135,84,0.1); }
-    100% { background-color: transparent; }
+  .user-info {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-left: 3px solid #4cd964;
   }
   
-  /* Status badges with icons */
-  .badge-status {
+  .control-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .status-badge {
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    padding: 0.5rem 0.75rem;
-    font-weight: 600;
   }
   
-  /* Input focus states */
+  .status-badge.pendiente {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .status-badge.ok {
+    background-color: #198754;
+    color: white;
+  }
+  
+  .status-badge.diferencia {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+  }
+  
+  .table-header {
+    background-color: #343a40;
+    color: white;
+    padding: 0.8rem 1rem;
+  }
+  
+  .table thead th {
+    background-color: #495057;
+    color: white;
+    border-bottom: none;
+    font-weight: 600;
+    padding: 0.8rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  .table tbody tr {
+    transition: background-color 0.2s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+  }
+  
+  /* ================= INPUT STYLES ================= */
   .count-input {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
     transition: all 0.2s ease;
-    border-width: 2px;
+    width: 100%;
+    max-width: 120px;
+    margin: 0 auto;
+    display: block;
+    background-color: white;
   }
   
   .count-input:focus {
     border-color: #0d6efd;
-    box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25);
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.15);
+    background-color: #f8f9ff;
   }
   
-  /* Voice status indicators */
+  .count-input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+  }
+  
+  /* ================= VOICE CONTROL STYLES ================= */
+  .voice-controls {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #dee2e6;
+    padding: 0.8rem 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .voice-status {
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  
   .voice-active {
-    animation: pulse-mic 1.5s infinite;
+    animation: pulse 2s infinite;
   }
   
-  @keyframes pulse-mic {
+  @keyframes pulse {
     0% { opacity: 1; }
     50% { opacity: 0.7; }
     100% { opacity: 1; }
   }
   
-  /* Save indicator */
-  .save-indicator {
+  /* ================= SAVE FEEDBACK ================= */
+  .saving-indicator {
+    display: none;
     position: absolute;
-    right: 10px;
+    right: 5px;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
   }
   
-  .row-saving .save-indicator {
-    opacity: 1;
+  .row-saving .saving-indicator {
+    display: block;
   }
   
-  /* Mobile optimizations */
+  .row-saving {
+    position: relative;
+    background-color: rgba(25,135,84,0.05) !important;
+    border-left: 4px solid #198754 !important;
+  }
+  
+  .row-saved {
+    animation: savedFlash 1.5s ease-out;
+  }
+  
+  @keyframes savedFlash {
+    0% { background-color: rgba(25,135,84,0.15); }
+    100% { background-color: transparent; }
+  }
+  
+  /* ================= RESPONSIVE STYLES ================= */
   @media (max-width: 768px) {
+    .page-container {
+      padding: 0 5px;
+    }
+    
+    .header-section {
+      padding: 0.8rem 0;
+      margin-bottom: 1rem;
+    }
+    
+    .control-panel {
+      padding: 0.8rem;
+    }
+    
     .table-responsive {
-      font-size: 0.9rem;
-    }
-    
-    .sticky-tools {
-      top: 0;
-      position: fixed;
-      width: 100%;
-      left: 0;
-      right: 0;
-      padding: 0.5rem;
-      margin: 0;
-      border-radius: 0;
-    }
-    
-    .table-container {
-      margin-top: 70px;
+      font-size: 0.85rem;
     }
     
     .count-input {
-      font-size: 1.1rem !important;
-      height: 48px;
+      font-size: 0.9rem;
+      height: 42px;
+      max-width: 100px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+      padding: 0.5rem 0.3rem;
+    }
+    
+    .voice-controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0.6rem;
+    }
+    
+    .main-content {
+      margin-bottom: 120px;
     }
   }
+  
+  @media (max-width: 576px) {
+    .btn span:not(.bi) {
+      display: none;
+    }
+    
+    .btn .bi {
+      margin-right: 0 !important;
+    }
+    
+    .table th:nth-child(2), /* Hide description on very small screens */
+    .table td:nth-child(2) {
+      display: none;
+    }
+  }
+  
+  /* ================= FOOTER LEGEND ================= */
+  .legend {
+    font-size: 0.85rem;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+    padding-top: 0.8rem;
+    margin-top: 1rem;
+  }
+  
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 1rem;
+  }
+  
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+  }
+  
+  .legend-ok { background-color: #198754; }
+  .legend-diferencia { background-color: #ffc107; }
+  .legend-pendiente { background-color: #6c757d; }
 </style>
 
-<div id="pageRoot" class="container">
-  <!-- ================= HEADER ================= -->
-  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-clipboard-check fs-1 text-success me-3"></i>
-      <div>
-        <h1 class="fw-bold mb-0">Conteo Físico de Inventario</h1>
-        <div class="text-muted">
-          <small>Dictado por voz • Guardado automático • Modo guantes</small>
-        </div>
-      </div>
-    </div>
-
-    <div class="d-flex gap-2">
-      <button id="btnGloves" class="btn btn-outline-dark" 
-              aria-label="Activar modo guantes">
-        <i class="bi bi-hand-index-thumb"></i> 
-        <span class="d-none d-md-inline">Modo Guantes</span>
-      </button>
-      <button id="btnVoice" class="btn btn-outline-primary position-relative"
-              aria-label="Activar dictado por voz">
-        <i class="bi bi-mic"></i>
-        <span class="d-none d-md-inline">Dictado por Voz</span>
-        <span id="voiceIndicator" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle visually-hidden">
-          <span class="visually-hidden">Grabando</span>
-        </span>
-      </button>
-    </div>
-  </div>
-
-  <!-- ================= VOICE CONTROL PANEL ================= -->
-  <div class="card shadow-sm mb-4 sticky-tools">
-    <div class="card-body">
+<div class="page-container">
+  <!-- ================= HEADER SECTION ================= -->
+  <div class="header-section">
+    <div class="container">
       <div class="row align-items-center">
-        <div class="col-md-6">
-          <div class="d-flex flex-wrap gap-4">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggleContinuous" checked
-                     aria-label="Dictado continuo">
-              <label class="form-check-label fw-semibold" for="toggleContinuous">
-                <i class="bi bi-arrow-repeat me-1"></i> Dictado continuo
-              </label>
-            </div>
-            
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggleSpeak" checked
-                     aria-label="Confirmación por voz">
-              <label class="form-check-label fw-semibold" for="toggleSpeak">
-                <i class="bi bi-speaker me-1"></i> Confirmación por voz
-              </label>
-            </div>
-          </div>
+        <div class="col-md-8">
+          <h1 class="h2 mb-1 fw-bold">
+            <i class="bi bi-clipboard-check me-2"></i>Conteo Físico de Inventario
+          </h1>
+          <p class="mb-0 opacity-75">
+            Dictado por voz • Guardado automático • Modo guantes
+          </p>
         </div>
-        
-        <div class="col-md-6">
-          <div class="d-flex justify-content-end align-items-center">
-            <div class="me-3">
-              <div id="voiceStatus" class="text-muted">
-                <i class="bi bi-mic me-1"></i> 
-                <span class="status-text">Preparado para dictado</span>
-              </div>
-              <small class="text-muted d-block" id="voiceInstructions">
-                Di "código" seguido de números y "cantidad" seguido de números
-              </small>
-            </div>
-            
-            <div id="debugInfo" class="small text-muted d-none">
-              <div>Estado: <span id="debugState">-</span></div>
-            </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-2"></i>
+            <span class="fw-semibold">JCASTILLO</span>
+            <span class="opacity-75">(OWNER)</span>
           </div>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light ms-2">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+          </a>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= INVENTORY TABLE ================= -->
-  <div class="card shadow-sm table-container">
-    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-      <h5 class="mb-0">Items para Conteo</h5>
-      <div class="small">
-        <span class="badge bg-info me-2">Total: {{ items|length }}</span>
-        <span class="text-light">Stock: Sistema | Conteo: Físico</span>
+  <!-- ================= CONTROL PANEL ================= -->
+  <div class="control-panel">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleContinuous" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleContinuous">
+              <i class="bi bi-arrow-repeat me-1"></i>Dictado continuo
+            </label>
+          </div>
+          
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleSpeak" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleSpeak">
+              <i class="bi bi-speaker me-1"></i>Confirmación por voz
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 text-md-end mt-2 mt-md-0">
+        <div class="d-flex gap-2 justify-content-md-end">
+          <button id="btnGloves" class="btn btn-outline-secondary">
+            <i class="bi bi-hand-index-thumb me-1"></i><span>Modo Guantes</span>
+          </button>
+          <button id="btnVoice" class="btn btn-primary">
+            <i class="bi bi-mic me-1"></i><span>Dictado por Voz</span>
+          </button>
+        </div>
       </div>
     </div>
-    
-    <div class="card-body p-0">
+  </div>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <div class="main-content">
+    <!-- Table Header -->
+    <div class="table-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 fw-bold">Items para Conteo</h5>
+      <div class="text-light small">
+        <span class="badge bg-info me-2">Total: {{ items|length }}</span>
+        <span class="opacity-75">Stock: Sistema | Conteo: Físico</span>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="table-container">
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-          <thead class="table-dark sticky-top" style="top: 70px;">
+          <thead>
             <tr>
-              <th scope="col" class="ps-3">Código</th>
-              <th scope="col">Descripción</th>
-              <th scope="col" class="text-center">UM</th>
-              <th scope="col" class="text-center">Ubicación</th>
-              <th scope="col" class="text-center">
-                <span class="d-flex align-items-center justify-content-center gap-1">
-                  Stock <i class="bi bi-database text-info" title="Stock del sistema"></i>
-                </span>
-              </th>
-              <th scope="col" class="text-center" style="width: 180px;">
-                <span class="d-flex align-items-center justify-content-center gap-1">
-                  Conteo <i class="bi bi-clipboard-check text-warning" title="Conteo físico"></i>
-                </span>
-              </th>
-              <th scope="col" class="text-center" style="width: 140px;">Estado</th>
+              <th class="text-center" style="width: 12%">Código</th>
+              <th class="text-start" style="width: 25%">Descripción</th>
+              <th class="text-center" style="width: 8%">UM</th>
+              <th class="text-center" style="width: 10%">Ubicación</th>
+              <th class="text-center" style="width: 10%">Stock</th>
+              <th class="text-center" style="width: 12%">Conteo</th>
+              <th class="text-center" style="width: 12%">Estado</th>
             </tr>
           </thead>
           <tbody>
           {% for i in items %}
-            <tr id="row-{{ i.material_code }}-{{ i.location }}" 
-                data-code="{{ i.material_code }}" 
-                data-location="{{ i.location }}">
-              <td class="fw-bold ps-3">
-                <code>{{ i.material_code }}</code>
+            <tr id="row-{{ i.material_code }}-{{ i.location }}"
+                class="{% if i.estado == 'OK' %}table-success{% elif i.estado == 'Diferencia' %}table-warning{% endif %}">
+              <!-- Código -->
+              <td class="text-center fw-bold">
+                <code class="bg-light px-2 py-1 rounded">{{ i.material_code }}</code>
               </td>
-              <td>
-                <div class="text-muted small">{{ i.material_text[:50] }}{% if i.material_text|length > 50 %}...{% endif %}</div>
+              
+              <!-- Descripción -->
+              <td class="text-start">
+                <div class="small text-muted" title="{{ i.material_text }}">
+                  {{ i.material_text|truncate(50, true, '...') }}
+                </div>
               </td>
-              <td class="text-center fw-semibold">{{ i.base_unit }}</td>
+              
+              <!-- Unidad de Medida -->
+              <td class="text-center fw-semibold">
+                <span class="badge bg-secondary">{{ i.base_unit }}</span>
+              </td>
+              
+              <!-- Ubicación -->
               <td class="text-center fw-bold">
                 <span class="badge bg-dark">{{ i.location }}</span>
               </td>
-              <td class="text-center fw-bold">
-                <span class="text-primary" title="Stock del sistema">{{ i.stock }}</span>
+              
+              <!-- Stock del Sistema -->
+              <td class="text-center fw-bold text-primary">
+                {{ i.stock }}
               </td>
-
-              <td class="position-relative">
-                <input type="text" 
-                       class="form-control text-center count-input"
-                       value="{{ i.real_count }}"
+              
+              <!-- Conteo Físico -->
+              <td class="text-center position-relative">
+                <input type="text"
+                       class="form-control count-input"
+                       value="{% if i.real_count and i.real_count > 0 %}{{ i.real_count }}{% endif %}"
                        inputmode="numeric"
                        pattern="[0-9]*"
                        autocomplete="off"
                        data-code="{{ i.material_code }}"
                        data-loc="{{ i.location }}"
                        data-stock="{{ i.stock }}"
-                       aria-label="Conteo físico para código {{ i.material_code }}"
-                       placeholder="0">
-                <div class="save-indicator">
+                       placeholder="0"
+                       aria-label="Conteo para {{ i.material_code }}">
+                <div class="saving-indicator">
                   <div class="spinner-border spinner-border-sm text-success" role="status">
                     <span class="visually-hidden">Guardando...</span>
                   </div>
                 </div>
               </td>
-
+              
+              <!-- Estado -->
               <td class="text-center">
-                {% set badge_class = {
-                  'OK': 'bg-success',
-                  'Diferencia': 'bg-warning text-dark',
-                  'Pendiente': 'bg-secondary'
-                } %}
-                
-                {% set badge_icon = {
-                  'OK': 'bi-check-circle',
-                  'Diferencia': 'bi-exclamation-triangle',
-                  'Pendiente': 'bi-clock'
-                } %}
-                
-                <span class="badge badge-status {{ badge_class.get(i.estado, 'bg-secondary') }}"
-                      title="{{ i.estado }}">
-                  <i class="bi {{ badge_icon.get(i.estado, 'bi-question-circle') }}"></i>
-                  {{ i.estado }}
-                </span>
+                {% if i.estado == 'OK' %}
+                  <span class="status-badge ok">
+                    <i class="bi bi-check-circle me-1"></i>OK
+                  </span>
+                {% elif i.estado == 'Diferencia' %}
+                  <span class="status-badge diferencia">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Diferencia
+                  </span>
+                {% else %}
+                  <span class="status-badge pendiente">
+                    <i class="bi bi-clock me-1"></i>Pendiente
+                  </span>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
@@ -287,34 +445,54 @@
         </table>
       </div>
     </div>
-    
-    <div class="card-footer bg-light">
-      <div class="row">
-        <div class="col-md-6">
-          <div class="d-flex gap-3">
-            <div class="d-flex align-items-center">
-              <div class="bg-success rounded-circle me-1" style="width: 12px; height: 12px;"></div>
-              <small>OK: Coincide con stock</small>
-            </div>
-            <div class="d-flex align-items-center">
-              <div class="bg-warning rounded-circle me-1" style="width: 12px; height: 12px;"></div>
-              <small>Diferencia: Revisar</small>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color legend-ok"></div>
+        <span>OK: Coincide con stock</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-diferencia"></div>
+        <span>Diferencia: Revisar</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-pendiente"></div>
+        <span>Pendiente: Sin conteo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VOICE CONTROLS FOOTER ================= -->
+  <div class="voice-controls">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <div id="voiceStatus" class="voice-status">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="statusText">Preparado para dictado</span>
+            <div id="voiceInstructions" class="small mt-1">
+              Di "código" seguido de números y "cantidad" seguido de números
             </div>
           </div>
         </div>
-        <div class="col-md-6 text-end">
-          <small class="text-muted">Los cambios se guardan automáticamente</small>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="d-flex gap-2 justify-content-md-end">
+            <span class="badge bg-light text-dark border d-none" id="lastCommand">
+              <i class="bi bi-soundwave me-1"></i><span id="commandText"></span>
+            </span>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ================= IMPROVED SCRIPT ================= -->
+<!-- ================= OPTIMIZED SCRIPT ================= -->
 <script>
 /**
- * Sistema de Conteo Físico - Mejorado para Producción
- * Compatible con móviles Android Chrome y desktop
+ * Sistema de Conteo Físico - Optimizado para Producción Industrial
+ * Compatible con Android Chrome y dispositivos móviles
  */
 
 (function() {
@@ -322,148 +500,153 @@
   
   // ================= CONFIGURATION =================
   const CONFIG = {
-    DEBOUNCE_DELAY: 1000,     // Tiempo antes de guardar después de escribir
-    VOICE_RESTART_DELAY: 500, // Tiempo antes de reiniciar dictado
-    MAX_VOICE_RESTARTS: 5,    // Máximo de reinicios automáticos consecutivos
-    SPEECH_LANG: 'es-PE'      // Idioma para reconocimiento de voz
+    DEBOUNCE_DELAY: 800,
+    VOICE_RESTART_DELAY: 300,
+    MAX_RESTART_ATTEMPTS: 3,
+    SPEECH_LANG: 'es-ES',
+    COMMAND_TIMEOUT: 5000
   };
   
   // ================= STATE MANAGEMENT =================
-  const AppState = {
+  const State = {
     voice: {
       recognition: null,
       isListening: false,
       isAvailable: false,
-      continuousMode: true,
-      feedbackMode: true,
+      continuous: true,
+      feedback: true,
       errorCount: 0,
-      autoRestartCount: 0
+      restartCount: 0
     },
     ui: {
       glovesMode: false,
-      pendingSaves: new Set()
-    }
+      savingRows: new Set(),
+      lastCommand: null
+    },
+    debug: false
   };
   
-  // ================= DOM ELEMENTS =================
+  // ================= DOM REFERENCES =================
   const DOM = {
     btnVoice: document.getElementById('btnVoice'),
     btnGloves: document.getElementById('btnGloves'),
     voiceStatus: document.getElementById('voiceStatus'),
-    statusText: document.querySelector('.status-text'),
-    voiceIndicator: document.getElementById('voiceIndicator'),
+    statusText: document.getElementById('statusText'),
     voiceInstructions: document.getElementById('voiceInstructions'),
     toggleContinuous: document.getElementById('toggleContinuous'),
     toggleSpeak: document.getElementById('toggleSpeak'),
-    pageRoot: document.getElementById('pageRoot'),
-    debugInfo: document.getElementById('debugInfo'),
-    debugState: document.getElementById('debugState')
+    lastCommandBadge: document.getElementById('lastCommand'),
+    commandText: document.getElementById('commandText'),
+    pageContainer: document.querySelector('.page-container')
   };
   
   // ================= UTILITY FUNCTIONS =================
   
   /**
-   * Actualiza el estado visual del dictado
+   * Actualiza la UI del estado de voz
    */
   function updateVoiceUI(state, message = '') {
     const states = {
       idle: {
         icon: 'bi-mic',
-        btnClass: 'btn-outline-primary',
-        indicator: false,
-        defaultMsg: 'Preparado para dictado'
+        btnClass: 'btn-primary',
+        statusClass: '',
+        defaultMsg: 'Preparado para dictado',
+        instructions: 'Di "código" seguido de números y "cantidad" seguido de números'
       },
       listening: {
         icon: 'bi-mic-fill',
-        btnClass: 'btn-primary voice-active',
-        indicator: true,
-        defaultMsg: 'Escuchando... Habla ahora'
-      },
-      error: {
-        icon: 'bi-exclamation-triangle',
-        btnClass: 'btn-outline-danger',
-        indicator: false,
-        defaultMsg: 'Error de micrófono'
+        btnClass: 'btn-danger voice-active',
+        statusClass: 'bg-warning bg-opacity-10 border-warning',
+        defaultMsg: 'Escuchando... Habla ahora',
+        instructions: 'Habla claramente cerca del micrófono'
       },
       processing: {
         icon: 'bi-soundwave',
         btnClass: 'btn-primary',
-        indicator: true,
-        defaultMsg: 'Procesando comando...'
+        statusClass: 'bg-info bg-opacity-10 border-info',
+        defaultMsg: 'Procesando comando...',
+        instructions: 'Procesando tu voz...'
+      },
+      error: {
+        icon: 'bi-exclamation-triangle',
+        btnClass: 'btn-outline-danger',
+        statusClass: 'bg-danger bg-opacity-10 border-danger text-danger',
+        defaultMsg: 'Error de micrófono',
+        instructions: 'Verifica los permisos del micrófono'
       }
     };
     
     const config = states[state] || states.idle;
     
-    // Actualizar botón
-    DOM.btnVoice.innerHTML = `
-      <i class="bi ${config.icon}"></i>
-      <span class="d-none d-md-inline">${state === 'listening' ? 'Dictando...' : 'Dictado por Voz'}</span>
-    `;
-    DOM.btnVoice.className = DOM.btnVoice.className.replace(/btn-(outline-)?(primary|danger)/g, '');
+    // Actualizar botón de voz
+    DOM.btnVoice.innerHTML = `<i class="bi ${config.icon} me-1"></i><span>Dictado por Voz</span>`;
+    DOM.btnVoice.className = DOM.btnVoice.className.replace(/btn-(primary|danger|outline-danger)/g, '');
     DOM.btnVoice.classList.add(config.btnClass);
-    
-    // Actualizar indicador
-    if (config.indicator) {
-      DOM.voiceIndicator.classList.remove('visually-hidden');
-    } else {
-      DOM.voiceIndicator.classList.add('visually-hidden');
-    }
     
     // Actualizar estado
     DOM.statusText.textContent = message || config.defaultMsg;
-    DOM.voiceStatus.className = `text-${state === 'error' ? 'danger' : 'muted'}`;
+    DOM.voiceInstructions.textContent = config.instructions;
+    DOM.voiceStatus.className = `voice-status ${config.statusClass}`;
     
     // Instrucciones específicas para móvil
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      DOM.voiceInstructions.textContent = 
-        'Toque el botón de dictado y hable claramente cerca del micrófono';
-    }
-    
-    // Debug info
-    if (DOM.debugState) {
-      DOM.debugState.textContent = state;
+    if (/Mobi|Android/i.test(navigator.userAgent) && state === 'idle') {
+      DOM.voiceInstructions.textContent = 'Toca el botón de dictado y habla claramente';
     }
   }
   
   /**
-   * Feedback de voz (confirmación)
+   * Muestra el último comando reconocido
    */
-  function speakFeedback(text) {
-    if (!AppState.voice.feedbackMode || !window.speechSynthesis) return;
+  function showLastCommand(command, success = true) {
+    if (!DOM.lastCommandBadge) return;
+    
+    DOM.commandText.textContent = command.substring(0, 30);
+    DOM.lastCommandBadge.className = `badge ${success ? 'bg-success text-white' : 'bg-danger text-white'} border d-inline-flex align-items-center`;
+    DOM.lastCommandBadge.classList.remove('d-none');
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+      DOM.lastCommandBadge.classList.add('d-none');
+    }, 3000);
+  }
+  
+  /**
+   * Feedback de voz sintetizado
+   */
+  function speak(text) {
+    if (!State.voice.feedback || !window.speechSynthesis) return;
     
     try {
-      // Cancelar cualquier habla anterior
       speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = CONFIG.SPEECH_LANG;
       utterance.rate = 1.0;
-      utterance.volume = 0.8;
+      utterance.volume = 0.9;
       
-      // Configurar voz para móviles
+      // Optimizar para móvil
       if (/Mobi|Android/i.test(navigator.userAgent)) {
         utterance.rate = 1.1;
-        utterance.volume = 1.0;
+        utterance.pitch = 1.0;
       }
       
       utterance.onerror = () => {
         console.warn('Error en síntesis de voz');
       };
       
-      // Usar setTimeout para evitar conflictos
       setTimeout(() => {
         speechSynthesis.speak(utterance);
-      }, 100);
+      }, 50);
     } catch (error) {
-      console.warn('No se pudo usar síntesis de voz:', error);
+      console.warn('Síntesis de voz no disponible:', error);
     }
   }
   
   /**
    * Encuentra input por código de material
    */
-  function findInputByMaterialCode(code) {
+  function findInputByCode(code) {
     return document.querySelector(`.count-input[data-code="${code}"]`);
   }
   
@@ -477,41 +660,49 @@
     
     if (!row) return;
     
-    // Remover clases anteriores
-    row.classList.remove('row-saving', 'row-saved');
+    // Remover estados anteriores
+    row.classList.remove('row-saving', 'row-saved', 'table-warning', 'table-success');
+    
+    const count = parseInt(input.value) || 0;
+    const stock = parseInt(input.dataset.stock) || 0;
     
     if (success) {
-      // Mostrar animación de guardado
+      // Estado de guardado
       row.classList.add('row-saving');
       
-      // Ocultar después de guardar
       setTimeout(() => {
         row.classList.remove('row-saving');
         row.classList.add('row-saved');
         
-        // Actualizar estado visual basado en stock vs conteo
-        const stock = parseInt(input.dataset.stock) || 0;
-        const count = parseInt(input.value) || 0;
-        const badge = row.querySelector('.badge');
+        // Actualizar estado basado en conteo vs stock
+        if (count === 0) {
+          row.classList.remove('table-success', 'table-warning');
+        } else if (count === stock) {
+          row.classList.add('table-success');
+          row.classList.remove('table-warning');
+        } else {
+          row.classList.add('table-warning');
+          row.classList.remove('table-success');
+        }
         
+        // Actualizar badge de estado
+        const badge = row.querySelector('.status-badge');
         if (badge) {
           if (count === 0) {
-            badge.className = 'badge badge-status bg-secondary';
-            badge.innerHTML = '<i class="bi bi-clock"></i> Pendiente';
+            badge.className = 'status-badge pendiente';
+            badge.innerHTML = '<i class="bi bi-clock me-1"></i>Pendiente';
           } else if (count === stock) {
-            badge.className = 'badge badge-status bg-success';
-            badge.innerHTML = '<i class="bi bi-check-circle"></i> OK';
+            badge.className = 'status-badge ok';
+            badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>OK';
           } else {
-            badge.className = 'badge badge-status bg-warning text-dark';
-            badge.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Diferencia';
+            badge.className = 'status-badge diferencia';
+            badge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Diferencia';
           }
         }
-      }, 800);
+      }, 600);
       
-      // Remover animación después de un tiempo
-      setTimeout(() => {
-        row.classList.remove('row-saved');
-      }, 2000);
+      // Limpiar animación
+      setTimeout(() => row.classList.remove('row-saved'), 2000);
     }
   }
   
@@ -519,15 +710,15 @@
    * Guarda una fila en el servidor
    */
   async function saveRow(input) {
-    const val = parseInt(input.value || "0", 10) || 0;
+    const value = parseInt(input.value || "0", 10) || 0;
     const code = input.dataset.code;
     
-    // Evitar guardados duplicados
-    if (AppState.ui.pendingSaves.has(code)) {
+    // Prevenir guardados duplicados
+    if (State.ui.savingRows.has(code)) {
       return;
     }
     
-    AppState.ui.pendingSaves.add(code);
+    State.ui.savingRows.add(code);
     
     try {
       const response = await fetch("{{ url_for('inventory.save_count_row') }}", {
@@ -539,7 +730,7 @@
         body: JSON.stringify({
           material_code: input.dataset.code,
           location: input.dataset.loc,
-          real_count: val
+          real_count: value
         })
       });
       
@@ -549,30 +740,31 @@
       
       const data = await response.json();
       
-      // Feedback visual y de voz
+      // Feedback visual
       showSaveFeedback(input, true);
       
-      if (val > 0) {
-        speakFeedback(`Registrado ${val} para código ${code}`);
+      // Feedback de voz si es diferente de 0
+      if (value > 0) {
+        speak(`Registrado ${value} para ${code}`);
       }
       
     } catch (error) {
       console.error('Error guardando fila:', error);
       showSaveFeedback(input, false);
+      speak('Error al guardar, reintentando');
       
-      // Reintentar después de 2 segundos (solo una vez)
-      if (!input.hasAttribute('data-retry-attempt')) {
-        input.setAttribute('data-retry-attempt', '1');
+      // Reintentar una vez
+      if (!input.hasAttribute('data-retry')) {
+        input.setAttribute('data-retry', '1');
         setTimeout(() => {
+          input.removeAttribute('data-retry');
           saveRow(input);
         }, 2000);
       }
     } finally {
-      // Limpiar después de un tiempo para permitir nuevos guardados
       setTimeout(() => {
-        AppState.ui.pendingSaves.delete(code);
-        input.removeAttribute('data-retry-attempt');
-      }, 3000);
+        State.ui.savingRows.delete(code);
+      }, 1000);
     }
   }
   
@@ -585,162 +777,152 @@
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-      AppState.voice.isAvailable = false;
-      updateVoiceUI('error', 'Dictado no soportado en este navegador');
+      State.voice.isAvailable = false;
+      updateVoiceUI('error', 'Navegador no compatible con dictado por voz');
       DOM.btnVoice.disabled = true;
       return false;
     }
     
     try {
-      AppState.voice.recognition = new SpeechRecognition();
-      AppState.voice.recognition.lang = CONFIG.SPEECH_LANG;
-      AppState.voice.recognition.interimResults = false;
-      AppState.voice.recognition.continuous = false; // Mejor para móviles
-      AppState.voice.recognition.maxAlternatives = 1;
+      State.voice.recognition = new SpeechRecognition();
+      State.voice.recognition.lang = CONFIG.SPEECH_LANG;
+      State.voice.recognition.interimResults = false;
+      State.voice.recognition.continuous = false;
+      State.voice.recognition.maxAlternatives = 2;
       
-      // Configurar eventos
-      setupRecognitionEvents();
-      AppState.voice.isAvailable = true;
+      setupVoiceEvents();
+      State.voice.isAvailable = true;
       return true;
       
     } catch (error) {
-      console.error('Error inicializando reconocimiento de voz:', error);
-      AppState.voice.isAvailable = false;
-      updateVoiceUI('error', 'No se pudo inicializar el micrófono');
+      console.error('Error inicializando reconocimiento:', error);
+      State.voice.isAvailable = false;
+      updateVoiceUI('error', 'No se pudo acceder al micrófono');
       return false;
     }
   }
   
   /**
-   * Configura los eventos del reconocimiento
+   * Configura eventos del reconocimiento de voz
    */
-  function setupRecognitionEvents() {
-    const rec = AppState.voice.recognition;
+  function setupVoiceEvents() {
+    const rec = State.voice.recognition;
     
     rec.onstart = () => {
-      AppState.voice.isListening = true;
-      AppState.voice.errorCount = 0;
+      State.voice.isListening = true;
+      State.voice.errorCount = 0;
+      State.voice.restartCount = 0;
       updateVoiceUI('listening');
     };
     
     rec.onresult = (event) => {
       updateVoiceUI('processing');
       
-      try {
-        const transcript = event.results[0][0].transcript.toLowerCase().trim();
-        console.log('Voz reconocida:', transcript);
-        
-        // Mejorar parsing para diferentes formatos
-        const parsed = parseVoiceCommand(transcript);
-        
-        if (parsed.success && parsed.code && parsed.quantity !== null) {
-          processVoiceCommand(parsed.code, parsed.quantity);
-        } else {
-          updateVoiceUI('error', 'No entendí. Di "código XXXX cantidad YY"');
-          speakFeedback('No entendí el comando');
-        }
-        
-      } catch (error) {
-        console.error('Error procesando resultado:', error);
-        updateVoiceUI('error', 'Error procesando comando');
+      const result = event.results[0];
+      const transcript = result[0].transcript.toLowerCase().trim();
+      const confidence = result[0].confidence;
+      
+      showLastCommand(transcript, confidence > 0.5);
+      
+      // Parsear comando de voz
+      const parsed = parseVoiceCommand(transcript);
+      
+      if (parsed.success && parsed.code && parsed.quantity !== null) {
+        processVoiceCommand(parsed.code, parsed.quantity);
+      } else {
+        updateVoiceUI('error', 'No se entendió el comando');
+        speak('No entendí, por favor repite');
       }
     };
     
     rec.onerror = (event) => {
-      console.error('Error de reconocimiento:', event.error);
+      State.voice.errorCount++;
       
-      AppState.voice.errorCount++;
-      
-      // Manejar errores específicos
       switch (event.error) {
         case 'not-allowed':
         case 'permission-denied':
           updateVoiceUI('error', 'Permiso de micrófono denegado');
-          speakFeedback('Necesito permiso para usar el micrófono');
+          speak('Por favor, permite el acceso al micrófono');
           stopVoiceRecognition();
           break;
           
         case 'no-speech':
-          if (AppState.voice.continuousMode) {
-            // Reinicio silencioso para modo continuo
+          if (State.voice.continuous) {
             setTimeout(restartVoiceRecognition, 1000);
-          } else {
-            updateVoiceUI('idle', 'No se detectó voz');
           }
           break;
           
         case 'audio-capture':
-          updateVoiceUI('error', 'No se encontró micrófono');
-          break;
-          
-        case 'network':
-          updateVoiceUI('error', 'Error de red en reconocimiento');
+          updateVoiceUI('error', 'No se detectó micrófono');
           break;
           
         default:
-          if (AppState.voice.errorCount < 3) {
+          if (State.voice.errorCount < 3) {
             setTimeout(restartVoiceRecognition, 1000);
           } else {
-            updateVoiceUI('error', 'Demasiados errores. Reinicie el dictado');
+            updateVoiceUI('error', 'Error en el reconocimiento');
             stopVoiceRecognition();
           }
       }
     };
     
     rec.onend = () => {
-      AppState.voice.isListening = false;
+      State.voice.isListening = false;
       
       // Reinicio automático en modo continuo
-      if (AppState.voice.continuousMode && 
-          AppState.voice.autoRestartCount < CONFIG.MAX_VOICE_RESTARTS) {
-        
-        AppState.voice.autoRestartCount++;
+      if (State.voice.continuous && State.voice.restartCount < CONFIG.MAX_RESTART_ATTEMPTS) {
+        State.voice.restartCount++;
         setTimeout(() => {
-          if (!AppState.voice.isListening && AppState.voice.continuousMode) {
+          if (!State.voice.isListening && State.voice.continuous) {
             startVoiceRecognition();
           }
         }, CONFIG.VOICE_RESTART_DELAY);
-        
       } else {
         updateVoiceUI('idle');
-        AppState.voice.autoRestartCount = 0;
+        State.voice.restartCount = 0;
       }
     };
   }
   
   /**
-   * Analiza el comando de voz
+   * Parsea comandos de voz
    */
   function parseVoiceCommand(transcript) {
-    // Patrones comunes
+    // Patrones de reconocimiento mejorados
     const patterns = [
       // "código 12345678 cantidad 10"
-      /c[óo]digo\s+(\d+)\s+cantidad\s+(\d+)/i,
-      // "12345678 cantidad 10"
-      /(\d{6,})\s+cantidad\s+(\d+)/i,
-      // "código 12345678 10 unidades"
-      /c[óo]digo\s+(\d+)\s+(\d+)\s+unidades/i,
-      // Solo números: asume primero código largo, luego cantidad
+      /c[óo]digo\s+(\d{4,})\s+cantidad\s+(\d+)/i,
+      // "12345678 10 unidades"
+      /(\d{6,})\s+(\d+)\s+unidades?/i,
+      // "para el 12345678 10"
+      /para el?\s+(\d{4,})\s+(\d+)/i,
+      // "material 12345678 10"
+      /material\s+(\d{4,})\s+(\d+)/i,
+      // Solo números: primero código largo, luego cantidad
       /(\d{6,})\D+(\d{1,4})/,
-      // "para el 12345678 poner 10"
-      /para el\s+(\d+)\s+poner\s+(\d+)/i
+      // "poner 10 en 12345678"
+      /poner\s+(\d+)\s+en\s+(\d{4,})/i
     ];
     
     for (const pattern of patterns) {
       const match = transcript.match(pattern);
       if (match) {
+        // Determinar qué grupo es código y cuál cantidad
+        const code = match[1].length >= 6 ? match[1] : match[2];
+        const quantity = match[1].length >= 6 ? match[2] : match[1];
+        
         return {
           success: true,
-          code: match[1],
-          quantity: parseInt(match[2], 10)
+          code: code,
+          quantity: parseInt(quantity, 10)
         };
       }
     }
     
-    // Fallback: buscar todos los números
+    // Fallback: extraer todos los números
     const numbers = transcript.match(/\d+/g) || [];
     if (numbers.length >= 2) {
-      // Asumir que el número más largo es el código
+      // El número más largo es probablemente el código
       const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
       const quantity = numbers.find(n => n !== code);
       
@@ -758,18 +940,18 @@
    * Procesa un comando de voz válido
    */
   function processVoiceCommand(code, quantity) {
-    const input = findInputByMaterialCode(code);
+    const input = findInputByCode(code);
     
     if (!input) {
       updateVoiceUI('error', `Código ${code} no encontrado`);
-      speakFeedback(`Código ${code} no encontrado en la lista`);
+      speak(`Código ${code} no existe`);
       return;
     }
     
     // Actualizar valor
     input.value = quantity;
     
-    // Disparar eventos de cambio
+    // Disparar eventos
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
     
@@ -778,14 +960,14 @@
     
     // Feedback
     const stock = parseInt(input.dataset.stock) || 0;
-    let feedback = `Registrado ${quantity} para ${code}`;
+    let feedback = `Registrado ${quantity}`;
     
     if (quantity === stock) {
-      feedback += `. Coincide con el stock`;
+      feedback += ', coincide con stock';
     } else if (quantity > stock) {
-      feedback += `. Mayor que stock de ${stock}`;
+      feedback += `, mayor que stock de ${stock}`;
     } else {
-      feedback += `. Menor que stock de ${stock}`;
+      feedback += `, menor que stock de ${stock}`;
     }
     
     updateVoiceUI('listening', feedback);
@@ -795,32 +977,27 @@
    * Inicia el reconocimiento de voz
    */
   function startVoiceRecognition() {
-    // Validar estado
-    if (AppState.voice.isListening || !AppState.voice.isAvailable) {
-      return;
-    }
-    
-    // Resetear contadores
-    AppState.voice.errorCount = 0;
-    AppState.voice.autoRestartCount = 0;
+    if (State.voice.isListening || !State.voice.isAvailable) return;
     
     // Solicitar permiso en móviles
     if (/Mobi|Android/i.test(navigator.userAgent)) {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
-          AppState.voice.recognition.start();
+          try {
+            State.voice.recognition.start();
+          } catch (error) {
+            updateVoiceUI('error', 'Error iniciando micrófono');
+          }
         })
         .catch(error => {
-          console.error('Permiso de micrófono denegado:', error);
-          updateVoiceUI('error', 'Permiso de micrófono requerido');
-          speakFeedback('Por favor, permite el acceso al micrófono en ajustes');
+          updateVoiceUI('error', 'Micrófono no disponible');
+          speak('Activa el micrófono en ajustes');
         });
     } else {
       try {
-        AppState.voice.recognition.start();
+        State.voice.recognition.start();
       } catch (error) {
-        console.error('Error iniciando reconocimiento:', error);
-        updateVoiceUI('error', 'No se pudo iniciar el micrófono');
+        updateVoiceUI('error', 'No se pudo iniciar el dictado');
       }
     }
   }
@@ -829,14 +1006,14 @@
    * Detiene el reconocimiento de voz
    */
   function stopVoiceRecognition() {
-    if (AppState.voice.recognition && AppState.voice.isListening) {
+    if (State.voice.recognition && State.voice.isListening) {
       try {
-        AppState.voice.recognition.stop();
+        State.voice.recognition.stop();
       } catch (error) {
-        console.warn('Error deteniendo reconocimiento:', error);
+        // Ignorar errores al detener
       }
     }
-    AppState.voice.isListening = false;
+    State.voice.isListening = false;
     updateVoiceUI('idle');
   }
   
@@ -852,7 +1029,7 @@
    * Alterna el reconocimiento de voz
    */
   function toggleVoiceRecognition() {
-    if (AppState.voice.isListening) {
+    if (State.voice.isListening) {
       stopVoiceRecognition();
     } else {
       startVoiceRecognition();
@@ -865,53 +1042,50 @@
    * Alterna el modo guantes
    */
   function toggleGlovesMode() {
-    AppState.ui.glovesMode = !AppState.ui.glovesMode;
+    State.ui.glovesMode = !State.ui.glovesMode;
     
-    if (AppState.ui.glovesMode) {
-      DOM.pageRoot.classList.add('gloves-mode');
-      DOM.btnGloves.classList.remove('btn-outline-dark');
-      DOM.btnGloves.classList.add('btn-dark');
-      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb-fill"></i> <span class="d-none d-md-inline">Guantes ON</span>';
-      speakFeedback('Modo guantes activado');
+    if (State.ui.glovesMode) {
+      DOM.pageContainer.classList.add('gloves-mode');
+      DOM.btnGloves.classList.remove('btn-outline-secondary');
+      DOM.btnGloves.classList.add('btn-secondary');
+      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb-fill me-1"></i><span>Guantes ON</span>';
+      speak('Modo guantes activado');
     } else {
-      DOM.pageRoot.classList.remove('gloves-mode');
-      DOM.btnGloves.classList.remove('btn-dark');
-      DOM.btnGloves.classList.add('btn-outline-dark');
-      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb"></i> <span class="d-none d-md-inline">Modo Guantes</span>';
+      DOM.pageContainer.classList.remove('gloves-mode');
+      DOM.btnGloves.classList.remove('btn-secondary');
+      DOM.btnGloves.classList.add('btn-outline-secondary');
+      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb me-1"></i><span>Modo Guantes</span>';
     }
   }
   
   // ================= INPUT HANDLING =================
   
   /**
-   * Configura los eventos de los inputs
+   * Configura handlers para inputs
    */
   function setupInputHandlers() {
-    let saveTimeout;
+    let saveTimer;
     
     document.querySelectorAll('.count-input').forEach(input => {
-      // Guardado con debounce
+      // Validar entrada
       input.addEventListener('input', function() {
-        clearTimeout(saveTimeout);
+        clearTimeout(saveTimer);
         
-        // Validar entrada
-        const value = this.value.replace(/[^0-9]/g, '');
-        if (this.value !== value) {
-          this.value = value;
-        }
+        // Solo permitir números
+        this.value = this.value.replace(/[^0-9]/g, '');
         
-        // Mostrar feedback inmediato
+        // Mostrar feedback visual
         const row = this.closest('tr');
         if (row) {
           row.classList.add('row-saving');
         }
         
-        // Programar guardado
-        saveTimeout = setTimeout(() => {
-          if (this.value !== '' && this.value !== '0') {
+        // Programar guardado (si hay valor)
+        if (this.value && this.value !== '0') {
+          saveTimer = setTimeout(() => {
             saveRow(this);
-          }
-        }, CONFIG.DEBOUNCE_DELAY);
+          }, CONFIG.DEBOUNCE_DELAY);
+        }
       });
       
       // Limpiar feedback al perder foco
@@ -920,7 +1094,7 @@
         if (row) {
           setTimeout(() => {
             row.classList.remove('row-saving');
-          }, 500);
+          }, 300);
         }
       });
     });
@@ -940,10 +1114,10 @@
     // Configurar controles de voz
     DOM.btnVoice.addEventListener('click', toggleVoiceRecognition);
     DOM.toggleContinuous.addEventListener('change', function() {
-      AppState.voice.continuousMode = this.checked;
+      State.voice.continuous = this.checked;
     });
     DOM.toggleSpeak.addEventListener('change', function() {
-      AppState.voice.feedbackMode = this.checked;
+      State.voice.feedback = this.checked;
     });
     
     // Configurar modo guantes
@@ -952,42 +1126,45 @@
     // Configurar handlers de inputs
     setupInputHandlers();
     
-    // Pausar dictado cuando la página no es visible
+    // Manejar visibilidad de la página
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden && AppState.voice.isListening) {
+      if (document.hidden && State.voice.isListening) {
         stopVoiceRecognition();
       }
     });
     
-    // Manejar navegación móvil
+    // Optimizaciones para móvil
     if (/Mobi|Android/i.test(navigator.userAgent)) {
-      // Mejorar scrolling en iOS/Android
-      document.documentElement.style.scrollBehavior = 'smooth';
-      
-      // Prevenir zoom en inputs (solo para iOS)
+      // Prevenir zoom en inputs en iOS
       document.addEventListener('touchstart', function(e) {
         if (e.target.matches('.count-input')) {
-          e.target.style.fontSize = '16px'; // Prevenir zoom en iOS
+          e.target.style.fontSize = '16px';
         }
       }, { passive: true });
+      
+      // Ajustar altura para evitar teclado
+      window.addEventListener('resize', () => {
+        if (document.activeElement.matches('.count-input')) {
+          document.activeElement.scrollIntoView({ block: 'center' });
+        }
+      });
     }
     
-    console.log('Sistema de conteo inicializado correctamente');
+    console.log('Sistema de conteo inicializado');
   }
   
-  // Inicializar cuando el DOM esté listo
+  // Iniciar aplicación
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {
     initApp();
   }
   
-  // ================= EXPOSED FUNCTIONS (para debugging) =================
-  window.AppDebug = {
-    getState: () => AppState,
-    startVoice: startVoiceRecognition,
-    stopVoice: stopVoiceRecognition,
-    toggleGloves: toggleGlovesMode
+  // Exportar para debugging
+  window.CountSystem = {
+    toggleVoice: toggleVoiceRecognition,
+    toggleGloves: toggleGlovesMode,
+    getState: () => State
   };
   
 })();
