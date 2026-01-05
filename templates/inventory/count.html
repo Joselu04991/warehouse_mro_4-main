@@ -296,6 +296,15 @@
             Dictado por voz • Guardado automático • Modo guantes
           </p>
         </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-2"></i>
+            <span class="fw-semibold">JCASTILLO</span>
+            <span class="opacity-75">(OWNER)</span>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light ms-2">
+            <i class="bi bi-box-arrow-right me-1"></i>Salir
+          </a>
         </div>
       </div>
     </div>
@@ -494,7 +503,7 @@
     DEBOUNCE_DELAY: 800,
     VOICE_RESTART_DELAY: 300,
     MAX_RESTART_ATTEMPTS: 3,
-    SPEECH_LANG: 'es-ES',
+    SPEECH_LANG: 'es-PE',  // Cambiado a es-PE para Perú
     COMMAND_TIMEOUT: 5000
   };
   
@@ -765,12 +774,14 @@
    * Inicializa el reconocimiento de voz
    */
   function initVoiceRecognition() {
+    // Verificar compatibilidad del navegador
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       State.voice.isAvailable = false;
       updateVoiceUI('error', 'Navegador no compatible con dictado por voz');
       DOM.btnVoice.disabled = true;
+      DOM.btnVoice.innerHTML = '<i class="bi bi-mic-mute me-1"></i><span>No compatible</span>';
       return false;
     }
     
@@ -778,8 +789,8 @@
       State.voice.recognition = new SpeechRecognition();
       State.voice.recognition.lang = CONFIG.SPEECH_LANG;
       State.voice.recognition.interimResults = false;
-      State.voice.recognition.continuous = false;
-      State.voice.recognition.maxAlternatives = 2;
+      State.voice.recognition.continuous = false;  // Importante para móviles
+      State.voice.recognition.maxAlternatives = 1;
       
       setupVoiceEvents();
       State.voice.isAvailable = true;
@@ -811,9 +822,9 @@
       
       const result = event.results[0];
       const transcript = result[0].transcript.toLowerCase().trim();
-      const confidence = result[0].confidence;
       
-      showLastCommand(transcript, confidence > 0.5);
+      console.log('Texto reconocido:', transcript);
+      showLastCommand(transcript, true);
       
       // Parsear comando de voz
       const parsed = parseVoiceCommand(transcript);
@@ -822,36 +833,49 @@
         processVoiceCommand(parsed.code, parsed.quantity);
       } else {
         updateVoiceUI('error', 'No se entendió el comando');
-        speak('No entendí, por favor repite');
+        speak('No entendí, por favor repite código y cantidad');
       }
     };
     
     rec.onerror = (event) => {
+      console.error('Error en reconocimiento:', event.error);
       State.voice.errorCount++;
       
       switch (event.error) {
         case 'not-allowed':
         case 'permission-denied':
           updateVoiceUI('error', 'Permiso de micrófono denegado');
-          speak('Por favor, permite el acceso al micrófono');
+          speak('Por favor, permite el acceso al micrófono en ajustes');
           stopVoiceRecognition();
           break;
           
         case 'no-speech':
           if (State.voice.continuous) {
+            updateVoiceUI('idle', 'No se detectó voz. Reintentando...');
             setTimeout(restartVoiceRecognition, 1000);
           }
           break;
           
         case 'audio-capture':
           updateVoiceUI('error', 'No se detectó micrófono');
+          speak('No se encontró micrófono');
+          break;
+          
+        case 'network':
+          updateVoiceUI('error', 'Error de red en reconocimiento');
+          break;
+          
+        case 'aborted':
+          // Ignorar, usualmente ocurre cuando se detiene manualmente
           break;
           
         default:
+          console.warn('Error de reconocimiento no manejado:', event.error);
           if (State.voice.errorCount < 3) {
+            updateVoiceUI('error', `Error ${event.error}. Reintentando...`);
             setTimeout(restartVoiceRecognition, 1000);
           } else {
-            updateVoiceUI('error', 'Error en el reconocimiento');
+            updateVoiceUI('error', 'Demasiados errores. Reinicia el dictado');
             stopVoiceRecognition();
           }
       }
@@ -863,6 +887,8 @@
       // Reinicio automático en modo continuo
       if (State.voice.continuous && State.voice.restartCount < CONFIG.MAX_RESTART_ATTEMPTS) {
         State.voice.restartCount++;
+        console.log(`Reinicio automático ${State.voice.restartCount}/${CONFIG.MAX_RESTART_ATTEMPTS}`);
+        
         setTimeout(() => {
           if (!State.voice.isListening && State.voice.continuous) {
             startVoiceRecognition();
@@ -876,51 +902,84 @@
   }
   
   /**
-   * Parsea comandos de voz
+   * Parsea comandos de voz - MEJORADO PARA ANDROID
    */
   function parseVoiceCommand(transcript) {
-    // Patrones de reconocimiento mejorados
+    console.log('Procesando comando:', transcript);
+    
+    // Limpiar y normalizar texto
+    const cleanTranscript = transcript
+      .toLowerCase()
+      .replace(/[.,]/g, ' ')  // Reemplazar puntuación por espacios
+      .replace(/\s+/g, ' ')   // Normalizar espacios múltiples
+      .trim();
+    
+    // Patrones de reconocimiento mejorados para español
     const patterns = [
       // "código 12345678 cantidad 10"
       /c[óo]digo\s+(\d{4,})\s+cantidad\s+(\d+)/i,
-      // "12345678 10 unidades"
-      /(\d{6,})\s+(\d+)\s+unidades?/i,
-      // "para el 12345678 10"
-      /para el?\s+(\d{4,})\s+(\d+)/i,
-      // "material 12345678 10"
-      /material\s+(\d{4,})\s+(\d+)/i,
-      // Solo números: primero código largo, luego cantidad
-      /(\d{6,})\D+(\d{1,4})/,
+      // "12345678 cantidad 10"
+      /(\d{6,})\s+cantidad\s+(\d+)/i,
+      // "código 12345678 10 unidades"
+      /c[óo]digo\s+(\d+)\s+(\d+)\s+unidades/i,
+      // "para el código 12345678 10"
+      /para el c[óo]digo\s+(\d+)\s+(\d+)/i,
+      // "12345678 10"
+      /(\d{6,})\s+(\d{1,4})/,
       // "poner 10 en 12345678"
-      /poner\s+(\d+)\s+en\s+(\d{4,})/i
+      /poner\s+(\d+)\s+en\s+(\d{4,})/i,
+      // "material 12345678 10"
+      /material\s+(\d+)\s+(\d+)/i,
+      // "10 para 12345678"
+      /(\d+)\s+para\s+(\d+)/i
     ];
     
     for (const pattern of patterns) {
-      const match = transcript.match(pattern);
+      const match = cleanTranscript.match(pattern);
       if (match) {
-        // Determinar qué grupo es código y cuál cantidad
-        const code = match[1].length >= 6 ? match[1] : match[2];
-        const quantity = match[1].length >= 6 ? match[2] : match[1];
+        console.log('Patrón encontrado:', pattern, match);
+        
+        // Determinar qué grupo es código (normalmente el más largo)
+        const group1 = match[1];
+        const group2 = match[2];
+        
+        let code, quantity;
+        
+        if (group1.length >= 6 && group2.length <= 4) {
+          // group1 es código, group2 es cantidad
+          code = group1;
+          quantity = parseInt(group2, 10);
+        } else if (group2.length >= 6 && group1.length <= 4) {
+          // group2 es código, group1 es cantidad
+          code = group2;
+          quantity = parseInt(group1, 10);
+        } else {
+          // Por defecto, el primero es código
+          code = group1;
+          quantity = parseInt(group2, 10);
+        }
         
         return {
           success: true,
           code: code,
-          quantity: parseInt(quantity, 10)
+          quantity: quantity
         };
       }
     }
     
     // Fallback: extraer todos los números
-    const numbers = transcript.match(/\d+/g) || [];
+    const numbers = cleanTranscript.match(/\d+/g) || [];
+    console.log('Números encontrados:', numbers);
+    
     if (numbers.length >= 2) {
       // El número más largo es probablemente el código
       const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
-      const quantity = numbers.find(n => n !== code);
+      const quantity = parseInt(numbers.find(n => n !== code) || numbers[1], 10);
       
       return {
         success: true,
         code: code,
-        quantity: parseInt(quantity, 10)
+        quantity: quantity
       };
     }
     
@@ -931,11 +990,13 @@
    * Procesa un comando de voz válido
    */
   function processVoiceCommand(code, quantity) {
+    console.log('Procesando comando:', code, quantity);
+    
     const input = findInputByCode(code);
     
     if (!input) {
       updateVoiceUI('error', `Código ${code} no encontrado`);
-      speak(`Código ${code} no existe`);
+      speak(`Código ${code} no existe en la lista`);
       return;
     }
     
@@ -943,15 +1004,17 @@
     input.value = quantity;
     
     // Disparar eventos
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    const inputEvent = new Event('input', { bubbles: true });
+    const changeEvent = new Event('change', { bubbles: true });
+    input.dispatchEvent(inputEvent);
+    input.dispatchEvent(changeEvent);
     
     // Guardar automáticamente
     saveRow(input);
     
     // Feedback
     const stock = parseInt(input.dataset.stock) || 0;
-    let feedback = `Registrado ${quantity}`;
+    let feedback = `Registrado ${quantity} para ${code}`;
     
     if (quantity === stock) {
       feedback += ', coincide con stock';
@@ -965,29 +1028,48 @@
   }
   
   /**
-   * Inicia el reconocimiento de voz
+   * Inicia el reconocimiento de voz con manejo de permisos
    */
-  function startVoiceRecognition() {
+  async function startVoiceRecognition() {
     if (State.voice.isListening || !State.voice.isAvailable) return;
     
-    // Solicitar permiso en móviles
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(() => {
-          try {
-            State.voice.recognition.start();
-          } catch (error) {
-            updateVoiceUI('error', 'Error iniciando micrófono');
-          }
-        })
-        .catch(error => {
-          updateVoiceUI('error', 'Micrófono no disponible');
-          speak('Activa el micrófono en ajustes');
-        });
+    // Para Android/Chrome Mobile, verificar permisos primero
+    if (/Mobi|Android/i.test(navigator.userAgent) && navigator.mediaDevices) {
+      try {
+        // Verificar permisos de micrófono
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' });
+        
+        if (permissionStatus.state === 'denied') {
+          updateVoiceUI('error', 'Permiso de micrófono denegado');
+          speak('Por favor, activa el micrófono en ajustes del navegador');
+          return;
+        }
+        
+        // Solicitar acceso al micrófono
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Iniciar reconocimiento
+        State.voice.recognition.start();
+        
+      } catch (error) {
+        console.error('Error de permisos de micrófono:', error);
+        updateVoiceUI('error', 'No se pudo acceder al micrófono');
+        
+        if (error.name === 'NotAllowedError') {
+          speak('Permiso de micrófono denegado. Actívalo en ajustes');
+        } else if (error.name === 'NotFoundError') {
+          speak('No se encontró micrófono');
+        } else {
+          speak('Error al acceder al micrófono');
+        }
+        return;
+      }
     } else {
+      // Para desktop u otros navegadores
       try {
         State.voice.recognition.start();
       } catch (error) {
+        console.error('Error iniciando reconocimiento:', error);
         updateVoiceUI('error', 'No se pudo iniciar el dictado');
       }
     }
@@ -1002,6 +1084,7 @@
         State.voice.recognition.stop();
       } catch (error) {
         // Ignorar errores al detener
+        console.warn('Error deteniendo reconocimiento:', error);
       }
     }
     State.voice.isListening = false;
@@ -1012,7 +1095,9 @@
    * Reinicia el reconocimiento de voz
    */
   function restartVoiceRecognition() {
-    stopVoiceRecognition();
+    if (State.voice.isListening) {
+      stopVoiceRecognition();
+    }
     setTimeout(startVoiceRecognition, CONFIG.VOICE_RESTART_DELAY);
   }
   
@@ -1097,6 +1182,8 @@
    * Inicializa la aplicación
    */
   function initApp() {
+    console.log('Inicializando sistema de conteo...');
+    
     // Inicializar reconocimiento de voz
     if (initVoiceRecognition()) {
       updateVoiceUI('idle');
@@ -1106,9 +1193,11 @@
     DOM.btnVoice.addEventListener('click', toggleVoiceRecognition);
     DOM.toggleContinuous.addEventListener('change', function() {
       State.voice.continuous = this.checked;
+      console.log('Modo continuo:', this.checked);
     });
     DOM.toggleSpeak.addEventListener('change', function() {
       State.voice.feedback = this.checked;
+      console.log('Confirmación por voz:', this.checked);
     });
     
     // Configurar modo guantes
@@ -1120,12 +1209,15 @@
     // Manejar visibilidad de la página
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && State.voice.isListening) {
+        console.log('Página oculta, deteniendo dictado');
         stopVoiceRecognition();
       }
     });
     
     // Optimizaciones para móvil
     if (/Mobi|Android/i.test(navigator.userAgent)) {
+      console.log('Dispositivo móvil detectado, aplicando optimizaciones');
+      
       // Prevenir zoom en inputs en iOS
       document.addEventListener('touchstart', function(e) {
         if (e.target.matches('.count-input')) {
@@ -1136,12 +1228,15 @@
       // Ajustar altura para evitar teclado
       window.addEventListener('resize', () => {
         if (document.activeElement.matches('.count-input')) {
-          document.activeElement.scrollIntoView({ block: 'center' });
+          document.activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
       });
+      
+      // Mejorar rendimiento táctil
+      document.documentElement.style.touchAction = 'manipulation';
     }
     
-    console.log('Sistema de conteo inicializado');
+    console.log('Sistema de conteo inicializado correctamente');
   }
   
   // Iniciar aplicación
@@ -1155,6 +1250,8 @@
   window.CountSystem = {
     toggleVoice: toggleVoiceRecognition,
     toggleGloves: toggleGlovesMode,
+    startVoice: startVoiceRecognition,
+    stopVoice: stopVoiceRecognition,
     getState: () => State
   };
   
