@@ -53,14 +53,14 @@ def index():
 
 @warehouse2d_bp.route('/map_view')
 @login_required
-def map_view():  # ¡IMPORTANTE! Este nombre debe coincidir con tu base.html
+def map_view():
     """Alias para compatibilidad - redirige a la página principal"""
     return redirect(url_for('warehouse2d.index'))
 
 # ================= RUTAS DE SUBIDA DE ARCHIVOS =================
 
 @warehouse2d_bp.route('/upload')
-@warehouse2d_bp.route('/upload-warehouse2d')
+@warehouse2d_bp.route('/upload-warehouse2d')  # ¡ALIAS AQUÍ!
 @login_required
 def upload_view():
     """Página para subir archivo Excel"""
