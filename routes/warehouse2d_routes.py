@@ -1,5 +1,4 @@
-# routes/warehouse2d_routes.py - VERSIÓN COMPLETA Y OPTIMIZADA
-# ESTE CÓDIGO ESTÁ DISEÑADO PARA MANEJAR GRANDES VOLÚMENES DE DATOS SIN SOBRECARGAR LAS COOKIES
+# routes/warehouse2d_routes.py - VERSIÓN COMPLETA Y CORREGIDA
 
 from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, send_file
 from flask_login import login_required, current_user
@@ -109,7 +108,7 @@ def require_warehouse_session(f):
         
         conn.close()
         
-        if not has_data and request.endpoint not in ['warehouse2d.upload_view', 'warehouse2d.upload_file']:
+        if not has_data and request.endpoint not in ['warehouse2d.upload_view', 'warehouse2d.upload_file', 'warehouse2d.upload_warehouse2d']:
             return redirect(url_for('warehouse2d.upload_view'))
         
         return f(*args, **kwargs)
@@ -174,6 +173,14 @@ def index():
                          total_materials=total_materials,
                          total_records=total_records)
 
+# ================= ALIAS PARA COMPATIBILIDAD =================
+
+@warehouse2d_bp.route('/map_view')
+@login_required
+def map_view():
+    """Alias para compatibilidad - REDIRECT A INDEX"""
+    return redirect(url_for('warehouse2d.index'))
+
 # ================= RUTAS DE SUBIDA DE ARCHIVOS =================
 
 @warehouse2d_bp.route('/upload', methods=['GET'])
@@ -182,6 +189,12 @@ def upload_view():
     """Página para subir archivo Excel"""
     cleanup_old_sessions()  # Limpiar sesiones antiguas
     return render_template('warehouse2d/upload.html')
+
+@warehouse2d_bp.route('/upload-warehouse2d')
+@login_required
+def upload_warehouse2d():
+    """Alias para compatibilidad"""
+    return redirect(url_for('warehouse2d.upload_view'))
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
@@ -882,8 +895,8 @@ def cleanup_all():
         
         # Eliminar todas las sesiones expiradas
         cutoff_time = datetime.now() - timedelta(hours=24)
-        cursor.execute('DELETE FROM warehouse_sessions WHERE expires_at < ?', (cutcutoff_time.strftime('%Y-%m-%d %H:%M:%S'),))
-        cursor.execute('DELETE FROM warehouse_locations WHERE session_id IN (SELECT session_id FROM warehouse_sessions WHERE expires_at < ?)', (cutcutoff_time.strftime('%Y-%m-%d %H:%M:%S'),))
+        cursor.execute('DELETE FROM warehouse_sessions WHERE expires_at < ?', (cutoff_time.strftime('%Y-%m-%d %H:%M:%S'),))
+        cursor.execute('DELETE FROM warehouse_locations WHERE session_id IN (SELECT session_id FROM warehouse_sessions WHERE expires_at < ?)', (cutoff_time.strftime('%Y-%m-%d %H:%M:%S'),))
         
         # Vaciar tablas si están muy grandes (más de 1M registros)
         cursor.execute('SELECT COUNT(*) FROM warehouse_locations')
