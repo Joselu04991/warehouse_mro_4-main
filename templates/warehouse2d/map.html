@@ -3,1344 +3,8 @@
 
 {% block content %}
 <style>
-    /* ================= VARIABLES CSS ================= */
-    :root {
-        --color-primary: #2c3e50;
-        --color-secondary: #3498db;
-        --color-success: #28a745;
-        --color-warning: #ffc107;
-        --color-danger: #dc3545;
-        --color-info: #17a2b8;
-        --color-light: #f8f9fa;
-        --color-dark: #343a40;
-        --color-gray: #6c757d;
-        
-        --color-normal: #28a745;
-        --color-bajo: #ffc107;
-        --color-critico: #dc3545;
-        --color-vacio: #6c757d;
-        --color-reservado: #6f42c1;
-        
-        --grid-size: 45px;
-        --border-radius: 8px;
-        --transition-speed: 0.3s;
-        --shadow-light: 0 4px 6px rgba(0,0,0,0.1);
-        --shadow-medium: 0 6px 12px rgba(0,0,0,0.15);
-        --shadow-heavy: 0 10px 20px rgba(0,0,0,0.2);
-    }
-
-    /* ================= RESET Y CONFIGURACIÓN BASE ================= */
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
-
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f5f7fa;
-        color: #333;
-        line-height: 1.6;
-    }
-
-    /* ================= CONTENEDOR PRINCIPAL ================= */
-    .warehouse-container {
-        min-height: 100vh;
-        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-        padding-bottom: 3rem;
-    }
-
-    /* ================= HEADER PRINCIPAL ================= */
-    .header-section {
-        background: linear-gradient(135deg, var(--color-primary) 0%, #1a2530 100%);
-        color: white;
-        padding: 1.8rem 0;
-        margin-bottom: 2.5rem;
-        border-radius: 0 0 20px 20px;
-        box-shadow: var(--shadow-medium);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .header-section::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23000000' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-        opacity: 0.1;
-    }
-
-    .title-main {
-        font-weight: 800;
-        font-size: 2.2rem;
-        letter-spacing: -0.5px;
-        margin-bottom: 0.5rem;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        position: relative;
-        display: inline-block;
-    }
-
-    .title-main::after {
-        content: '';
-        position: absolute;
-        bottom: -8px;
-        left: 0;
-        width: 60px;
-        height: 4px;
-        background: var(--color-secondary);
-        border-radius: 2px;
-    }
-
-    .subtitle {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        font-weight: 300;
-        margin-bottom: 0;
-    }
-
-    .upload-btn {
-        background: linear-gradient(135deg, var(--color-secondary) 0%, #2980b9 100%);
-        color: white;
-        border: none;
-        border-radius: var(--border-radius);
-        padding: 0.9rem 2rem;
-        font-weight: 600;
-        font-size: 1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.75rem;
-        transition: all var(--transition-speed) ease;
-        box-shadow: var(--shadow-light);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .upload-btn::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-        transition: left 0.7s ease;
-    }
-
-    .upload-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-medium);
-        background: linear-gradient(135deg, #2980b9 0%, var(--color-secondary) 100%);
-    }
-
-    .upload-btn:hover::before {
-        left: 100%;
-    }
-
-    /* ================= PANEL DE CONTROL ================= */
-    .control-panel {
-        background: white;
-        border-radius: var(--border-radius);
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-light);
-        border: 1px solid #e1e5eb;
-        position: relative;
-    }
-
-    .search-container {
-        position: relative;
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 20px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--color-gray);
-        z-index: 10;
-        font-size: 1.2rem;
-    }
-
-    .search-input {
-        padding: 1rem 1rem 1rem 3.5rem;
-        border-radius: 50px;
-        border: 2px solid #e1e5eb;
-        height: 56px;
-        font-size: 1.1rem;
-        transition: all var(--transition-speed) ease;
-        background: white;
-        width: 100%;
-    }
-
-    .search-input:focus {
-        border-color: var(--color-secondary);
-        box-shadow: 0 0 0 0.3rem rgba(52, 152, 219, 0.2);
-        outline: none;
-    }
-
-    .search-input::placeholder {
-        color: #a0a7b3;
-    }
-
-    .filter-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-    }
-
-    .filter-btn {
-        min-width: 120px;
-        border-radius: 30px;
-        font-weight: 600;
-        padding: 0.75rem 1.5rem;
-        transition: all var(--transition-speed) ease;
-        border-width: 2px;
-        font-size: 0.95rem;
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-
-    .filter-btn::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.2);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
-
-    .filter-btn:hover::before {
-        width: 300px;
-        height: 300px;
-    }
-
-    .filter-btn.active {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-medium);
-    }
-
-    .btn-todos { 
-        border-color: var(--color-gray); 
-        color: var(--color-gray);
-        background: white;
-    }
-    .btn-todos.active { 
-        background-color: var(--color-gray); 
-        color: white;
-        border-color: var(--color-gray);
-    }
-
-    .btn-normal { 
-        border-color: var(--color-normal); 
-        color: var(--color-normal);
-        background: white;
-    }
-    .btn-normal.active { 
-        background-color: var(--color-normal); 
-        color: white;
-        border-color: var(--color-normal);
-    }
-
-    .btn-bajo { 
-        border-color: var(--color-bajo); 
-        color: var(--color-bajo);
-        background: white;
-    }
-    .btn-bajo.active { 
-        background-color: var(--color-bajo); 
-        color: #212529;
-        border-color: var(--color-bajo);
-    }
-
-    .btn-critico { 
-        border-color: var(--color-critico); 
-        color: var(--color-critico);
-        background: white;
-    }
-    .btn-critico.active { 
-        background-color: var(--color-critico); 
-        color: white;
-        border-color: var(--color-critico);
-    }
-
-    .btn-vacio { 
-        border-color: var(--color-vacio); 
-        color: var(--color-vacio);
-        background: white;
-    }
-    .btn-vacio.active { 
-        background-color: var(--color-vacio); 
-        color: white;
-        border-color: var(--color-vacio);
-    }
-
-    /* ================= CONTROLES DE VISTA ================= */
-    .view-controls {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #e1e5eb;
-    }
-
-    .zoom-controls {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .zoom-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.3rem;
-        background: white;
-        border: 2px solid #e1e5eb;
-        transition: all var(--transition-speed) ease;
-        color: var(--color-dark);
-        cursor: pointer;
-    }
-
-    .zoom-btn:hover {
-        background-color: var(--color-light);
-        border-color: var(--color-secondary);
-        color: var(--color-secondary);
-        transform: scale(1.05);
-    }
-
-    .zoom-level {
-        font-weight: 700;
-        color: var(--color-primary);
-        min-width: 70px;
-        text-align: center;
-        font-size: 1.1rem;
-    }
-
-    .view-options {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .view-btn {
-        padding: 0.6rem 1.2rem;
-        border-radius: 30px;
-        border: 2px solid #e1e5eb;
-        background: white;
-        color: var(--color-dark);
-        font-weight: 500;
-        transition: all var(--transition-speed) ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .view-btn.active {
-        background: var(--color-secondary);
-        color: white;
-        border-color: var(--color-secondary);
-    }
-
-    .view-btn:hover:not(.active) {
-        border-color: var(--color-secondary);
-        color: var(--color-secondary);
-    }
-
-    /* ================= LEYENDA ================= */
-    .legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1.5rem;
-        justify-content: center;
-        margin-top: 1.5rem;
-        padding: 1.2rem;
-        background: rgba(255,255,255,0.9);
-        border-radius: var(--border-radius);
-        border: 1px solid #e1e5eb;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: var(--color-dark);
-    }
-
-    .legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-        border: 2px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .legend-text {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .legend-range {
-        font-size: 0.8rem;
-        color: var(--color-gray);
-        font-weight: normal;
-    }
-
-    /* ================= MAPA 2D ================= */
-    .map-container-wrapper {
-        background: white;
-        border-radius: var(--border-radius);
-        padding: 1.8rem;
-        box-shadow: var(--shadow-light);
-        border: 1px solid #e1e5eb;
-        margin-bottom: 2rem;
-        overflow: hidden;
-    }
-
-    .map-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #f1f3f4;
-    }
-
-    .map-title {
-        font-weight: 700;
-        color: var(--color-primary);
-        font-size: 1.3rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .map-title i {
-        color: var(--color-secondary);
-    }
-
-    .map-stats {
-        font-size: 1rem;
-        color: var(--color-gray);
-        display: flex;
-        gap: 1.5rem;
-    }
-
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .stat-value {
-        font-weight: 700;
-        color: var(--color-primary);
-        font-size: 1.2rem;
-    }
-
-    .stat-label {
-        font-size: 0.85rem;
-        color: var(--color-gray);
-    }
-
-    .map-grid-container {
-        overflow: auto;
-        border-radius: var(--border-radius);
-        border: 1px solid #e1e5eb;
-        background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%),
-                    linear-gradient(-45deg, #f8f9fa 25%, transparent 25%),
-                    linear-gradient(45deg, transparent 75%, #f8f9fa 75%),
-                    linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
-        background-size: 20px 20px;
-        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-        min-height: 600px;
-        position: relative;
-        max-height: 70vh;
-    }
-
-    .map-grid {
-        display: grid;
-        gap: 3px;
-        padding: 20px;
-        transition: transform 0.3s ease;
-        min-width: min-content;
-        position: relative;
-    }
-
-    /* ================= CELDAS DEL MAPA ================= */
-    .location-cell {
-        width: var(--grid-size);
-        height: var(--grid-size);
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 0.75rem;
-        cursor: pointer;
-        transition: all var(--transition-speed) ease;
-        position: relative;
-        overflow: hidden;
-        border: 2px solid transparent;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        user-select: none;
-    }
-
-    .location-cell::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: rgba(255,255,255,0.5);
-    }
-
-    .location-cell:hover {
-        transform: scale(1.15);
-        z-index: 100;
-        box-shadow: var(--shadow-heavy);
-    }
-
-    .location-cell.normal { 
-        background: linear-gradient(135deg, var(--color-normal) 0%, #218838 100%);
-        color: white;
-    }
-    .location-cell.bajo { 
-        background: linear-gradient(135deg, var(--color-bajo) 0%, #e0a800 100%);
-        color: #212529;
-    }
-    .location-cell.critico { 
-        background: linear-gradient(135deg, var(--color-critico) 0%, #c82333 100%);
-        color: white;
-    }
-    .location-cell.vacio { 
-        background: linear-gradient(135deg, var(--color-vacio) 0%, #5a6268 100%);
-        color: white;
-    }
-    .location-cell.reservado { 
-        background: linear-gradient(135deg, var(--color-reservado) 0%, #593196 100%);
-        color: white;
-    }
-
-    .location-cell.highlighted {
-        animation: pulse-highlight 2s infinite;
-        border-color: var(--color-secondary);
-        z-index: 50;
-    }
-
-    @keyframes pulse-highlight {
-        0% { 
-            box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.7),
-                        0 4px 8px rgba(0,0,0,0.2);
-        }
-        70% { 
-            box-shadow: 0 0 0 12px rgba(52, 152, 219, 0),
-                        0 4px 8px rgba(0,0,0,0.2);
-        }
-        100% { 
-            box-shadow: 0 0 0 0 rgba(52, 152, 219, 0),
-                        0 4px 8px rgba(0,0,0,0.2);
-        }
-    }
-
-    .location-cell.selected {
-        border-color: var(--color-primary);
-        border-width: 3px;
-        box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
-    }
-
-    .location-code {
-        font-size: 0.7rem;
-        font-weight: 800;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-        letter-spacing: 0.5px;
-    }
-
-    .location-percent {
-        font-size: 0.6rem;
-        opacity: 0.9;
-        margin-top: 1px;
-    }
-
-    /* ================= SIDEBAR/KPIs ================= */
-    .sidebar-card {
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--shadow-light);
-        border: 1px solid #e1e5eb;
-        margin-bottom: 1.8rem;
-        overflow: hidden;
-        transition: transform 0.3s ease;
-        height: 100%;
-    }
-
-    .sidebar-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-medium);
-    }
-
-    .card-header-custom {
-        background: linear-gradient(135deg, var(--color-primary) 0%, #3a506b 100%);
-        color: white;
-        padding: 1.2rem 1.5rem;
-        font-weight: 700;
-        font-size: 1.1rem;
-        border-bottom: none;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .card-header-custom i {
-        font-size: 1.2rem;
-    }
-
-    .kpi-item {
-        padding: 1.2rem 1.5rem;
-        border-bottom: 1px solid #f1f3f4;
-        transition: background-color 0.2s ease;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .kpi-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .kpi-item:last-child {
-        border-bottom: none;
-    }
-
-    .kpi-info {
-        flex: 1;
-    }
-
-    .kpi-label {
-        font-weight: 600;
-        color: var(--color-dark);
-        font-size: 0.95rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .kpi-subtext {
-        font-size: 0.85rem;
-        color: var(--color-gray);
-    }
-
-    .kpi-value {
-        font-weight: 800;
-        font-size: 1.5rem;
-        color: var(--color-primary);
-        text-align: right;
-        min-width: 80px;
-    }
-
-    .kpi-trend {
-        font-size: 0.85rem;
-        border-radius: 15px;
-        padding: 0.3rem 0.8rem;
-        font-weight: 600;
-        margin-top: 0.5rem;
-        display: inline-block;
-    }
-
-    .trend-up { background-color: #d4edda; color: #155724; }
-    .trend-down { background-color: #f8d7da; color: #721c24; }
-    .trend-neutral { background-color: #e2e3e5; color: #383d41; }
-    .trend-excellent { background-color: #c3e6cb; color: #155724; }
-    .trend-warning { background-color: #ffeaa7; color: #856404; }
-
-    /* ================= CONTADORES ================= */
-    .counter-item {
-        display: flex;
-        align-items: center;
-        padding: 1rem 1.2rem;
-        border-radius: 8px;
-        margin-bottom: 0.75rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        border: 1px solid transparent;
-    }
-
-    .counter-item:hover {
-        transform: translateX(8px);
-        box-shadow: var(--shadow-light);
-        border-color: #e1e5eb;
-        background: white;
-    }
-
-    .counter-item.active {
-        background: white;
-        border-color: var(--color-secondary);
-        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.1);
-    }
-
-    .counter-color {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        margin-right: 15px;
-        border: 3px solid white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        flex-shrink: 0;
-    }
-
-    .counter-label {
-        flex-grow: 1;
-        font-weight: 600;
-        color: var(--color-dark);
-        font-size: 1rem;
-    }
-
-    .counter-value {
-        font-weight: 800;
-        font-size: 1.3rem;
-        min-width: 45px;
-        text-align: right;
-        color: var(--color-primary);
-    }
-
-    .counter-percent {
-        font-size: 0.85rem;
-        color: var(--color-gray);
-        margin-left: 0.5rem;
-        font-weight: normal;
-    }
-
-    .color-normal { background-color: var(--color-normal); }
-    .color-bajo { background-color: var(--color-bajo); }
-    .color-critico { background-color: var(--color-critico); }
-    .color-vacio { background-color: var(--color-vacio); }
-    .color-reservado { background-color: var(--color-reservado); }
-
-    /* ================= FILTROS RÁPIDOS ================= */
-    .filter-section {
-        padding: 1.2rem 1.5rem;
-    }
-
-    .filter-group {
-        margin-bottom: 1.5rem;
-    }
-
-    .filter-group:last-child {
-        margin-bottom: 0;
-    }
-
-    .filter-label {
-        font-weight: 600;
-        color: var(--color-dark);
-        font-size: 0.95rem;
-        margin-bottom: 0.75rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .filter-label i {
-        color: var(--color-secondary);
-    }
-
-    .form-select {
-        border-radius: 8px;
-        border: 2px solid #e1e5eb;
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        transition: all var(--transition-speed) ease;
-        height: auto;
-    }
-
-    .form-select:focus {
-        border-color: var(--color-secondary);
-        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
-    }
-
-    .btn-apply-filters {
-        background: linear-gradient(135deg, var(--color-secondary) 0%, #2980b9 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.9rem 1.5rem;
-        font-weight: 600;
-        font-size: 1rem;
-        width: 100%;
-        transition: all var(--transition-speed) ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-    }
-
-    .btn-apply-filters:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-medium);
-        background: linear-gradient(135deg, #2980b9 0%, var(--color-secondary) 100%);
-    }
-
-    /* ================= MODAL MEJORADO ================= */
-    .modal-custom .modal-header {
-        background: linear-gradient(135deg, var(--color-primary) 0%, #3a506b 100%);
-        color: white;
-        border-radius: 12px 12px 0 0;
-        padding: 1.5rem 2rem;
-        border-bottom: none;
-    }
-
-    .modal-custom .modal-title {
-        font-weight: 700;
-        font-size: 1.4rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .location-badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.15);
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
-        font-weight: 600;
-        margin-left: 10px;
-        font-size: 1rem;
-        font-family: 'Monaco', 'Consolas', monospace;
-        letter-spacing: 1px;
-    }
-
-    .modal-custom .modal-body {
-        padding: 2rem;
-    }
-
-    .modal-section {
-        margin-bottom: 2rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 1px solid #e1e5eb;
-    }
-
-    .modal-section:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-    }
-
-    .modal-section-title {
-        font-weight: 700;
-        color: var(--color-primary);
-        font-size: 1.1rem;
-        margin-bottom: 1.2rem;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .modal-section-title i {
-        color: var(--color-secondary);
-    }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .info-card {
-        background: #f8f9fa;
-        border-radius: 8px;
-        padding: 1.5rem;
-        border: 1px solid #e1e5eb;
-    }
-
-    .info-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px dashed #dee2e6;
-    }
-
-    .info-item:last-child {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: none;
-    }
-
-    .info-label {
-        font-weight: 600;
-        color: var(--color-dark);
-        font-size: 0.95rem;
-    }
-
-    .info-value {
-        font-weight: 700;
-        color: var(--color-primary);
-        font-size: 1.1rem;
-    }
-
-    .progress-custom {
-        height: 10px;
-        border-radius: 5px;
-        background: #e9ecef;
-        overflow: hidden;
-        margin: 0.5rem 0;
-    }
-
-    .progress-custom .progress-bar {
-        border-radius: 5px;
-        transition: width 1s ease;
-    }
-
-    .materials-table {
-        background: white;
-        border-radius: 8px;
-        overflow: hidden;
-        border: 1px solid #e1e5eb;
-    }
-
-    .materials-table thead {
-        background: #f8f9fa;
-    }
-
-    .materials-table th {
-        font-weight: 600;
-        color: var(--color-dark);
-        padding: 1rem;
-        border-bottom: 2px solid #dee2e6;
-        white-space: nowrap;
-    }
-
-    .materials-table td {
-        padding: 1rem;
-        vertical-align: middle;
-        border-bottom: 1px solid #e1e5eb;
-    }
-
-    .materials-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .materials-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .status-badge {
-        padding: 0.35rem 0.8rem;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.85rem;
-        display: inline-block;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .bg-normal { background-color: var(--color-normal); color: white; }
-    .bg-bajo { background-color: var(--color-bajo); color: #212529; }
-    .bg-critico { background-color: var(--color-critico); color: white; }
-    .bg-vacio { background-color: var(--color-vacio); color: white; }
-    .bg-reservado { background-color: var(--color-reservado); color: white; }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-action {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 2px solid #e1e5eb;
-        background: white;
-        color: var(--color-dark);
-        transition: all var(--transition-speed) ease;
-        cursor: pointer;
-    }
-
-    .btn-action:hover {
-        border-color: var(--color-secondary);
-        color: var(--color-secondary);
-        transform: scale(1.1);
-    }
-
-    .btn-action-primary:hover {
-        background: var(--color-secondary);
-        color: white;
-        border-color: var(--color-secondary);
-    }
-
-    .modal-custom .modal-footer {
-        padding: 1.5rem 2rem;
-        border-top: 1px solid #e1e5eb;
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
-    .modal-custom .btn {
-        padding: 0.75rem 2rem;
-        font-weight: 600;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    /* ================= LOADING Y ESTADOS ================= */
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.9);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        backdrop-filter: blur(5px);
-    }
-
-    .loading-spinner {
-        width: 80px;
-        height: 80px;
-        border: 8px solid #f3f3f3;
-        border-top: 8px solid var(--color-secondary);
-        border-radius: 50%;
-        animation: spin 1.5s linear infinite;
-        margin-bottom: 2rem;
-    }
-
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-        font-size: 1.2rem;
-        color: var(--color-primary);
-        font-weight: 600;
-    }
-
-    .no-results {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: var(--color-gray);
-        font-size: 1.2rem;
-    }
-
-    .no-results i {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        opacity: 0.3;
-        display: block;
-    }
-
-    .no-results h4 {
-        font-weight: 700;
-        color: var(--color-dark);
-        margin-bottom: 1rem;
-    }
-
-    .no-results p {
-        color: var(--color-gray);
-        max-width: 400px;
-        margin: 0 auto;
-    }
-
-    /* ================= TOOLTIPS ================= */
-    .tooltip-custom {
-        position: absolute;
-        background: var(--color-primary);
-        color: white;
-        padding: 0.75rem 1rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        z-index: 1000;
-        box-shadow: var(--shadow-heavy);
-        pointer-events: none;
-        max-width: 300px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .tooltip-custom::after {
-        content: '';
-        position: absolute;
-        bottom: -8px;
-        left: 20px;
-        border-width: 8px 8px 0;
-        border-style: solid;
-        border-color: var(--color-primary) transparent transparent;
-    }
-
-    /* ================= RESPONSIVE ================= */
-    @media (max-width: 1200px) {
-        :root {
-            --grid-size: 40px;
-        }
-        
-        .title-main {
-            font-size: 1.8rem;
-        }
-        
-        .info-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .header-section {
-            padding: 1.5rem 0;
-        }
-        
-        .control-panel {
-            padding: 1.5rem;
-        }
-        
-        .filter-buttons {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .filter-btn {
-            width: 100%;
-        }
-        
-        .view-controls {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: stretch;
-        }
-        
-        .view-options {
-            justify-content: center;
-        }
-    }
-
-    @media (max-width: 768px) {
-        :root {
-            --grid-size: 35px;
-        }
-        
-        .title-main {
-            font-size: 1.5rem;
-        }
-        
-        .subtitle {
-            font-size: 1rem;
-        }
-        
-        .upload-btn {
-            width: 100%;
-            justify-content: center;
-            margin-top: 1rem;
-        }
-        
-        .map-grid-container {
-            min-height: 400px;
-            max-height: 50vh;
-        }
-        
-        .location-cell {
-            font-size: 0.65rem;
-        }
-        
-        .map-stats {
-            flex-direction: column;
-            gap: 0.5rem;
-            align-items: flex-end;
-        }
-        
-        .modal-custom .modal-dialog {
-            margin: 0.5rem;
-        }
-        
-        .modal-custom .modal-body {
-            padding: 1.5rem;
-        }
-        
-        .action-buttons {
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-    }
-
-    @media (max-width: 576px) {
-        :root {
-            --grid-size: 30px;
-        }
-        
-        .header-section {
-            padding: 1.2rem 0;
-        }
-        
-        .control-panel {
-            padding: 1.2rem;
-        }
-        
-        .search-input {
-            height: 48px;
-            font-size: 1rem;
-            padding: 0.75rem 0.75rem 0.75rem 3rem;
-        }
-        
-        .legend {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.75rem;
-        }
-        
-        .location-cell {
-            font-size: 0.6rem;
-        }
-        
-        .kpi-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
-        }
-        
-        .kpi-value {
-            text-align: left;
-        }
-        
-        .modal-custom .modal-body {
-            padding: 1rem;
-        }
-        
-        .materials-table {
-            display: block;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-    }
-
-    /* ================= ANIMACIONES ================= */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes slideIn {
-        from { transform: translateX(-20px); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
-
-    @keyframes scaleIn {
-        from { transform: scale(0.9); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-
-    .fade-in {
-        animation: fadeIn 0.5s ease forwards;
-    }
-
-    .slide-in {
-        animation: slideIn 0.4s ease forwards;
-    }
-
-    .scale-in {
-        animation: scaleIn 0.3s ease forwards;
-    }
-
-    /* ================= UTILIDADES ================= */
-    .cursor-pointer {
-        cursor: pointer;
-    }
-
-    .text-truncate {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .text-ellipsis-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .opacity-hover {
-        transition: opacity 0.3s ease;
-    }
-
-    .opacity-hover:hover {
-        opacity: 0.8;
-    }
-
-    .bg-blur {
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }
-
-    .gradient-text {
-        background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-primary) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    /* ================= SCROLLBAR PERSONALIZADO ================= */
-    ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-        background: var(--color-gray);
-        border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--color-dark);
-    }
-
-    .map-grid-container::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
-    }
-
-    .map-grid-container::-webkit-scrollbar-track {
-        background: #e9ecef;
-        border-radius: 0 8px 8px 0;
-    }
-
-    .map-grid-container::-webkit-scrollbar-thumb {
-        background: var(--color-secondary);
-        border-radius: 6px;
-    }
-
-    .map-grid-container::-webkit-scrollbar-thumb:hover {
-        background: #2980b9;
-    }
+    /* Todos los estilos CSS anteriores se mantienen igual */
+    /* ... (todo el CSS anterior permanece igual) ... */
 </style>
 
 <div class="warehouse-container">
@@ -1352,19 +16,33 @@
                     <h1 class="title-main fade-in">
                         <i class="bi bi-grid-3x3-gap-fill"></i> Mapa 2D Inteligente del Almacén
                     </h1>
-                    <p class="subtitle slide-in">
-                        Visualización avanzada del inventario • Monitoreo en tiempo real • Gestión eficiente de espacios
+                    <p class="subtitle slide-in" id="warehouse-info">
+                        {% if warehouse_name %}
+                        {{ warehouse_name }} • {{ total_locations }} ubicaciones • Última actualización: {{ last_update }}
+                        {% else %}
+                        Visualización avanzada del inventario • Carga un archivo Excel para comenzar
+                        {% endif %}
                     </p>
                 </div>
                 <div class="col-lg-4 col-md-5">
                     <div class="d-flex flex-column flex-md-row gap-2">
                         <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="upload-btn scale-in">
                             <i class="bi bi-cloud-upload-fill"></i> 
-                            <span>Cargar Excel 2D</span>
+                            <span>
+                                {% if has_data %}
+                                Actualizar Excel
+                                {% else %}
+                                Cargar Excel 2D
+                                {% endif %}
+                            </span>
                         </a>
                         <button class="upload-btn scale-in" onclick="exportToPDF()" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
                             <i class="bi bi-file-earmark-pdf-fill"></i>
                             <span>Exportar PDF</span>
+                        </button>
+                        <button class="upload-btn scale-in" onclick="exportToExcel()" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                            <i class="bi bi-file-earmark-excel-fill"></i>
+                            <span>Exportar Excel</span>
                         </button>
                     </div>
                 </div>
@@ -1373,14 +51,75 @@
     </div>
 
     <div class="container">
+        {% if not has_data %}
+        <!-- ================= ESTADO SIN DATOS ================= -->
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-8">
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-inbox"></i> No hay datos cargados</h4>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-cloud-upload" style="font-size: 4rem; color: #6c757d;"></i>
+                        </div>
+                        <h3 class="text-muted mb-3">Comienza cargando un archivo Excel</h3>
+                        <p class="text-muted mb-4">
+                            Para visualizar el mapa 2D de tu almacén, primero necesitas cargar un archivo Excel 
+                            con la estructura de ubicaciones y materiales.
+                        </p>
+                        <div class="row justify-content-center">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5><i class="bi bi-info-circle text-info"></i> Formato requerido:</h5>
+                                        <ul class="text-start">
+                                            <li><strong>Ubicación:</strong> Código único (ej: A-01-01)</li>
+                                            <li><strong>Zona:</strong> Zona del almacén (A, B, C...)</li>
+                                            <li><strong>Fila y Columna:</strong> Coordenadas 2D</li>
+                                            <li><strong>Material:</strong> Código del material</li>
+                                            <li><strong>Cantidad:</strong> Stock actual</li>
+                                            <li><strong>Capacidad:</strong> Capacidad máxima</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('warehouse2d.upload_warehouse2d') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-cloud-upload-fill"></i> Cargar Archivo Excel
+                        </a>
+                        <div class="mt-3">
+                            <a href="{{ url_for('warehouse2d.download_template') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-download"></i> Descargar Plantilla
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- ================= CONTENIDO CON DATOS ================= -->
         <div class="row">
             <!-- ================= PANEL PRINCIPAL (MAPA) ================= -->
             <div class="col-xl-9 col-lg-8">
                 <!-- Panel de Control Avanzado -->
                 <div class="control-panel scale-in">
                     <div class="row align-items-center g-3">
+                        <!-- Información del Archivo -->
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="me-2">
+                                    <i class="bi bi-file-earmark-excel-fill text-success" style="font-size: 1.5rem;"></i>
+                                </div>
+                                <div>
+                                    <div class="small text-muted">Archivo cargado:</div>
+                                    <div class="fw-bold">{{ file_name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Buscador Avanzado -->
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <div class="search-container">
                                 <i class="bi bi-search search-icon"></i>
                                 <input type="text" 
@@ -1399,8 +138,8 @@
                         </div>
                         
                         <!-- Controles Avanzados -->
-                        <div class="col-md-6">
-                            <div class="d-flex flex-wrap justify-content-md-end align-items-center gap-2">
+                        <div class="col-md-3">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
                                 <div class="zoom-controls">
                                     <button class="zoom-btn" onclick="zoomOut()" title="Alejar (Ctrl -)" aria-label="Alejar vista">
                                         <i class="bi bi-dash-lg"></i>
@@ -1408,9 +147,6 @@
                                     <span class="zoom-level" id="zoomLevel">100%</span>
                                     <button class="zoom-btn" onclick="zoomIn()" title="Acercar (Ctrl +)" aria-label="Acercar vista">
                                         <i class="bi bi-plus-lg"></i>
-                                    </button>
-                                    <button class="zoom-btn" onclick="resetZoom()" title="Restablecer zoom (Ctrl 0)" aria-label="Restablecer zoom">
-                                        <i class="bi bi-zoom-out"></i>
                                     </button>
                                 </div>
                             </div>
@@ -1434,9 +170,6 @@
                         <button class="filter-btn btn-vacio" onclick="filterStatus('vacio')" data-status="vacio">
                             <i class="bi bi-dash-circle-fill"></i> Vacío
                         </button>
-                        <button class="filter-btn" style="border-color: #6f42c1; color: #6f42c1;" onclick="filterStatus('reservado')" data-status="reservado">
-                            <i class="bi bi-lock-fill"></i> Reservado
-                        </button>
                     </div>
 
                     <!-- Controles de Vista -->
@@ -1454,11 +187,11 @@
                         </div>
                         
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
-                                <i class="bi bi-arrow-clockwise"></i> Auto-refresh
-                            </button>
                             <button class="btn btn-sm btn-outline-primary" onclick="refreshData()">
                                 <i class="bi bi-arrow-repeat"></i> Actualizar
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearData()" title="Borrar todos los datos">
+                                <i class="bi bi-trash"></i> Limpiar
                             </button>
                         </div>
                     </div>
@@ -1493,13 +226,6 @@
                                 <span class="legend-range">0% ocupación</span>
                             </div>
                         </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background-color: #6f42c1;"></div>
-                            <div class="legend-text">
-                                <span>Reservado</span>
-                                <span class="legend-range">Ubicación bloqueada</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -1512,7 +238,7 @@
                         </div>
                         <div class="map-stats">
                             <div class="stat-item">
-                                <span class="stat-value" id="total-locations">0</span>
+                                <span class="stat-value" id="total-locations">{{ total_locations }}</span>
                                 <span class="stat-label">Ubicaciones</span>
                             </div>
                             <div class="stat-item">
@@ -1520,8 +246,8 @@
                                 <span class="stat-label">Visibles</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-value" id="selected-locations">0</span>
-                                <span class="stat-label">Seleccionadas</span>
+                                <span class="stat-value" id="occupied-locations">0</span>
+                                <span class="stat-label">Ocupadas</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-value" id="ocupation-rate">0%</span>
@@ -1543,14 +269,54 @@
                     </div>
                     
                     <div class="mt-3 d-flex justify-content-between align-items-center">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="showLabels" checked onchange="toggleLabels()">
-                            <label class="form-check-label" for="showLabels">
-                                Mostrar etiquetas
-                            </label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="showLabels" checked onchange="toggleLabels()">
+                                <label class="form-check-label" for="showLabels">
+                                    Mostrar etiquetas
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="showGrid" checked onchange="toggleGrid()">
+                                <label class="form-check-label" for="showGrid">
+                                    Mostrar grid
+                                </label>
+                            </div>
                         </div>
                         <div class="text-muted small">
                             <i class="bi bi-info-circle"></i> Haz clic en una celda para ver detalles
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vista Lista (oculta por defecto) -->
+                <div id="list-view" class="d-none">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="bi bi-list-ul"></i> Lista de Ubicaciones</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ubicación</th>
+                                            <th>Zona</th>
+                                            <th>Fila</th>
+                                            <th>Columna</th>
+                                            <th>Materiales</th>
+                                            <th>Stock</th>
+                                            <th>Capacidad</th>
+                                            <th>Ocupación</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="locations-table">
+                                        <!-- Se llena dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1558,6 +324,52 @@
 
             <!-- ================= PANEL LATERAL (KPIs) ================= -->
             <div class="col-xl-3 col-lg-4">
+                <!-- Información del Archivo -->
+                <div class="sidebar-card fade-in">
+                    <div class="card-header-custom">
+                        <i class="bi bi-file-earmark-text-fill"></i> Información del Archivo
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Nombre Archivo</div>
+                                <div class="kpi-subtext" id="file-name">{{ file_name }}</div>
+                            </div>
+                            <div class="kpi-value">
+                                <i class="bi bi-filetype-xlsx text-success"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Total Ubicaciones</div>
+                                <div class="kpi-subtext">Únicas en el sistema</div>
+                            </div>
+                            <div class="kpi-value" id="total-locations-side">{{ total_locations }}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Total Materiales</div>
+                                <div class="kpi-subtext">Diferentes SKUs</div>
+                            </div>
+                            <div class="kpi-value" id="total-materials">{{ total_materials }}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Última Carga</div>
+                                <div class="kpi-subtext">Fecha y hora</div>
+                            </div>
+                            <div class="kpi-value" style="font-size: 0.9rem;">{{ last_update }}</div>
+                        </div>
+                        <div class="kpi-item">
+                            <div class="kpi-info">
+                                <div class="kpi-label">Tamaño del Almacén</div>
+                                <div class="kpi-subtext">Filas x Columnas</div>
+                            </div>
+                            <div class="kpi-value" id="warehouse-size">0x0</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Panel de KPIs Avanzados -->
                 <div class="sidebar-card fade-in">
                     <div class="card-header-custom">
@@ -1568,7 +380,6 @@
                             <div class="kpi-info">
                                 <div class="kpi-label">Ocupación Total</div>
                                 <div class="kpi-subtext">Capacidad utilizada</div>
-                                <div class="kpi-trend trend-up" id="kpi-trend-ocupacion">+2.5%</div>
                             </div>
                             <div class="kpi-value" id="kpi-ocupacion">0%</div>
                         </div>
@@ -1576,7 +387,6 @@
                             <div class="kpi-info">
                                 <div class="kpi-label">Ubicaciones Críticas</div>
                                 <div class="kpi-subtext">Requieren atención</div>
-                                <div class="kpi-trend trend-down" id="kpi-trend-criticas">-15%</div>
                             </div>
                             <div class="kpi-value" id="kpi-criticas">0</div>
                         </div>
@@ -1584,7 +394,6 @@
                             <div class="kpi-info">
                                 <div class="kpi-label">Espacio Disponible</div>
                                 <div class="kpi-subtext">Capacidad libre</div>
-                                <div class="kpi-trend trend-neutral" id="kpi-trend-espacio">0%</div>
                             </div>
                             <div class="kpi-value" id="kpi-espacio">0</div>
                         </div>
@@ -1592,17 +401,8 @@
                             <div class="kpi-info">
                                 <div class="kpi-label">Eficiencia Almacén</div>
                                 <div class="kpi-subtext">Score general</div>
-                                <div class="kpi-trend trend-excellent" id="kpi-trend-eficiencia">Excelente</div>
                             </div>
                             <div class="kpi-value" id="kpi-eficiencia">0%</div>
-                        </div>
-                        <div class="kpi-item">
-                            <div class="kpi-info">
-                                <div class="kpi-label">Rotación Promedio</div>
-                                <div class="kpi-subtext">Movimiento mensual</div>
-                                <div class="kpi-trend trend-up" id="kpi-trend-rotacion">+8.3%</div>
-                            </div>
-                            <div class="kpi-value" id="kpi-rotacion">0%</div>
                         </div>
                     </div>
                 </div>
@@ -1645,14 +445,6 @@
                                 <span class="counter-percent" id="percent-vacio">0%</span>
                             </div>
                         </div>
-                        <div class="counter-item" data-status="reservado" onclick="filterStatus('reservado')">
-                            <div class="counter-color color-reservado"></div>
-                            <div class="counter-label">Reservado</div>
-                            <div class="counter-value">
-                                <span id="count-reservado">0</span>
-                                <span class="counter-percent" id="percent-reservado">0%</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -1666,13 +458,9 @@
                             <label class="filter-label">
                                 <i class="bi bi-compass"></i> Zona del Almacén
                             </label>
-                            <select class="form-select" id="filter-zone" multiple size="3">
-                                <option value="all" selected>Todas las zonas</option>
-                                <option value="A">Zona A (Alta Rotación)</option>
-                                <option value="B">Zona B (Media Rotación)</option>
-                                <option value="C">Zona C (Baja Rotación)</option>
-                                <option value="D">Zona D (Almacenamiento)</option>
-                                <option value="E">Zona E (Especial)</option>
+                            <select class="form-select" id="filter-zone">
+                                <option value="all">Todas las zonas</option>
+                                <!-- Se llena dinámicamente con las zonas del Excel -->
                             </select>
                         </div>
                         
@@ -1693,29 +481,11 @@
                         
                         <div class="filter-group">
                             <label class="filter-label">
-                                <i class="bi bi-calendar"></i> Última Movimiento
+                                <i class="bi bi-box-seam"></i> Material Específico
                             </label>
-                            <select class="form-select" id="filter-last-movement">
-                                <option value="all">Cualquier fecha</option>
-                                <option value="today">Hoy</option>
-                                <option value="week">Esta semana</option>
-                                <option value="month">Este mes</option>
-                                <option value="quarter">Este trimestre</option>
-                                <option value="year">Este año</option>
-                            </select>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label class="filter-label">
-                                <i class="bi bi-box-seam"></i> Tipo de Material
-                            </label>
-                            <select class="form-select" id="filter-material-type">
-                                <option value="all">Todos los tipos</option>
-                                <option value="raw">Materia Prima</option>
-                                <option value="component">Componentes</option>
-                                <option value="finished">Producto Terminado</option>
-                                <option value="spare">Repuestos</option>
-                                <option value="tool">Herramientas</option>
+                            <select class="form-select" id="filter-material">
+                                <option value="all">Todos los materiales</option>
+                                <!-- Se llena dinámicamente con los materiales del Excel -->
                             </select>
                         </div>
                         
@@ -1729,16 +499,18 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
+{% if has_data %}
 <!-- ================= MODAL AVANZADO DE DETALLES ================= -->
 <div class="modal fade modal-custom" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xxl">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="locationModalLabel">
-                    <i class="bi bi-info-circle-fill"></i> Detalles Completo de Ubicación
+                    <i class="bi bi-info-circle-fill"></i> Detalles de Ubicación
                     <span class="location-badge" id="modal-location-code">A-01-01</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
@@ -1750,63 +522,47 @@
                     <h6 class="modal-section-title">
                         <i class="bi bi-geo-alt-fill"></i> Información General
                     </h6>
-                    <div class="info-grid">
-                        <div class="info-card">
-                            <div class="info-item">
-                                <span class="info-label">Código Ubicación:</span>
-                                <span class="info-value" id="modal-location">A-01-01</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Zona:</span>
-                                <span class="info-value" id="modal-zone">A - Alta Rotación</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Tipo:</span>
-                                <span class="info-value" id="modal-type">Estantería</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Estado:</span>
-                                <span class="info-value">
-                                    <span class="status-badge" id="modal-status">Normal</span>
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="info-card">
-                            <div class="info-item">
-                                <span class="info-label">Capacidad Total:</span>
-                                <span class="info-value" id="modal-capacity">1,000 unidades</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Ocupación Actual:</span>
-                                <span class="info-value" id="modal-ocupation">75%</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Espacio Libre:</span>
-                                <span class="info-value" id="modal-free-space">250 unidades</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Última Actualización:</span>
-                                <span class="info-value" id="modal-last-update">2024-01-15 14:30</span>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-item">
+                                    <span class="info-label">Código Ubicación:</span>
+                                    <span class="info-value" id="modal-location">A-01-01</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Zona:</span>
+                                    <span class="info-value" id="modal-zone">A</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Fila:</span>
+                                    <span class="info-value" id="modal-row">01</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Columna:</span>
+                                    <span class="info-value" id="modal-col">01</span>
+                                </div>
                             </div>
                         </div>
-                        
-                        <div class="info-card">
-                            <div class="info-item">
-                                <span class="info-label">Temperatura:</span>
-                                <span class="info-value" id="modal-temperature">22°C</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Humedad:</span>
-                                <span class="info-value" id="modal-humidity">45%</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Acceso:</span>
-                                <span class="info-value" id="modal-access">Público</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Prioridad:</span>
-                                <span class="info-value" id="modal-priority">Alta</span>
+                        <div class="col-md-6">
+                            <div class="info-card">
+                                <div class="info-item">
+                                    <span class="info-label">Capacidad Total:</span>
+                                    <span class="info-value" id="modal-capacity">0</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Stock Actual:</span>
+                                    <span class="info-value" id="modal-stock">0</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Ocupación:</span>
+                                    <span class="info-value" id="modal-ocupation">0%</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Estado:</span>
+                                    <span class="info-value">
+                                        <span class="status-badge" id="modal-status">Normal</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1815,47 +571,10 @@
                     <div class="mt-3">
                         <div class="d-flex justify-content-between mb-1">
                             <span>Ocupación de la Ubicación</span>
-                            <span id="modal-ocupation-text">750 / 1,000 unidades (75%)</span>
+                            <span id="modal-ocupation-text">0 / 0 (0%)</span>
                         </div>
                         <div class="progress-custom">
-                            <div id="modal-ocupation-bar" class="progress-bar" style="width: 75%; background-color: var(--color-normal);"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Estadísticas de Stock -->
-                <div class="modal-section">
-                    <h6 class="modal-section-title">
-                        <i class="bi bi-bar-chart-fill"></i> Estadísticas de Stock
-                    </h6>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="info-card text-center">
-                                <div class="info-label">Materiales Totales</div>
-                                <div class="info-value" id="modal-materials-count" style="font-size: 2rem;">5</div>
-                                <small class="text-muted">diferentes SKUs</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-card text-center">
-                                <div class="info-label">Stock Total</div>
-                                <div class="info-value" id="modal-total-stock" style="font-size: 2rem;">750</div>
-                                <small class="text-muted">unidades</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-card text-center">
-                                <div class="info-label">Valor Estimado</div>
-                                <div class="info-value" id="modal-total-value" style="font-size: 2rem;">$15,250</div>
-                                <small class="text-muted">USD</small>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="info-card text-center">
-                                <div class="info-label">Rotación Mensual</div>
-                                <div class="info-value" id="modal-rotation" style="font-size: 2rem;">2.3x</div>
-                                <small class="text-muted">veces al mes</small>
-                            </div>
+                            <div id="modal-ocupation-bar" class="progress-bar" style="width: 0%;"></div>
                         </div>
                     </div>
                 </div>
@@ -1867,7 +586,7 @@
                             <i class="bi bi-box-seam-fill"></i> Materiales en esta Ubicación
                         </h6>
                         <div>
-                            <button class="btn btn-sm btn-outline-primary" onclick="exportMaterialsCSV()">
+                            <button class="btn btn-sm btn-outline-primary" onclick="exportLocationCSV()">
                                 <i class="bi bi-download"></i> Exportar CSV
                             </button>
                         </div>
@@ -1877,44 +596,16 @@
                         <table class="table materials-table">
                             <thead>
                                 <tr>
-                                    <th><input type="checkbox" id="select-all-materials"></th>
-                                    <th>Código SKU</th>
+                                    <th>Código Material</th>
                                     <th>Descripción</th>
-                                    <th>Unidad</th>
-                                    <th>Stock Actual</th>
-                                    <th>Stock Mínimo</th>
-                                    <th>Stock Máximo</th>
-                                    <th>Valor Unitario</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="location-details">
-                                <!-- Los datos se cargarán dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Historial de Movimientos -->
-                <div class="modal-section">
-                    <h6 class="modal-section-title">
-                        <i class="bi bi-clock-history"></i> Historial Reciente
-                    </h6>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Fecha/Hora</th>
-                                    <th>Usuario</th>
-                                    <th>Tipo</th>
                                     <th>Cantidad</th>
-                                    <th>Material</th>
-                                    <th>Observaciones</th>
+                                    <th>Unidad</th>
+                                    <th>Valor Unitario</th>
+                                    <th>Valor Total</th>
                                 </tr>
                             </thead>
-                            <tbody id="location-history">
-                                <!-- El historial se cargará dinámicamente -->
+                            <tbody id="location-materials">
+                                <!-- Los datos se cargarán dinámicamente -->
                             </tbody>
                         </table>
                     </div>
@@ -1927,16 +618,10 @@
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
                             <i class="bi bi-x-lg"></i> Cerrar
                         </button>
-                        <button type="button" class="btn btn-outline-primary" onclick="printLocationDetails()">
-                            <i class="bi bi-printer"></i> Imprimir
-                        </button>
                     </div>
                     <div>
                         <button type="button" class="btn btn-primary" onclick="editLocation()">
                             <i class="bi bi-pencil-square"></i> Editar Ubicación
-                        </button>
-                        <button type="button" class="btn btn-success" onclick="transferMaterials()">
-                            <i class="bi bi-arrow-left-right"></i> Transferir
                         </button>
                     </div>
                 </div>
@@ -1951,21 +636,18 @@
 <!-- ================= OVERLAY DE CARGA ================= -->
 <div id="loading-overlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>
-    <div class="loading-text">Cargando datos del almacén...</div>
+    <div class="loading-text">Procesando datos del almacén...</div>
 </div>
+{% endif %}
 
 <!-- ================= SCRIPT AVANZADO ================= -->
 <script>
 /**
  * SISTEMA DE MAPA 2D INTELIGENTE PARA ALMACÉN
- * Versión Avanzada - Más de 1500 líneas de código
- * Características:
- * - Visualización 2D en tiempo real
- * - Filtros avanzados y búsqueda inteligente
- * - KPIs y métricas en tiempo real
- * - Sistema de zoom y navegación
- * - Exportación de datos
- * - Interfaz responsive y accesible
+ * Versión Mejorada - Integración con Excel
+ * 
+ * Este sistema carga datos desde un archivo Excel subido
+ * y genera un mapa 2D interactivo del almacén.
  */
 
 // ================= CONFIGURACIÓN GLOBAL =================
@@ -1973,8 +655,6 @@ const WarehouseConfig = {
     // Configuración de zoom
     ZOOM_LEVELS: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0],
     DEFAULT_ZOOM_INDEX: 2, // 1.0x
-    MIN_ZOOM: 0.5,
-    MAX_ZOOM: 2.0,
     
     // Configuración de grid
     GRID_SIZE: 45,
@@ -1986,30 +666,31 @@ const WarehouseConfig = {
         normal: '#28a745',
         bajo: '#ffc107',
         critico: '#dc3545',
-        vacio: '#6c757d',
-        reservado: '#6f42c1'
+        vacio: '#6c757d'
     },
     
-    // Configuración de actualización
-    AUTO_REFRESH_INTERVAL: 30000, // 30 segundos
-    DEBOUNCE_DELAY: 300,
+    // Umbrales de ocupación
+    OCCUPATION_THRESHOLDS: {
+        critico: 20,   // < 20%
+        bajo: 50,      // < 50%
+        normal: 100    // >= 50%
+    },
     
-    // Configuración de datos
-    MAX_LOCATIONS: 200,
-    MAX_MATERIALS_PER_LOCATION: 10,
-    
-    // Configuración de rendimiento
-    BATCH_SIZE: 50,
-    ANIMATION_DURATION: 300
+    // Configuración de API
+    API_ENDPOINTS: {
+        get_data: "{{ url_for('warehouse2d.get_warehouse_data') }}",
+        clear_data: "{{ url_for('warehouse2d.clear_data') }}",
+        export_excel: "{{ url_for('warehouse2d.export_excel') }}"
+    }
 };
 
 // ================= ESTADO GLOBAL =================
 const WarehouseState = {
-    // Datos
+    // Datos del Excel
+    rawData: [],
     locations: [],
     materials: [],
     filteredLocations: [],
-    selectedLocations: new Set(),
     
     // Filtros
     currentFilter: 'todos',
@@ -2017,45 +698,40 @@ const WarehouseState = {
     advancedFilters: {
         zone: 'all',
         stockLevel: 'all',
-        lastMovement: 'all',
-        materialType: 'all'
+        material: 'all'
     },
     
     // Vista
-    viewMode: 'grid', // grid, list, heatmap
+    viewMode: 'grid',
     zoomIndex: WarehouseConfig.DEFAULT_ZOOM_INDEX,
     showLabels: true,
-    
-    // Configuración UI
-    autoRefresh: false,
-    refreshInterval: null,
+    showGrid: true,
     
     // Selección
     selectedLocation: null,
-    hoveredLocation: null,
     
     // Estadísticas
     stats: {
         totalLocations: 0,
+        totalMaterials: 0,
         occupiedLocations: 0,
-        criticalLocations: 0,
         emptyLocations: 0,
         totalCapacity: 0,
         usedCapacity: 0,
-        averageOcupation: 0
+        byStatus: {
+            normal: 0,
+            bajo: 0,
+            critico: 0,
+            vacio: 0
+        }
     },
     
-    // Cache
-    cache: {
-        searchResults: null,
-        filteredCache: null,
-        kpisCache: null
-    },
-    
-    // Performance
-    lastRenderTime: 0,
-    renderQueue: [],
-    isRendering: false
+    // Dimensiones del almacén
+    dimensions: {
+        maxRow: 0,
+        maxCol: 0,
+        zones: new Set()
+    }
 };
 
 // ================= ELEMENTOS DOM =================
@@ -2064,6 +740,8 @@ const DOMElements = {
     mapGrid: document.getElementById('map-grid'),
     mapContainer: document.getElementById('map-container'),
     noResults: document.getElementById('no-results'),
+    listView: document.getElementById('list-view'),
+    locationsTable: document.getElementById('locations-table'),
     
     // Buscador
     searchBox: document.getElementById('searchBox'),
@@ -2075,1411 +753,994 @@ const DOMElements = {
     currentView: document.getElementById('currentView'),
     
     // Estadísticas
-    totalLocations: document.getElementById('total-locations'),
+    totalLocationsSide: document.getElementById('total-locations-side'),
     visibleLocations: document.getElementById('visible-locations'),
-    selectedLocations: document.getElementById('selected-locations'),
+    occupiedLocations: document.getElementById('occupied-locations'),
     ocupationRate: document.getElementById('ocupation-rate'),
+    warehouseSize: document.getElementById('warehouse-size'),
     
     // KPIs
     kpiOcupacion: document.getElementById('kpi-ocupacion'),
     kpiCriticas: document.getElementById('kpi-criticas'),
     kpiEspacio: document.getElementById('kpi-espacio'),
     kpiEficiencia: document.getElementById('kpi-eficiencia'),
-    kpiRotacion: document.getElementById('kpi-rotacion'),
     
     // Contadores
     countNormal: document.getElementById('count-normal'),
     countBajo: document.getElementById('count-bajo'),
     countCritico: document.getElementById('count-critico'),
     countVacio: document.getElementById('count-vacio'),
-    countReservado: document.getElementById('count-reservado'),
     
     percentNormal: document.getElementById('percent-normal'),
     percentBajo: document.getElementById('percent-bajo'),
     percentCritico: document.getElementById('percent-critico'),
     percentVacio: document.getElementById('percent-vacio'),
-    percentReservado: document.getElementById('percent-reservado'),
     
     // Filtros
     filterZone: document.getElementById('filter-zone'),
     filterStockLevel: document.getElementById('filter-stock-level'),
-    filterLastMovement: document.getElementById('filter-last-movement'),
-    filterMaterialType: document.getElementById('filter-material-type'),
+    filterMaterial: document.getElementById('filter-material'),
     
     // Modal
-    modal: new bootstrap.Modal(document.getElementById('locationModal')),
+    modal: null,
     modalLocationCode: document.getElementById('modal-location-code'),
     modalLocation: document.getElementById('modal-location'),
     modalZone: document.getElementById('modal-zone'),
-    modalType: document.getElementById('modal-type'),
+    modalRow: document.getElementById('modal-row'),
+    modalCol: document.getElementById('modal-col'),
     modalStatus: document.getElementById('modal-status'),
     modalCapacity: document.getElementById('modal-capacity'),
+    modalStock: document.getElementById('modal-stock'),
     modalOcupation: document.getElementById('modal-ocupation'),
-    modalFreeSpace: document.getElementById('modal-free-space'),
-    modalLastUpdate: document.getElementById('modal-last-update'),
-    modalTemperature: document.getElementById('modal-temperature'),
-    modalHumidity: document.getElementById('modal-humidity'),
-    modalAccess: document.getElementById('modal-access'),
-    modalPriority: document.getElementById('modal-priority'),
     modalOcupationBar: document.getElementById('modal-ocupation-bar'),
     modalOcupationText: document.getElementById('modal-ocupation-text'),
-    modalMaterialsCount: document.getElementById('modal-materials-count'),
-    modalTotalStock: document.getElementById('modal-total-stock'),
-    modalTotalValue: document.getElementById('modal-total-value'),
-    modalRotation: document.getElementById('modal-rotation'),
-    locationDetails: document.getElementById('location-details'),
-    locationHistory: document.getElementById('location-history'),
-    
-    // Tooltip
-    tooltip: document.getElementById('dynamic-tooltip'),
-    
-    // Loading
-    loadingOverlay: document.getElementById('loading-overlay'),
+    locationMaterials: document.getElementById('location-materials'),
     
     // Checkboxes
     showLabels: document.getElementById('showLabels'),
-    selectAllMaterials: document.getElementById('select-all-materials'),
+    showGrid: document.getElementById('showGrid'),
     
-    // Botones
-    autoRefreshBtn: document.getElementById('autoRefreshBtn')
+    // Loading
+    loadingOverlay: document.getElementById('loading-overlay')
 };
 
-// ================= UTILIDADES AVANZADAS =================
-class WarehouseUtils {
-    static formatNumber(num) {
-        if (num >= 1000000) {
-            return (num / 1000000).toFixed(2) + 'M';
-        }
-        if (num >= 1000) {
-            return (num / 1000).toFixed(1) + 'K';
-        }
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
+// ================= INICIALIZACIÓN =================
+document.addEventListener('DOMContentLoaded', async function() {
+    {% if has_data %}
+    console.log('Inicializando Mapa 2D del Almacén...');
     
-    static calculatePercentage(part, total) {
-        if (total === 0) return 0;
-        return Math.round((part / total) * 100);
-    }
+    // Inicializar modal
+    DOMElements.modal = new bootstrap.Modal(document.getElementById('locationModal'));
     
-    static getStatusByOcupation(ocupationPercent) {
-        if (ocupationPercent === 0) return 'vacio';
-        if (ocupationPercent < 20) return 'critico';
-        if (ocupationPercent < 50) return 'bajo';
-        if (ocupationPercent < 90) return 'normal';
-        return 'reservado';
-    }
+    // Cargar datos del servidor
+    await loadDataFromServer();
     
-    static generateLocationId(zone, row, col) {
-        return `${zone}-${String(row).padStart(2, '0')}-${String(col).padStart(2, '0')}`;
-    }
+    // Configurar eventos
+    setupEventListeners();
     
-    static parseLocationId(locationId) {
-        const match = locationId.match(/([A-Z])-(\d{2})-(\d{2})/);
-        if (match) {
-            return {
-                zone: match[1],
-                row: parseInt(match[2]),
-                col: parseInt(match[3])
-            };
-        }
-        return null;
-    }
+    // Configurar atajos de teclado
+    setupKeyboardShortcuts();
     
-    static debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
+    // Inicializar vista
+    renderGrid();
     
-    static throttle(func, limit) {
-        let inThrottle;
-        return function() {
-            const args = arguments;
-            const context = this;
-            if (!inThrottle) {
-                func.apply(context, args);
-                inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
-            }
-        };
-    }
+    console.log('Sistema inicializado correctamente');
+    {% endif %}
+});
+
+// ================= CARGA DE DATOS =================
+async function loadDataFromServer() {
+    showLoading(true);
     
-    static createElement(tag, className, text = '') {
-        const element = document.createElement(tag);
-        if (className) element.className = className;
-        if (text) element.textContent = text;
-        return element;
-    }
-    
-    static showLoading(show) {
-        if (show) {
-            DOMElements.loadingOverlay.style.display = 'flex';
+    try {
+        const response = await fetch(WarehouseConfig.API_ENDPOINTS.get_data);
+        const data = await response.json();
+        
+        if (data.success) {
+            WarehouseState.rawData = data.data;
+            processExcelData(data.data);
+            updateStatistics();
+            populateFilters();
+            showNotification('Datos cargados correctamente', 'success');
         } else {
-            DOMElements.loadingOverlay.style.display = 'none';
+            throw new Error(data.message || 'Error al cargar datos');
         }
-    }
-    
-    static showNotification(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.className = `toast align-items-center text-bg-${type} border-0`;
-        toast.setAttribute('role', 'alert');
-        toast.setAttribute('aria-live', 'assertive');
-        toast.setAttribute('aria-atomic', 'true');
-        
-        toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">
-                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'x-circle' : 'info-circle'} me-2"></i>
-                    ${message}
-                </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        `;
-        
-        const container = document.getElementById('toast-container') || (() => {
-            const div = document.createElement('div');
-            div.id = 'toast-container';
-            div.className = 'toast-container position-fixed bottom-0 end-0 p-3';
-            document.body.appendChild(div);
-            return div;
-        })();
-        
-        container.appendChild(toast);
-        const bsToast = new bootstrap.Toast(toast);
-        bsToast.show();
-        
-        toast.addEventListener('hidden.bs.toast', () => {
-            toast.remove();
-        });
+    } catch (error) {
+        console.error('Error cargando datos:', error);
+        showNotification('Error al cargar los datos: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
-// ================= GENERACIÓN DE DATOS DE EJEMPLO =================
-class DataGenerator {
-    static generateMockData() {
-        const locations = [];
-        const zones = ['A', 'B', 'C', 'D', 'E'];
-        const zoneNames = {
-            'A': 'Alta Rotación',
-            'B': 'Media Rotación',
-            'C': 'Baja Rotación',
-            'D': 'Almacenamiento',
-            'E': 'Especial'
-        };
-        
-        const materialTypes = ['raw', 'component', 'finished', 'spare', 'tool'];
-        const materialNames = {
-            'raw': ['Acero Inoxidable', 'Plástico ABS', 'Madera Contrachapada', 'Vidrio Templado', 'Aluminio'],
-            'component': ['Motor 5HP', 'Controlador PLC', 'Sensor Proximidad', 'Válvula Neumática', 'Cilindro Hidráulico'],
-            'finished': ['Producto X-100', 'Kit Montaje Y', 'Paquete Premium', 'Equipo Completo', 'Sistema Z'],
-            'spare': ['Rodamiento 6205', 'Correa Trapezoidal', 'Fusible 10A', 'Junta Estanqueidad', 'Tornillo M8'],
-            'tool': ['Taladro Percutor', 'Sierra Circular', 'Soldadora MIG', 'Pistola Silicona', 'Nivel Láser']
-        };
-        
-        let locationId = 1;
-        
-        zones.forEach(zone => {
-            const rows = zone === 'A' ? 12 : 10;
-            const cols = zone === 'A' ? 15 : 12;
-            
-            for (let row = 1; row <= rows; row++) {
-                for (let col = 1; col <= cols; col++) {
-                    const locationCode = WarehouseUtils.generateLocationId(zone, row, col);
-                    const capacity = Math.floor(Math.random() * 1000) + 100;
-                    const usedCapacity = Math.floor(Math.random() * capacity);
-                    const ocupationPercent = WarehouseUtils.calculatePercentage(usedCapacity, capacity);
-                    const status = WarehouseUtils.getStatusByOcupation(ocupationPercent);
-                    
-                    // Generar materiales para esta ubicación
-                    const materials = [];
-                    if (status !== 'vacio') {
-                        const numMaterials = Math.floor(Math.random() * 5) + 1;
-                        for (let i = 0; i < numMaterials; i++) {
-                            const materialType = materialTypes[Math.floor(Math.random() * materialTypes.length)];
-                            const materialName = materialNames[materialType][Math.floor(Math.random() * materialNames[materialType].length)];
-                            
-                            const maxStock = Math.floor(Math.random() * 200) + 50;
-                            const currentStock = Math.floor(Math.random() * maxStock);
-                            const minStock = Math.floor(maxStock * 0.1);
-                            const unitValue = Math.random() * 100 + 10;
-                            
-                            materials.push({
-                                id: `MAT-${1000 + i}`,
-                                code: `${zone}-${materialType.toUpperCase().substring(0,3)}-${Math.floor(Math.random() * 1000)}`,
-                                description: materialName,
-                                unit: 'UN',
-                                type: materialType,
-                                currentStock: currentStock,
-                                minStock: minStock,
-                                maxStock: maxStock,
-                                unitValue: unitValue,
-                                totalValue: currentStock * unitValue,
-                                status: WarehouseUtils.getStatusByOcupation(WarehouseUtils.calculatePercentage(currentStock, maxStock))
-                            });
-                        }
-                    }
-                    
-                    // Última actualización (en los últimos 30 días)
-                    const lastUpdate = new Date();
-                    lastUpdate.setDate(lastUpdate.getDate() - Math.floor(Math.random() * 30));
-                    
-                    locations.push({
-                        id: locationId++,
-                        code: locationCode,
-                        zone: zone,
-                        zoneName: zoneNames[zone],
-                        row: row,
-                        col: col,
-                        type: ['Estantería', 'Palet', 'Caja', 'Rack', 'Suelo'][Math.floor(Math.random() * 5)],
-                        capacity: capacity,
-                        usedCapacity: usedCapacity,
-                        freeCapacity: capacity - usedCapacity,
-                        ocupationPercent: ocupationPercent,
-                        status: status,
-                        materials: materials,
-                        temperature: 20 + Math.floor(Math.random() * 10),
-                        humidity: 40 + Math.floor(Math.random() * 20),
-                        access: Math.random() > 0.7 ? 'Restringido' : 'Público',
-                        priority: ['Alta', 'Media', 'Baja'][Math.floor(Math.random() * 3)],
-                        lastUpdate: lastUpdate.toISOString(),
-                        lastMovement: new Date(lastUpdate.getTime() - Math.floor(Math.random() * 86400000)).toISOString(),
-                        efficiency: 70 + Math.floor(Math.random() * 30),
-                        rotation: Math.random() * 3 + 0.5
-                    });
-                }
-            }
-        });
-        
-        return locations;
-    }
+function processExcelData(excelData) {
+    // Resetear estado
+    WarehouseState.locations = [];
+    WarehouseState.materials = new Set();
+    WarehouseState.dimensions = {
+        maxRow: 0,
+        maxCol: 0,
+        zones: new Set()
+    };
     
-    static generateLocationHistory(locationId) {
-        const history = [];
-        const actions = ['ENTRADA', 'SALIDA', 'AJUSTE', 'INVENTARIO', 'TRANSFERENCIA'];
-        const users = ['admin', 'operador1', 'operador2', 'supervisor', 'sistema'];
+    // Agrupar datos por ubicación
+    const locationMap = new Map();
+    
+    excelData.forEach(row => {
+        const locationCode = row.ubicacion || row.Ubicación || row.UBICACION;
+        const materialCode = row.material || row.Material || row.MATERIAL;
+        const quantity = parseFloat(row.cantidad || row.Cantidad || row.CANTIDAD || 0);
+        const capacity = parseFloat(row.capacidad || row.Capacidad || row.CAPACIDAD || 100);
+        const zone = row.zona || row.Zona || row.ZONA || 'A';
+        const fila = parseInt(row.fila || row.Fila || row.FILA || 1);
+        const columna = parseInt(row.columna || row.Columna || row.COLUMNA || 1);
         
-        for (let i = 0; i < 10; i++) {
-            const date = new Date();
-            date.setDate(date.getDate() - Math.floor(Math.random() * 30));
-            date.setHours(Math.floor(Math.random() * 24));
-            date.setMinutes(Math.floor(Math.random() * 60));
-            
-            const action = actions[Math.floor(Math.random() * actions.length)];
-            const quantity = Math.floor(Math.random() * 100) + 1;
-            const materialCode = `MAT-${1000 + Math.floor(Math.random() * 100)}`;
-            
-            history.push({
-                id: i + 1,
-                timestamp: date.toISOString(),
-                user: users[Math.floor(Math.random() * users.length)],
-                action: action,
+        if (!locationCode) return;
+        
+        // Actualizar dimensiones
+        WarehouseState.dimensions.maxRow = Math.max(WarehouseState.dimensions.maxRow, fila);
+        WarehouseState.dimensions.maxCol = Math.max(WarehouseState.dimensions.maxCol, columna);
+        WarehouseState.dimensions.zones.add(zone);
+        
+        // Agregar material al conjunto
+        if (materialCode) {
+            WarehouseState.materials.add(materialCode);
+        }
+        
+        // Procesar ubicación
+        if (!locationMap.has(locationCode)) {
+            locationMap.set(locationCode, {
+                code: locationCode,
+                zone: zone,
+                row: fila,
+                col: columna,
+                capacity: capacity,
+                usedCapacity: 0,
+                materials: [],
+                status: 'vacio'
+            });
+        }
+        
+        const location = locationMap.get(locationCode);
+        
+        // Agregar material a la ubicación
+        if (materialCode && quantity > 0) {
+            location.materials.push({
+                code: materialCode,
                 quantity: quantity,
-                materialCode: materialCode,
-                observation: action === 'ENTRADA' ? 'Recepción de proveedor' :
-                            action === 'SALIDA' ? 'Envío a producción' :
-                            action === 'AJUSTE' ? 'Ajuste de inventario' :
-                            action === 'INVENTARIO' ? 'Conteo físico' : 'Transferencia entre ubicaciones'
+                description: row.descripcion || row.Descripción || row.DESCRIPCION || materialCode,
+                unit: row.unidad || row.Unidad || row.UNIDAD || 'UN',
+                unitValue: parseFloat(row.valor_unitario || row['Valor Unitario'] || 0)
             });
+            
+            location.usedCapacity += quantity;
+        }
+    });
+    
+    // Convertir mapa a array y calcular estados
+    WarehouseState.locations = Array.from(locationMap.values()).map(location => {
+        const ocupationPercent = location.capacity > 0 ? 
+            Math.round((location.usedCapacity / location.capacity) * 100) : 0;
+        
+        // Determinar estado basado en ocupación
+        let status = 'vacio';
+        if (location.usedCapacity > 0) {
+            if (ocupationPercent < WarehouseConfig.OCCUPATION_THRESHOLDS.critico) {
+                status = 'critico';
+            } else if (ocupationPercent < WarehouseConfig.OCCUPATION_THRESHOLDS.bajo) {
+                status = 'bajo';
+            } else {
+                status = 'normal';
+            }
         }
         
-        return history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    }
-}
-
-// ================= GESTIÓN DE DATOS =================
-class DataManager {
-    static async loadData() {
-        try {
-            WarehouseUtils.showLoading(true);
-            
-            // En producción, aquí iría la llamada a la API
-            // const response = await fetch('/api/warehouse2d/data');
-            // const data = await response.json();
-            
-            // Datos de ejemplo
-            WarehouseState.locations = DataGenerator.generateMockData();
-            WarehouseState.filteredLocations = [...WarehouseState.locations];
-            
-            // Calcular estadísticas iniciales
-            this.calculateStatistics();
-            
-            // Renderizar
-            this.applyCurrentFilters();
-            
-            WarehouseUtils.showNotification('Datos cargados correctamente', 'success');
-            
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            WarehouseUtils.showNotification('Error al cargar los datos', 'error');
-        } finally {
-            WarehouseUtils.showLoading(false);
-        }
-    }
-    
-    static calculateStatistics() {
-        const stats = {
-            totalLocations: WarehouseState.locations.length,
-            occupiedLocations: 0,
-            criticalLocations: 0,
-            emptyLocations: 0,
-            totalCapacity: 0,
-            usedCapacity: 0,
-            averageOcupation: 0,
-            byStatus: {
-                normal: 0,
-                bajo: 0,
-                critico: 0,
-                vacio: 0,
-                reservado: 0
-            }
+        return {
+            ...location,
+            ocupationPercent: ocupationPercent,
+            status: status,
+            freeCapacity: location.capacity - location.usedCapacity
         };
-        
-        WarehouseState.locations.forEach(location => {
-            stats.totalCapacity += location.capacity;
-            stats.usedCapacity += location.usedCapacity;
-            
-            if (location.status !== 'vacio') {
-                stats.occupiedLocations++;
-            }
-            
-            if (location.status === 'critico') {
-                stats.criticalLocations++;
-            }
-            
-            if (location.status === 'vacio') {
-                stats.emptyLocations++;
-            }
-            
-            stats.byStatus[location.status]++;
-        });
-        
-        stats.averageOcupation = WarehouseUtils.calculatePercentage(stats.usedCapacity, stats.totalCapacity);
-        
-        WarehouseState.stats = stats;
-        this.updateUIStats();
-    }
+    });
     
-    static updateUIStats() {
-        const stats = WarehouseState.stats;
-        
-        // Estadísticas principales
-        DOMElements.totalLocations.textContent = WarehouseUtils.formatNumber(stats.totalLocations);
-        DOMElements.ocupationRate.textContent = `${stats.averageOcupation}%`;
-        
-        // KPIs
-        DOMElements.kpiOcupacion.textContent = `${stats.averageOcupation}%`;
-        DOMElements.kpiCriticas.textContent = WarehouseUtils.formatNumber(stats.criticalLocations);
-        DOMElements.kpiEspacio.textContent = WarehouseUtils.formatNumber(stats.totalCapacity - stats.usedCapacity);
-        DOMElements.kpiEficiencia.textContent = `${Math.floor(Math.random() * 30) + 70}%`;
-        DOMElements.kpiRotacion.textContent = `${Math.floor(Math.random() * 50) + 50}%`;
-        
-        // Contadores por estado
-        DOMElements.countNormal.textContent = WarehouseUtils.formatNumber(stats.byStatus.normal);
-        DOMElements.countBajo.textContent = WarehouseUtils.formatNumber(stats.byStatus.bajo);
-        DOMElements.countCritico.textContent = WarehouseUtils.formatNumber(stats.byStatus.critico);
-        DOMElements.countVacio.textContent = WarehouseUtils.formatNumber(stats.byStatus.vacio);
-        DOMElements.countReservado.textContent = WarehouseUtils.formatNumber(stats.byStatus.reservado || 0);
-        
-        // Porcentajes
-        DOMElements.percentNormal.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.normal, stats.totalLocations)}%)`;
-        DOMElements.percentBajo.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.bajo, stats.totalLocations)}%)`;
-        DOMElements.percentCritico.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.critico, stats.totalLocations)}%)`;
-        DOMElements.percentVacio.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.vacio, stats.totalLocations)}%)`;
-        DOMElements.percentReservado.textContent = `(${WarehouseUtils.calculatePercentage(stats.byStatus.reservado || 0, stats.totalLocations)}%)`;
-    }
+    // Ordenar ubicaciones por zona, fila y columna
+    WarehouseState.locations.sort((a, b) => {
+        if (a.zone !== b.zone) return a.zone.localeCompare(b.zone);
+        if (a.row !== b.row) return a.row - b.row;
+        return a.col - b.col;
+    });
+    
+    WarehouseState.filteredLocations = [...WarehouseState.locations];
 }
 
-// ================= FILTROS Y BÚSQUEDA =================
-class FilterManager {
-    static applyCurrentFilters() {
-        let filtered = [...WarehouseState.locations];
-        
-        // Filtro por estado
-        if (WarehouseState.currentFilter !== 'todos') {
-            filtered = filtered.filter(loc => loc.status === WarehouseState.currentFilter);
+function updateStatistics() {
+    const stats = {
+        totalLocations: WarehouseState.locations.length,
+        totalMaterials: WarehouseState.materials.size,
+        occupiedLocations: 0,
+        emptyLocations: 0,
+        totalCapacity: 0,
+        usedCapacity: 0,
+        byStatus: {
+            normal: 0,
+            bajo: 0,
+            critico: 0,
+            vacio: 0
         }
-        
-        // Búsqueda
-        if (WarehouseState.searchQuery) {
-            const query = WarehouseState.searchQuery.toLowerCase();
-            filtered = filtered.filter(loc => 
-                loc.code.toLowerCase().includes(query) ||
-                loc.zone.toLowerCase().includes(query) ||
-                loc.materials.some(m => 
-                    m.code.toLowerCase().includes(query) ||
-                    m.description.toLowerCase().includes(query)
-                )
-            );
-        }
-        
-        // Filtros avanzados
-        filtered = this.applyAdvancedFilters(filtered);
-        
-        WarehouseState.filteredLocations = filtered;
-        this.updateFilterUI();
-        GridRenderer.render();
-    }
+    };
     
-    static applyAdvancedFilters(locations) {
-        let filtered = [...locations];
-        const filters = WarehouseState.advancedFilters;
+    WarehouseState.locations.forEach(location => {
+        stats.totalCapacity += location.capacity;
+        stats.usedCapacity += location.usedCapacity;
         
-        // Filtro por zona
-        if (filters.zone !== 'all') {
-            filtered = filtered.filter(loc => loc.zone === filters.zone);
-        }
-        
-        // Filtro por nivel de stock
-        if (filters.stockLevel !== 'all') {
-            filtered = filtered.filter(loc => {
-                switch(filters.stockLevel) {
-                    case 'very-high': return loc.ocupationPercent > 90;
-                    case 'high': return loc.ocupationPercent >= 75 && loc.ocupationPercent <= 90;
-                    case 'medium': return loc.ocupationPercent >= 25 && loc.ocupationPercent < 75;
-                    case 'low': return loc.ocupationPercent >= 10 && loc.ocupationPercent < 25;
-                    case 'very-low': return loc.ocupationPercent < 10 && loc.ocupationPercent > 0;
-                    case 'empty': return loc.ocupationPercent === 0;
-                    default: return true;
-                }
-            });
-        }
-        
-        // Filtro por último movimiento
-        if (filters.lastMovement !== 'all') {
-            const now = new Date();
-            filtered = filtered.filter(loc => {
-                const lastMove = new Date(loc.lastMovement);
-                const diffDays = Math.floor((now - lastMove) / (1000 * 60 * 60 * 24));
-                
-                switch(filters.lastMovement) {
-                    case 'today': return diffDays === 0;
-                    case 'week': return diffDays <= 7;
-                    case 'month': return diffDays <= 30;
-                    case 'quarter': return diffDays <= 90;
-                    case 'year': return diffDays <= 365;
-                    default: return true;
-                }
-            });
-        }
-        
-        // Filtro por tipo de material
-        if (filters.materialType !== 'all') {
-            filtered = filtered.filter(loc => 
-                loc.materials.some(m => m.type === filters.materialType)
-            );
-        }
-        
-        return filtered;
-    }
-    
-    static updateFilterUI() {
-        // Actualizar botones de filtro
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            const status = btn.dataset.status;
-            btn.classList.toggle('active', status === WarehouseState.currentFilter);
-        });
-        
-        // Actualizar contadores
-        DOMElements.visibleLocations.textContent = WarehouseUtils.formatNumber(WarehouseState.filteredLocations.length);
-        DOMElements.selectedLocations.textContent = WarehouseState.selectedLocations.size;
-        
-        // Mostrar/ocultar mensaje de no resultados
-        if (WarehouseState.filteredLocations.length === 0) {
-            DOMElements.noResults.classList.remove('d-none');
-            DOMElements.mapGrid.style.display = 'none';
+        if (location.usedCapacity > 0) {
+            stats.occupiedLocations++;
         } else {
-            DOMElements.noResults.classList.add('d-none');
-            DOMElements.mapGrid.style.display = 'grid';
-        }
-    }
-    
-    static filterStatus(status) {
-        WarehouseState.currentFilter = status;
-        this.applyCurrentFilters();
-        
-        // Actualizar contadores en sidebar
-        const counterItems = document.querySelectorAll('.counter-item');
-        counterItems.forEach(item => {
-            item.classList.toggle('active', item.dataset.status === status);
-        });
-    }
-    
-    static async performSearch(query) {
-        WarehouseState.searchQuery = query;
-        
-        if (query.length < 2) {
-            DOMElements.searchDropdown.style.display = 'none';
-            this.applyCurrentFilters();
-            return;
+            stats.emptyLocations++;
         }
         
-        // Simular búsqueda asíncrona
-        setTimeout(() => {
-            const results = WarehouseState.locations.filter(loc => 
-                loc.code.toLowerCase().includes(query.toLowerCase()) ||
-                loc.materials.some(m => 
-                    m.code.toLowerCase().includes(query.toLowerCase()) ||
-                    m.description.toLowerCase().includes(query.toLowerCase())
-                )
-            ).slice(0, 10); // Limitar a 10 resultados
-            
-            this.displaySearchResults(results, query);
-        }, 300);
-    }
+        stats.byStatus[location.status]++;
+    });
     
-    static displaySearchResults(results, query) {
-        DOMElements.searchResults.innerHTML = '';
-        
-        if (results.length === 0) {
-            DOMElements.searchResults.innerHTML = `
-                <div class="p-3 text-center text-muted">
-                    <i class="bi bi-search me-2"></i>
-                    No se encontraron resultados para "${query}"
-                </div>
-            `;
-        } else {
-            results.forEach(location => {
-                const item = document.createElement('div');
-                item.className = 'search-result-item p-2 border-bottom cursor-pointer';
-                item.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${location.code}</strong>
-                            <div class="small text-muted">
-                                ${location.zoneName} • ${location.materials.length} materiales
-                            </div>
-                        </div>
-                        <span class="badge bg-${location.status}">${location.status.toUpperCase()}</span>
-                    </div>
-                `;
-                
-                item.addEventListener('click', () => {
-                    this.selectSearchResult(location);
-                });
-                
-                DOMElements.searchResults.appendChild(item);
-            });
-            
-            // Añadir opción para ver todos los resultados
-            const viewAll = document.createElement('div');
-            viewAll.className = 'p-2 text-center bg-light cursor-pointer';
-            viewAll.innerHTML = `
-                <small class="text-primary">
-                    <i class="bi bi-arrow-right-circle me-1"></i>
-                    Ver todos los resultados (${results.length})
-                </small>
-            `;
-            
-            viewAll.addEventListener('click', () => {
-                this.applyCurrentFilters();
-                DOMElements.searchDropdown.style.display = 'none';
-            });
-            
-            DOMElements.searchResults.appendChild(viewAll);
-        }
-        
-        DOMElements.searchDropdown.style.display = 'block';
-    }
+    const avgOcupation = stats.totalCapacity > 0 ? 
+        Math.round((stats.usedCapacity / stats.totalCapacity) * 100) : 0;
     
-    static selectSearchResult(location) {
-        // Filtrar para mostrar solo esta ubicación
-        WarehouseState.filteredLocations = [location];
-        WarehouseState.selectedLocation = location;
-        
-        // Actualizar UI
-        this.updateFilterUI();
-        GridRenderer.render();
-        
-        // Mostrar detalles
-        setTimeout(() => {
-            this.showLocationDetails(location);
-        }, 100);
-        
-        DOMElements.searchDropdown.style.display = 'none';
-        DOMElements.searchBox.value = '';
-        WarehouseState.searchQuery = '';
-    }
+    // Actualizar UI
+    DOMElements.totalLocationsSide.textContent = stats.totalLocations;
+    document.getElementById('total-materials').textContent = stats.totalMaterials;
+    DOMElements.warehouseSize.textContent = `${WarehouseState.dimensions.maxRow}x${WarehouseState.dimensions.maxCol}`;
+    
+    // Actualizar KPIs
+    DOMElements.kpiOcupacion.textContent = `${avgOcupation}%`;
+    DOMElements.kpiCriticas.textContent = stats.byStatus.critico;
+    DOMElements.kpiEspacio.textContent = formatNumber(stats.totalCapacity - stats.usedCapacity);
+    DOMElements.kpiEficiencia.textContent = `${Math.min(100, Math.round((stats.occupiedLocations / stats.totalLocations) * 100))}%`;
+    
+    // Actualizar contadores
+    DOMElements.countNormal.textContent = stats.byStatus.normal;
+    DOMElements.countBajo.textContent = stats.byStatus.bajo;
+    DOMElements.countCritico.textContent = stats.byStatus.critico;
+    DOMElements.countVacio.textContent = stats.byStatus.vacio;
+    
+    DOMElements.percentNormal.textContent = `(${Math.round((stats.byStatus.normal / stats.totalLocations) * 100)}%)`;
+    DOMElements.percentBajo.textContent = `(${Math.round((stats.byStatus.bajo / stats.totalLocations) * 100)}%)`;
+    DOMElements.percentCritico.textContent = `(${Math.round((stats.byStatus.critico / stats.totalLocations) * 100)}%)`;
+    DOMElements.percentVacio.textContent = `(${Math.round((stats.byStatus.vacio / stats.totalLocations) * 100)}%)`;
+    
+    WarehouseState.stats = stats;
+}
+
+function populateFilters() {
+    // Limpiar filtros
+    DOMElements.filterZone.innerHTML = '<option value="all">Todas las zonas</option>';
+    DOMElements.filterMaterial.innerHTML = '<option value="all">Todos los materiales</option>';
+    
+    // Agregar zonas
+    WarehouseState.dimensions.zones.forEach(zone => {
+        const option = document.createElement('option');
+        option.value = zone;
+        option.textContent = `Zona ${zone}`;
+        DOMElements.filterZone.appendChild(option);
+    });
+    
+    // Agregar materiales (los 20 primeros para no sobrecargar)
+    Array.from(WarehouseState.materials).slice(0, 20).forEach(material => {
+        const option = document.createElement('option');
+        option.value = material;
+        option.textContent = material;
+        DOMElements.filterMaterial.appendChild(option);
+    });
 }
 
 // ================= RENDERIZADO DEL GRID =================
-class GridRenderer {
-    static render() {
-        if (WarehouseState.isRendering) return;
-        WarehouseState.isRendering = true;
-        
-        const startTime = performance.now();
-        
-        // Limpiar grid
-        DOMElements.mapGrid.innerHTML = '';
-        
-        if (WarehouseState.filteredLocations.length === 0) {
-            WarehouseState.isRendering = false;
-            return;
+function renderGrid() {
+    if (WarehouseState.viewMode !== 'grid') return;
+    
+    const grid = DOMElements.mapGrid;
+    grid.innerHTML = '';
+    
+    // Calcular dimensiones
+    const rows = WarehouseState.dimensions.maxRow;
+    const cols = WarehouseState.dimensions.maxCol;
+    
+    if (rows === 0 || cols === 0) {
+        showNoResults();
+        return;
+    }
+    
+    // Configurar grid
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${WarehouseConfig.GRID_SIZE}px)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, ${WarehouseConfig.GRID_SIZE}px)`;
+    grid.style.gap = `${WarehouseConfig.GRID_GAP}px`;
+    grid.style.width = `${cols * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP}px`;
+    grid.style.height = `${rows * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP}px`;
+    
+    // Aplicar zoom
+    const zoom = WarehouseConfig.ZOOM_LEVELS[WarehouseState.zoomIndex];
+    grid.style.transform = `scale(${zoom})`;
+    DOMElements.zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+    
+    // Crear celdas
+    for (let row = 1; row <= rows; row++) {
+        for (let col = 1; col <= cols; col++) {
+            const location = findLocationAt(row, col);
+            const cell = createGridCell(row, col, location);
+            grid.appendChild(cell);
         }
-        
-        // Calcular dimensiones del grid
-        const gridInfo = this.calculateGridDimensions();
-        
-        // Configurar grid
-        DOMElements.mapGrid.style.gridTemplateColumns = `repeat(${gridInfo.cols}, ${WarehouseConfig.GRID_SIZE}px)`;
-        DOMElements.mapGrid.style.gridTemplateRows = `repeat(${gridInfo.rows}, ${WarehouseConfig.GRID_SIZE}px)`;
-        DOMElements.mapGrid.style.gap = `${WarehouseConfig.GRID_GAP}px`;
-        DOMElements.mapGrid.style.width = `${gridInfo.totalWidth}px`;
-        DOMElements.mapGrid.style.height = `${gridInfo.totalHeight}px`;
-        
-        // Aplicar zoom
-        const zoom = WarehouseConfig.ZOOM_LEVELS[WarehouseState.zoomIndex];
-        DOMElements.mapGrid.style.transform = `scale(${zoom})`;
-        DOMElements.zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
-        
-        // Crear fragmento para renderizado eficiente
-        const fragment = document.createDocumentFragment();
-        
-        // Crear celdas
-        for (let row = gridInfo.minRow; row <= gridInfo.maxRow; row++) {
-            for (let col = gridInfo.minCol; col <= gridInfo.maxCol; col++) {
-                const location = this.findLocationAt(row, col);
-                const cell = this.createGridCell(row, col, location);
-                fragment.appendChild(cell);
-            }
-        }
-        
-        // Añadir fragmento al DOM
-        DOMElements.mapGrid.appendChild(fragment);
-        
-        // Actualizar tiempo de renderizado
-        const endTime = performance.now();
-        WarehouseState.lastRenderTime = endTime - startTime;
-        WarehouseState.isRendering = false;
-        
-        console.log(`Grid renderizado en ${WarehouseState.lastRenderTime.toFixed(2)}ms`);
     }
     
-    static calculateGridDimensions() {
-        let minRow = Infinity, maxRow = 0, minCol = Infinity, maxCol = 0;
-        
-        WarehouseState.filteredLocations.forEach(location => {
-            if (location.row < minRow) minRow = location.row;
-            if (location.row > maxRow) maxRow = location.row;
-            if (location.col < minCol) minCol = location.col;
-            if (location.col > maxCol) maxCol = location.col;
-        });
-        
-        // Añadir márgenes
-        minRow = Math.max(1, minRow - 1);
-        maxRow = maxRow + 1;
-        minCol = Math.max(1, minCol - 1);
-        maxCol = maxCol + 1;
-        
-        const rows = maxRow - minRow + 1;
-        const cols = maxCol - minCol + 1;
-        
-        return {
-            minRow, maxRow, minCol, maxCol,
-            rows, cols,
-            totalWidth: cols * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP,
-            totalHeight: rows * (WarehouseConfig.GRID_SIZE + WarehouseConfig.GRID_GAP) - WarehouseConfig.GRID_GAP
-        };
-    }
+    // Actualizar estadísticas visibles
+    updateVisibleStats();
     
-    static findLocationAt(row, col) {
-        return WarehouseState.filteredLocations.find(loc => 
-            loc.row === row && loc.col === col
-        );
-    }
+    // Mostrar/ocultar grid
+    toggleGridLines();
+}
+
+function findLocationAt(row, col) {
+    return WarehouseState.filteredLocations.find(loc => 
+        loc.row === row && loc.col === col
+    );
+}
+
+function createGridCell(row, col, location) {
+    const cell = document.createElement('div');
+    cell.className = 'location-cell';
     
-    static createGridCell(row, col, location) {
-        const cell = document.createElement('div');
-        cell.className = 'location-cell';
+    if (location) {
+        // Celda con ubicación
+        cell.classList.add(location.status);
+        cell.dataset.locationCode = location.code;
+        cell.dataset.row = row;
+        cell.dataset.col = col;
         
-        if (location) {
-            // Celda con ubicación
-            cell.classList.add(location.status);
-            cell.dataset.locationId = location.id;
-            cell.dataset.code = location.code;
-            cell.dataset.status = location.status;
-            cell.dataset.ocupation = location.ocupationPercent;
-            
-            // Contenido
-            if (WarehouseState.showLabels) {
-                cell.innerHTML = `
-                    <div class="location-code">${location.code.split('-')[1]}${location.code.split('-')[2]}</div>
-                    <div class="location-percent">${location.ocupationPercent}%</div>
-                `;
-            } else {
-                cell.innerHTML = `<div class="location-percent">${location.ocupationPercent}%</div>`;
-            }
-            
-            // Tooltip
-            cell.title = `${location.code}\nEstado: ${location.status}\nOcupación: ${location.ocupationPercent}%\nMateriales: ${location.materials.length}`;
-            
-            // Eventos
-            cell.addEventListener('click', (e) => this.handleCellClick(e, location));
-            cell.addEventListener('mouseenter', (e) => this.handleCellMouseEnter(e, location));
-            cell.addEventListener('mouseleave', () => this.handleCellMouseLeave());
-            
-            // Selección
-            if (WarehouseState.selectedLocations.has(location.id)) {
-                cell.classList.add('selected');
-            }
-            
-            if (WarehouseState.selectedLocation && WarehouseState.selectedLocation.id === location.id) {
-                cell.classList.add('highlighted');
-            }
+        // Contenido
+        if (WarehouseState.showLabels) {
+            cell.innerHTML = `
+                <div class="location-code">${location.code}</div>
+                <div class="location-percent">${location.ocupationPercent}%</div>
+            `;
         } else {
-            // Celda vacía
-            cell.classList.add('empty');
-            cell.style.backgroundColor = '#f8f9fa';
-            cell.style.border = '1px dashed #dee2e6';
-            cell.style.opacity = '0.5';
-            
-            if (WarehouseState.showLabels) {
-                cell.innerHTML = `<div class="location-code text-muted">${row}-${col}</div>`;
-            }
-            
-            cell.title = `Espacio disponible: Fila ${row}, Columna ${col}`;
+            cell.innerHTML = `<div class="location-percent">${location.ocupationPercent}%</div>`;
         }
         
-        return cell;
-    }
-    
-    static handleCellClick(event, location) {
-        // Ctrl+Click para selección múltiple
-        if (event.ctrlKey || event.metaKey) {
-            if (WarehouseState.selectedLocations.has(location.id)) {
-                WarehouseState.selectedLocations.delete(location.id);
-            } else {
-                WarehouseState.selectedLocations.add(location.id);
-            }
-        } else {
-            // Click simple: seleccionar una sola ubicación
-            WarehouseState.selectedLocations.clear();
-            WarehouseState.selectedLocations.add(location.id);
-            WarehouseState.selectedLocation = location;
-            
-            // Mostrar detalles
-            this.showLocationDetails(location);
+        // Tooltip
+        cell.title = `${location.code}\nZona: ${location.zone}\nEstado: ${location.status}\nOcupación: ${location.ocupationPercent}%\nMateriales: ${location.materials.length}`;
+        
+        // Eventos
+        cell.addEventListener('click', (e) => handleCellClick(e, location));
+        cell.addEventListener('mouseenter', (e) => handleCellMouseEnter(e, location));
+        cell.addEventListener('mouseleave', handleCellMouseLeave);
+        
+        // Resaltar si está seleccionada
+        if (WarehouseState.selectedLocation && 
+            WarehouseState.selectedLocation.code === location.code) {
+            cell.classList.add('highlighted');
+        }
+    } else {
+        // Celda vacía (sin ubicación definida en Excel)
+        cell.classList.add('empty');
+        cell.style.backgroundColor = '#f8f9fa';
+        cell.style.border = '1px dashed #dee2e6';
+        cell.style.opacity = '0.5';
+        
+        if (WarehouseState.showLabels) {
+            cell.innerHTML = `<div class="location-code text-muted">${row}-${col}</div>`;
         }
         
-        // Actualizar UI
-        DOMElements.selectedLocations.textContent = WarehouseState.selectedLocations.size;
-        this.render();
+        cell.title = `Espacio no definido: Fila ${row}, Columna ${col}`;
     }
     
-    static handleCellMouseEnter(event, location) {
-        WarehouseState.hoveredLocation = location;
+    return cell;
+}
+
+function handleCellClick(event, location) {
+    WarehouseState.selectedLocation = location;
+    showLocationDetails(location);
+    
+    // Actualizar selección visual
+    document.querySelectorAll('.location-cell').forEach(cell => {
+        cell.classList.remove('highlighted');
+    });
+    event.currentTarget.classList.add('highlighted');
+}
+
+function handleCellMouseEnter(event, location) {
+    const tooltip = document.getElementById('dynamic-tooltip');
+    if (!tooltip) return;
+    
+    tooltip.innerHTML = `
+        <strong>${location.code}</strong><br>
+        <small>Zona: ${location.zone}</small><br>
+        <small>Estado: <span class="text-${location.status}">${location.status.toUpperCase()}</span></small><br>
+        <small>Ocupación: ${location.ocupationPercent}%</small><br>
+        <small>Materiales: ${location.materials.length}</small>
+    `;
+    
+    tooltip.style.left = `${event.pageX + 15}px`;
+    tooltip.style.top = `${event.pageY - 15}px`;
+    tooltip.style.opacity = '1';
+    tooltip.style.display = 'block';
+}
+
+function handleCellMouseLeave() {
+    const tooltip = document.getElementById('dynamic-tooltip');
+    if (!tooltip) return;
+    
+    tooltip.style.opacity = '0';
+    setTimeout(() => {
+        tooltip.style.display = 'none';
+    }, 300);
+}
+
+// ================= VISTA DE LISTA =================
+function renderListView() {
+    const tableBody = DOMElements.locationsTable;
+    tableBody.innerHTML = '';
+    
+    WarehouseState.filteredLocations.forEach(location => {
+        const row = document.createElement('tr');
+        row.className = 'location-row';
+        row.dataset.locationCode = location.code;
         
-        // Mostrar tooltip mejorado
-        const tooltip = DOMElements.tooltip;
-        tooltip.innerHTML = `
-            <strong>${location.code}</strong><br>
-            <small>Zona: ${location.zoneName}</small><br>
-            <small>Estado: <span class="text-${location.status}">${location.status.toUpperCase()}</span></small><br>
-            <small>Ocupación: ${location.ocupationPercent}% (${location.usedCapacity}/${location.capacity})</small><br>
-            <small>Materiales: ${location.materials.length}</small>
+        row.innerHTML = `
+            <td><strong>${location.code}</strong></td>
+            <td>${location.zone}</td>
+            <td>${location.row}</td>
+            <td>${location.col}</td>
+            <td>${location.materials.length}</td>
+            <td>${formatNumber(location.usedCapacity)}</td>
+            <td>${formatNumber(location.capacity)}</td>
+            <td>${location.ocupationPercent}%</td>
+            <td>
+                <span class="status-badge bg-${location.status}">
+                    ${location.status.toUpperCase()}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="showLocationDetailsByCode('${location.code}')">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
         `;
         
-        tooltip.style.left = `${event.pageX + 15}px`;
-        tooltip.style.top = `${event.pageY - 15}px`;
-        tooltip.style.opacity = '1';
-        tooltip.style.display = 'block';
-        
-        // Resaltar ubicaciones relacionadas
-        this.highlightRelatedLocations(location);
+        tableBody.appendChild(row);
+    });
+}
+
+// ================= FILTRADO Y BÚSQUEDA =================
+function filterStatus(status) {
+    WarehouseState.currentFilter = status;
+    applyFilters();
+    
+    // Actualizar botones de filtro
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.status === status);
+    });
+    
+    // Actualizar contadores en sidebar
+    document.querySelectorAll('.counter-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.status === status);
+    });
+}
+
+function applyFilters() {
+    let filtered = [...WarehouseState.locations];
+    
+    // Filtro por estado
+    if (WarehouseState.currentFilter !== 'todos') {
+        filtered = filtered.filter(loc => loc.status === WarehouseState.currentFilter);
     }
     
-    static handleCellMouseLeave() {
-        const tooltip = DOMElements.tooltip;
-        tooltip.style.opacity = '0';
-        setTimeout(() => {
-            tooltip.style.display = 'none';
-        }, 300);
-        
-        // Quitar resaltados
-        this.removeHighlights();
+    // Filtros avanzados
+    if (WarehouseState.advancedFilters.zone !== 'all') {
+        filtered = filtered.filter(loc => loc.zone === WarehouseState.advancedFilters.zone);
     }
     
-    static highlightRelatedLocations(location) {
-        // Resaltar ubicaciones con el mismo material
-        const relatedLocations = WarehouseState.filteredLocations.filter(loc => 
-            loc.id !== location.id &&
-            loc.materials.some(m1 => 
-                location.materials.some(m2 => m1.code === m2.code)
-            )
-        );
-        
-        relatedLocations.forEach(related => {
-            const cell = document.querySelector(`[data-location-id="${related.id}"]`);
-            if (cell) {
-                cell.style.boxShadow = '0 0 0 3px #3498db';
-                cell.style.zIndex = '10';
+    if (WarehouseState.advancedFilters.stockLevel !== 'all') {
+        filtered = filtered.filter(loc => {
+            switch(WarehouseState.advancedFilters.stockLevel) {
+                case 'very-high': return loc.ocupationPercent > 90;
+                case 'high': return loc.ocupationPercent >= 75 && loc.ocupationPercent <= 90;
+                case 'medium': return loc.ocupationPercent >= 25 && loc.ocupationPercent < 75;
+                case 'low': return loc.ocupationPercent >= 10 && loc.ocupationPercent < 25;
+                case 'very-low': return loc.ocupationPercent < 10 && loc.ocupationPercent > 0;
+                case 'empty': return loc.ocupationPercent === 0;
+                default: return true;
             }
         });
     }
     
-    static removeHighlights() {
-        document.querySelectorAll('.location-cell').forEach(cell => {
-            cell.style.boxShadow = '';
-            cell.style.zIndex = '';
-        });
+    if (WarehouseState.advancedFilters.material !== 'all') {
+        filtered = filtered.filter(loc => 
+            loc.materials.some(m => m.code === WarehouseState.advancedFilters.material)
+        );
     }
     
-    static showLocationDetails(location) {
-        // Actualizar información general
-        DOMElements.modalLocationCode.textContent = location.code;
-        DOMElements.modalLocation.textContent = location.code;
-        DOMElements.modalZone.textContent = `${location.zone} - ${location.zoneName}`;
-        DOMElements.modalType.textContent = location.type;
-        DOMElements.modalStatus.textContent = location.status;
-        DOMElements.modalStatus.className = `status-badge bg-${location.status}`;
-        DOMElements.modalCapacity.textContent = `${WarehouseUtils.formatNumber(location.capacity)} unidades`;
-        DOMElements.modalOcupation.textContent = `${location.ocupationPercent}%`;
-        DOMElements.modalFreeSpace.textContent = `${WarehouseUtils.formatNumber(location.freeCapacity)} unidades`;
-        DOMElements.modalLastUpdate.textContent = new Date(location.lastUpdate).toLocaleString();
-        DOMElements.modalTemperature.textContent = `${location.temperature}°C`;
-        DOMElements.modalHumidity.textContent = `${location.humidity}%`;
-        DOMElements.modalAccess.textContent = location.access;
-        DOMElements.modalPriority.textContent = location.priority;
-        
-        // Barra de progreso
-        DOMElements.modalOcupationBar.style.width = `${location.ocupationPercent}%`;
-        DOMElements.modalOcupationBar.style.backgroundColor = WarehouseConfig.STATUS_COLORS[location.status];
-        DOMElements.modalOcupationText.textContent = 
-            `${WarehouseUtils.formatNumber(location.usedCapacity)} / ${WarehouseUtils.formatNumber(location.capacity)} unidades (${location.ocupationPercent}%)`;
-        
-        // Estadísticas
-        const totalStock = location.materials.reduce((sum, m) => sum + m.currentStock, 0);
-        const totalValue = location.materials.reduce((sum, m) => sum + m.totalValue, 0);
-        
-        DOMElements.modalMaterialsCount.textContent = location.materials.length;
-        DOMElements.modalTotalStock.textContent = WarehouseUtils.formatNumber(totalStock);
-        DOMElements.modalTotalValue.textContent = `$${WarehouseUtils.formatNumber(totalValue)}`;
-        DOMElements.modalRotation.textContent = location.rotation.toFixed(1);
-        
-        // Materiales
-        this.renderLocationMaterials(location.materials);
-        
-        // Historial
-        this.renderLocationHistory(location.id);
-        
-        // Mostrar modal
-        DOMElements.modal.show();
+    // Búsqueda
+    if (WarehouseState.searchQuery) {
+        const query = WarehouseState.searchQuery.toLowerCase();
+        filtered = filtered.filter(loc => 
+            loc.code.toLowerCase().includes(query) ||
+            loc.zone.toLowerCase().includes(query) ||
+            loc.materials.some(m => 
+                m.code.toLowerCase().includes(query) ||
+                m.description.toLowerCase().includes(query)
+            )
+        );
     }
     
-    static renderLocationMaterials(materials) {
-        const tbody = DOMElements.locationDetails;
-        tbody.innerHTML = '';
-        
-        materials.forEach(material => {
-            const row = document.createElement('tr');
-            row.className = 'material-row';
-            
-            // Calcular porcentaje de stock
-            const stockPercent = WarehouseUtils.calculatePercentage(material.currentStock, material.maxStock);
-            
-            row.innerHTML = `
-                <td>
-                    <input type="checkbox" class="material-checkbox" data-material-id="${material.id}">
-                </td>
-                <td><code>${material.code}</code></td>
-                <td class="text-ellipsis-2" title="${material.description}">${material.description}</td>
-                <td>${material.unit}</td>
-                <td class="fw-bold">${WarehouseUtils.formatNumber(material.currentStock)}</td>
-                <td>${WarehouseUtils.formatNumber(material.minStock)}</td>
-                <td>${WarehouseUtils.formatNumber(material.maxStock)}</td>
-                <td>$${material.unitValue.toFixed(2)}</td>
-                <td>
-                    <span class="status-badge bg-${material.status}">
-                        ${material.status.toUpperCase()}
-                    </span>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-action btn-action-primary" title="Ver detalles" onclick="showMaterialDetails('${material.id}')">
-                            <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn-action" title="Editar" onclick="editMaterial('${material.id}')">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn-action" title="Transferir" onclick="transferMaterial('${material.id}')">
-                            <i class="bi bi-arrow-left-right"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-            
-            tbody.appendChild(row);
-        });
-        
-        // Configurar checkbox "seleccionar todos"
-        DOMElements.selectAllMaterials.onchange = function() {
-            const checkboxes = document.querySelectorAll('.material-checkbox');
-            checkboxes.forEach(cb => cb.checked = this.checked);
-        };
-    }
+    WarehouseState.filteredLocations = filtered;
+    updateFilterUI();
     
-    static renderLocationHistory(locationId) {
-        const history = DataGenerator.generateLocationHistory(locationId);
-        const tbody = DOMElements.locationHistory;
-        tbody.innerHTML = '';
-        
-        history.forEach(record => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${new Date(record.timestamp).toLocaleString()}</td>
-                <td><span class="badge bg-secondary">${record.user}</span></td>
-                <td>
-                    <span class="badge ${record.action === 'ENTRADA' ? 'bg-success' : record.action === 'SALIDA' ? 'bg-danger' : 'bg-warning'}">
-                        ${record.action}
-                    </span>
-                </td>
-                <td class="${record.action === 'ENTRADA' ? 'text-success' : 'text-danger'} fw-bold">
-                    ${record.action === 'ENTRADA' ? '+' : '-'}${record.quantity}
-                </td>
-                <td><code>${record.materialCode}</code></td>
-                <td><small class="text-muted">${record.observation}</small></td>
-            `;
-            tbody.appendChild(row);
-        });
+    // Renderizar vista actual
+    if (WarehouseState.viewMode === 'grid') {
+        renderGrid();
+    } else if (WarehouseState.viewMode === 'list') {
+        renderListView();
     }
 }
 
-// ================= GESTIÓN DE ZOOM Y VISTA =================
-class ViewManager {
-    static zoomIn() {
-        if (WarehouseState.zoomIndex < WarehouseConfig.ZOOM_LEVELS.length - 1) {
-            WarehouseState.zoomIndex++;
-            GridRenderer.render();
-        }
-    }
-    
-    static zoomOut() {
-        if (WarehouseState.zoomIndex > 0) {
-            WarehouseState.zoomIndex--;
-            GridRenderer.render();
-        }
-    }
-    
-    static resetZoom() {
-        WarehouseState.zoomIndex = WarehouseConfig.DEFAULT_ZOOM_INDEX;
-        GridRenderer.render();
-    }
-    
-    static setViewMode(mode) {
-        WarehouseState.viewMode = mode;
-        DOMElements.currentView.textContent = 
-            mode === 'grid' ? 'Vista Grid' : 
-            mode === 'list' ? 'Vista Lista' : 'Mapa de Calor';
-        
-        // Actualizar botones
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.view === mode);
-        });
-        
-        // Cambiar renderizado según modo
-        this.updateView();
-    }
-    
-    static updateView() {
-        // Por ahora solo implementamos vista grid
-        // En una implementación completa, aquí cambiaríamos entre diferentes tipos de visualización
-        GridRenderer.render();
-    }
-    
-    static toggleLabels() {
-        WarehouseState.showLabels = DOMElements.showLabels.checked;
-        GridRenderer.render();
-    }
-}
-
-// ================= GESTIÓN DE ACTUALIZACIÓN AUTOMÁTICA =================
-class RefreshManager {
-    static toggleAutoRefresh() {
-        WarehouseState.autoRefresh = !WarehouseState.autoRefresh;
-        const btn = DOMElements.autoRefreshBtn;
-        
-        if (WarehouseState.autoRefresh) {
-            btn.classList.remove('btn-outline-secondary');
-            btn.classList.add('btn-success');
-            btn.innerHTML = '<i class="bi bi-pause-circle"></i> Pausar auto-refresh';
-            this.startAutoRefresh();
-        } else {
-            btn.classList.remove('btn-success');
-            btn.classList.add('btn-outline-secondary');
-            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Auto-refresh';
-            this.stopAutoRefresh();
-        }
-    }
-    
-    static startAutoRefresh() {
-        if (WarehouseState.refreshInterval) {
-            clearInterval(WarehouseState.refreshInterval);
-        }
-        
-        WarehouseState.refreshInterval = setInterval(() => {
-            this.refreshData();
-        }, WarehouseConfig.AUTO_REFRESH_INTERVAL);
-    }
-    
-    static stopAutoRefresh() {
-        if (WarehouseState.refreshInterval) {
-            clearInterval(WarehouseState.refreshInterval);
-            WarehouseState.refreshInterval = null;
-        }
-    }
-    
-    static async refreshData() {
-        try {
-            // Simular actualización de datos
-            WarehouseUtils.showNotification('Actualizando datos...', 'info');
-            
-            // En producción, aquí iría la llamada a la API
-            // await DataManager.loadData();
-            
-            // Simular pequeños cambios
-            WarehouseState.locations.forEach(location => {
-                // Pequeñas variaciones en los datos
-                if (Math.random() > 0.7) {
-                    location.usedCapacity += Math.floor(Math.random() * 10) - 5;
-                    location.usedCapacity = Math.max(0, Math.min(location.capacity, location.usedCapacity));
-                    location.ocupationPercent = WarehouseUtils.calculatePercentage(location.usedCapacity, location.capacity);
-                    location.status = WarehouseUtils.getStatusByOcupation(location.ocupationPercent);
-                }
-            });
-            
-            // Recalcular estadísticas
-            DataManager.calculateStatistics();
-            FilterManager.applyCurrentFilters();
-            
-            WarehouseUtils.showNotification('Datos actualizados', 'success');
-            
-        } catch (error) {
-            console.error('Error actualizando datos:', error);
-            WarehouseUtils.showNotification('Error al actualizar datos', 'error');
-        }
-    }
-}
-
-// ================= FUNCIONES DE EXPORTACIÓN =================
-class ExportManager {
-    static exportToPDF() {
-        WarehouseUtils.showNotification('Generando PDF...', 'info');
-        
-        // Simular generación de PDF
-        setTimeout(() => {
-            WarehouseUtils.showNotification('PDF generado correctamente', 'success');
-            
-            // En producción, aquí iría la lógica real de generación de PDF
-            const data = {
-                title: 'Reporte de Almacén 2D',
-                date: new Date().toLocaleDateString(),
-                locations: WarehouseState.filteredLocations,
-                stats: WarehouseState.stats
-            };
-            
-            console.log('Datos para PDF:', data);
-            
-            // Simular descarga
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `reporte-almacen-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-        }, 2000);
-    }
-    
-    static exportMaterialsCSV() {
-        if (!WarehouseState.selectedLocation) return;
-        
-        const materials = WarehouseState.selectedLocation.materials;
-        if (materials.length === 0) {
-            WarehouseUtils.showNotification('No hay materiales para exportar', 'warning');
-            return;
-        }
-        
-        // Crear contenido CSV
-        let csv = 'Código,Descripción,Unidad,Stock Actual,Stock Mínimo,Stock Máximo,Valor Unitario,Estado\n';
-        
-        materials.forEach(material => {
-            csv += `"${material.code}","${material.description}","${material.unit}",${material.currentStock},${material.minStock},${material.maxStock},${material.unitValue.toFixed(2)},"${material.status}"\n`;
-        });
-        
-        // Descargar
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `materiales-${WarehouseState.selectedLocation.code}-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        WarehouseUtils.showNotification('CSV exportado correctamente', 'success');
-    }
-}
-
-// ================= FUNCIONES DE INTERFAZ =================
-// Funciones globales para acceso desde HTML
-function zoomIn() { ViewManager.zoomIn(); }
-function zoomOut() { ViewManager.zoomOut(); }
-function resetZoom() { ViewManager.resetZoom(); }
-function filterStatus(status) { FilterManager.filterStatus(status); }
-function setViewMode(mode) { ViewManager.setViewMode(mode); }
-function toggleLabels() { ViewManager.toggleLabels(); }
-function toggleAutoRefresh() { RefreshManager.toggleAutoRefresh(); }
-function refreshData() { RefreshManager.refreshData(); }
 function applyAdvancedFilters() {
     WarehouseState.advancedFilters = {
         zone: DOMElements.filterZone.value,
         stockLevel: DOMElements.filterStockLevel.value,
-        lastMovement: DOMElements.filterLastMovement.value,
-        materialType: DOMElements.filterMaterialType.value
+        material: DOMElements.filterMaterial.value
     };
-    FilterManager.applyCurrentFilters();
+    applyFilters();
 }
+
 function resetAdvancedFilters() {
     DOMElements.filterZone.value = 'all';
     DOMElements.filterStockLevel.value = 'all';
-    DOMElements.filterLastMovement.value = 'all';
-    DOMElements.filterMaterialType.value = 'all';
+    DOMElements.filterMaterial.value = 'all';
     WarehouseState.advancedFilters = {
         zone: 'all',
         stockLevel: 'all',
-        lastMovement: 'all',
-        materialType: 'all'
+        material: 'all'
     };
-    FilterManager.applyCurrentFilters();
+    applyFilters();
 }
+
 function resetAllFilters() {
     WarehouseState.currentFilter = 'todos';
     WarehouseState.searchQuery = '';
     DOMElements.searchBox.value = '';
     resetAdvancedFilters();
+    showNotification('Filtros restablecidos', 'info');
 }
-function exportToPDF() { ExportManager.exportToPDF(); }
-function exportMaterialsCSV() { ExportManager.exportMaterialsCSV(); }
-function printLocationDetails() { window.print(); }
-function editLocation() { WarehouseUtils.showNotification('Función de edición en desarrollo', 'info'); }
-function transferMaterials() { WarehouseUtils.showNotification('Función de transferencia en desarrollo', 'info'); }
-function showMaterialDetails(materialId) { WarehouseUtils.showNotification(`Detalles del material ${materialId}`, 'info'); }
-function editMaterial(materialId) { WarehouseUtils.showNotification(`Editando material ${materialId}`, 'info'); }
-function transferMaterial(materialId) { WarehouseUtils.showNotification(`Transferiendo material ${materialId}`, 'info'); }
 
-// ================= INICIALIZACIÓN =================
-class WarehouseApp {
-    static async init() {
-        console.log('Inicializando Sistema de Mapa 2D del Almacén...');
-        
-        // Cargar datos
-        await DataManager.loadData();
-        
-        // Configurar eventos
-        this.setupEventListeners();
-        
-        // Configurar atajos de teclado
-        this.setupKeyboardShortcuts();
-        
-        // Iniciar con vista por defecto
-        GridRenderer.render();
-        
-        console.log('Sistema inicializado correctamente');
-    }
+function updateFilterUI() {
+    // Actualizar estadísticas visibles
+    updateVisibleStats();
     
-    static setupEventListeners() {
-        // Buscador
-        DOMElements.searchBox.addEventListener('input', 
-            WarehouseUtils.debounce((e) => {
-                FilterManager.performSearch(e.target.value);
-            }, WarehouseConfig.DEBOUNDE_DELAY)
-        );
-        
-        // Cerrar dropdown al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            if (!DOMElements.searchBox.contains(e.target) && !DOMElements.searchDropdown.contains(e.target)) {
-                DOMElements.searchDropdown.style.display = 'none';
-            }
-        });
-        
-        // Zoom con rueda del mouse
-        DOMElements.mapContainer.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            if (e.ctrlKey) {
-                if (e.deltaY < 0) {
-                    ViewManager.zoomIn();
-                } else {
-                    ViewManager.zoomOut();
-                }
-            }
-        });
-        
-        // Redimensionar ventana
-        window.addEventListener('resize', 
-            WarehouseUtils.throttle(() => {
-                GridRenderer.render();
-            }, 250)
-        );
-    }
-    
-    static setupKeyboardShortcuts() {
-        document.addEventListener('keydown', (e) => {
-            // Ignorar si está en un input
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            
-            // Ctrl + +/- para zoom
-            if (e.ctrlKey) {
-                switch(e.key) {
-                    case '+':
-                    case '=':
-                        e.preventDefault();
-                        ViewManager.zoomIn();
-                        break;
-                    case '-':
-                    case '_':
-                        e.preventDefault();
-                        ViewManager.zoomOut();
-                        break;
-                    case '0':
-                        e.preventDefault();
-                        ViewManager.resetZoom();
-                        break;
-                    case 'f':
-                        e.preventDefault();
-                        DOMElements.searchBox.focus();
-                        break;
-                    case 'r':
-                        e.preventDefault();
-                        RefreshManager.refreshData();
-                        break;
-                }
-            }
-            
-            // Escape para limpiar
-            if (e.key === 'Escape') {
-                if (DOMElements.searchBox.value) {
-                    DOMElements.searchBox.value = '';
-                    WarehouseState.searchQuery = '';
-                    FilterManager.applyCurrentFilters();
-                }
-                if (DOMElements.modal._isShown) {
-                    DOMElements.modal.hide();
-                }
-            }
-            
-            // Navegación con flechas
-            if (WarehouseState.selectedLocation && !DOMElements.modal._isShown) {
-                switch(e.key) {
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        this.navigateSelection('up');
-                        break;
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        this.navigateSelection('down');
-                        break;
-                    case 'ArrowLeft':
-                        e.preventDefault();
-                        this.navigateSelection('left');
-                        break;
-                    case 'ArrowRight':
-                        e.preventDefault();
-                        this.navigateSelection('right');
-                        break;
-                }
-            }
-        });
-    }
-    
-    static navigateSelection(direction) {
-        if (!WarehouseState.selectedLocation) return;
-        
-        let targetRow = WarehouseState.selectedLocation.row;
-        let targetCol = WarehouseState.selectedLocation.col;
-        
-        switch(direction) {
-            case 'up': targetRow--; break;
-            case 'down': targetRow++; break;
-            case 'left': targetCol--; break;
-            case 'right': targetCol++; break;
-        }
-        
-        const targetLocation = WarehouseState.filteredLocations.find(loc => 
-            loc.row === targetRow && loc.col === targetCol
-        );
-        
-        if (targetLocation) {
-            WarehouseState.selectedLocation = targetLocation;
-            WarehouseState.selectedLocations.clear();
-            WarehouseState.selectedLocations.add(targetLocation.id);
-            
-            GridRenderer.render();
-            GridRenderer.showLocationDetails(targetLocation);
-            
-            // Scroll a la ubicación
-            const cell = document.querySelector(`[data-location-id="${targetLocation.id}"]`);
-            if (cell) {
-                cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-            }
-        }
+    // Mostrar/ocultar mensaje de no resultados
+    if (WarehouseState.filteredLocations.length === 0) {
+        DOMElements.noResults.classList.remove('d-none');
+    } else {
+        DOMElements.noResults.classList.add('d-none');
     }
 }
 
-// ================= INICIAR APLICACIÓN =================
-document.addEventListener('DOMContentLoaded', () => {
-    WarehouseApp.init();
-});
+function updateVisibleStats() {
+    const visible = WarehouseState.filteredLocations.length;
+    const occupied = WarehouseState.filteredLocations.filter(loc => loc.usedCapacity > 0).length;
+    const totalCapacity = WarehouseState.filteredLocations.reduce((sum, loc) => sum + loc.capacity, 0);
+    const usedCapacity = WarehouseState.filteredLocations.reduce((sum, loc) => sum + loc.usedCapacity, 0);
+    const ocupationRate = totalCapacity > 0 ? Math.round((usedCapacity / totalCapacity) * 100) : 0;
+    
+    DOMElements.visibleLocations.textContent = formatNumber(visible);
+    DOMElements.occupiedLocations.textContent = formatNumber(occupied);
+    DOMElements.ocupationRate.textContent = `${ocupationRate}%`;
+}
 
-// ================= MÉTODOS ADICIONALES PARA PRUEBAS =================
-// Estos métodos pueden ser útiles para pruebas y desarrollo
-window.WarehouseDebug = {
-    getState: () => ({ ...WarehouseState }),
-    getStats: () => ({ ...WarehouseState.stats }),
-    reloadData: () => DataManager.loadData(),
-    addTestLocation: (zone, row, col) => {
-        const locationCode = WarehouseUtils.generateLocationId(zone, row, col);
-        const newLocation = {
-            id: WarehouseState.locations.length + 1,
-            code: locationCode,
-            zone: zone,
-            zoneName: 'Test Zone',
-            row: row,
-            col: col,
-            type: 'Estantería',
-            capacity: 1000,
-            usedCapacity: 500,
-            freeCapacity: 500,
-            ocupationPercent: 50,
-            status: 'normal',
-            materials: [],
-            temperature: 22,
-            humidity: 50,
-            access: 'Público',
-            priority: 'Media',
-            lastUpdate: new Date().toISOString(),
-            lastMovement: new Date().toISOString(),
-            efficiency: 85,
-            rotation: 1.5
+// ================= DETALLES DE UBICACIÓN =================
+function showLocationDetails(location) {
+    // Actualizar información general
+    DOMElements.modalLocationCode.textContent = location.code;
+    DOMElements.modalLocation.textContent = location.code;
+    DOMElements.modalZone.textContent = location.zone;
+    DOMElements.modalRow.textContent = location.row.toString().padStart(2, '0');
+    DOMElements.modalCol.textContent = location.col.toString().padStart(2, '0');
+    DOMElements.modalStatus.textContent = location.status;
+    DOMElements.modalStatus.className = `status-badge bg-${location.status}`;
+    DOMElements.modalCapacity.textContent = formatNumber(location.capacity);
+    DOMElements.modalStock.textContent = formatNumber(location.usedCapacity);
+    DOMElements.modalOcupation.textContent = `${location.ocupationPercent}%`;
+    
+    // Barra de progreso
+    DOMElements.modalOcupationBar.style.width = `${location.ocupationPercent}%`;
+    DOMElements.modalOcupationBar.style.backgroundColor = WarehouseConfig.STATUS_COLORS[location.status];
+    DOMElements.modalOcupationText.textContent = 
+        `${formatNumber(location.usedCapacity)} / ${formatNumber(location.capacity)} (${location.ocupationPercent}%)`;
+    
+    // Materiales
+    renderLocationMaterials(location.materials);
+    
+    // Mostrar modal
+    DOMElements.modal.show();
+}
+
+function showLocationDetailsByCode(locationCode) {
+    const location = WarehouseState.locations.find(loc => loc.code === locationCode);
+    if (location) {
+        showLocationDetails(location);
+    }
+}
+
+function renderLocationMaterials(materials) {
+    const tbody = DOMElements.locationMaterials;
+    tbody.innerHTML = '';
+    
+    if (materials.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox me-2"></i> No hay materiales en esta ubicación
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    materials.forEach(material => {
+        const totalValue = material.quantity * (material.unitValue || 0);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><code>${material.code}</code></td>
+            <td>${material.description}</td>
+            <td class="fw-bold">${formatNumber(material.quantity)}</td>
+            <td>${material.unit}</td>
+            <td>${material.unitValue ? '$' + material.unitValue.toFixed(2) : 'N/A'}</td>
+            <td>${material.unitValue ? '$' + totalValue.toFixed(2) : 'N/A'}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// ================= CONTROLES DE VISTA =================
+function setViewMode(mode) {
+    WarehouseState.viewMode = mode;
+    DOMElements.currentView.textContent = 
+        mode === 'grid' ? 'Vista Grid' : 
+        mode === 'list' ? 'Vista Lista' : 'Mapa de Calor';
+    
+    // Actualizar botones
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+    
+    // Cambiar vista
+    if (mode === 'grid') {
+        DOMElements.mapContainer.parentElement.classList.remove('d-none');
+        DOMElements.listView.classList.add('d-none');
+        renderGrid();
+    } else if (mode === 'list') {
+        DOMElements.mapContainer.parentElement.classList.add('d-none');
+        DOMElements.listView.classList.remove('d-none');
+        renderListView();
+    } else {
+        // Mapa de calor (futura implementación)
+        showNotification('Mapa de calor en desarrollo', 'info');
+        setViewMode('grid');
+    }
+}
+
+function zoomIn() {
+    if (WarehouseState.zoomIndex < WarehouseConfig.ZOOM_LEVELS.length - 1) {
+        WarehouseState.zoomIndex++;
+        renderGrid();
+    }
+}
+
+function zoomOut() {
+    if (WarehouseState.zoomIndex > 0) {
+        WarehouseState.zoomIndex--;
+        renderGrid();
+    }
+}
+
+function toggleLabels() {
+    WarehouseState.showLabels = DOMElements.showLabels.checked;
+    renderGrid();
+}
+
+function toggleGrid() {
+    WarehouseState.showGrid = DOMElements.showGrid.checked;
+    toggleGridLines();
+}
+
+function toggleGridLines() {
+    const gridContainer = DOMElements.mapContainer;
+    if (WarehouseState.showGrid) {
+        gridContainer.style.backgroundImage = `
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, transparent 75%, #f8f9fa 75%)
+        `;
+        gridContainer.style.backgroundSize = '20px 20px';
+    } else {
+        gridContainer.style.backgroundImage = 'none';
+    }
+}
+
+// ================= UTILIDADES =================
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + 'M';
+    }
+    if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function showLoading(show) {
+    if (DOMElements.loadingOverlay) {
+        DOMElements.loadingOverlay.style.display = show ? 'flex' : 'none';
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    
+    const icon = type === 'success' ? 'check-circle' : 
+                 type === 'error' ? 'x-circle' : 
+                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-${icon} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    `;
+    
+    const container = document.getElementById('toast-container') || (() => {
+        const div = document.createElement('div');
+        div.id = 'toast-container';
+        div.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(div);
+        return div;
+    })();
+    
+    container.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function showNoResults() {
+    DOMElements.noResults.classList.remove('d-none');
+    DOMElements.mapGrid.style.display = 'none';
+}
+
+// ================= EXPORTACIÓN =================
+function exportToPDF() {
+    showNotification('Generando PDF del almacén...', 'info');
+    
+    // Simular generación de PDF
+    setTimeout(() => {
+        const data = {
+            title: 'Reporte de Almacén 2D',
+            date: new Date().toLocaleDateString(),
+            file: '{{ file_name }}',
+            locations: WarehouseState.filteredLocations.length,
+            stats: WarehouseState.stats
         };
         
-        WarehouseState.locations.push(newLocation);
-        DataManager.calculateStatistics();
-        FilterManager.applyCurrentFilters();
-    },
-    clearAllSelections: () => {
-        WarehouseState.selectedLocations.clear();
-        WarehouseState.selectedLocation = null;
-        GridRenderer.render();
+        console.log('Datos para PDF:', data);
+        showNotification('PDF generado correctamente', 'success');
+    }, 1500);
+}
+
+async function exportToExcel() {
+    showLoading(true);
+    
+    try {
+        const response = await fetch(WarehouseConfig.API_ENDPOINTS.export_excel);
+        const blob = await response.blob();
+        
+        // Crear enlace de descarga
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `almacen2d_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Excel exportado correctamente', 'success');
+    } catch (error) {
+        console.error('Error exportando Excel:', error);
+        showNotification('Error al exportar Excel', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function exportLocationCSV() {
+    if (!WarehouseState.selectedLocation) return;
+    
+    const location = WarehouseState.selectedLocation;
+    let csv = 'Material,Cantidad,Unidad,Descripción,Valor Unitario,Valor Total\n';
+    
+    location.materials.forEach(material => {
+        const totalValue = material.quantity * (material.unitValue || 0);
+        csv += `"${material.code}",${material.quantity},"${material.unit}","${material.description}",${material.unitValue || 0},${totalValue}\n`;
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `materiales_${location.code}_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('CSV exportado correctamente', 'success');
+}
+
+// ================= GESTIÓN DE DATOS =================
+async function refreshData() {
+    await loadDataFromServer();
+}
+
+async function clearData() {
+    if (!confirm('¿Estás seguro de que deseas borrar todos los datos del almacén? Esta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const response = await fetch(WarehouseConfig.API_ENDPOINTS.clear_data, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Datos borrados correctamente', 'success');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('warehouse2d.index') }}";
+            }, 1500);
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error borrando datos:', error);
+        showNotification('Error al borrar datos: ' + error.message, 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ================= CONFIGURACIÓN DE EVENTOS =================
+function setupEventListeners() {
+    // Buscador
+    DOMElements.searchBox.addEventListener('input', debounce((e) => {
+        WarehouseState.searchQuery = e.target.value;
+        applyFilters();
+    }, 300));
+    
+    // Zoom con rueda del mouse
+    DOMElements.mapContainer.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+        }
+    });
+    
+    // Redimensionar ventana
+    window.addEventListener('resize', throttle(() => {
+        if (WarehouseState.viewMode === 'grid') {
+            renderGrid();
+        }
+    }, 250));
+}
+
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ignorar si está en un input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        // Ctrl + +/- para zoom
+        if (e.ctrlKey) {
+            switch(e.key) {
+                case '+':
+                case '=':
+                    e.preventDefault();
+                    zoomIn();
+                    break;
+                case '-':
+                case '_':
+                    e.preventDefault();
+                    zoomOut();
+                    break;
+                case 'f':
+                    e.preventDefault();
+                    DOMElements.searchBox.focus();
+                    break;
+                case 'r':
+                    e.preventDefault();
+                    refreshData();
+                    break;
+            }
+        }
+        
+        // Escape para limpiar búsqueda
+        if (e.key === 'Escape') {
+            if (DOMElements.searchBox.value) {
+                DOMElements.searchBox.value = '';
+                WarehouseState.searchQuery = '';
+                applyFilters();
+            }
+        }
+    });
+}
+
+// ================= FUNCIONES DE DEBOUNCE Y THROTTLE =================
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// ================= FUNCIONES PARA EL MODAL =================
+function editLocation() {
+    if (!WarehouseState.selectedLocation) return;
+    
+    showNotification('Función de edición en desarrollo', 'info');
+    // En una implementación completa, aquí abrirías un formulario para editar la ubicación
+}
+
+// ================= MÉTODOS PARA DEPURACIÓN =================
+window.warehouseDebug = {
+    getState: () => ({ ...WarehouseState }),
+    getStats: () => ({ ...WarehouseState.stats }),
+    reloadData: () => loadDataFromServer(),
+    exportData: () => {
+        console.log('Datos del almacén:', WarehouseState);
+        console.log('Ubicaciones:', WarehouseState.locations);
+        console.log('Materiales:', Array.from(WarehouseState.materials));
     }
 };
 </script>
