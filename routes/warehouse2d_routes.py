@@ -29,24 +29,15 @@ def index():
         ubicaciones = set()
         materiales = set()
         for item in warehouse_data:
-            # Buscar ubicación en diferentes formatos
-            ubicacion = None
-            for key in ['ubicacion', 'Ubicacion', 'ubicación', 'Ubicación', 'UBICACION']:
-                if key in item and item[key]:
-                    ubicacion = str(item[key])
-                    break
-            
-            # Buscar material en diferentes formatos
-            material = None
-            for key in ['material', 'Material', 'MATERIAL']:
-                if key in item and item[key]:
-                    material = str(item[key])
-                    break
-            
+            # Buscar ubicación
+            ubicacion = item.get('ubicacion') or item.get('Ubicacion') or item.get('ubicación') or item.get('location')
             if ubicacion:
-                ubicaciones.add(ubicacion)
+                ubicaciones.add(str(ubicacion))
+            
+            # Buscar material
+            material = item.get('material') or item.get('Material') or item.get('codigo_material')
             if material:
-                materiales.add(material)
+                materiales.add(str(material))
         
         total_locations = len(ubicaciones)
         total_materials = len(materiales)
@@ -58,10 +49,18 @@ def index():
                          total_locations=total_locations,
                          total_materials=total_materials)
 
+# ================= ALIAS PARA COMPATIBILIDAD =================
+
+@warehouse2d_bp.route('/map_view')
+@login_required
+def map_view_alias():
+    """Alias para compatibilidad"""
+    return redirect(url_for('warehouse2d.index'))
+
 # ================= RUTAS DE SUBIDA DE ARCHIVOS =================
 
 @warehouse2d_bp.route('/upload')
-@warehouse2d_bp.route('/upload-warehouse2d')  # Ruta alternativa para compatibilidad
+@warehouse2d_bp.route('/upload-warehouse2d')
 @login_required
 def upload_view():
     """Página para subir archivo Excel"""
@@ -74,7 +73,7 @@ def allowed_file(filename):
 @warehouse2d_bp.route('/upload', methods=['POST'])
 @login_required
 def upload_file():
-    """Procesar archivo Excel subido"""
+    """Procesar archivo Excel subido con las columnas específicas"""
     if 'file' not in request.files:
         flash('No se seleccionó ningún archivo', 'error')
         return redirect(request.url)
@@ -93,79 +92,215 @@ def upload_file():
             else:
                 df = pd.read_excel(file)
             
-            # Guardar columnas originales
+            # Guardar columnas originales para referencia
             original_columns = list(df.columns)
-            
-            # Convertir a lista de diccionarios
-            data = df.where(pd.notnull(df), None).to_dict('records')
-            
-            # Normalizar nombres de columnas
-            normalized_data = []
-            for row in data:
-                normalized_row = {}
-                for key, value in row.items():
-                    if pd.isna(value):
-                        value = None
-                    
-                    # Normalizar nombre de columna
-                    norm_key = str(key).strip().lower()
-                    # Reemplazar caracteres especiales
-                    norm_key = norm_key.replace(' ', '_').replace('á', 'a').replace('é', 'e')\
-                                      .replace('í', 'i').replace('ó', 'o').replace('ú', 'u')\
-                                      .replace('ñ', 'n').replace('Á', 'a').replace('É', 'e')\
-                                      .replace('Í', 'i').replace('Ó', 'o').replace('Ú', 'u')\
-                                      .replace('Ñ', 'n')
-                    
-                    normalized_row[norm_key] = value
-                normalized_data.append(normalized_row)
-            
-            # Guardar en sesión
-            session['warehouse_data'] = normalized_data
-            session['file_name'] = file.filename
-            session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             session['raw_columns'] = original_columns
             
+            # Verificar columnas requeridas
+            required_columns = ['Ubicación', 'Código del Material']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            
+            if missing_columns:
+                flash(f'Faltan columnas requeridas: {", ".join(missing_columns)}', 'error')
+                return redirect(url_for('warehouse2d.upload_view'))
+            
+            # Mapear columnas a nombres normalizados
+            column_mapping = {
+                'Código del Material': 'material',
+                'Texto breve de material': 'descripcion',
+                'Unidad de medida base': 'unidad',
+                'Stock de seguridad': 'stock_minimo',
+                'Stock máximo': 'stock_maximo',
+                'Ubicación': 'ubicacion',
+                'Libre utilización': 'stock_actual'
+            }
+            
+            # Renombrar columnas
+            df_renamed = df.rename(columns=column_mapping)
+            
+            # Filtrar solo las columnas que necesitamos
+            available_columns = [col for col in column_mapping.values() if col in df_renamed.columns]
+            df_filtered = df_renamed[available_columns]
+            
+            # Convertir a lista de diccionarios y manejar valores nulos
+            data = []
+            for _, row in df_filtered.iterrows():
+                item = {}
+                for col in available_columns:
+                    value = row[col]
+                    # Convertir NaN a None
+                    if pd.isna(value):
+                        value = None
+                    # Convertir tipos numéricos
+                    elif col in ['stock_minimo', 'stock_maximo', 'stock_actual']:
+                        try:
+                            value = float(value) if value is not None else 0
+                        except:
+                            value = 0
+                    item[col] = value
+                
+                # Asegurar que tenemos ubicación y material
+                if item.get('ubicacion') and item.get('material'):
+                    data.append(item)
+            
+            # Procesar ubicaciones para extraer fila y columna
+            processed_data = []
+            for item in data:
+                ubicacion = str(item['ubicacion']).strip()
+                
+                # Extraer fila y columna del código de ubicación
+                # Asumimos formato como: A-01-01, B-02-03, etc.
+                fila = 1
+                columna = 1
+                zona = 'A'
+                
+                try:
+                    # Intentar parsear formato A-01-01
+                    if '-' in ubicacion:
+                        parts = ubicacion.split('-')
+                        if len(parts) >= 1:
+                            zona = parts[0]
+                        if len(parts) >= 2:
+                            fila = int(parts[1])
+                        if len(parts) >= 3:
+                            columna = int(parts[2])
+                    # Intentar parsear formato A0101
+                    elif len(ubicacion) >= 4:
+                        zona = ubicacion[0]
+                        try:
+                            fila = int(ubicacion[1:3])
+                            columna = int(ubicacion[3:5])
+                        except:
+                            pass
+                except:
+                    pass
+                
+                # Agregar campos calculados
+                item['fila'] = fila
+                item['columna'] = columna
+                item['zona'] = zona
+                
+                # Calcular capacidad y ocupación
+                capacidad = item.get('stock_maximo', 1000)
+                stock_actual = item.get('stock_actual', 0)
+                
+                item['capacidad'] = capacidad
+                item['cantidad'] = stock_actual
+                
+                processed_data.append(item)
+            
+            # Guardar en sesión
+            session['warehouse_data'] = processed_data
+            session['file_name'] = file.filename
+            session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Estadísticas
+            total_registros = len(processed_data)
+            ubicaciones_unicas = len(set(item['ubicacion'] for item in processed_data))
+            materiales_unicos = len(set(item['material'] for item in processed_data))
+            
             flash(f'✓ Archivo "{file.filename}" cargado exitosamente', 'success')
-            flash(f'✓ {len(data)} registros procesados', 'success')
-            flash(f'✓ {len(set(str(row.get("ubicacion", "")) for row in normalized_data if row.get("ubicacion")))} ubicaciones identificadas', 'info')
+            flash(f'✓ {total_registros} registros procesados', 'success')
+            flash(f'✓ {ubicaciones_unicas} ubicaciones únicas identificadas', 'info')
+            flash(f'✓ {materiales_unicos} materiales únicos cargados', 'info')
             
             return redirect(url_for('warehouse2d.index'))
             
         except UnicodeDecodeError:
-            # Intentar con diferentes encodings para CSV
+            # Intentar con encoding latin-1
             try:
-                file.stream.seek(0)  # Resetear stream
+                file.stream.seek(0)
                 df = pd.read_csv(file, encoding='latin-1')
                 
-                # Guardar columnas originales
+                # Repetir el procesamiento...
                 original_columns = list(df.columns)
-                
-                # Convertir a lista de diccionarios
-                data = df.where(pd.notnull(df), None).to_dict('records')
-                
-                # Normalizar nombres de columnas
-                normalized_data = []
-                for row in data:
-                    normalized_row = {}
-                    for key, value in row.items():
-                        if pd.isna(value):
-                            value = None
-                        
-                        norm_key = str(key).strip().lower()
-                        norm_key = norm_key.replace(' ', '_').replace('á', 'a').replace('é', 'e')\
-                                          .replace('í', 'i').replace('ó', 'o').replace('ú', 'u')\
-                                          .replace('ñ', 'n')
-                        
-                        normalized_row[norm_key] = value
-                    normalized_data.append(normalized_row)
-                
-                # Guardar en sesión
-                session['warehouse_data'] = normalized_data
-                session['file_name'] = file.filename
-                session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 session['raw_columns'] = original_columns
                 
-                flash(f'✓ Archivo "{file.filename}" cargado exitosamente (encoding: latin-1)', 'success')
+                # Verificar columnas requeridas
+                required_columns = ['Ubicación', 'Código del Material']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                
+                if missing_columns:
+                    flash(f'Faltan columnas requeridas: {", ".join(missing_columns)}', 'error')
+                    return redirect(url_for('warehouse2d.upload_view'))
+                
+                # Mapear columnas
+                column_mapping = {
+                    'Código del Material': 'material',
+                    'Texto breve de material': 'descripcion',
+                    'Unidad de medida base': 'unidad',
+                    'Stock de seguridad': 'stock_minimo',
+                    'Stock máximo': 'stock_maximo',
+                    'Ubicación': 'ubicacion',
+                    'Libre utilización': 'stock_actual'
+                }
+                
+                df_renamed = df.rename(columns=column_mapping)
+                available_columns = [col for col in column_mapping.values() if col in df_renamed.columns]
+                df_filtered = df_renamed[available_columns]
+                
+                data = []
+                for _, row in df_filtered.iterrows():
+                    item = {}
+                    for col in available_columns:
+                        value = row[col]
+                        if pd.isna(value):
+                            value = None
+                        elif col in ['stock_minimo', 'stock_maximo', 'stock_actual']:
+                            try:
+                                value = float(value) if value is not None else 0
+                            except:
+                                value = 0
+                        item[col] = value
+                    
+                    if item.get('ubicacion') and item.get('material'):
+                        data.append(item)
+                
+                # Procesar ubicaciones
+                processed_data = []
+                for item in data:
+                    ubicacion = str(item['ubicacion']).strip()
+                    
+                    fila = 1
+                    columna = 1
+                    zona = 'A'
+                    
+                    try:
+                        if '-' in ubicacion:
+                            parts = ubicacion.split('-')
+                            if len(parts) >= 1:
+                                zona = parts[0]
+                            if len(parts) >= 2:
+                                fila = int(parts[1])
+                            if len(parts) >= 3:
+                                columna = int(parts[2])
+                        elif len(ubicacion) >= 4:
+                            zona = ubicacion[0]
+                            try:
+                                fila = int(ubicacion[1:3])
+                                columna = int(ubicacion[3:5])
+                            except:
+                                pass
+                    except:
+                        pass
+                    
+                    item['fila'] = fila
+                    item['columna'] = columna
+                    item['zona'] = zona
+                    
+                    capacidad = item.get('stock_maximo', 1000)
+                    stock_actual = item.get('stock_actual', 0)
+                    
+                    item['capacidad'] = capacidad
+                    item['cantidad'] = stock_actual
+                    
+                    processed_data.append(item)
+                
+                session['warehouse_data'] = processed_data
+                session['file_name'] = file.filename
+                session['last_update'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                flash(f'✓ Archivo "{file.filename}" cargado (encoding: latin-1)', 'success')
                 return redirect(url_for('warehouse2d.index'))
                 
             except Exception as e2:
@@ -174,6 +309,9 @@ def upload_file():
                 
         except Exception as e:
             flash(f'Error al procesar el archivo: {str(e)}', 'error')
+            # Mostrar primeras filas para debugging
+            if 'df' in locals():
+                flash(f'Columnas encontradas: {", ".join(df.columns)}', 'info')
             return redirect(url_for('warehouse2d.upload_view'))
     
     flash('Tipo de archivo no permitido. Use .xlsx, .xls o .csv', 'error')
@@ -307,15 +445,22 @@ def export_excel():
         # Crear un nuevo libro de Excel
         output = BytesIO()
         
-        # Convertir datos normalizados de vuelta a formato original si es necesario
+        # Convertir de vuelta al formato original
         export_data = []
-        for row in data:
-            export_row = {}
-            for key, value in row.items():
-                # Revertir normalización para nombres de columnas más legibles
-                pretty_key = key.replace('_', ' ').title()
-                export_row[pretty_key] = value
-            export_data.append(export_row)
+        for item in data:
+            export_item = {
+                'Ubicación': item.get('ubicacion', ''),
+                'Código del Material': item.get('material', ''),
+                'Texto breve de material': item.get('descripcion', ''),
+                'Unidad de medida base': item.get('unidad', 'UN'),
+                'Stock de seguridad': item.get('stock_minimo', 0),
+                'Stock máximo': item.get('stock_maximo', 1000),
+                'Libre utilización': item.get('stock_actual', item.get('cantidad', 0)),
+                'Fila': item.get('fila', 1),
+                'Columna': item.get('columna', 1),
+                'Zona': item.get('zona', 'A')
+            }
+            export_data.append(export_item)
         
         # Crear DataFrame
         df = pd.DataFrame(export_data)
@@ -346,7 +491,7 @@ def export_excel():
 @warehouse2d_bp.route('/download-template')
 @login_required
 def download_template():
-    """Descargar plantilla de Excel para carga de datos"""
+    """Descargar plantilla de Excel con las columnas específicas"""
     try:
         # Crear plantilla
         output = BytesIO()
@@ -374,22 +519,19 @@ def download_template():
         })
         
         # Instrucciones
-        worksheet.merge_range('A1:E1', 'PLANTILLA PARA CARGA DE DATOS DE ALMACÉN 2D', header_format)
-        worksheet.merge_range('A2:E2', 'Complete los datos según su estructura de almacén', example_format)
+        worksheet.merge_range('A1:G1', 'PLANTILLA PARA CARGA DE DATOS DE ALMACÉN 2D', header_format)
+        worksheet.merge_range('A2:G2', 'Complete los datos según su estructura de almacén', example_format)
         
         # Encabezados de la tabla
         headers = [
-            ['COLUMNA', 'DESCRIPCIÓN', 'EJEMPLO', 'TIPO', 'REQUERIDO'],
-            ['ubicacion', 'Código único de ubicación', 'A-01-01, B-02-03', 'Texto', 'Sí'],
-            ['zona', 'Zona del almacén', 'A, B, C, PASILLO', 'Texto', 'No'],
-            ['fila', 'Número de fila', '1, 2, 3, 10', 'Número', 'Sí'],
-            ['columna', 'Número de columna', '1, 2, 3, 20', 'Número', 'Sí'],
-            ['material', 'Código del material', 'MAT-001, TORN-005', 'Texto', 'Sí'],
-            ['descripcion', 'Descripción del material', 'Tornillo M8, Tuerca', 'Texto', 'No'],
-            ['cantidad', 'Cantidad en stock', '100, 250, 500.5', 'Número', 'Sí'],
-            ['unidad', 'Unidad de medida', 'UN, KG, M, L', 'Texto', 'No'],
-            ['capacidad', 'Capacidad máxima', '1000, 2000, 5000', 'Número', 'No'],
-            ['valor_unitario', 'Valor por unidad', '0.50, 1.25, 10.99', 'Número', 'No']
+            ['COLUMNA', 'DESCRIPCIÓN', 'EJEMPLO', 'TIPO', 'REQUERIDO', 'NOTAS'],
+            ['Ubicación', 'Código de ubicación en almacén', 'A-01-01, B-02-03, C-01-05', 'Texto', 'Sí', 'Formato: Zona-Fila-Columna'],
+            ['Código del Material', 'Código único del material', 'MAT-001, PROD-100, TOOL-005', 'Texto', 'Sí', ''],
+            ['Texto breve de material', 'Descripción del material', 'Tornillo M8, Producto X, Herramienta Y', 'Texto', 'No', ''],
+            ['Unidad de medida base', 'Unidad de medición', 'UN, KG, M, L, PZA', 'Texto', 'No', ''],
+            ['Stock de seguridad', 'Stock mínimo permitido', '10, 50, 100', 'Número', 'No', ''],
+            ['Stock máximo', 'Capacidad máxima de almacenamiento', '1000, 2000, 5000', 'Número', 'No', ''],
+            ['Libre utilización', 'Stock actual disponible', '100, 250, 500.5', 'Número', 'No', 'Stock actual en la ubicación']
         ]
         
         # Escribir encabezados
@@ -403,17 +545,26 @@ def download_template():
         # Hoja para datos
         worksheet2 = workbook.add_worksheet('Datos')
         
-        # Escribir encabezados en hoja de datos
-        data_headers = ['ubicacion', 'zona', 'fila', 'columna', 'material', 'descripcion', 'cantidad', 'unidad', 'capacidad', 'valor_unitario']
+        # Escribir encabezados en hoja de datos (columnas exactas de tu Excel)
+        data_headers = [
+            'Ubicación', 
+            'Código del Material', 
+            'Texto breve de material', 
+            'Unidad de medida base', 
+            'Stock de seguridad', 
+            'Stock máximo', 
+            'Libre utilización'
+        ]
+        
         for col_num, header in enumerate(data_headers):
             worksheet2.write(0, col_num, header, header_format)
         
         # Ejemplos de datos
         examples = [
-            ['A-01-01', 'A', 1, 1, 'MAT-001', 'Tornillo M8', 100, 'UN', 1000, 0.50],
-            ['A-01-02', 'A', 1, 2, 'MAT-002', 'Tuerca M8', 150, 'UN', 1000, 0.25],
-            ['B-01-01', 'B', 1, 1, 'MAT-003', 'Arandela plana', 500, 'UN', 2000, 0.10],
-            ['C-02-03', 'C', 2, 3, 'PROD-100', 'Producto X', 50, 'PZA', 100, 25.99]
+            ['A-01-01', 'MAT-001', 'Tornillo M8', 'UN', 10, 1000, 100],
+            ['A-01-02', 'MAT-002', 'Tuerca M8', 'UN', 5, 1000, 150],
+            ['B-01-01', 'MAT-003', 'Arandela plana', 'UN', 20, 2000, 500],
+            ['C-02-03', 'PROD-100', 'Producto terminado X', 'PZA', 5, 100, 50]
         ]
         
         for row_num, row_data in enumerate(examples, start=1):
@@ -422,12 +573,13 @@ def download_template():
         
         # Ajustar ancho de columnas
         worksheet.set_column('A:A', 15)
-        worksheet.set_column('B:B', 25)
-        worksheet.set_column('C:C', 20)
-        worksheet.set_column('D:D', 10)
-        worksheet.set_column('E:E', 15)
+        worksheet.set_column('B:B', 20)
+        worksheet.set_column('C:C', 25)
+        worksheet.set_column('D:D', 15)
+        worksheet.set_column('E:E', 10)
+        worksheet.set_column('F:F', 10)
         
-        worksheet2.set_column('A:J', 15)
+        worksheet2.set_column('A:G', 15)
         
         workbook.close()
         output.seek(0)
@@ -449,71 +601,33 @@ def process_for_map(data):
     """Procesar datos crudos para el mapa"""
     location_map = {}
     
-    for row in data:
-        # Buscar ubicación en diferentes formatos
-        ubicacion = None
-        for key in ['ubicacion', 'ubicación']:
-            if key in row and row[key]:
-                ubicacion = str(row[key])
-                break
-        
+    for item in data:
+        ubicacion = item.get('ubicacion')
         if not ubicacion:
             continue
         
-        # Buscar otros campos
-        zona = row.get('zona', '')
-        if not zona:
-            # Intentar extraer zona del código de ubicación
-            if '-' in ubicacion:
-                zona = ubicacion.split('-')[0]
+        ubicacion = str(ubicacion).strip()
+        zona = item.get('zona', 'A')
+        fila = item.get('fila', 1)
+        columna = item.get('columna', 1)
         
-        # Obtener fila y columna
-        fila = row.get('fila', 1)
-        columna = row.get('columna', 1)
-        
-        # Convertir a enteros
+        # Asegurar que fila y columna sean enteros
         try:
-            fila = int(float(fila)) if fila else 1
+            fila = int(fila)
+            columna = int(columna)
         except:
             fila = 1
-        
-        try:
-            columna = int(float(columna)) if columna else 1
-        except:
             columna = 1
         
-        # Buscar material
-        material = None
-        for key in ['material', 'codigo_material', 'codigo']:
-            if key in row and row[key]:
-                material = str(row[key])
-                break
-        
+        material = item.get('material')
         if not material:
             continue
         
-        # Obtener cantidad
-        cantidad = 0
-        for key in ['cantidad', 'stock', 'existencia']:
-            if key in row and row[key]:
-                try:
-                    cantidad = float(row[key])
-                    break
-                except:
-                    cantidad = 0
-        
-        # Obtener capacidad
-        capacidad = 1000  # Valor por defecto
-        for key in ['capacidad', 'capacidad_max', 'max_capacidad']:
-            if key in row and row[key]:
-                try:
-                    capacidad = float(row[key])
-                    break
-                except:
-                    capacidad = 1000
-        
-        # Obtener descripción
-        descripcion = row.get('descripcion', row.get('descripción', material))
+        capacidad = item.get('capacidad', item.get('stock_maximo', 1000))
+        stock_actual = item.get('cantidad', item.get('stock_actual', 0))
+        descripcion = item.get('descripcion', material)
+        unidad = item.get('unidad', 'UN')
+        stock_minimo = item.get('stock_minimo', 0)
         
         if ubicacion not in location_map:
             location_map[ubicacion] = {
@@ -532,12 +646,14 @@ def process_for_map(data):
         location['materials'].append({
             'code': material,
             'description': descripcion,
-            'quantity': cantidad,
-            'unit': row.get('unidad', 'UN'),
-            'unit_value': float(row.get('valor_unitario', 0) or 0)
+            'quantity': stock_actual,
+            'unit': unidad,
+            'min_stock': stock_minimo,
+            'max_stock': capacidad,
+            'unit_value': 0  # No tenemos esta información
         })
         
-        location['used_capacity'] += cantidad
+        location['used_capacity'] += stock_actual
     
     # Convertir a lista y calcular ocupación
     locations_list = []
@@ -546,7 +662,7 @@ def process_for_map(data):
         if loc['capacity'] > 0:
             ocupation_percent = (loc['used_capacity'] / loc['capacity']) * 100
         
-        # Determinar estado
+        # Determinar estado basado en porcentaje de ocupación
         status = 'vacio'
         if loc['used_capacity'] > 0:
             if ocupation_percent < 20:
@@ -556,8 +672,14 @@ def process_for_map(data):
             else:
                 status = 'normal'
         
-        # Calcular valor total
-        total_value = sum(mat['quantity'] * mat['unit_value'] for mat in loc['materials'])
+        # Calcular si hay materiales con stock crítico
+        critical_materials = 0
+        for mat in loc['materials']:
+            if mat['quantity'] <= mat['min_stock']:
+                critical_materials += 1
+        
+        # Calcular valor total (estimado)
+        total_value = sum(mat['quantity'] for mat in loc['materials'])  # Sin valor unitario
         
         locations_list.append({
             'code': loc['code'],
@@ -571,8 +693,12 @@ def process_for_map(data):
             'status': status,
             'materials': loc['materials'],
             'materials_count': len(loc['materials']),
+            'critical_materials': critical_materials,
             'total_value': round(total_value, 2)
         })
+    
+    # Ordenar por zona, fila y columna
+    locations_list.sort(key=lambda x: (x['zone'], x['row'], x['col']))
     
     return locations_list
 
@@ -586,6 +712,7 @@ def calculate_map_statistics(locations):
         'total_capacity': 0,
         'used_capacity': 0,
         'total_value': 0,
+        'critical_locations': 0,
         'by_status': {
             'normal': 0,
             'bajo': 0,
@@ -605,6 +732,9 @@ def calculate_map_statistics(locations):
             stats['occupied_locations'] += 1
         else:
             stats['empty_locations'] += 1
+        
+        if loc['critical_materials'] > 0:
+            stats['critical_locations'] += 1
         
         stats['by_status'][loc['status']] += 1
         
@@ -630,4 +760,3 @@ def get_warehouse_dimensions(locations):
         'max_col': max_col,
         'zones': zones
     }
-
