@@ -1,42 +1,168 @@
 {% extends "base.html" %}
+{% block title %}Crear Nueva Tarea{% endblock %}
+
 {% block content %}
-
-<h3 class="mb-3">➕ Crear Tarea</h3>
-
-<form method="post" action="{{ url_for('tasks.create_task') }}" class="card p-4 shadow-sm">
-
-    <div class="mb-3">
-        <label class="form-label">Título</label>
-        <input name="titulo" class="form-control" required>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">➕ Crear Nueva Tarea</h4>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('tasks.create_task') }}">
+                        
+                        <!-- Título -->
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label fw-bold">📝 Título de la Tarea</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="titulo" 
+                                   name="titulo" 
+                                   placeholder="Ej: Revisar inventario del almacén A"
+                                   required
+                                   minlength="3">
+                            <div class="form-text">Mínimo 3 caracteres. Sea claro y descriptivo.</div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label fw-bold">📋 Descripción</label>
+                            <textarea class="form-control" 
+                                      id="descripcion" 
+                                      name="descripcion" 
+                                      rows="4"
+                                      placeholder="Describa los detalles de la tarea..."></textarea>
+                            <div class="form-text">Opcional. Puede incluir instrucciones específicas.</div>
+                        </div>
+                        
+                        <!-- Asignar a -->
+                        <div class="mb-3">
+                            <label for="assigned_to" class="form-label fw-bold">👤 Asignar a</label>
+                            <select class="form-select" id="assigned_to" name="assigned_to" required>
+                                <option value="">Seleccione un usuario...</option>
+                                
+                                <!-- Grupo: Administradores -->
+                                <optgroup label="👑 Administradores">
+                                    {% for usuario in usuarios if usuario.role in ['owner', 'admin'] %}
+                                    <option value="{{ usuario.id }}" 
+                                            {% if usuario.id == current_user.id %}selected{% endif %}>
+                                        {{ usuario.username }} 
+                                        {% if usuario.role == 'owner' %}(Owner){% endif %}
+                                        {% if usuario.role == 'admin' %}(Admin){% endif %}
+                                        {% if usuario.id == current_user.id %}← Tú{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                
+                                <!-- Grupo: Técnicos -->
+                                <optgroup label="🔧 Técnicos">
+                                    {% for usuario in usuarios if usuario.role == 'tecnico' %}
+                                    <option value="{{ usuario.id }}">
+                                        {{ usuario.username }} (Técnico)
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                                
+                                <!-- Grupo: Otros -->
+                                <optgroup label="👥 Otros">
+                                    {% for usuario in usuarios if usuario.role not in ['owner', 'admin', 'tecnico'] %}
+                                    <option value="{{ usuario.id }}">
+                                        {{ usuario.username }} ({{ usuario.role }})
+                                    </option>
+                                    {% endfor %}
+                                </optgroup>
+                            </select>
+                            <div class="form-text">Seleccione al responsable de la tarea.</div>
+                        </div>
+                        
+                        <!-- Fecha límite -->
+                        <div class="mb-4">
+                            <label for="fecha_limite" class="form-label fw-bold">📅 Fecha Límite</label>
+                            <input type="date" 
+                                   class="form-control" 
+                                   id="fecha_limite" 
+                                   name="fecha_limite" 
+                                   min="{{ fecha_minima }}"
+                                   required>
+                            <div class="form-text">La fecha no puede ser anterior a hoy.</div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('tasks.my_tasks') }}" class="btn btn-secondary">
+                                ↩️ Volver a mis tareas
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                ✅ Crear Tarea
+                            </button>
+                        </div>
+                        
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card mt-3 border-info">
+                <div class="card-body">
+                    <h6 class="text-info">💡 Información importante:</h6>
+                    <ul class="mb-0 small">
+                        <li>Puedes asignar tareas a cualquier usuario activo del sistema.</li>
+                        <li>Los usuarios recibirán notificaciones de nuevas tareas asignadas.</li>
+                        <li>El sistema asignará puntaje automáticamente al completar tareas.</li>
+                        <li>Las tareas vencidas afectan negativamente el puntaje.</li>
+                    </ul>
+                </div>
+            </div>
+            
+        </div>
     </div>
+</div>
 
-    <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <textarea name="descripcion" class="form-control" rows="3"></textarea>
-    </div>
+<script>
+// Script para mejorar la experiencia del usuario
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer fecha mínima como hoy
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha_limite').min = today;
+    
+    // Auto-seleccionar al usuario actual si no hay selección
+    const selectUsuario = document.getElementById('assigned_to');
+    if (selectUsuario.value === '') {
+        // Buscar opción que contenga "← Tú"
+        for (let option of selectUsuario.options) {
+            if (option.text.includes('← Tú')) {
+                selectUsuario.value = option.value;
+                break;
+            }
+        }
+    }
+    
+    // Validación en tiempo real del título
+    const inputTitulo = document.getElementById('titulo');
+    inputTitulo.addEventListener('input', function() {
+        if (this.value.length < 3) {
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        }
+    });
+});
+</script>
 
-    <div class="mb-3">
-        <label class="form-label">Asignar a</label>
-        <select name="assigned_to" class="form-select" required>
-            <option value="">Seleccionar técnico</option>
-            {% for u in usuarios %}
-            <option value="{{ u.id }}">
-                {{ u.username }} {% if u.area %} ({{ u.area }}) {% endif %}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-
-
-    <div class="mb-3">
-        <label class="form-label">Fecha límite</label>
-        <input type="date" name="fecha_limite" class="form-control" required>
-    </div>
-
-    <button class="btn btn-primary w-100">
-        💾 Crear tarea
-    </button>
-
-</form>
-
+<style>
+.optgroup {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #495057;
+    padding: 5px 0;
+}
+.optgroup option {
+    font-weight: normal;
+    padding-left: 20px;
+}
+</style>
 {% endblock %}
