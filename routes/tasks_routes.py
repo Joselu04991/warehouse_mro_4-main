@@ -5,6 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
+import time
 
 from models import db
 from models.task import Task
@@ -19,12 +20,54 @@ tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 # =========================
 def get_email_config():
     """Obtiene la configuración de email para Outlook/Office 365"""
-    return {
-        'SMTP_SERVER': 'smtp.office365.com',
-        'SMTP_PORT': 587,
-        'SENDER_EMAIL': os.environ.get('OUTLOOK_EMAIL', 'tu_correo@sider.com.pe'),
-        'SENDER_PASSWORD': os.environ.get('OUTLOOK_PASSWORD', 'tu_contraseña')
-    }
+    try:
+        return {
+            'SMTP_SERVER': 'smtp.office365.com',
+            'SMTP_PORT': 587,
+            'SENDER_EMAIL': os.environ.get('OUTLOOK_EMAIL', ''),
+            'SENDER_PASSWORD': os.environ.get('OUTLOOK_PASSWORD', '')
+        }
+    except:
+        return None
+
+
+# =========================
+# FUNCIÓN SEGURA PARA ENVIAR EMAILS
+# =========================
+def send_email_safe(destinatario, asunto, contenido_texto, contenido_html=None):
+    """Envía un email de manera segura con manejo de errores"""
+    try:
+        config = get_email_config()
+        
+        # Si no hay configuración de email, retornar sin error
+        if not config or not config['SENDER_EMAIL'] or not config['SENDER_PASSWORD']:
+            print("⚠️ Configuración de email no encontrada. Saltando envío de email.")
+            return True
+            
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = asunto
+        msg['From'] = config['SENDER_EMAIL']
+        msg['To'] = destinatario
+        
+        # Adjuntar texto plano
+        msg.attach(MIMEText(contenido_texto, 'plain', 'utf-8'))
+        
+        # Si hay contenido HTML, adjuntarlo también
+        if contenido_html:
+            msg.attach(MIMEText(contenido_html, 'html', 'utf-8'))
+        
+        # Enviar con timeout
+        with smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT'], timeout=10) as server:
+            server.starttls()
+            server.login(config['SENDER_EMAIL'], config['SENDER_PASSWORD'])
+            server.send_message(msg)
+        
+        print(f"✅ Email enviado a {destinatario}")
+        return True
+        
+    except Exception as e:
+        print(f"⚠️ Error enviando email a {destinatario}: {str(e)}")
+        return False
 
 
 # =========================
@@ -64,7 +107,7 @@ def create_task_form():
 
 
 # =========================
-# CREAR TAREA (POST)
+# CREAR TAREA (POST) - VERSIÓN SIMPLIFICADA
 # =========================
 @tasks_bp.route("/create", methods=["POST"])
 @login_required
@@ -74,6 +117,7 @@ def create_task():
         return redirect(url_for("tasks.my_tasks"))
 
     try:
+        # Crear la tarea primero
         task = Task(
             titulo=request.form["titulo"],
             descripcion=request.form["descripcion"],
@@ -87,28 +131,59 @@ def create_task():
 
         flash("Tarea creada correctamente", "success")
         
+        # Intentar enviar notificación en segundo plano (no bloqueante)
         try:
             usuario_asignado = User.query.get(task.assigned_to_id)
             if usuario_asignado and usuario_asignado.email:
-                enviar_email_nueva_tarea(
-                    usuario_asignado.email,
-                    task.titulo,
-                    task.descripcion,
-                    task.fecha_limite.strftime('%d/%m/%Y'),
-                    current_user.username
-                )
+                # Preparar contenido del email
+                asunto = f"📋 Nueva Tarea: {task.titulo}"
+                texto = f"""NUEVA TAREA ASIGNADA
+
+Se le ha asignado una nueva tarea por {current_user.username}:
+
+Título: {task.titulo}
+Descripción: {task.descripcion}
+Fecha límite: {task.fecha_limite.strftime('%d/%m/%Y')}
+
+Por favor, revise y complete la tarea antes de la fecha límite.
+
+Sistema de Gestión MRO
+SIDER PERÚ"""
+                
+                html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+                    <div style="background: #0056b3; color: white; padding: 20px; text-align: center;">
+                        <h2 style="margin: 0;">📋 Nueva Tarea Asignada</h2>
+                    </div>
+                    <div style="padding: 25px;">
+                        <p>Estimado colaborador,</p>
+                        <p><strong>{current_user.username}</strong> le ha asignado una nueva tarea:</p>
+                        <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                            <h3 style="color: #0056b3; margin-top: 0;">{task.titulo}</h3>
+                            <p><strong>Descripción:</strong> {task.descripcion}</p>
+                            <p><strong>Fecha límite:</strong> {task.fecha_limite.strftime('%d/%m/%Y')}</p>
+                        </div>
+                        <p>Por favor, revise y complete la tarea antes de la fecha límite.</p>
+                        <p>Atentamente,<br><strong>Sistema de Gestión MRO</strong><br>SIDER PERÚ</p>
+                    </div>
+                </div>"""
+                
+                # Enviar email de manera segura (no bloquea si falla)
+                send_email_safe(usuario_asignado.email, asunto, texto, html)
+                
         except Exception as e:
-            print(f"Error enviando notificación de nueva tarea: {e}")
+            print(f"⚠️ Error en notificación de nueva tarea: {e}")
+            # No hacemos flash para no interrumpir el flujo principal
         
         return redirect(url_for("tasks.my_tasks"))
         
     except Exception as e:
+        db.session.rollback()
         flash(f"Error al crear tarea: {str(e)}", "danger")
         return redirect(url_for("tasks.create_task_form"))
 
 
 # =========================
-# COMPLETAR TAREA
+# COMPLETAR TAREA - VERSIÓN SIMPLIFICADA
 # =========================
 @tasks_bp.route("/complete/<int:task_id>")
 @login_required
@@ -119,32 +194,63 @@ def complete_task(task_id):
         flash("No autorizado", "danger")
         return redirect(url_for("tasks.my_tasks"))
 
-    task.estado = "completada"
-    task.fecha_completado = date.today()
-
-    aplicar_puntaje(task)
-
-    db.session.commit()
-    flash("Tarea completada", "success")
-    
     try:
-        if task.assigned_by_id:
-            supervisor = User.query.get(task.assigned_by_id)
-            if supervisor and supervisor.email:
-                enviar_email_tarea_completada(
-                    supervisor.email,
-                    current_user.username,
-                    task.titulo,
-                    date.today().strftime('%d/%m/%Y')
-                )
+        task.estado = "completada"
+        task.fecha_completado = date.today()
+        aplicar_puntaje(task)
+        db.session.commit()
+        
+        flash("Tarea completada", "success")
+        
+        # Intentar enviar notificación en segundo plano
+        try:
+            if task.assigned_by_id:
+                supervisor = User.query.get(task.assigned_by_id)
+                if supervisor and supervisor.email:
+                    asunto = f"✅ Tarea Completada: {task.titulo}"
+                    texto = f"""TAREA COMPLETADA
+
+El usuario {current_user.username} ha completado una tarea:
+
+Título: {task.titulo}
+Completado el: {date.today().strftime('%d/%m/%Y')}
+
+La tarea ha sido marcada como completada en el sistema.
+
+Sistema de Gestión MRO
+SIDER PERÚ"""
+                    
+                    html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+                        <div style="background: #28a745; color: white; padding: 20px; text-align: center;">
+                            <h2 style="margin: 0;">✅ Tarea Completada</h2>
+                        </div>
+                        <div style="padding: 25px;">
+                            <p>Estimado supervisor,</p>
+                            <p>El usuario <strong>{current_user.username}</strong> ha completado una tarea:</p>
+                            <div style="background: #f8f9fa; border: 1px solid #d4edda; padding: 20px; margin: 20px 0; border-radius: 4px;">
+                                <h3 style="color: #28a745; margin-top: 0;">{task.titulo}</h3>
+                                <p><strong>Completado el:</strong> {date.today().strftime('%d/%m/%Y')}</p>
+                            </div>
+                            <p>La tarea ha sido marcada como completada en el sistema.</p>
+                            <p>Atentamente,<br><strong>Sistema de Gestión MRO</strong><br>SIDER PERÚ</p>
+                        </div>
+                    </div>"""
+                    
+                    send_email_safe(supervisor.email, asunto, texto, html)
+                    
+        except Exception as e:
+            print(f"⚠️ Error en notificación de tarea completada: {e}")
+        
+        return redirect(url_for("tasks.my_tasks"))
+        
     except Exception as e:
-        print(f"Error enviando notificación de completado: {e}")
-    
-    return redirect(url_for("tasks.my_tasks"))
+        db.session.rollback()
+        flash(f"Error al completar tarea: {str(e)}", "danger")
+        return redirect(url_for("tasks.my_tasks"))
 
 
 # =========================
-# ENVIAR CORREO DE TAREA (Individual)
+# ENVIAR CORREO DE TAREA (Individual) - VERSIÓN SIMPLIFICADA
 # =========================
 @tasks_bp.route("/send_task_email", methods=["POST"])
 @login_required
@@ -152,7 +258,6 @@ def send_task_email():
     try:
         data = request.get_json()
         
-        task_id = data.get('task_id')
         recipient_email = data.get('recipient_email', 'jose.castillo@sider.com.pe')
         task_title = data.get('task_title', 'Sin título')
         task_desc = data.get('task_desc', 'Sin descripción')
@@ -160,11 +265,13 @@ def send_task_email():
         task_days = data.get('task_days', '0')
         additional_message = data.get('additional_message', '')
         
-        if int(task_days) < 0:
+        # Determinar estado
+        dias = int(task_days) if task_days else 0
+        if dias < 0:
             estado = "⏰ VENCIDA"
             color = "#d9534f"
             icon = "⏰"
-        elif int(task_days) <= 3:
+        elif dias <= 3:
             estado = "⚠ Por vencer"
             color = "#f0ad4e"
             icon = "⚠"
@@ -173,135 +280,10 @@ def send_task_email():
             color = "#5cb85c"
             icon = "✅"
         
-        # Usar triple comillas para evitar problemas con escapes
-        html_content = f'''<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Recordatorio de Tarea - MRO SIDER</title>
-            <style>
-                body {{ 
-                    font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 0; 
-                    background-color: #f5f5f5; 
-                    color: #333333; 
-                }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    background: #ffffff; 
-                }}
-                .header {{ 
-                    background: #0056b3; 
-                    color: white; 
-                    padding: 25px; 
-                    text-align: center; 
-                }}
-                .header h1 {{ 
-                    margin: 0; 
-                    font-size: 24px; 
-                    font-weight: 300; 
-                }}
-                .content {{ 
-                    padding: 30px; 
-                    line-height: 1.6; 
-                }}
-                .task-card {{ 
-                    background: #f8f9fa; 
-                    border: 1px solid #dee2e6; 
-                    border-left: 5px solid {color}; 
-                    padding: 20px; 
-                    margin: 25px 0; 
-                    border-radius: 4px; 
-                }}
-                .task-title {{ 
-                    font-size: 20px; 
-                    font-weight: 600; 
-                    color: #0056b3; 
-                    margin-bottom: 15px; 
-                }}
-                .task-detail {{ 
-                    margin: 10px 0; 
-                    color: #495057; 
-                }}
-                .status-badge {{ 
-                    display: inline-block; 
-                    padding: 6px 12px; 
-                    background: {color}; 
-                    color: white; 
-                    border-radius: 4px; 
-                    font-weight: 600; 
-                    font-size: 14px; 
-                    margin-top: 10px; 
-                }}
-                .footer {{ 
-                    text-align: center; 
-                    color: #6c757d; 
-                    font-size: 12px; 
-                    margin-top: 30px; 
-                    padding-top: 20px; 
-                    border-top: 1px solid #e9ecef; 
-                }}
-                .message-box {{ 
-                    background: #e8f4fd; 
-                    border: 1px solid #b6d4fe; 
-                    padding: 15px; 
-                    border-radius: 4px; 
-                    margin: 20px 0; 
-                }}
-                .logo {{ 
-                    text-align: center; 
-                    margin-bottom: 20px; 
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>{icon} Recordatorio de Tarea</h1>
-                    <p style="margin: 5px 0 0 0; opacity: 0.9;">Sistema de Gestión MRO - SIDER PERÚ</p>
-                </div>
-                
-                <div class="content">
-                    <div class="logo">
-                        <strong style="color: #0056b3; font-size: 18px;">SIDER PERÚ</strong>
-                    </div>
-                    
-                    <p>Estimado usuario,</p>
-                    <p>Le recordamos la siguiente tarea pendiente en el sistema:</p>
-                    
-                    <div class="task-card">
-                        <div class="task-title">{task_title}</div>
-                        <div class="task-detail"><strong>Descripción:</strong> {task_desc}</div>
-                        <div class="task-detail"><strong>Fecha límite:</strong> {task_date}</div>
-                        <div class="task-detail"><strong>Días restantes:</strong> {task_days} días</div>
-                        <div class="status-badge">{estado}</div>
-                    </div>
-                    
-                    {f'<div class="message-box"><strong>Mensaje adicional:</strong><br>{additional_message}</div>' if additional_message else ''}
-                    
-                    <p style="font-size: 14px; color: #6c757d;">
-                        Este es un recordatorio automático del sistema de gestión de tareas MRO. 
-                        Por favor, revise y complete la tarea antes de la fecha límite.
-                    </p>
-                    
-                    <p>Atentamente,<br>
-                    <strong>Sistema de Gestión MRO</strong><br>
-                    SIDER PERÚ</p>
-                </div>
-                
-                <div class="footer">
-                    <p>© {datetime.now().year} SIDER PERÚ - Sistema de Gestión MRO</p>
-                    <p>Usuario: {current_user.username} | Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
-                    <p><small>Este correo fue generado automáticamente. Por favor no responder.</small></p>
-                </div>
-            </div>
-        </body>
-        </html>'''
+        # Crear contenido del email
+        asunto = f"{icon} Recordatorio: {task_title}"
         
-        text_content = f"""RECORDATORIO DE TAREA - SISTEMA MRO SIDER
+        texto = f"""RECORDATORIO DE TAREA
 
 Título: {task_title}
 Descripción: {task_desc}
@@ -320,42 +302,59 @@ Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}
 SIDER PERÚ
 Sistema de Gestión MRO"""
         
-        config = get_email_config()
+        html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <div style="background: #0056b3; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px;">{icon} Recordatorio de Tarea</h1>
+                <p style="margin: 5px 0 0 0;">Sistema de Gestión MRO - SIDER PERÚ</p>
+            </div>
+            <div style="padding: 30px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <strong style="color: #0056b3; font-size: 18px;">SIDER PERÚ</strong>
+                </div>
+                <p>Estimado usuario,</p>
+                <p>Le recordamos la siguiente tarea pendiente en el sistema:</p>
+                <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-left: 5px solid {color}; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                    <div style="font-size: 20px; font-weight: 600; color: #0056b3; margin-bottom: 15px;">{task_title}</div>
+                    <div style="margin: 10px 0; color: #495057;"><strong>Descripción:</strong> {task_desc}</div>
+                    <div style="margin: 10px 0; color: #495057;"><strong>Fecha límite:</strong> {task_date}</div>
+                    <div style="margin: 10px 0; color: #495057;"><strong>Días restantes:</strong> {task_days} días</div>
+                    <div style="display: inline-block; padding: 6px 12px; background: {color}; color: white; border-radius: 4px; font-weight: 600; font-size: 14px; margin-top: 10px;">{estado}</div>
+                </div>
+                {f'<div style="background: #e8f4fd; border: 1px solid #b6d4fe; padding: 15px; border-radius: 4px; margin: 20px 0;"><strong>Mensaje adicional:</strong><br>{additional_message}</div>' if additional_message else ''}
+                <p style="font-size: 14px; color: #6c757d;">Este es un recordatorio automático del sistema de gestión de tareas MRO.</p>
+                <p>Atentamente,<br><strong>Sistema de Gestión MRO</strong><br>SIDER PERÚ</p>
+            </div>
+            <div style="text-align: center; color: #6c757d; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <p>© {datetime.now().year} SIDER PERÚ - Sistema de Gestión MRO</p>
+                <p>Usuario: {current_user.username} | Fecha: {datetime.now().strftime('%d/%m/%Y %H:%M')}</p>
+                <p><small>Este correo fue generado automáticamente. Por favor no responder.</small></p>
+            </div>
+        </div>"""
         
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"{icon} Recordatorio: {task_title}"
-        msg['From'] = config['SENDER_EMAIL']
-        msg['To'] = recipient_email
-        msg['X-Priority'] = '1'
-        msg['Importance'] = 'High'
+        # Enviar email de manera segura
+        success = send_email_safe(recipient_email, asunto, texto, html)
         
-        part1 = MIMEText(text_content, 'plain', 'utf-8')
-        part2 = MIMEText(html_content, 'html', 'utf-8')
-        msg.attach(part1)
-        msg.attach(part2)
-        
-        with smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT']) as server:
-            server.starttls()
-            server.login(config['SENDER_EMAIL'], config['SENDER_PASSWORD'])
-            server.send_message(msg)
-        
-        print(f"Correo enviado exitosamente a {recipient_email}")
-        
-        return jsonify({
-            'success': True,
-            'message': f'Correo enviado exitosamente a {recipient_email}'
-        })
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Correo enviado exitosamente a {recipient_email}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo enviar el correo. Verifique la configuración de email.'
+            })
         
     except Exception as e:
-        print(f"Error enviando correo: {str(e)}")
+        print(f"Error en send_task_email: {str(e)}")
         return jsonify({
             'success': False,
-            'error': f'Error al enviar correo: {str(e)}'
+            'error': f'Error: {str(e)}'
         }), 500
 
 
 # =========================
-# ENVIAR RESUMEN SEMANAL
+# ENVIAR RESUMEN SEMANAL - VERSIÓN SIMPLIFICADA
 # =========================
 @tasks_bp.route("/send_weekly_summary", methods=["POST"])
 @login_required
@@ -364,337 +363,116 @@ def send_weekly_summary():
         data = request.get_json()
         user_email = data.get('email', current_user.email)
         
+        # Obtener estadísticas
         tareas = Task.query.filter_by(assigned_to_id=current_user.id).all()
         
-        total_tareas = len(tareas)
-        tareas_completadas = len([t for t in tareas if t.estado == "completada"])
-        tareas_pendientes = total_tareas - tareas_completadas
-        
         hoy = date.today()
-        tareas_vencidas = []
-        tareas_por_vencer = []
+        total = len(tareas)
+        completadas = len([t for t in tareas if t.estado == "completada"])
+        pendientes = total - completadas
+        
+        vencidas = []
+        por_vencer = []
         
         for t in tareas:
             if t.estado != "completada" and t.fecha_limite:
                 delta = (t.fecha_limite - hoy).days
                 if delta < 0:
-                    tareas_vencidas.append(t)
+                    vencidas.append(t)
                 elif delta <= 3:
-                    tareas_por_vencer.append(t)
+                    por_vencer.append(t)
         
-        # Construir sección de tareas vencidas
-        tareas_vencidas_html = ""
-        if tareas_vencidas:
-            for t in tareas_vencidas:
-                dias_pasados = abs((t.fecha_limite - hoy).days)
-                tareas_vencidas_html += f'<div class="task-item vencida"><strong>{t.titulo}</strong><br>Vencida el {t.fecha_limite.strftime("%d/%m/%Y")} (hace {dias_pasados} días)</div>'
-        else:
-            tareas_vencidas_html = '<p style="color: #6c757d; font-size: 14px;">✅ No hay tareas vencidas</p>'
+        # Crear contenido del email
+        asunto = f"📊 Resumen Semanal de Tareas - {hoy.strftime('%d/%m/%Y')}"
         
-        # Construir sección de tareas por vencer
-        tareas_por_vencer_html = ""
-        if tareas_por_vencer:
-            for t in tareas_por_vencer:
-                dias_restantes = (t.fecha_limite - hoy).days
-                tareas_por_vencer_html += f'<div class="task-item por-vencer"><strong>{t.titulo}</strong><br>Vence el {t.fecha_limite.strftime("%d/%m/%Y")} (en {dias_restantes} días)</div>'
-        else:
-            tareas_por_vencer_html = '<p style="color: #6c757d; font-size: 14px;">✅ No hay tareas por vencer</p>'
+        texto = f"""RESUMEN SEMANAL DE TAREAS
+
+Usuario: {current_user.username}
+Fecha: {hoy.strftime('%d/%m/%Y')}
+
+ESTADÍSTICAS:
+Total tareas: {total}
+Completadas: {completadas}
+Pendientes: {pendientes}
+Vencidas: {len(vencidas)}
+Por vencer: {len(por_vencer)}
+
+TAREAS VENCIDAS:"""
         
-        html_content = f'''<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Resumen Semanal - MRO SIDER</title>
-            <style>
-                body {{ 
-                    font-family: 'Segoe UI', 'Calibri', Arial, sans-serif; 
-                    margin: 0; 
-                    padding: 0; 
-                    background-color: #f5f5f5; 
-                    color: #333333; 
-                }}
-                .container {{ 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    background: #ffffff; 
-                }}
-                .header {{ 
-                    background: #0056b3; 
-                    color: white; 
-                    padding: 25px; 
-                    text-align: center; 
-                }}
-                .header h1 {{ 
-                    margin: 0; 
-                    font-size: 24px; 
-                    font-weight: 300; 
-                }}
-                .stats {{ 
-                    display: grid; 
-                    grid-template-columns: repeat(2, 1fr); 
-                    gap: 15px; 
-                    margin: 25px; 
-                }}
-                .stat-card {{ 
-                    background: white; 
-                    padding: 20px; 
-                    border-radius: 4px; 
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-                    text-align: center; 
-                    border: 1px solid #dee2e6; 
-                }}
-                .stat-value {{ 
-                    font-size: 28px; 
-                    font-weight: 600; 
-                    margin: 10px 0; 
-                }}
-                .stat-label {{ 
-                    color: #6c757d; 
-                    font-size: 12px; 
-                    text-transform: uppercase; 
-                    letter-spacing: 0.5px; 
-                }}
-                .section {{ 
-                    margin: 25px; 
-                }}
-                .section-title {{ 
-                    color: #0056b3; 
-                    font-size: 16px; 
-                    font-weight: 600; 
-                    margin-bottom: 15px; 
-                    padding-bottom: 8px; 
-                    border-bottom: 2px solid #e9ecef; 
-                }}
-                .task-item {{ 
-                    background: #f8f9fa; 
-                    padding: 15px; 
-                    margin: 10px 0; 
-                    border-radius: 4px; 
-                    border-left: 4px solid; 
-                    font-size: 14px; 
-                }}
-                .vencida {{ 
-                    border-left-color: #d9534f; 
-                    background: #fdf7f7; 
-                }}
-                .por-vencer {{ 
-                    border-left-color: #f0ad4e; 
-                    background: #fcf8f3; 
-                }}
-                .footer {{ 
-                    text-align: center; 
-                    color: #6c757d; 
-                    font-size: 12px; 
-                    margin: 30px 25px 0; 
-                    padding: 20px 0; 
-                    border-top: 1px solid #e9ecef; 
-                }}
-                .logo {{ 
-                    text-align: center; 
-                    margin: 20px 0; 
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>📊 Resumen Semanal de Tareas</h1>
-                    <p style="margin: 5px 0 0 0; opacity: 0.9;">Usuario: {current_user.username} | Fecha: {hoy.strftime('%d/%m/%Y')}</p>
-                </div>
-                
-                <div class="logo">
-                    <strong style="color: #0056b3; font-size: 18px;">SIDER PERÚ - Sistema MRO</strong>
-                </div>
-                
-                <div class="stats">
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #0056b3;">{total_tareas}</div>
-                        <div class="stat-label">Total Tareas</div>
+        for t in vencidas:
+            texto += f"\n- {t.titulo} (vencida el {t.fecha_limite.strftime('%d/%m/%Y')})"
+        
+        texto += "\n\nTAREAS POR VENCER:"
+        for t in por_vencer:
+            dias = (t.fecha_limite - hoy).days
+            texto += f"\n- {t.titulo} (vence el {t.fecha_limite.strftime('%d/%m/%Y')}, en {dias} días)"
+        
+        texto += f"""
+
+---
+SIDER PERÚ
+Sistema de Gestión MRO
+Resumen generado automáticamente"""
+        
+        html = f"""<div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <div style="background: #0056b3; color: white; padding: 20px; text-align: center;">
+                <h1 style="margin: 0; font-size: 24px;">📊 Resumen Semanal de Tareas</h1>
+                <p style="margin: 5px 0 0 0;">Usuario: {current_user.username} | Fecha: {hoy.strftime('%d/%m/%Y')}</p>
+            </div>
+            <div style="padding: 30px;">
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 25px;">
+                    <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border: 1px solid #dee2e6;">
+                        <div style="font-size: 28px; font-weight: 600; color: #0056b3;">{total}</div>
+                        <div style="color: #6c757d; font-size: 12px; text-transform: uppercase;">Total Tareas</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #5cb85c;">{tareas_completadas}</div>
-                        <div class="stat-label">Completadas</div>
+                    <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border: 1px solid #dee2e6;">
+                        <div style="font-size: 28px; font-weight: 600; color: #5cb85c;">{completadas}</div>
+                        <div style="color: #6c757d; font-size: 12px; text-transform: uppercase;">Completadas</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #f0ad4e;">{tareas_pendientes}</div>
-                        <div class="stat-label">Pendientes</div>
+                    <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border: 1px solid #dee2e6;">
+                        <div style="font-size: 28px; font-weight: 600; color: #f0ad4e;">{pendientes}</div>
+                        <div style="color: #6c757d; font-size: 12px; text-transform: uppercase;">Pendientes</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #d9534f;">{len(tareas_vencidas)}</div>
-                        <div class="stat-label">Vencidas</div>
+                    <div style="background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border: 1px solid #dee2e6;">
+                        <div style="font-size: 28px; font-weight: 600; color: #d9534f;">{len(vencidas)}</div>
+                        <div style="color: #6c757d; font-size: 12px; text-transform: uppercase;">Vencidas</div>
                     </div>
                 </div>
-                
-                <div class="section">
-                    <div class="section-title">⏰ Tareas Vencidas ({len(tareas_vencidas)})</div>
-                    {tareas_vencidas_html}
+                <div style="margin: 25px;">
+                    <div style="color: #0056b3; font-size: 16px; font-weight: 600; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef;">⏰ Tareas Vencidas ({len(vencidas)})</div>
+                    {"".join([f'<div style="background: #fdf7f7; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #d9534f; font-size: 14px;"><strong>{t.titulo}</strong><br>Vencida el {t.fecha_limite.strftime("%d/%m/%Y")} (hace {abs((t.fecha_limite - hoy).days)} días)</div>' for t in vencidas]) if vencidas else '<p style="color: #6c757d; font-size: 14px;">✅ No hay tareas vencidas</p>'}
                 </div>
-                
-                <div class="section">
-                    <div class="section-title">⚠ Tareas por Vencer ({len(tareas_por_vencer)})</div>
-                    {tareas_por_vencer_html}
-                </div>
-                
-                <div class="footer">
-                    <p>© {hoy.year} SIDER PERÚ - Sistema de Gestión MRO</p>
-                    <p><small>Resumen semanal generado automáticamente. Por favor no responder.</small></p>
+                <div style="margin: 25px;">
+                    <div style="color: #0056b3; font-size: 16px; font-weight: 600; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef;">⚠ Tareas por Vencer ({len(por_vencer)})</div>
+                    {"".join([f'<div style="background: #fcf8f3; padding: 15px; margin: 10px 0; border-radius: 4px; border-left: 4px solid #f0ad4e; font-size: 14px;"><strong>{t.titulo}</strong><br>Vence el {t.fecha_limite.strftime("%d/%m/%Y")} (en {(t.fecha_limite - hoy).days} días)</div>' for t in por_vencer]) if por_vencer else '<p style="color: #6c757d; font-size: 14px;">✅ No hay tareas por vencer</p>'}
                 </div>
             </div>
-        </body>
-        </html>'''
+            <div style="text-align: center; color: #6c757d; font-size: 12px; margin: 30px 25px 0; padding: 20px 0; border-top: 1px solid #e9ecef;">
+                <p>© {hoy.year} SIDER PERÚ - Sistema de Gestión MRO</p>
+                <p><small>Resumen semanal generado automáticamente. Por favor no responder.</small></p>
+            </div>
+        </div>"""
         
-        config = get_email_config()
+        # Enviar email de manera segura
+        success = send_email_safe(user_email, asunto, texto, html)
         
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"📊 Resumen Semanal de Tareas - {hoy.strftime('%d/%m/%Y')}"
-        msg['From'] = config['SENDER_EMAIL']
-        msg['To'] = user_email
-        msg['X-Priority'] = '1'
-        
-        part1 = MIMEText("Resumen semanal de tareas - Ver versión HTML", 'plain', 'utf-8')
-        part2 = MIMEText(html_content, 'html', 'utf-8')
-        msg.attach(part1)
-        msg.attach(part2)
-        
-        with smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT']) as server:
-            server.starttls()
-            server.login(config['SENDER_EMAIL'], config['SENDER_PASSWORD'])
-            server.send_message(msg)
-        
-        print(f"Resumen semanal enviado a {user_email}")
-        
-        return jsonify({
-            'success': True,
-            'message': f'Resumen semanal enviado a {user_email}'
-        })
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'Resumen semanal enviado a {user_email}'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo enviar el correo. Verifique la configuración de email.'
+            })
         
     except Exception as e:
-        print(f"Error enviando resumen semanal: {str(e)}")
+        print(f"Error en send_weekly_summary: {str(e)}")
         return jsonify({
             'success': False,
-            'error': f'Error al enviar resumen: {str(e)}'
+            'error': f'Error: {str(e)}'
         }), 500
-
-
-# =========================
-# FUNCIONES AUXILIARES DE EMAIL (OUTLOOK)
-# =========================
-def enviar_email_nueva_tarea(destinatario, titulo, descripcion, fecha_limite, asignador):
-    """Envía email de notificación de nueva tarea asignada"""
-    try:
-        config = get_email_config()
-        
-        html = f'''<div style="font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 600px;">
-            <div style="background: #0056b3; color: white; padding: 20px; text-align: center;">
-                <h2 style="margin: 0; font-weight: 300;">📋 Nueva Tarea Asignada</h2>
-            </div>
-            <div style="padding: 25px;">
-                <p>Estimado colaborador,</p>
-                <p><strong>{asignador}</strong> le ha asignado una nueva tarea:</p>
-                
-                <div style="background: #f8f9fa; border: 1px solid #dee2e6; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                    <h3 style="color: #0056b3; margin-top: 0;">{titulo}</h3>
-                    <p><strong>Descripción:</strong> {descripcion}</p>
-                    <p><strong>Fecha límite:</strong> {fecha_limite}</p>
-                </div>
-                
-                <p>Por favor, revise y complete la tarea antes de la fecha límite.</p>
-                
-                <p>Atentamente,<br>
-                <strong>Sistema de Gestión MRO</strong><br>
-                SIDER PERÚ</p>
-            </div>
-        </div>'''
-        
-        text = f"""NUEVA TAREA ASIGNADA - SISTEMA MRO
-
-Se le ha asignado una nueva tarea por {asignador}:
-
-Título: {titulo}
-Descripción: {descripcion}
-Fecha límite: {fecha_limite}
-
-Por favor, revise y complete la tarea antes de la fecha límite.
-
-Sistema de Gestión MRO
-SIDER PERÚ"""
-        
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"📋 Nueva Tarea: {titulo}"
-        msg['From'] = config['SENDER_EMAIL']
-        msg['To'] = destinatario
-        msg['X-Priority'] = '1'
-        
-        msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html, 'html', 'utf-8'))
-        
-        with smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT']) as server:
-            server.starttls()
-            server.login(config['SENDER_EMAIL'], config['SENDER_PASSWORD'])
-            server.send_message(msg)
-            
-        print(f"Notificación de nueva tarea enviada a {destinatario}")
-            
-    except Exception as e:
-        print(f"Error enviando notificación de nueva tarea: {e}")
-
-
-def enviar_email_tarea_completada(destinatario, usuario, titulo, fecha_completado):
-    """Envía email de notificación de tarea completada"""
-    try:
-        config = get_email_config()
-        
-        html = f'''<div style="font-family: 'Segoe UI', Calibri, Arial, sans-serif; max-width: 600px;">
-            <div style="background: #28a745; color: white; padding: 20px; text-align: center;">
-                <h2 style="margin: 0; font-weight: 300;">✅ Tarea Completada</h2>
-            </div>
-            <div style="padding: 25px;">
-                <p>Estimado supervisor,</p>
-                <p>El usuario <strong>{usuario}</strong> ha completado una tarea:</p>
-                
-                <div style="background: #f8f9fa; border: 1px solid #d4edda; padding: 20px; margin: 20px 0; border-radius: 4px;">
-                    <h3 style="color: #28a745; margin-top: 0;">{titulo}</h3>
-                    <p><strong>Completado el:</strong> {fecha_completado}</p>
-                </div>
-                
-                <p>La tarea ha sido marcada como completada en el sistema.</p>
-                
-                <p>Atentamente,<br>
-                <strong>Sistema de Gestión MRO</strong><br>
-                SIDER PERÚ</p>
-            </div>
-        </div>'''
-        
-        text = f"""TAREA COMPLETADA - SISTEMA MRO
-
-El usuario {usuario} ha completado una tarea:
-
-Título: {titulo}
-Completado el: {fecha_completado}
-
-La tarea ha sido marcada como completada en el sistema.
-
-Sistema de Gestión MRO
-SIDER PERÚ"""
-        
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"✅ Tarea Completada: {titulo}"
-        msg['From'] = config['SENDER_EMAIL']
-        msg['To'] = destinatario
-        
-        msg.attach(MIMEText(text, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html, 'html', 'utf-8'))
-        
-        with smtplib.SMTP(config['SMTP_SERVER'], config['SMTP_PORT']) as server:
-            server.starttls()
-            server.login(config['SENDER_EMAIL'], config['SENDER_PASSWORD'])
-            server.send_message(msg)
-            
-        print(f"Notificación de tarea completada enviada a {destinatario}")
-            
-    except Exception as e:
-        print(f"Error enviando notificación de completado: {e}")
 
 
 # =========================
