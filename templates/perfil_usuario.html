@@ -667,9 +667,8 @@
             <span>Cambiar Contraseña</span>
         </a>
         
-        <a href="{{ url_for('auth.descargar_datos_gerencia') }}" class="action-btn action-btn-secondary">
-            <i class="bi bi-file-earmark-pdf"></i>
-            <span>Generar Reporte PDF</span>
+        <a href="{{ url_for('auth.descargar_datos_premium') }}" class="btn btn-warning mt-2">
+            <i class="bi bi-file-earmark-pdf-fill"></i> Descargar Reporte Premium
         </a>
         
         <a href="{{ url_for('dashboard.dashboard') }}" class="action-btn action-btn-dark">
@@ -719,3 +718,4 @@
 </script>
 
 {% endblock %}
+
