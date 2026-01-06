@@ -251,6 +251,7 @@ def descargar_datos_gerencia():
 # 📄 PDF PREMIUM - VERSIÓN MEJORADA
 # ============================================================
 @auth_bp.route("/descargar-datos-premium")
+@auth_bp.route("/descargar-pdf-perfil")
 @login_required
 def descargar_datos_premium():
     """Descarga el reporte PDF PREMIUM del usuario"""
@@ -591,3 +592,4 @@ def limpiar_reportes():
         print(f"[limpiar_reportes] Error: {e}")
         flash("Error al eliminar reportes.", "danger")
         return redirect(url_for("auth.mis_reportes"))
+
