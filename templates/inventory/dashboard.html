@@ -486,6 +486,77 @@
         gap: 10px;
     }
 
+    /* ================= ACCIONES MODAL ================= */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .action-button {
+        padding: 15px;
+        border: 2px solid #dee2e6;
+        border-radius: var(--radius-sm);
+        background: white;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .action-button:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .action-button.selected {
+        border-color: var(--primary);
+        background: var(--primary-light);
+    }
+
+    .action-button i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .action-button.falta i { color: #dc3545; }
+    .action-button.sobra i { color: #28a745; }
+    .action-button.ajuste i { color: #ffc107; }
+    .action-button.movimiento i { color: #17a2b8; }
+
+    .action-details {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: var(--radius-sm);
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
+    }
+
     /* ================= REPORT MODAL ================= */
     .report-options {
         display: flex;
@@ -553,6 +624,36 @@
         font-size: 0.9rem;
     }
 
+    /* ================= LOADING OVERLAY ================= */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        color: white;
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
     /* ================= RESPONSIVE ================= */
     @media (max-width: 1200px) {
         .dashboard-layout {
@@ -595,6 +696,10 @@
         .modal-content {
             width: 95%;
             padding: 20px;
+        }
+        
+        .action-buttons {
+            grid-template-columns: 1fr;
         }
     }
 
@@ -648,10 +753,6 @@
         animation: spin 1s linear infinite;
     }
 
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-
     /* ================= TOAST NOTIFICATIONS ================= */
     .toast-container {
         position: fixed;
@@ -684,6 +785,86 @@
 </style>
 
 <!-- MODALES -->
+<!-- Modal para Acciones de Inventario -->
+<div id="inventoryActionModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-clipboard-check"></i> Acción de Inventario</h3>
+        </div>
+        <div class="modal-body">
+            <div class="action-buttons">
+                <div class="action-button falta" onclick="selectAction('falta')">
+                    <i class="bi bi-dash-circle"></i>
+                    <div>Registrar Falta</div>
+                </div>
+                <div class="action-button sobra" onclick="selectAction('sobra')">
+                    <i class="bi bi-plus-circle"></i>
+                    <div>Registrar Sobra</div>
+                </div>
+                <div class="action-button ajuste" onclick="selectAction('ajuste')">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <div>Ajuste de Stock</div>
+                </div>
+                <div class="action-button movimiento" onclick="selectAction('movimiento')">
+                    <i class="bi bi-truck"></i>
+                    <div>Movimiento</div>
+                </div>
+            </div>
+            
+            <div id="actionDetails" class="action-details" style="display: none;">
+                <h5 id="actionTitle">Registrar Falta</h5>
+                <form id="inventoryActionForm">
+                    <div class="form-group">
+                        <label for="itemCode">Código del Material *</label>
+                        <input type="text" id="itemCode" class="form-control" required 
+                               placeholder="Ej: MAT-001">
+                    </div>
+                    <div class="form-group">
+                        <label for="itemDescription">Descripción</label>
+                        <input type="text" id="itemDescription" class="form-control" 
+                               placeholder="Descripción del material">
+                    </div>
+                    <div class="form-group">
+                        <label for="currentLocation">Ubicación Actual</label>
+                        <input type="text" id="currentLocation" class="form-control" 
+                               placeholder="Ubicación donde se encuentra">
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Cantidad *</label>
+                        <input type="number" id="quantity" class="form-control" 
+                               min="1" value="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reason">Motivo *</label>
+                        <select id="reason" class="form-control" required>
+                            <option value="">Seleccionar motivo</option>
+                            <option value="conteo_fisico">Diferencia en conteo físico</option>
+                            <option value="dañado">Material dañado/defectuoso</option>
+                            <option value="vencido">Material vencido</option>
+                            <option value="robo">Pérdida/robo</option>
+                            <option value="error_sistema">Error de sistema</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comments">Comentarios</label>
+                        <textarea id="comments" class="form-control" rows="3" 
+                                  placeholder="Detalles adicionales..."></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('inventoryActionModal')">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="submitActionBtn" style="display: none;" 
+                    onclick="submitInventoryAction()">
+                <i class="bi bi-check-circle"></i> Registrar Acción
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Reportes -->
 <div id="reportModal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
@@ -710,24 +891,6 @@
                 </div>
                 
                 <div class="option-group">
-                    <h5>Incluir Secciones</h5>
-                    <div class="checkbox-group">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="section-kpis" checked>
-                            <label for="section-kpis">KPIs y Estadísticas</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="section-charts" checked>
-                            <label for="section-charts">Gráficos y Visualizaciones</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="section-table" checked>
-                            <label for="section-table">Tabla de Inventario</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="option-group">
                     <h5>Formato de Salida</h5>
                     <div class="checkbox-group">
                         <div class="checkbox-item">
@@ -737,10 +900,6 @@
                         <div class="checkbox-item">
                             <input type="radio" id="format-excel" name="output-format" value="excel">
                             <label for="format-excel">Excel</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="radio" id="format-csv" name="output-format" value="csv">
-                            <label for="format-csv">CSV</label>
                         </div>
                     </div>
                 </div>
@@ -755,63 +914,44 @@
     </div>
 </div>
 
+<!-- Modal para Configuración -->
 <div id="settingsModal" class="modal-overlay">
     <div class="modal-content">
         <div class="modal-header">
-            <h3><i class="bi bi-gear"></i> Configuración del Dashboard</h3>
+            <h3><i class="bi bi-gear"></i> Configuración</h3>
         </div>
         <div class="modal-body">
             <div class="settings-options">
                 <div class="setting-item">
                     <div class="setting-info">
-                        <h5>Actualización Automática</h5>
-                        <p>Actualizar datos cada 30 segundos</p>
+                        <h5>Umbral Stock Bajo</h5>
+                        <p>Cantidad mínima para considerar stock bajo</p>
                     </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked 
-                               onchange="toggleAutoRefresh(this.checked)">
-                    </div>
+                    <input type="number" id="lowStockThreshold" class="form-control" style="width: 80px;" 
+                           value="10" min="1" max="100">
                 </div>
                 
                 <div class="setting-item">
                     <div class="setting-info">
-                        <h5>Mostrar Notificaciones</h5>
-                        <p>Mostrar alertas de cambios importantes</p>
+                        <h5>Stock Crítico</h5>
+                        <p>Stock menor o igual a esta cantidad</p>
                     </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="showNotifications" checked
-                               onchange="toggleNotifications(this.checked)">
-                    </div>
-                </div>
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h5>Modo Oscuro</h5>
-                        <p>Cambiar tema a modo oscuro</p>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="darkMode"
-                               onchange="toggleDarkMode(this.checked)">
-                    </div>
-                </div>
-                
-                <div class="setting-item">
-                    <div class="setting-info">
-                        <h5>Ordenar Tabla</h5>
-                        <p>Ordenar items por stock (descendente)</p>
-                    </div>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="sortTable" checked
-                               onchange="toggleTableSort(this.checked)">
-                    </div>
+                    <input type="number" id="criticalStockThreshold" class="form-control" style="width: 80px;" 
+                           value="0" min="0" max="10">
                 </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">Cerrar</button>
-            <button type="button" class="btn btn-primary" onclick="saveSettings()">Guardar Cambios</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="saveSettings()">Guardar</button>
         </div>
     </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <h4 id="loadingMessage">Generando reporte...</h4>
 </div>
 
 <!-- MAIN DASHBOARD -->
@@ -823,14 +963,15 @@
                 <h1>
                     <i class="bi bi-speedometer2"></i>
                     Dashboard de Inventario
+                    <span class="badge bg-primary">Sistema vs Físico</span>
                 </h1>
             </div>
             <div class="header-actions">
                 <button class="btn btn-sm btn-outline-primary" onclick="updateDashboard()">
                     <i class="bi bi-arrow-clockwise"></i> Actualizar
                 </button>
-                <button class="btn btn-sm btn-primary" onclick="showExportModal()">
-                    <i class="bi bi-download"></i> Exportar
+                <button class="btn btn-sm btn-success" onclick="openInventoryAction()">
+                    <i class="bi bi-clipboard-check"></i> Acción de Inventario
                 </button>
             </div>
         </div>
@@ -852,7 +993,7 @@
                 <div class="stat-info">
                     {% set criticos = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '<=', 0)|list|length if items else 0 %}
                     <h4 id="criticalItems">{{ criticos }}</h4>
-                    <span>Stock Crítico</span>
+                    <span>Stock Crítico (≤0)</span>
                 </div>
             </div>
             <div class="stat-item">
@@ -862,7 +1003,7 @@
                 <div class="stat-info">
                     {% set bajos = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '>', 0)|selectattr('libre_utilizacion', '<', 10)|list|length if items else 0 %}
                     <h4 id="lowItems">{{ bajos }}</h4>
-                    <span>Stock Bajo</span>
+                    <span>Stock Bajo (1-9)</span>
                 </div>
             </div>
             <div class="stat-item">
@@ -872,8 +1013,19 @@
                 <div class="stat-info">
                     {% set normales = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '>=', 10)|list|length if items else 0 %}
                     <h4 id="okItems">{{ normales }}</h4>
-                    <span>Stock Normal</span>
+                    <span>Stock Normal (≥10)</span>
                 </div>
+            </div>
+        </div>
+        
+        <div class="mt-3 pt-3 border-top">
+            <div class="alert alert-info py-2 mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                <small>
+                    <strong>Stock Normal:</strong> Se basa en el sistema vs conteo físico. 
+                    <strong>≥10 unidades</strong> significa que el stock físico coincide o supera al sistema. 
+                    <strong>Stock Bajo/Crítico</strong> indica diferencias significativas.
+                </small>
             </div>
         </div>
     </div>
@@ -900,7 +1052,7 @@
                     </div>
                     <div class="kpi-content">
                         <div class="kpi-value" id="totalStock">0</div>
-                        <div class="kpi-label">Stock Total</div>
+                        <div class="kpi-label">Stock Total Sistema</div>
                     </div>
                 </div>
                 
@@ -913,6 +1065,16 @@
                         <div class="kpi-label">Promedio por Item</div>
                     </div>
                 </div>
+                
+                <div class="kpi-card">
+                    <div class="kpi-icon" style="background: var(--warning-gradient);">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-value" id="differences">0</div>
+                        <div class="kpi-label">Diferencias Detectadas</div>
+                    </div>
+                </div>
             </div>
 
             <!-- GRÁFICOS -->
@@ -921,14 +1083,11 @@
                     <div class="chart-header">
                         <div class="chart-title">
                             <i class="bi bi-pie-chart"></i>
-                            Distribución por Estado
+                            Estado del Inventario
                         </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary" type="button" 
-                                    onclick="toggleChartType('pie')">
-                                <i class="bi bi-arrows-angle-expand" id="pieChartIcon"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="toggleChartType('pie')">
+                            <i class="bi bi-arrows-angle-expand" id="pieChartIcon"></i>
+                        </button>
                     </div>
                     <div class="chart-body">
                         <canvas id="estadoChart"></canvas>
@@ -941,12 +1100,9 @@
                             <i class="bi bi-bar-chart"></i>
                             Stock por Ubicación
                         </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary" type="button" 
-                                    onclick="toggleChartType('bar')">
-                                <i class="bi bi-arrows-angle-expand" id="barChartIcon"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportChartData()">
+                            <i class="bi bi-download"></i>
+                        </button>
                     </div>
                     <div class="chart-body">
                         <canvas id="ubicacionChart"></canvas>
@@ -959,7 +1115,7 @@
                 <div class="table-header">
                     <div class="table-title">
                         <i class="bi bi-table"></i>
-                        Inventario Detallado
+                        Inventario Detallado (Sistema vs Físico)
                         <span id="filteredCount" class="badge bg-secondary">{{ items|length if items else 0 }}</span>
                     </div>
                     
@@ -972,8 +1128,11 @@
                         <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()" title="Limpiar filtros">
                             <i class="bi bi-x-circle"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-info" onclick="toggleTableView()" title="Cambiar vista">
-                            <i class="bi bi-list-ul"></i>
+                        <button class="btn btn-sm btn-outline-primary" onclick="openReportModal()" title="Generar reporte">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="openSettingsModal()" title="Configuración">
+                            <i class="bi bi-gear"></i>
                         </button>
                     </div>
                 </div>
@@ -982,18 +1141,12 @@
                     <table class="dashboard-table" id="inventoryTable">
                         <thead>
                             <tr>
-                                <th onclick="sortTable(0)" style="cursor: pointer;">
-                                    Código <i class="bi bi-arrow-down-up"></i>
-                                </th>
-                                <th onclick="sortTable(1)" style="cursor: pointer;">
-                                    Descripción <i class="bi bi-arrow-down-up"></i>
-                                </th>
-                                <th onclick="sortTable(2)" style="cursor: pointer;">
-                                    Ubicación <i class="bi bi-arrow-down-up"></i>
-                                </th>
-                                <th onclick="sortTable(3)" style="cursor: pointer;">
-                                    Stock <i class="bi bi-arrow-down-up"></i>
-                                </th>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Ubicación</th>
+                                <th>Stock Sistema</th>
+                                <th>Stock Físico</th>
+                                <th>Diferencia</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -1001,12 +1154,17 @@
                         <tbody id="inventoryTableBody">
                             {% if items and items|length > 0 %}
                                 {% for item in items %}
-                                {% set stock = item.libre_utilizacion if item.libre_utilizacion is defined else 0 %}
+                                {% set stock_sistema = item.libre_utilizacion if item.libre_utilizacion is defined else 0 %}
+                                {% set stock_fisico = item.stock_fisico if item.stock_fisico is defined else stock_sistema %}
+                                {% set diferencia = stock_fisico - stock_sistema %}
+                                {% set diferencia_abs = diferencia|abs %}
                                 <tr class="inventory-row" 
                                     data-code="{{ item.material_code|default('', true) }}"
                                     data-desc="{{ item.material_text|default('', true) }}"
                                     data-location="{{ item.location|default('Sin ubicación', true) }}"
-                                    data-stock="{{ stock }}">
+                                    data-stock-sistema="{{ stock_sistema }}"
+                                    data-stock-fisico="{{ stock_fisico }}"
+                                    data-diferencia="{{ diferencia }}">
                                     <td class="fw-semibold">{{ item.material_code|default('N/A', true) }}</td>
                                     <td>
                                         <div class="text-truncate" style="max-width: 200px;" 
@@ -1017,35 +1175,55 @@
                                     <td>
                                         <span class="badge bg-dark">{{ item.location|default('Sin ubicación', true) }}</span>
                                     </td>
-                                    <td class="fw-bold {% if stock <= 0 %}text-danger{% elif stock < 10 %}text-warning{% else %}text-success{% endif %}">
-                                        {{ stock }}
+                                    <td class="fw-bold text-primary">{{ stock_sistema }}</td>
+                                    <td class="fw-bold {% if stock_fisico > stock_sistema %}text-success{% elif stock_fisico < stock_sistema %}text-danger{% else %}text-primary{% endif %}">
+                                        {{ stock_fisico }}
+                                    </td>
+                                    <td class="fw-bold {% if diferencia > 0 %}text-success{% elif diferencia < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        {% if diferencia > 0 %}
+                                            <i class="bi bi-arrow-up-circle text-success"></i> +{{ diferencia_abs }}
+                                        {% elif diferencia < 0 %}
+                                            <i class="bi bi-arrow-down-circle text-danger"></i> -{{ diferencia_abs }}
+                                        {% else %}
+                                            <span class="text-muted">0</span>
+                                        {% endif %}
                                     </td>
                                     <td>
-                                        {% if stock <= 0 %}
+                                        {% if stock_fisico <= 0 %}
                                             <span class="stock-badge badge-critical">
                                                 <i class="bi bi-exclamation-triangle me-1"></i>Crítico
                                             </span>
-                                        {% elif stock < 10 %}
+                                        {% elif stock_fisico < 10 %}
                                             <span class="stock-badge badge-low">
                                                 <i class="bi bi-exclamation-circle me-1"></i>Bajo
                                             </span>
                                         {% else %}
                                             <span class="stock-badge badge-ok">
-                                                <i class="bi bi-check-circle me-1"></i>OK
+                                                <i class="bi bi-check-circle me-1"></i>Normal
                                             </span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary" 
-                                                onclick="editItem('{{ item.material_code|default('', true) }}')">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if diferencia != 0 %}
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="registerDifference('{{ item.material_code|default('', true) }}', {{ diferencia }})"
+                                                    title="Registrar diferencia">
+                                                <i class="bi bi-clipboard-check"></i>
+                                            </button>
+                                            {% endif %}
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="editStock('{{ item.material_code|default('', true) }}')"
+                                                    title="Ajustar stock">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-inbox display-6"></i>
                                             <p class="mt-2 mb-3">No hay items de inventario</p>
@@ -1065,9 +1243,15 @@
                         Mostrando {{ items|length if items else 0 }} de {{ items|length if items else 0 }} items
                     </small>
                     <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-secondary" onclick="exportTable('csv')">CSV</button>
-                        <button class="btn btn-outline-secondary" onclick="exportTable('excel')">Excel</button>
-                        <button class="btn btn-outline-secondary" onclick="printTable()">Imprimir</button>
+                        <button class="btn btn-outline-success" onclick="exportToExcel()">
+                            <i class="bi bi-file-excel"></i> Excel
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="exportToPDF()">
+                            <i class="bi bi-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printTable()">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1075,39 +1259,33 @@
 
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <!-- WIDGET: ESTADO DE STOCK -->
+            <!-- WIDGET: RESUMEN DE DIFERENCIAS -->
             <div class="widget">
                 <div class="widget-header">
-                    <h5><i class="bi bi-clipboard-data"></i> Resumen por Estado</h5>
+                    <h5><i class="bi bi-clipboard-data"></i> Resumen de Diferencias</h5>
                 </div>
                 <div class="widget-body">
                     <div class="status-list">
                         <div class="status-item">
                             <div class="status-label">
-                                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                                <span>Stock Crítico</span>
+                                <i class="bi bi-arrow-up-circle-fill text-success"></i>
+                                <span>Sobras</span>
                             </div>
-                            <span class="status-badge" style="background: var(--danger-gradient);">
-                                {{ criticos }}
-                            </span>
+                            <span class="status-badge" style="background: var(--success-gradient);" id="sobrasCount">0</span>
                         </div>
                         <div class="status-item">
                             <div class="status-label">
-                                <i class="bi bi-exclamation-circle-fill text-warning"></i>
-                                <span>Stock Bajo</span>
+                                <i class="bi bi-arrow-down-circle-fill text-danger"></i>
+                                <span>Faltantes</span>
                             </div>
-                            <span class="status-badge" style="background: var(--warning-gradient);">
-                                {{ bajos }}
-                            </span>
+                            <span class="status-badge" style="background: var(--danger-gradient);" id="faltantesCount">0</span>
                         </div>
                         <div class="status-item">
                             <div class="status-label">
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                                <span>Stock Normal</span>
+                                <i class="bi bi-check-circle-fill text-primary"></i>
+                                <span>Coinciden</span>
                             </div>
-                            <span class="status-badge" style="background: var(--success-gradient);">
-                                {{ normales }}
-                            </span>
+                            <span class="status-badge" style="background: var(--primary-gradient);" id="coincidenCount">0</span>
                         </div>
                     </div>
                 </div>
@@ -1124,29 +1302,29 @@
                             <i class="bi bi-upload"></i>
                             <span>Cargar Inventario</span>
                         </a>
-                        <button class="action-btn" onclick="showExportOptions()">
+                        <button class="action-btn" onclick="openInventoryAction()">
+                            <i class="bi bi-clipboard-check"></i>
+                            <span>Registrar Diferencia</span>
+                        </button>
+                        <button class="action-btn" onclick="exportDifferences()">
                             <i class="bi bi-download"></i>
-                            <span>Exportar Datos</span>
+                            <span>Exportar Diferencias</span>
                         </button>
-                        <button class="action-btn" onclick="openReportModal()">
-                            <i class="bi bi-file-earmark-text"></i>
-                            <span>Generar Reporte</span>
-                        </button>
-                        <button class="action-btn" onclick="openSettingsModal()">
-                            <i class="bi bi-gear"></i>
-                            <span>Ajustes</span>
+                        <button class="action-btn" onclick="showReconciliation()">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>Conciliación</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- WIDGET: TOP UBICACIONES -->
+            <!-- WIDGET: ULTIMAS ACCIONES -->
             <div class="widget">
                 <div class="widget-header">
-                    <h5><i class="bi bi-trophy"></i> Top Ubicaciones</h5>
+                    <h5><i class="bi bi-clock-history"></i> Últimas Acciones</h5>
                 </div>
                 <div class="widget-body">
-                    <div id="topLocations">
+                    <div id="recentActions">
                         <div class="text-center">
                             <div class="spinner-border spinner-border-sm text-primary"></div>
                             <span class="ms-2">Cargando...</span>
@@ -1162,14 +1340,14 @@
                 </div>
                 <div class="widget-body">
                     <div class="d-flex flex-column gap-2">
-                        <button class="btn btn-sm btn-outline-danger w-100" onclick="filterByStatus('critical')">
-                            <i class="bi bi-exclamation-triangle me-1"></i>Stock Crítico
+                        <button class="btn btn-sm btn-outline-danger w-100" onclick="filterByStatus('falta')">
+                            <i class="bi bi-arrow-down-circle me-1"></i>Faltantes
                         </button>
-                        <button class="btn btn-sm btn-outline-warning w-100" onclick="filterByStatus('low')">
-                            <i class="bi bi-exclamation-circle me-1"></i>Stock Bajo
+                        <button class="btn btn-sm btn-outline-success w-100" onclick="filterByStatus('sobra')">
+                            <i class="bi bi-arrow-up-circle me-1"></i>Sobras
                         </button>
-                        <button class="btn btn-sm btn-outline-success w-100" onclick="filterByStatus('ok')">
-                            <i class="bi bi-check-circle me-1"></i>Stock Normal
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="filterByStatus('coincide')">
+                            <i class="bi bi-check-circle me-1"></i>Coinciden
                         </button>
                         <button class="btn btn-sm btn-outline-secondary w-100" onclick="clearStatusFilter()">
                             <i class="bi bi-x-circle me-1"></i>Limpiar Filtro
@@ -1184,48 +1362,41 @@
 <!-- ================= JAVASCRIPT COMPLETO ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 // ================= CONFIGURACIÓN GLOBAL =================
 const config = {
-    autoRefresh: true,
-    refreshInterval: 30000,
-    notifications: true,
-    darkMode: false,
-    tableSort: true,
-    currentSort: { column: 3, direction: 'desc' }
+    lowStockThreshold: 10,
+    criticalStockThreshold: 0,
+    currentAction: null
 };
 
 let charts = {};
 let inventoryData = [];
 let filteredData = [];
-let autoRefreshInterval = null;
 
 // ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Inicializando dashboard completo...');
+    console.log('🚀 Inicializando dashboard de inventario...');
     
     // Inicializar componentes
     initDashboard();
     initModals();
-    initSettings();
+    loadRecentActions();
     
     // Configurar eventos
     setupEventListeners();
 });
 
-// ================= DASHBOARD FUNCTIONS =================
+// ================= FUNCIONES DEL DASHBOARD =================
 function initDashboard() {
     collectInventoryData();
     calculateMetrics();
     renderCharts();
-    updateTopLocations();
+    updateDifferencesSummary();
     setupSearch();
-    
-    // Iniciar actualización automática si está habilitada
-    if (config.autoRefresh) {
-        startAutoRefresh();
-    }
 }
 
 function collectInventoryData() {
@@ -1236,20 +1407,15 @@ function collectInventoryData() {
             code: row.dataset.code || '',
             desc: row.dataset.desc || '',
             location: row.dataset.location || 'Sin ubicación',
-            stock: parseInt(row.dataset.stock) || 0,
-            status: getStockStatus(parseInt(row.dataset.stock)),
+            stock_sistema: parseInt(row.dataset.stockSistema) || 0,
+            stock_fisico: parseInt(row.dataset.stockFisico) || 0,
+            diferencia: parseInt(row.dataset.diferencia) || 0,
             element: row
         };
         inventoryData.push(data);
     });
     filteredData = [...inventoryData];
     console.log(`📦 ${inventoryData.length} items cargados`);
-}
-
-function getStockStatus(stock) {
-    if (stock <= 0) return 'critical';
-    if (stock < 10) return 'low';
-    return 'ok';
 }
 
 function calculateMetrics() {
@@ -1259,49 +1425,32 @@ function calculateMetrics() {
     const locations = new Set(inventoryData.map(item => item.location));
     document.getElementById('totalLocations').textContent = locations.size;
     
-    // Stock total
-    const totalStock = inventoryData.reduce((sum, item) => sum + item.stock, 0);
+    // Stock total del sistema
+    const totalStock = inventoryData.reduce((sum, item) => sum + item.stock_sistema, 0);
     document.getElementById('totalStock').textContent = totalStock.toLocaleString();
     
     // Promedio por item
     const avgStock = totalStock / inventoryData.length;
     document.getElementById('avgStock').textContent = avgStock.toFixed(1);
+    
+    // Diferencias totales
+    const differences = inventoryData.filter(item => item.diferencia !== 0).length;
+    document.getElementById('differences').textContent = differences;
 }
 
-function updateTopLocations() {
-    if (inventoryData.length === 0) {
-        document.getElementById('topLocations').innerHTML = '<p class="text-muted text-center">No hay datos</p>';
-        return;
-    }
+function updateDifferencesSummary() {
+    if (inventoryData.length === 0) return;
     
-    const locationMap = new Map();
-    inventoryData.forEach(item => {
-        if (!locationMap.has(item.location)) {
-            locationMap.set(item.location, 0);
-        }
-        locationMap.set(item.location, locationMap.get(item.location) + item.stock);
-    });
+    const sobras = inventoryData.filter(item => item.diferencia > 0).length;
+    const faltantes = inventoryData.filter(item => item.diferencia < 0).length;
+    const coinciden = inventoryData.filter(item => item.diferencia === 0).length;
     
-    const topLocations = Array.from(locationMap.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-    
-    const html = topLocations.map(([location, stock], index) => `
-        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 ${index < topLocations.length - 1 ? 'border-bottom' : ''}">
-            <div class="d-flex align-items-center">
-                <span class="badge bg-secondary me-2">${index + 1}</span>
-                <span class="text-truncate" style="max-width: 150px;" title="${location}">
-                    ${location}
-                </span>
-            </div>
-            <span class="fw-bold text-primary">${stock}</span>
-        </div>
-    `).join('');
-    
-    document.getElementById('topLocations').innerHTML = html || '<p class="text-muted">No hay datos</p>';
+    document.getElementById('sobrasCount').textContent = sobras;
+    document.getElementById('faltantesCount').textContent = faltantes;
+    document.getElementById('coincidenCount').textContent = coinciden;
 }
 
-// ================= CHART FUNCTIONS =================
+// ================= FUNCIONES DE GRÁFICOS =================
 function renderCharts() {
     renderEstadoChart();
     renderUbicacionChart();
@@ -1311,9 +1460,12 @@ function renderEstadoChart() {
     const ctx = document.getElementById('estadoChart');
     if (!ctx) return;
     
-    const criticos = inventoryData.filter(item => item.stock <= 0).length;
-    const bajos = inventoryData.filter(item => item.stock > 0 && item.stock < 10).length;
-    const normales = inventoryData.filter(item => item.stock >= 10).length;
+    const criticos = inventoryData.filter(item => item.stock_fisico <= config.criticalStockThreshold).length;
+    const bajos = inventoryData.filter(item => 
+        item.stock_fisico > config.criticalStockThreshold && 
+        item.stock_fisico < config.lowStockThreshold
+    ).length;
+    const normales = inventoryData.filter(item => item.stock_fisico >= config.lowStockThreshold).length;
     
     if (charts.estado) {
         charts.estado.destroy();
@@ -1349,6 +1501,17 @@ function renderEstadoChart() {
                         padding: 15,
                         font: { size: 11 }
                     }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = inventoryData.length;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
                 }
             },
             cutout: '65%'
@@ -1365,7 +1528,7 @@ function renderUbicacionChart() {
         if (!locationMap.has(item.location)) {
             locationMap.set(item.location, 0);
         }
-        locationMap.set(item.location, locationMap.get(item.location) + item.stock);
+        locationMap.set(item.location, locationMap.get(item.location) + item.stock_fisico);
     });
     
     const topLocations = Array.from(locationMap.entries())
@@ -1381,7 +1544,7 @@ function renderUbicacionChart() {
         data: {
             labels: topLocations.map(([location]) => location),
             datasets: [{
-                label: 'Stock Total',
+                label: 'Stock Físico Total',
                 data: topLocations.map(([, stock]) => stock),
                 backgroundColor: 'rgba(23, 162, 184, 0.7)',
                 borderColor: 'rgba(23, 162, 184, 1)',
@@ -1412,7 +1575,21 @@ function renderUbicacionChart() {
     });
 }
 
-// ================= SEARCH AND FILTER FUNCTIONS =================
+function toggleChartType(type) {
+    if (type === 'pie' && charts.estado) {
+        const currentType = charts.estado.config.type;
+        const newType = currentType === 'doughnut' ? 'pie' : 'doughnut';
+        charts.estado.config.type = newType;
+        charts.estado.update();
+        
+        const icon = document.getElementById('pieChartIcon');
+        icon.className = newType === 'pie' ? 'bi bi-circle' : 'bi bi-arrows-angle-expand';
+        
+        showToast(`Gráfico cambiado a ${newType === 'pie' ? 'circular' : 'dona'}`);
+    }
+}
+
+// ================= FUNCIONES DE BÚSQUEDA Y FILTROS =================
 function setupSearch() {
     const searchInput = document.getElementById('searchInv');
     if (!searchInput) return;
@@ -1438,7 +1615,8 @@ function filterInventory(searchTerm) {
         return item.code.toLowerCase().includes(searchTerm) ||
                item.desc.toLowerCase().includes(searchTerm) ||
                item.location.toLowerCase().includes(searchTerm) ||
-               item.stock.toString().includes(searchTerm);
+               item.stock_sistema.toString().includes(searchTerm) ||
+               item.stock_fisico.toString().includes(searchTerm);
     });
     
     let visibleCount = 0;
@@ -1455,23 +1633,40 @@ function filterByStatus(status) {
     const searchInput = document.getElementById('searchInv');
     if (searchInput) searchInput.value = '';
     
-    filteredData = inventoryData.filter(item => item.status === status);
-    
+    filteredData = [];
     let visibleCount = 0;
+    
     inventoryData.forEach(item => {
-        const isVisible = item.status === status;
+        let isVisible = false;
+        
+        switch(status) {
+            case 'falta':
+                isVisible = item.diferencia < 0;
+                break;
+            case 'sobra':
+                isVisible = item.diferencia > 0;
+                break;
+            case 'coincide':
+                isVisible = item.diferencia === 0;
+                break;
+        }
+        
         item.element.style.display = isVisible ? '' : 'none';
-        if (isVisible) visibleCount++;
+        if (isVisible) {
+            visibleCount++;
+            filteredData.push(item);
+        }
     });
     
     updateFilteredCount();
-    showToast(`Filtrado por: ${status === 'critical' ? 'Stock Crítico' : status === 'low' ? 'Stock Bajo' : 'Stock Normal'}`);
+    showToast(`Filtrado por: ${status === 'falta' ? 'Faltantes' : status === 'sobra' ? 'Sobras' : 'Coinciden'}`);
 }
 
 function clearStatusFilter() {
     const searchInput = document.getElementById('searchInv');
     if (searchInput) searchInput.value = '';
     filterInventory('');
+    showToast('Filtros limpiados');
 }
 
 function clearFilters() {
@@ -1490,173 +1685,7 @@ function updateFilteredCount() {
         `Mostrando ${visibleCount} de ${inventoryData.length} items`;
 }
 
-// ================= TABLE FUNCTIONS =================
-function sortTable(columnIndex) {
-    if (!config.tableSort) return;
-    
-    const table = document.getElementById('inventoryTable');
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
-    
-    if (rows.length <= 1) return;
-    
-    const direction = config.currentSort.column === columnIndex ? 
-                     config.currentSort.direction === 'asc' ? 'desc' : 'asc' : 'asc';
-    
-    rows.sort((a, b) => {
-        let aValue = a.cells[columnIndex].textContent.trim();
-        let bValue = b.cells[columnIndex].textContent.trim();
-        
-        // Para columna de stock, convertir a número
-        if (columnIndex === 3) {
-            aValue = parseFloat(aValue) || 0;
-            bValue = parseFloat(bValue) || 0;
-        }
-        
-        if (direction === 'asc') {
-            return aValue > bValue ? 1 : -1;
-        } else {
-            return aValue < bValue ? 1 : -1;
-        }
-    });
-    
-    // Reordenar filas
-    rows.forEach(row => tbody.appendChild(row));
-    
-    // Actualizar estado de ordenamiento
-    config.currentSort = { column: columnIndex, direction };
-    
-    showToast(`Tabla ordenada por columna ${columnIndex + 1} (${direction})`);
-}
-
-function toggleTableView() {
-    const table = document.getElementById('inventoryTable');
-    const isCondensed = table.classList.contains('table-sm');
-    
-    if (isCondensed) {
-        table.classList.remove('table-sm');
-        showToast('Vista normal activada');
-    } else {
-        table.classList.add('table-sm');
-        showToast('Vista compacta activada');
-    }
-}
-
-// ================= EXPORT FUNCTIONS =================
-function exportTable(format) {
-    if (filteredData.length === 0) {
-        showToast('No hay datos para exportar', 'warning');
-        return;
-    }
-    
-    try {
-        let content, filename, mimeType;
-        
-        if (format === 'csv') {
-            content = convertToCSV();
-            filename = `inventario_${getFormattedDate()}.csv`;
-            mimeType = 'text/csv';
-        } else if (format === 'excel') {
-            content = convertToExcel();
-            filename = `inventario_${getFormattedDate()}.xlsx`;
-            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-        }
-        
-        downloadFile(content, filename, mimeType);
-        showToast(`Exportado como ${format.toUpperCase()}`, 'success');
-        
-    } catch (error) {
-        console.error('Error al exportar:', error);
-        showToast('Error al exportar los datos', 'danger');
-    }
-}
-
-function convertToCSV() {
-    const headers = ['Código', 'Descripción', 'Ubicación', 'Stock', 'Estado'];
-    const rows = filteredData.map(item => [
-        item.code,
-        item.desc,
-        item.location,
-        item.stock,
-        item.status === 'critical' ? 'Crítico' : item.status === 'low' ? 'Bajo' : 'Normal'
-    ]);
-    
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    return csvContent;
-}
-
-function convertToExcel() {
-    const wsData = [
-        ['Código', 'Descripción', 'Ubicación', 'Stock', 'Estado'],
-        ...filteredData.map(item => [
-            item.code,
-            item.desc,
-            item.location,
-            item.stock,
-            item.status === 'critical' ? 'Crítico' : item.status === 'low' ? 'Bajo' : 'Normal'
-        ])
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-    
-    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-}
-
-function downloadFile(content, filename, mimeType) {
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-function getFormattedDate() {
-    const now = new Date();
-    return now.toISOString().slice(0, 10).replace(/-/g, '');
-}
-
-function printTable() {
-    const printContent = document.getElementById('inventoryTable').outerHTML;
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>Inventario - ${new Date().toLocaleDateString()}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                    @media print {
-                        body { margin: 0; }
-                    }
-                </style>
-            </head>
-            <body>
-                <h2>Reporte de Inventario</h2>
-                <p>Generado: ${new Date().toLocaleString()}</p>
-                ${printContent}
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-    showToast('Preparando para imprimir...');
-}
-
-// ================= MODAL FUNCTIONS =================
+// ================= FUNCIONES DE MODALES =================
 function initModals() {
     // Cerrar modales al hacer clic fuera
     document.querySelectorAll('.modal-overlay').forEach(modal => {
@@ -1673,6 +1702,11 @@ function initModals() {
             closeAllModals();
         }
     });
+}
+
+function openInventoryAction() {
+    resetActionForm();
+    document.getElementById('inventoryActionModal').style.display = 'flex';
 }
 
 function openReportModal() {
@@ -1693,275 +1727,630 @@ function closeAllModals() {
     });
 }
 
-function generateReport() {
-    const reportType = document.querySelector('input[name="report-type"]:checked').value;
-    const includeKPIs = document.getElementById('section-kpis').checked;
-    const includeCharts = document.getElementById('section-charts').checked;
-    const includeTable = document.getElementById('section-table').checked;
-    const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
+// ================= FUNCIONES DE ACCIONES DE INVENTARIO =================
+function selectAction(action) {
+    config.currentAction = action;
     
-    // Mostrar loading
-    const generateBtn = document.querySelector('#reportModal .btn-primary');
-    const originalText = generateBtn.innerHTML;
-    generateBtn.innerHTML = '<span class="spinner"></span> Generando...';
-    generateBtn.disabled = true;
+    // Remover selección anterior
+    document.querySelectorAll('.action-button').forEach(btn => {
+        btn.classList.remove('selected');
+    });
     
-    // Simular generación de reporte
-    setTimeout(() => {
-        generateBtn.innerHTML = originalText;
-        generateBtn.disabled = false;
+    // Agregar selección actual
+    event.currentTarget.classList.add('selected');
+    
+    // Mostrar detalles del formulario
+    document.getElementById('actionDetails').style.display = 'block';
+    document.getElementById('submitActionBtn').style.display = 'block';
+    
+    // Actualizar título
+    const titles = {
+        'falta': 'Registrar Falta de Material',
+        'sobra': 'Registrar Sobra de Material',
+        'ajuste': 'Ajuste de Stock',
+        'movimiento': 'Movimiento entre Ubicaciones'
+    };
+    document.getElementById('actionTitle').textContent = titles[action] || 'Acción de Inventario';
+    
+    // Pre-cargar datos si hay un item seleccionado
+    const selectedRow = document.querySelector('.inventory-row.selected');
+    if (selectedRow) {
+        document.getElementById('itemCode').value = selectedRow.dataset.code;
+        document.getElementById('itemDescription').value = selectedRow.dataset.desc;
+        document.getElementById('currentLocation').value = selectedRow.dataset.location;
         
-        closeModal('reportModal');
-        
-        showToast(`Reporte ${reportType} generado exitosamente`, 'success');
-        
-        // Simular descarga
-        const reportData = {
-            type: reportType,
-            format: outputFormat,
-            timestamp: new Date().toISOString(),
-            includes: {
-                kpis: includeKPIs,
-                charts: includeCharts,
-                table: includeTable
-            }
-        };
-        
-        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reporte_inventario_${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-    }, 2000);
+        if (action === 'falta') {
+            const diferencia = Math.abs(parseInt(selectedRow.dataset.diferencia));
+            document.getElementById('quantity').value = diferencia || 1;
+        } else if (action === 'sobra') {
+            const diferencia = parseInt(selectedRow.dataset.diferencia);
+            document.getElementById('quantity').value = diferencia > 0 ? diferencia : 1;
+        }
+    }
 }
 
-function showExportOptions() {
-    const exportData = {
-        totalItems: inventoryData.length,
-        totalStock: inventoryData.reduce((sum, item) => sum + item.stock, 0),
-        criticalItems: inventoryData.filter(item => item.status === 'critical').length,
-        lowItems: inventoryData.filter(item => item.status === 'low').length,
-        okItems: inventoryData.filter(item => item.status === 'ok').length,
-        data: filteredData.map(item => ({
-            codigo: item.code,
-            descripcion: item.desc,
-            ubicacion: item.location,
-            stock: item.stock,
-            estado: item.status
-        }))
+function resetActionForm() {
+    config.currentAction = null;
+    document.querySelectorAll('.action-button').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    document.getElementById('actionDetails').style.display = 'none';
+    document.getElementById('submitActionBtn').style.display = 'none';
+    document.getElementById('inventoryActionForm').reset();
+}
+
+function submitInventoryAction() {
+    const form = document.getElementById('inventoryActionForm');
+    if (!form.checkValidity()) {
+        showToast('Por favor complete todos los campos requeridos', 'warning');
+        return;
+    }
+    
+    const actionData = {
+        tipo: config.currentAction,
+        codigo: document.getElementById('itemCode').value,
+        descripcion: document.getElementById('itemDescription').value,
+        ubicacion: document.getElementById('currentLocation').value,
+        cantidad: parseInt(document.getElementById('quantity').value),
+        motivo: document.getElementById('reason').value,
+        comentarios: document.getElementById('comments').value,
+        fecha: new Date().toISOString(),
+        usuario: 'Usuario Actual' // En un sistema real, esto vendría de la sesión
     };
     
-    const jsonStr = JSON.stringify(exportData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `inventario_export_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // Mostrar loading
+    const submitBtn = document.getElementById('submitActionBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner"></span> Procesando...';
+    submitBtn.disabled = true;
     
-    showToast('Datos exportados en formato JSON', 'success');
+    // Simular envío al servidor
+    setTimeout(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Aquí normalmente harías una petición POST al servidor
+        console.log('Acción registrada:', actionData);
+        
+        // Mostrar confirmación
+        closeModal('inventoryActionModal');
+        showToast(`${actionData.tipo === 'falta' ? 'Falta' : actionData.tipo === 'sobra' ? 'Sobra' : 'Acción'} registrada exitosamente`, 'success');
+        
+        // Actualizar acciones recientes
+        addRecentAction(actionData);
+        
+        // Si es ajuste de stock, actualizar el dashboard
+        if (actionData.tipo === 'falta' || actionData.tipo === 'sobra') {
+            updateDashboard();
+        }
+        
+    }, 1500);
 }
 
-function showExportModal() {
+function registerDifference(itemCode, diferencia) {
+    // Abrir modal de acción pre-seleccionando falta o sobra
+    openInventoryAction();
+    
+    setTimeout(() => {
+        const action = diferencia < 0 ? 'falta' : 'sobra';
+        const actionButton = document.querySelector(`.action-button.${action}`);
+        if (actionButton) {
+            actionButton.click();
+            
+            // Buscar el item en la tabla
+            const row = document.querySelector(`[data-code="${itemCode}"]`);
+            if (row) {
+                row.classList.add('selected');
+                document.getElementById('itemCode').value = itemCode;
+                document.getElementById('itemDescription').value = row.dataset.desc;
+                document.getElementById('currentLocation').value = row.dataset.location;
+                document.getElementById('quantity').value = Math.abs(diferencia);
+                
+                // Pre-seleccionar motivo común
+                document.getElementById('reason').value = 'conteo_fisico';
+            }
+        }
+    }, 100);
+}
+
+function editStock(itemCode) {
+    // Buscar el item
+    const row = document.querySelector(`[data-code="${itemCode}"]`);
+    if (!row) return;
+    
     Swal.fire({
-        title: 'Exportar Dashboard',
-        text: 'Selecciona el formato de exportación',
-        icon: 'info',
+        title: 'Ajustar Stock',
+        html: `
+            <div class="text-start">
+                <p><strong>${row.dataset.code}</strong></p>
+                <p>${row.dataset.desc}</p>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Stock Sistema</label>
+                        <input type="number" id="swalStockSistema" class="form-control" 
+                               value="${row.dataset.stockSistema}" min="0">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Stock Físico</label>
+                        <input type="number" id="swalStockFisico" class="form-control" 
+                               value="${row.dataset.stockFisico}" min="0">
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">Motivo del ajuste</label>
+                    <select id="swalReason" class="form-control">
+                        <option value="conteo_fisico">Conteo físico</option>
+                        <option value="ajuste_inventario">Ajuste de inventario</option>
+                        <option value="error_registro">Error de registro</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                
+                <div class="mt-3">
+                    <label class="form-label">Comentarios</label>
+                    <textarea id="swalComments" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+        `,
         showCancelButton: true,
-        confirmButtonText: 'Exportar Todo',
+        confirmButtonText: 'Guardar Cambios',
         cancelButtonText: 'Cancelar',
-        showDenyButton: true,
-        denyButtonText: 'Solo Datos',
         customClass: {
             confirmButton: 'btn btn-primary',
-            cancelButton: 'btn btn-secondary',
-            denyButton: 'btn btn-info'
+            cancelButton: 'btn btn-secondary'
         },
-        buttonsStyling: false
+        buttonsStyling: false,
+        preConfirm: () => {
+            const sistema = parseInt(document.getElementById('swalStockSistema').value);
+            const fisico = parseInt(document.getElementById('swalStockFisico').value);
+            const reason = document.getElementById('swalReason').value;
+            const comments = document.getElementById('swalComments').value;
+            
+            if (isNaN(sistema) || isNaN(fisico) || sistema < 0 || fisico < 0) {
+                Swal.showValidationMessage('Por favor ingrese valores válidos');
+                return false;
+            }
+            
+            return { sistema, fisico, reason, comments };
+        }
     }).then((result) => {
         if (result.isConfirmed) {
-            exportDashboard();
-        } else if (result.isDenied) {
-            showExportOptions();
+            // Aquí normalmente harías una petición al servidor para actualizar
+            console.log('Stock actualizado:', result.value);
+            
+            // Actualizar visualmente (en un sistema real, esto vendría del servidor)
+            row.dataset.stockSistema = result.value.sistema;
+            row.dataset.stockFisico = result.value.fisico;
+            row.dataset.diferencia = result.value.fisico - result.value.sistema;
+            
+            // Actualizar la fila en la tabla
+            updateRowDisplay(row, result.value.sistema, result.value.fisico);
+            
+            // Actualizar métricas
+            collectInventoryData();
+            calculateMetrics();
+            updateDifferencesSummary();
+            renderCharts();
+            
+            showToast('Stock actualizado exitosamente', 'success');
         }
     });
 }
 
-function exportDashboard() {
-    const dashboardData = {
-        metadata: {
-            exportedAt: new Date().toISOString(),
-            totalItems: inventoryData.length,
-            version: '1.0'
-        },
-        summary: {
-            totalItems: inventoryData.length,
-            totalStock: inventoryData.reduce((sum, item) => sum + item.stock, 0),
-            averageStock: inventoryData.length > 0 ? 
-                inventoryData.reduce((sum, item) => sum + item.stock, 0) / inventoryData.length : 0,
-            uniqueLocations: new Set(inventoryData.map(item => item.location)).size
-        },
-        statusBreakdown: {
-            critical: inventoryData.filter(item => item.status === 'critical').length,
-            low: inventoryData.filter(item => item.status === 'low').length,
-            ok: inventoryData.filter(item => item.status === 'ok').length
-        },
-        topLocations: Array.from(
-            new Map(inventoryData.reduce((acc, item) => {
-                if (!acc.has(item.location)) acc.set(item.location, 0);
-                acc.set(item.location, acc.get(item.location) + item.stock);
-                return acc;
-            }, new Map()))
-            .entries()
-        ).sort((a, b) => b[1] - a[1]).slice(0, 10),
-        inventoryData: filteredData.map(item => ({
-            code: item.code,
-            description: item.desc,
-            location: item.location,
-            stock: item.stock,
-            status: item.status
-        }))
-    };
+function updateRowDisplay(row, sistema, fisico) {
+    const diferencia = fisico - sistema;
+    const diferenciaAbs = Math.abs(diferencia);
     
-    const jsonStr = JSON.stringify(dashboardData, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dashboard_completo_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Actualizar celdas
+    const cells = row.cells;
+    cells[3].textContent = sistema;
+    cells[3].className = 'fw-bold text-primary';
     
-    showToast('Dashboard completo exportado', 'success');
+    cells[4].textContent = fisico;
+    cells[4].className = `fw-bold ${fisico > sistema ? 'text-success' : fisico < sistema ? 'text-danger' : 'text-primary'}`;
+    
+    cells[5].innerHTML = diferencia > 0 ? 
+        `<i class="bi bi-arrow-up-circle text-success"></i> +${diferenciaAbs}` :
+        diferencia < 0 ? 
+        `<i class="bi bi-arrow-down-circle text-danger"></i> -${diferenciaAbs}` :
+        `<span class="text-muted">0</span>`;
+    
+    // Actualizar estado
+    cells[6].innerHTML = getStatusBadge(fisico);
 }
 
-// ================= SETTINGS FUNCTIONS =================
-function initSettings() {
-    // Cargar configuración desde localStorage
-    const savedConfig = localStorage.getItem('dashboardConfig');
-    if (savedConfig) {
-        Object.assign(config, JSON.parse(savedConfig));
-    }
-    
-    // Aplicar configuración
-    document.getElementById('autoRefresh').checked = config.autoRefresh;
-    document.getElementById('showNotifications').checked = config.notifications;
-    document.getElementById('darkMode').checked = config.darkMode;
-    document.getElementById('sortTable').checked = config.tableSort;
-    
-    // Aplicar modo oscuro si está activado
-    if (config.darkMode) {
-        enableDarkMode();
-    }
-}
-
-function toggleAutoRefresh(enabled) {
-    config.autoRefresh = enabled;
-    if (enabled) {
-        startAutoRefresh();
-        showToast('Actualización automática activada');
+function getStatusBadge(stock) {
+    if (stock <= config.criticalStockThreshold) {
+        return `<span class="stock-badge badge-critical">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Crítico
+                </span>`;
+    } else if (stock < config.lowStockThreshold) {
+        return `<span class="stock-badge badge-low">
+                    <i class="bi bi-exclamation-circle me-1"></i>Bajo
+                </span>`;
     } else {
-        stopAutoRefresh();
-        showToast('Actualización automática desactivada');
+        return `<span class="stock-badge badge-ok">
+                    <i class="bi bi-check-circle me-1"></i>Normal
+                </span>`;
     }
 }
 
-function toggleNotifications(enabled) {
-    config.notifications = enabled;
-    showToast(enabled ? 'Notificaciones activadas' : 'Notificaciones desactivadas');
-}
-
-function toggleDarkMode(enabled) {
-    config.darkMode = enabled;
-    if (enabled) {
-        enableDarkMode();
-    } else {
-        disableDarkMode();
-    }
-}
-
-function toggleTableSort(enabled) {
-    config.tableSort = enabled;
-    showToast(enabled ? 'Ordenamiento de tabla activado' : 'Ordenamiento de tabla desactivado');
-}
-
-function enableDarkMode() {
-    document.documentElement.setAttribute('data-bs-theme', 'dark');
-    document.body.classList.add('dark-mode');
-}
-
-function disableDarkMode() {
-    document.documentElement.setAttribute('data-bs-theme', 'light');
-    document.body.classList.remove('dark-mode');
-}
-
-function saveSettings() {
-    localStorage.setItem('dashboardConfig', JSON.stringify(config));
-    closeModal('settingsModal');
-    showToast('Configuración guardada', 'success');
-}
-
-// ================= AUTO REFRESH FUNCTIONS =================
-function startAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-    autoRefreshInterval = setInterval(updateDashboard, config.refreshInterval);
-    console.log(`🔄 Auto-refresh iniciado (cada ${config.refreshInterval/1000}s)`);
-}
-
-function stopAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-        console.log('⏹️ Auto-refresh detenido');
-    }
-}
-
-function updateDashboard() {
-    console.log('🔄 Actualizando dashboard...');
+// ================= FUNCIONES DE REPORTES =================
+function generateReport() {
+    const reportType = document.querySelector('input[name="report-type"]:checked').value;
+    const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
     
-    // Simular actualización de datos
-    const loadingToast = showToast('Actualizando datos...', 'info', 1000);
+    showLoading('Generando reporte...');
     
+    // Simular generación de reporte
     setTimeout(() => {
-        // En un sistema real, aquí harías una petición al servidor
-        collectInventoryData();
-        calculateMetrics();
-        renderCharts();
-        updateTopLocations();
+        hideLoading();
+        closeModal('reportModal');
         
-        if (config.notifications) {
-            showToast('Dashboard actualizado', 'success');
+        if (outputFormat === 'excel') {
+            exportToExcel(reportType);
+        } else if (outputFormat === 'pdf') {
+            exportToPDF(reportType);
         }
-    }, 1000);
+        
+    }, 2000);
 }
 
-// ================= CHART INTERACTION FUNCTIONS =================
-function toggleChartType(type) {
-    if (type === 'pie' && charts.estado) {
-        const currentType = charts.estado.config.type;
-        const newType = currentType === 'doughnut' ? 'pie' : 'doughnut';
-        charts.estado.config.type = newType;
-        charts.estado.update();
+function exportToExcel(reportType = 'detailed') {
+    try {
+        showLoading('Generando archivo Excel...');
         
-        const icon = document.getElementById('pieChartIcon');
-        icon.className = newType === 'pie' ? 'bi bi-circle' : 'bi bi-arrows-angle-expand';
+        // Preparar datos según tipo de reporte
+        let dataToExport = [];
+        let fileName = '';
         
-        showToast(`Gráfico cambiado a ${newType}`);
+        switch(reportType) {
+            case 'summary':
+                // Reporte resumido
+                dataToExport = getSummaryData();
+                fileName = `reporte_resumen_inventario_${getFormattedDate()}.xlsx`;
+                break;
+            case 'critical':
+                // Solo stock crítico
+                dataToExport = filteredData.filter(item => item.stock_fisico <= config.criticalStockThreshold);
+                fileName = `reporte_stock_critico_${getFormattedDate()}.xlsx`;
+                break;
+            case 'detailed':
+            default:
+                // Reporte detallado completo
+                dataToExport = filteredData;
+                fileName = `reporte_detallado_inventario_${getFormattedDate()}.xlsx`;
+                break;
+        }
+        
+        // Crear hoja de cálculo
+        const wsData = [
+            ['Reporte de Inventario', '', '', '', '', '', ''],
+            ['Fecha de generación:', new Date().toLocaleDateString(), '', '', '', '', ''],
+            ['Total de items:', dataToExport.length, '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Stock Físico', 'Diferencia', 'Estado']
+        ];
+        
+        // Agregar datos
+        dataToExport.forEach(item => {
+            const estado = item.stock_fisico <= config.criticalStockThreshold ? 'Crítico' : 
+                          item.stock_fisico < config.lowStockThreshold ? 'Bajo' : 'Normal';
+            const diferencia = item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia.toString();
+            
+            wsData.push([
+                item.code,
+                item.desc,
+                item.location,
+                item.stock_sistema,
+                item.stock_fisico,
+                diferencia,
+                estado
+            ]);
+        });
+        
+        // Agregar resumen
+        wsData.push(['', '', '', '', '', '', '']);
+        wsData.push(['RESUMEN', '', '', '', '', '', '']);
+        wsData.push(['Sobras:', getSobrasCount(), '', '', '', '', '']);
+        wsData.push(['Faltantes:', getFaltantesCount(), '', '', '', '', '']);
+        wsData.push(['Coinciden:', getCoincidenCount(), '', '', '', '', '']);
+        
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+        
+        // Descargar archivo
+        XLSX.writeFile(wb, fileName);
+        
+        setTimeout(() => {
+            hideLoading();
+            showToast(`Reporte exportado: ${fileName}`, 'success');
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error al exportar Excel:', error);
+        hideLoading();
+        showToast('Error al generar el archivo Excel', 'danger');
     }
 }
 
-// ================= UTILITY FUNCTIONS =================
-function showToast(message, type = 'info', duration = 3000) {
-    if (!config.notifications && type !== 'danger') return;
+function exportToPDF(reportType = 'detailed') {
+    try {
+        showLoading('Generando archivo PDF...');
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('landscape');
+        
+        // Título
+        doc.setFontSize(16);
+        doc.text('Reporte de Inventario', 14, 15);
+        
+        // Información
+        doc.setFontSize(10);
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 25);
+        doc.text(`Total items: ${filteredData.length}`, 14, 30);
+        
+        // Preparar datos para la tabla
+        const tableData = filteredData.map(item => [
+            item.code,
+            item.desc.substring(0, 30), // Limitar descripción
+            item.location,
+            item.stock_sistema.toString(),
+            item.stock_fisico.toString(),
+            item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia.toString(),
+            getStatusText(item.stock_fisico)
+        ]);
+        
+        // Encabezados
+        const headers = [['Código', 'Descripción', 'Ubicación', 'Sistema', 'Físico', 'Diferencia', 'Estado']];
+        
+        // Generar tabla
+        doc.autoTable({
+            head: headers,
+            body: tableData,
+            startY: 35,
+            theme: 'grid',
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [26, 95, 122] }
+        });
+        
+        // Agregar resumen
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.text('Resumen', 14, finalY);
+        
+        doc.setFontSize(10);
+        doc.text(`Sobras: ${getSobrasCount()}`, 14, finalY + 10);
+        doc.text(`Faltantes: ${getFaltantesCount()}`, 14, finalY + 15);
+        doc.text(`Coinciden: ${getCoincidenCount()}`, 14, finalY + 20);
+        
+        // Guardar PDF
+        const fileName = `reporte_inventario_${getFormattedDate()}.pdf`;
+        doc.save(fileName);
+        
+        setTimeout(() => {
+            hideLoading();
+            showToast(`Reporte PDF generado: ${fileName}`, 'success');
+        }, 500);
+        
+    } catch (error) {
+        console.error('Error al exportar PDF:', error);
+        hideLoading();
+        showToast('Error al generar el archivo PDF', 'danger');
+    }
+}
+
+function exportDifferences() {
+    // Filtrar solo items con diferencias
+    const differences = filteredData.filter(item => item.diferencia !== 0);
     
+    if (differences.length === 0) {
+        showToast('No hay diferencias para exportar', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Exportar Diferencias',
+        text: `Se exportarán ${differences.length} items con diferencias`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Exportar Excel',
+        cancelButtonText: 'Exportar PDF',
+        showDenyButton: true,
+        denyButtonText: 'Cancelar',
+        customClass: {
+            confirmButton: 'btn btn-success',
+            cancelButton: 'btn btn-danger',
+            denyButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            exportDifferencesToExcel(differences);
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            exportDifferencesToPDF(differences);
+        }
+    });
+}
+
+function exportDifferencesToExcel(differences) {
+    const wsData = [
+        ['Reporte de Diferencias de Inventario', '', '', '', '', '', ''],
+        ['Fecha:', new Date().toLocaleDateString(), '', '', '', '', ''],
+        ['Total diferencias:', differences.length, '', '', '', '', ''],
+        ['', '', '', '', '', '', ''],
+        ['Código', 'Descripción', 'Ubicación', 'Sistema', 'Físico', 'Diferencia', 'Tipo']
+    ];
+    
+    differences.forEach(item => {
+        const tipo = item.diferencia > 0 ? 'Sobra' : 'Falta';
+        const diferencia = item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia.toString();
+        
+        wsData.push([
+            item.code,
+            item.desc,
+            item.location,
+            item.stock_sistema,
+            item.stock_fisico,
+            diferencia,
+            tipo
+        ]);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
+    
+    const fileName = `diferencias_inventario_${getFormattedDate()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    showToast(`Diferencias exportadas: ${differences.length} items`, 'success');
+}
+
+function exportDifferencesToPDF(differences) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    
+    doc.setFontSize(16);
+    doc.text('Reporte de Diferencias de Inventario', 14, 15);
+    
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 25);
+    doc.text(`Total diferencias: ${differences.length}`, 14, 30);
+    
+    const tableData = differences.map(item => [
+        item.code,
+        item.desc.substring(0, 30),
+        item.location,
+        item.stock_sistema.toString(),
+        item.stock_fisico.toString(),
+        item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia.toString(),
+        item.diferencia > 0 ? 'Sobra' : 'Falta'
+    ]);
+    
+    doc.autoTable({
+        head: [['Código', 'Descripción', 'Ubicación', 'Sistema', 'Físico', 'Diferencia', 'Tipo']],
+        body: tableData,
+        startY: 35,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [26, 95, 122] }
+    });
+    
+    const fileName = `diferencias_inventario_${getFormattedDate()}.pdf`;
+    doc.save(fileName);
+    
+    showToast(`Diferencias exportadas en PDF: ${differences.length} items`, 'success');
+}
+
+function printTable() {
+    const printContent = document.getElementById('inventoryTable').outerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Inventario - ${new Date().toLocaleDateString()}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h2 { color: #1a5f7a; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; font-weight: bold; }
+                    .badge-critical { background: #dc3545; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px; }
+                    .badge-low { background: #ffc107; color: #212529; padding: 2px 6px; border-radius: 10px; font-size: 12px; }
+                    .badge-ok { background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px; }
+                    @media print {
+                        body { margin: 0; }
+                        table { font-size: 12px; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h2>Reporte de Inventario</h2>
+                <p><strong>Fecha:</strong> ${new Date().toLocaleString()}</p>
+                <p><strong>Total items:</strong> ${filteredData.length}</p>
+                <p><strong>Sobras:</strong> ${getSobrasCount()} | <strong>Faltantes:</strong> ${getFaltantesCount()} | <strong>Coinciden:</strong> ${getCoincidenCount()}</p>
+                ${printContent}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
+    showToast('Preparando para imprimir...');
+}
+
+// ================= FUNCIONES DE CONFIGURACIÓN =================
+function saveSettings() {
+    config.lowStockThreshold = parseInt(document.getElementById('lowStockThreshold').value) || 10;
+    config.criticalStockThreshold = parseInt(document.getElementById('criticalStockThreshold').value) || 0;
+    
+    // Guardar en localStorage
+    localStorage.setItem('inventorySettings', JSON.stringify(config));
+    
+    // Actualizar dashboard
+    collectInventoryData();
+    renderCharts();
+    updateDifferencesSummary();
+    
+    closeModal('settingsModal');
+    showToast('Configuración guardada y aplicada', 'success');
+}
+
+// ================= FUNCIONES DE UTILIDAD =================
+function getSobrasCount() {
+    return filteredData.filter(item => item.diferencia > 0).length;
+}
+
+function getFaltantesCount() {
+    return filteredData.filter(item => item.diferencia < 0).length;
+}
+
+function getCoincidenCount() {
+    return filteredData.filter(item => item.diferencia === 0).length;
+}
+
+function getStatusText(stock) {
+    if (stock <= config.criticalStockThreshold) return 'Crítico';
+    if (stock < config.lowStockThreshold) return 'Bajo';
+    return 'Normal';
+}
+
+function getSummaryData() {
+    return {
+        totalItems: inventoryData.length,
+        totalStockSistema: inventoryData.reduce((sum, item) => sum + item.stock_sistema, 0),
+        totalStockFisico: inventoryData.reduce((sum, item) => sum + item.stock_fisico, 0),
+        sobras: getSobrasCount(),
+        faltantes: getFaltantesCount(),
+        coinciden: getCoincidenCount(),
+        criticos: inventoryData.filter(item => item.stock_fisico <= config.criticalStockThreshold).length,
+        bajos: inventoryData.filter(item => item.stock_fisico > config.criticalStockThreshold && item.stock_fisico < config.lowStockThreshold).length,
+        normales: inventoryData.filter(item => item.stock_fisico >= config.lowStockThreshold).length
+    };
+}
+
+function getFormattedDate() {
+    const now = new Date();
+    return now.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function showLoading(message) {
+    document.getElementById('loadingMessage').textContent = message;
+    document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function showToast(message, type = 'info', duration = 3000) {
     // Crear contenedor si no existe
     let container = document.getElementById('toastContainer');
     if (!container) {
@@ -2004,24 +2393,193 @@ function showToast(message, type = 'info', duration = 3000) {
             setTimeout(() => toastEl.remove(), 300);
         }
     }, duration);
-    
-    return toastId;
 }
 
-function editItem(itemCode) {
-    showToast(`Editando item: ${itemCode}`, 'info');
-    // Aquí iría la lógica para abrir un formulario de edición
-    // Por ahora solo mostramos un mensaje
+function loadRecentActions() {
+    // Simular carga de acciones recientes
+    const actions = [
+        { tipo: 'falta', codigo: 'MAT-001', cantidad: 5, fecha: 'Hace 2 horas' },
+        { tipo: 'sobra', codigo: 'MAT-015', cantidad: 3, fecha: 'Hace 4 horas' },
+        { tipo: 'ajuste', codigo: 'MAT-042', cantidad: 10, fecha: 'Ayer' },
+        { tipo: 'movimiento', codigo: 'MAT-023', cantidad: 8, fecha: 'Ayer' }
+    ];
+    
+    const html = actions.map(action => `
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+            <div>
+                <i class="bi bi-${action.tipo === 'falta' ? 'dash-circle text-danger' : action.tipo === 'sobra' ? 'plus-circle text-success' : 'arrow-left-right text-warning'} me-2"></i>
+                <span class="fw-semibold">${action.codigo}</span>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold">${action.cantidad} uni.</div>
+                <small class="text-muted">${action.fecha}</small>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('recentActions').innerHTML = html || '<p class="text-muted text-center">No hay acciones recientes</p>';
+}
+
+function addRecentAction(actionData) {
+    const recentActions = document.getElementById('recentActions');
+    const actionHTML = `
+        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+            <div>
+                <i class="bi bi-${actionData.tipo === 'falta' ? 'dash-circle text-danger' : actionData.tipo === 'sobra' ? 'plus-circle text-success' : 'arrow-left-right text-warning'} me-2"></i>
+                <span class="fw-semibold">${actionData.codigo}</span>
+            </div>
+            <div class="text-end">
+                <div class="fw-bold">${actionData.cantidad} uni.</div>
+                <small class="text-muted">Ahora</small>
+            </div>
+        </div>
+    `;
+    
+    // Agregar al principio
+    recentActions.innerHTML = actionHTML + recentActions.innerHTML;
+    
+    // Limitar a 5 acciones
+    const actions = recentActions.querySelectorAll('.border-bottom');
+    if (actions.length > 5) {
+        actions[5].remove();
+    }
+}
+
+function showReconciliation() {
+    Swal.fire({
+        title: 'Conciliación de Inventario',
+        html: `
+            <div class="text-start">
+                <p>Esta función permite conciliar las diferencias entre el sistema y el inventario físico.</p>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Se registrarán todas las diferencias encontradas como ajustes oficiales.
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="reconcileConfirm">
+                    <label class="form-check-label" for="reconcileConfirm">
+                        Confirmo que he verificado físicamente los items con diferencias
+                    </label>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="reconcileGenerateReport">
+                    <label class="form-check-label" for="reconcileGenerateReport">
+                        Generar reporte de conciliación
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar Conciliación',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        },
+        buttonsStyling: false,
+        preConfirm: () => {
+            if (!document.getElementById('reconcileConfirm').checked) {
+                Swal.showValidationMessage('Debe confirmar la verificación física');
+                return false;
+            }
+            return {
+                generateReport: document.getElementById('reconcileGenerateReport').checked
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const differences = filteredData.filter(item => item.diferencia !== 0);
+            
+            if (differences.length === 0) {
+                showToast('No hay diferencias para conciliar', 'info');
+                return;
+            }
+            
+            showLoading(`Conciliando ${differences.length} diferencias...`);
+            
+            // Simular proceso de conciliación
+            setTimeout(() => {
+                hideLoading();
+                
+                if (result.value.generateReport) {
+                    exportDifferencesToExcel(differences);
+                }
+                
+                Swal.fire({
+                    title: 'Conciliación Completada',
+                    html: `
+                        <div class="text-center">
+                            <i class="bi bi-check-circle-fill text-success display-4 mb-3"></i>
+                            <p>Se conciliaron ${differences.length} diferencias exitosamente.</p>
+                            <div class="mt-3">
+                                <p><strong>Sobras:</strong> ${getSobrasCount()}</p>
+                                <p><strong>Faltantes:</strong> ${getFaltantesCount()}</p>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+                
+                // Aquí normalmente actualizarías el sistema con los ajustes
+                
+            }, 3000);
+        }
+    });
+}
+
+function exportChartData() {
+    if (!charts.ubicacion) {
+        showToast('No hay datos del gráfico para exportar', 'warning');
+        return;
+    }
+    
+    const data = charts.ubicacion.data;
+    const wsData = [
+        ['Ubicación', 'Stock Total'],
+        ...data.labels.map((label, index) => [label, data.datasets[0].data[index]])
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Stock por Ubicación');
+    
+    const fileName = `stock_ubicaciones_${getFormattedDate()}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    
+    showToast('Datos del gráfico exportados', 'success');
+}
+
+function updateDashboard() {
+    showLoading('Actualizando datos...');
+    
+    // Simular actualización desde el servidor
+    setTimeout(() => {
+        // En un sistema real, aquí harías fetch a una API
+        collectInventoryData();
+        calculateMetrics();
+        updateDifferencesSummary();
+        renderCharts();
+        loadRecentActions();
+        
+        hideLoading();
+        showToast('Dashboard actualizado', 'success');
+    }, 1000);
 }
 
 function setupEventListeners() {
     // Eventos de clic en filas
     document.querySelectorAll('.inventory-row').forEach(row => {
         row.addEventListener('click', function(e) {
-            if (!e.target.closest('button')) {
-                const code = this.dataset.code;
-                const desc = this.dataset.desc;
-                showToast(`Seleccionado: ${code} - ${desc}`, 'info');
+            if (!e.target.closest('button') && !e.target.closest('a')) {
+                // Seleccionar/deseleccionar fila
+                document.querySelectorAll('.inventory-row').forEach(r => {
+                    r.classList.remove('selected');
+                });
+                this.classList.add('selected');
             }
         });
     });
@@ -2032,81 +2590,41 @@ function setupEventListeners() {
             e.stopPropagation();
         });
     });
+    
+    // Cargar configuración guardada
+    const savedConfig = localStorage.getItem('inventorySettings');
+    if (savedConfig) {
+        Object.assign(config, JSON.parse(savedConfig));
+        document.getElementById('lowStockThreshold').value = config.lowStockThreshold;
+        document.getElementById('criticalStockThreshold').value = config.criticalStockThreshold;
+    }
 }
 
 // ================= EXPORTAR FUNCIONES GLOBALES =================
-// Hacer funciones disponibles globalmente
 window.updateDashboard = updateDashboard;
 window.clearFilters = clearFilters;
 window.filterByStatus = filterByStatus;
 window.clearStatusFilter = clearStatusFilter;
-window.toggleTableView = toggleTableView;
-window.sortTable = sortTable;
-window.exportTable = exportTable;
-window.printTable = printTable;
-window.toggleChartType = toggleChartType;
+window.openInventoryAction = openInventoryAction;
 window.openReportModal = openReportModal;
 window.openSettingsModal = openSettingsModal;
 window.closeModal = closeModal;
 window.generateReport = generateReport;
-window.showExportOptions = showExportOptions;
-window.showExportModal = showExportModal;
-window.exportDashboard = exportDashboard;
-window.toggleAutoRefresh = toggleAutoRefresh;
-window.toggleNotifications = toggleNotifications;
-window.toggleDarkMode = toggleDarkMode;
-window.toggleTableSort = toggleTableSort;
+window.exportToExcel = exportToExcel;
+window.exportToPDF = exportToPDF;
+window.printTable = printTable;
+window.toggleChartType = toggleChartType;
+window.exportChartData = exportChartData;
+window.registerDifference = registerDifference;
+window.editStock = editStock;
+window.exportDifferences = exportDifferences;
+window.showReconciliation = showReconciliation;
 window.saveSettings = saveSettings;
-window.editItem = editItem;
+window.selectAction = selectAction;
+window.submitInventoryAction = submitInventoryAction;
 </script>
 
-<!-- SweetAlert2 para mejores diálogos -->
+<!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-<style>
-.dark-mode {
-    background-color: #212529;
-    color: #f8f9fa;
-}
-
-.dark-mode .dashboard-header,
-.dark-mode .kpi-card,
-.dark-mode .chart-card,
-.dark-mode .widget,
-.dark-mode .table-card {
-    background-color: #343a40;
-    border-color: #495057;
-    color: #f8f9fa;
-}
-
-.dark-mode .search-input {
-    background-color: #495057;
-    border-color: #6c757d;
-    color: #f8f9fa;
-}
-
-.dark-mode .search-input:focus {
-    background-color: #495057;
-    border-color: #0d6efd;
-}
-
-.dark-mode .dashboard-table thead {
-    background-color: #495057;
-}
-
-.dark-mode .dashboard-table th {
-    color: #dee2e6;
-    border-color: #6c757d;
-}
-
-.dark-mode .dashboard-table td {
-    color: #e9ecef;
-    border-color: #495057;
-}
-
-.dark-mode .dashboard-table tbody tr:hover {
-    background-color: #495057;
-}
-</style>
 
 {% endblock %}
