@@ -1,5 +1,5 @@
 # =============================================================================
-# INVENTORY ROUTES – SISTEMA MRO (COMPATIBLE CON TU MODELO REAL)
+# INVENTORY ROUTES – COMPLETO CON TODAS LAS RUTAS NECESARIAS
 # =============================================================================
 
 from datetime import datetime
@@ -101,6 +101,7 @@ def list_inventory():
 # -----------------------------------------------------------------------------
 # UPLOAD INVENTARIO ACTUAL
 # -----------------------------------------------------------------------------
+
 @inventory_bp.route("/upload", methods=["GET", "POST"])
 @login_required
 def upload_inventory():
@@ -115,7 +116,7 @@ def upload_inventory():
                 user_id=current_user.id,
                 material_code=str(r.get("Código del Material","")).strip(),
                 material_text=str(r.get("Texto breve de material","")).strip(),
-                base_unit=str(r.get("Unidad de medida base","")).strip(),  # ✅ AQUÍ
+                base_unit=str(r.get("Unidad de medida base","")).strip(),
                 location=str(r.get("Ubicación","")).replace(" ", "").upper(),
                 libre_utilizacion=safe_float(r.get("Libre utilización")),
                 creado_en=now_pe()
@@ -126,8 +127,9 @@ def upload_inventory():
         return redirect(url_for("inventory.list_inventory"))
 
     return render_template("inventory/upload.html")
+
 # -----------------------------------------------------------------------------
-# UPLOAD HISTÓRICO (CLAVE – COMPATIBLE CON TU MODELO)
+# UPLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
 
 @inventory_bp.route("/upload-history", methods=["GET"])
@@ -138,7 +140,6 @@ def upload_history_form():
 @inventory_bp.route("/upload-history", methods=["POST"])
 @login_required
 def upload_history():
-
     file = request.files.get("file")
     if not file:
         flash("Debe subir un archivo Excel", "warning")
@@ -175,10 +176,10 @@ def upload_history():
 # -----------------------------------------------------------------------------
 # HISTORY (AGRUPADO POR SNAPSHOT_ID)
 # -----------------------------------------------------------------------------
+
 @inventory_bp.route("/history")
 @login_required
 def history_inventory():
-
     page = int(request.args.get("page", 1))
     per_page = 10
 
@@ -233,6 +234,7 @@ def history_inventory():
         desde=request.args.get("desde"),
         hasta=request.args.get("hasta")
     )
+
 # -----------------------------------------------------------------------------
 # DOWNLOAD HISTÓRICO
 # -----------------------------------------------------------------------------
@@ -240,7 +242,6 @@ def history_inventory():
 @inventory_bp.route("/history/<snapshot_id>/download")
 @login_required
 def history_download(snapshot_id):
-
     rows = InventoryHistory.query.filter_by(
         user_id=current_user.id,
         snapshot_id=snapshot_id
@@ -271,10 +272,10 @@ def history_download(snapshot_id):
 # -----------------------------------------------------------------------------
 # LIMPIAR DUPLICADOS
 # -----------------------------------------------------------------------------
+
 @inventory_bp.route("/history/cleanup-duplicates", methods=["POST"])
 @login_required
 def cleanup_duplicates():
-
     # 1. Contar filas por snapshot_id (inventarios completos)
     snaps = (
         db.session.query(
@@ -335,11 +336,14 @@ def cleanup_duplicates():
 
     flash(f"🧹 Se eliminó {len(snapshot_ids_to_delete)} inventario duplicado", "success")
     return redirect(url_for("inventory.history_inventory"))
-    
+
+# -----------------------------------------------------------------------------
+# CONTEO FÍSICO (PANTALLA PRINCIPAL)
+# -----------------------------------------------------------------------------
+
 @inventory_bp.route("/count")
 @login_required
 def count_inventory():
-
     items = (
         db.session.query(
             InventoryItem,
@@ -384,11 +388,239 @@ def count_inventory():
         "inventory/count.html",
         items=rows
     )
-    
+
+# -----------------------------------------------------------------------------
+# GUARDAR CONTEOS (INDIVIDUAL Y MASIVO)
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/save-count-row", methods=["POST"])
+@login_required
+def save_count_row():
+    data = request.get_json() or {}
+
+    code = data.get("material_code")
+    loc = data.get("location")
+    real = safe_float(data.get("real_count"))
+
+    if not code or not loc:
+        return jsonify(success=False), 400
+
+    row = InventoryCount.query.filter_by(
+        user_id=current_user.id,
+        material_code=code,
+        location=loc
+    ).first()
+
+    if not row:
+        row = InventoryCount(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        )
+        db.session.add(row)
+
+    row.real_count = real
+    row.contado_en = now_pe()
+
+    db.session.commit()
+    return jsonify(success=True)
+
+@inventory_bp.route("/save-count", methods=["POST"])
+@login_required
+def save_count():
+    data = request.get_json() or []
+
+    if not isinstance(data, list):
+        return jsonify(success=False), 400
+
+    for d in data:
+        code = d.get("material_code")
+        loc = d.get("location")
+        real = safe_float(d.get("real_count"))
+
+        if not code or not loc:
+            continue
+
+        row = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=code,
+            location=loc
+        ).first()
+
+        if not row:
+            row = InventoryCount(
+                user_id=current_user.id,
+                material_code=code,
+                location=loc
+            )
+            db.session.add(row)
+
+        row.real_count = real
+        row.contado_en = now_pe()
+
+    db.session.commit()
+    return jsonify(success=True)
+
+# -----------------------------------------------------------------------------
+# NUEVAS RUTAS PARA EL HTML MEJORADO
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/save-inventory", methods=["POST"])
+@login_required
+def save_inventory():
+    """Guarda el inventario completo como terminado (para el botón 'Guardar Inventario')"""
+    try:
+        # Marcar todos los conteos como finalizados
+        counts = InventoryCount.query.filter_by(user_id=current_user.id).all()
+        
+        for count in counts:
+            count.finalizado = True
+            count.finalizado_en = now_pe()
+        
+        # Crear registro de historial del conteo
+        from models.inventory_final import InventoryFinal
+        
+        # Obtener estadísticas
+        total_items = InventoryItem.query.filter_by(user_id=current_user.id).count()
+        
+        counts_summary = (
+            db.session.query(
+                func.count(InventoryCount.material_code).label("contados"),
+                func.sum(
+                    db.case(
+                        (InventoryCount.real_count == InventoryItem.libre_utilizacion, 1),
+                        else_=0
+                    )
+                ).label("coincidencias"),
+                func.sum(
+                    db.case(
+                        (InventoryCount.real_count != InventoryItem.libre_utilizacion, 1),
+                        else_=0
+                    )
+                ).label("diferencias")
+            )
+            .join(
+                InventoryItem,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location
+                )
+            )
+            .filter(InventoryCount.user_id == current_user.id)
+            .first()
+        )
+        
+        # Crear registro final
+        final = InventoryFinal(
+            user_id=current_user.id,
+            total_items=total_items,
+            items_contados=counts_summary.contados or 0,
+            items_coinciden=counts_summary.coincidencias or 0,
+            items_diferen=counts_summary.diferencias or 0,
+            porcentaje_completado=round(((counts_summary.contados or 0) / total_items * 100) if total_items > 0 else 0, 1),
+            creado_en=now_pe(),
+            status="COMPLETADO"
+        )
+        db.session.add(final)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": "Inventario guardado correctamente",
+            "data": {
+                "total": total_items,
+                "contados": counts_summary.contados or 0,
+                "coincidencias": counts_summary.coincidencias or 0,
+                "diferencias": counts_summary.diferencias or 0
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@inventory_bp.route("/export-differences")
+@login_required
+def export_differences():
+    """Exporta diferencias a Excel (alias para download_discrepancies_excel)"""
+    return download_discrepancies_excel()
+
+@inventory_bp.route("/get-summary")
+@login_required
+def get_summary():
+    """Obtiene resumen del inventario en tiempo real"""
+    try:
+        # Obtener estadísticas
+        total_items = InventoryItem.query.filter_by(
+            user_id=current_user.id
+        ).count()
+        
+        # Items contados
+        counted_items = db.session.query(
+            func.count(InventoryCount.material_code)
+        ).filter_by(user_id=current_user.id).scalar() or 0
+        
+        # Items con coincidencias
+        ok_items = (
+            db.session.query(func.count(InventoryCount.material_code))
+            .join(
+                InventoryItem,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location,
+                    InventoryItem.libre_utilizacion == InventoryCount.real_count
+                )
+            )
+            .filter(InventoryCount.user_id == current_user.id)
+            .scalar() or 0
+        )
+        
+        # Items con diferencias
+        difference_items = (
+            db.session.query(func.count(InventoryCount.material_code))
+            .join(
+                InventoryItem,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location,
+                    InventoryItem.libre_utilizacion != InventoryCount.real_count
+                )
+            )
+            .filter(InventoryCount.user_id == current_user.id)
+            .scalar() or 0
+        )
+        
+        return jsonify({
+            "success": True,
+            "summary": {
+                "total": total_items,
+                "counted": counted_items,
+                "ok": ok_items,
+                "differences": difference_items,
+                "percentage": round((counted_items / total_items * 100) if total_items > 0 else 0, 1)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# -----------------------------------------------------------------------------
+# EXPORTAR DISCREPANCIAS A EXCEL
+# -----------------------------------------------------------------------------
+
 @inventory_bp.route("/discrepancias/excel")
 @login_required
 def download_discrepancies_excel():
-
     rows = (
         db.session.query(
             InventoryItem.material_code,
@@ -440,73 +672,347 @@ def download_discrepancies_excel():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-@inventory_bp.route("/save-count-row", methods=["POST"])
+# -----------------------------------------------------------------------------
+# RESET CONTEOS
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/reset-counts", methods=["POST"])
 @login_required
-def save_count_row():
+def reset_counts():
+    """Borra todos los conteos del usuario actual"""
+    try:
+        deleted = InventoryCount.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Se eliminaron {deleted} conteos"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-    data = request.get_json() or {}
+# -----------------------------------------------------------------------------
+# VIEW INDIVIDUAL ITEM COUNT
+# -----------------------------------------------------------------------------
 
-    code = data.get("material_code")
-    loc = data.get("location")
-    real = safe_float(data.get("real_count"))
-
-    if not code or not loc:
-        return jsonify(success=False), 400
-
-    row = InventoryCount.query.filter_by(
+@inventory_bp.route("/item/<material_code>/<location>")
+@login_required
+def view_item_count(material_code, location):
+    """Vista detallada de un item específico"""
+    item = InventoryItem.query.filter_by(
         user_id=current_user.id,
-        material_code=code,
-        location=loc
+        material_code=material_code,
+        location=location
+    ).first_or_404()
+    
+    count = InventoryCount.query.filter_by(
+        user_id=current_user.id,
+        material_code=material_code,
+        location=location
     ).first()
+    
+    return render_template(
+        "inventory/item_detail.html",
+        item=item,
+        count=count
+    )
 
-    if not row:
-        row = InventoryCount(
-            user_id=current_user.id,
-            material_code=code,
-            location=loc
-        )
-        db.session.add(row)
+# -----------------------------------------------------------------------------
+# BULK UPDATE COUNTS
+# -----------------------------------------------------------------------------
 
-    row.real_count = real
-    row.contado_en = now_pe()
-
-    db.session.commit()
-    return jsonify(success=True)
-
-@inventory_bp.route("/save-count", methods=["POST"])
+@inventory_bp.route("/bulk-update-counts", methods=["POST"])
 @login_required
-def save_count():
-
-    data = request.get_json() or []
-
-    if not isinstance(data, list):
-        return jsonify(success=False), 400
-
-    for d in data:
-        code = d.get("material_code")
-        loc = d.get("location")
-        real = safe_float(d.get("real_count"))
-
-        if not code or not loc:
-            continue
-
-        row = InventoryCount.query.filter_by(
-            user_id=current_user.id,
-            material_code=code,
-            location=loc
-        ).first()
-
-        if not row:
-            row = InventoryCount(
+def bulk_update_counts():
+    """Actualiza múltiples conteos a la vez"""
+    try:
+        data = request.get_json() or {}
+        
+        if not isinstance(data, list):
+            return jsonify({"success": False, "error": "Formato inválido"}), 400
+        
+        updated = 0
+        for item_data in data:
+            code = item_data.get("material_code")
+            loc = item_data.get("location")
+            real_count = safe_float(item_data.get("real_count"))
+            
+            if not code or not loc:
+                continue
+            
+            count = InventoryCount.query.filter_by(
                 user_id=current_user.id,
                 material_code=code,
                 location=loc
+            ).first()
+            
+            if not count:
+                count = InventoryCount(
+                    user_id=current_user.id,
+                    material_code=code,
+                    location=loc,
+                    real_count=real_count,
+                    contado_en=now_pe()
+                )
+                db.session.add(count)
+            else:
+                count.real_count = real_count
+                count.contado_en = now_pe()
+            
+            updated += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Se actualizaron {updated} conteos",
+            "updated": updated
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# -----------------------------------------------------------------------------
+# GET ALL COUNTS
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/api/counts")
+@login_required
+def get_counts():
+    """Obtiene todos los conteos del usuario actual (para API)"""
+    try:
+        counts = InventoryCount.query.filter_by(user_id=current_user.id).all()
+        
+        data = []
+        for count in counts:
+            data.append({
+                "material_code": count.material_code,
+                "location": count.location,
+                "real_count": count.real_count or 0,
+                "contado_en": count.contado_en.strftime("%Y-%m-%d %H:%M:%S") if count.contado_en else None,
+                "finalizado": count.finalizado or False
+            })
+        
+        return jsonify({
+            "success": True,
+            "counts": data,
+            "total": len(data)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# -----------------------------------------------------------------------------
+# GET INVENTORY STATUS
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/api/status")
+@login_required
+def get_inventory_status():
+    """Obtiene estado del inventario actual"""
+    try:
+        total_items = InventoryItem.query.filter_by(user_id=current_user.id).count()
+        counted_items = InventoryCount.query.filter_by(user_id=current_user.id).count()
+        
+        # Items con diferencias
+        differences_query = (
+            db.session.query(InventoryCount)
+            .join(
+                InventoryItem,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location
+                )
             )
-            db.session.add(row)
+            .filter(
+                InventoryCount.user_id == current_user.id,
+                InventoryCount.real_count != InventoryItem.libre_utilizacion
+            )
+        )
+        
+        differences_count = differences_query.count()
+        
+        # Items OK
+        ok_query = (
+            db.session.query(InventoryCount)
+            .join(
+                InventoryItem,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location
+                )
+            )
+            .filter(
+                InventoryCount.user_id == current_user.id,
+                InventoryCount.real_count == InventoryItem.libre_utilizacion
+            )
+        )
+        
+        ok_count = ok_query.count()
+        
+        return jsonify({
+            "success": True,
+            "status": {
+                "total_items": total_items,
+                "counted_items": counted_items,
+                "ok_items": ok_count,
+                "different_items": differences_count,
+                "pending_items": total_items - counted_items,
+                "completion_percentage": round((counted_items / total_items * 100) if total_items > 0 else 0, 1),
+                "accuracy_percentage": round((ok_count / counted_items * 100) if counted_items > 0 else 0, 1)
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-        row.real_count = real
-        row.contado_en = now_pe()
+# -----------------------------------------------------------------------------
+# CLEAR ALL COUNTS (ADMIN ONLY)
+# -----------------------------------------------------------------------------
 
-    db.session.commit()
-    return jsonify(success=True)
+@inventory_bp.route("/clear-all", methods=["POST"])
+@login_required
+def clear_all_counts():
+    """Limpia todos los conteos (solo para administradores)"""
+    try:
+        # Verificar si es admin (ajusta según tu lógica de permisos)
+        if not hasattr(current_user, 'is_admin') or not current_user.is_admin:
+            return jsonify({
+                "success": False,
+                "error": "No autorizado"
+            }), 403
+        
+        deleted = InventoryCount.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Se eliminaron {deleted} conteos"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
+# -----------------------------------------------------------------------------
+# GENERATE FINAL REPORT
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/generate-final-report")
+@login_required
+def generate_final_report():
+    """Genera reporte final del inventario"""
+    try:
+        # Obtener datos
+        items = (
+            db.session.query(
+                InventoryItem,
+                InventoryCount.real_count
+            )
+            .outerjoin(
+                InventoryCount,
+                db.and_(
+                    InventoryItem.user_id == InventoryCount.user_id,
+                    InventoryItem.material_code == InventoryCount.material_code,
+                    InventoryItem.location == InventoryCount.location
+                )
+            )
+            .filter(InventoryItem.user_id == current_user.id)
+            .order_by(InventoryItem.location, InventoryItem.material_code)
+            .all()
+        )
+        
+        # Crear Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Reporte Final"
+        
+        # Encabezados
+        headers = [
+            "Código Material", "Descripción", "Unidad", "Ubicación",
+            "Stock Sistema", "Conteo Físico", "Diferencia", "Estado", "Observaciones"
+        ]
+        ws.append(headers)
+        
+        # Datos
+        for item, real_count in items:
+            stock = item.libre_utilizacion or 0
+            real = real_count or 0
+            diferencia = real - stock
+            
+            if real == 0:
+                estado = "PENDIENTE"
+            elif real == stock:
+                estado = "OK"
+            else:
+                estado = "DIFERENCIA"
+            
+            ws.append([
+                item.material_code,
+                item.material_text,
+                item.base_unit,
+                item.location,
+                stock,
+                real,
+                diferencia,
+                estado,
+                ""  # Observaciones (vacío por defecto)
+            ])
+        
+        # Crear hoja de resumen
+        ws_summary = wb.create_sheet(title="Resumen")
+        ws_summary.append(["RESUMEN DEL INVENTARIO"])
+        ws_summary.append(["Fecha:", now_pe().strftime("%Y-%m-%d %H:%M")])
+        ws_summary.append(["Usuario:", getattr(current_user, 'username', 'Usuario')])
+        ws_summary.append([])
+        
+        # Estadísticas
+        total = len(items)
+        contados = sum(1 for _, real in items if (real or 0) > 0)
+        ok = sum(1 for item, real in items if (real or 0) == (item.libre_utilizacion or 0))
+        diferencias = contados - ok
+        
+        ws_summary.append(["Total Items:", total])
+        ws_summary.append(["Items Contados:", contados])
+        ws_summary.append(["Coincidencias:", ok])
+        ws_summary.append(["Diferencias:", diferencias])
+        ws_summary.append(["Porcentaje Completado:", f"{round((contados/total*100) if total>0 else 0, 1)}%"])
+        ws_summary.append(["Precisión:", f"{round((ok/contados*100) if contados>0 else 0, 1)}%"])
+        
+        # Guardar en memoria
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f"reporte_final_inventario_{now_pe().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
