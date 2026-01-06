@@ -100,7 +100,19 @@ def logout():
 @auth_bp.route("/perfil")
 @login_required
 def perfil_usuario():
-    return render_template("perfil_usuario.html")
+    # Calcular KPIs básicos para mostrar en el perfil
+    from models.inventory import InventoryItem
+    from models.bultos import Bulto
+    from models.alerts import Alert
+    
+    kpi_inventarios = InventoryItem.query.count()
+    kpi_bultos = Bulto.query.count()
+    kpi_alertas = Alert.query.count()
+    
+    return render_template("perfil_usuario.html",
+                         kpi_inventarios=kpi_inventarios,
+                         kpi_bultos=kpi_bultos,
+                         kpi_alertas=kpi_alertas)
 
 
 # ============================================================
@@ -186,7 +198,7 @@ def subir_foto():
 
 
 # ============================================================
-# 📄 REPORTES PDF
+# 📄 REPORTES PDF - VERSIÓN CORREGIDA SIN matplotlib
 # ============================================================
 @auth_bp.route("/reportes")
 @login_required
@@ -195,17 +207,234 @@ def reportes_usuario():
 
 
 # ============================================================
-# 📄 PDF 1 - GERENCIA
+# 📄 PDF 1 - GERENCIA - VERSIÓN CORREGIDA
 # ============================================================
 @auth_bp.route("/descargar-datos")
 @login_required
 def descargar_datos_gerencia():
-    from utils.pdf_reports import create_pdf_reporte
-
-    pdf_path = create_pdf_reporte(current_user.id)
-
-    if not pdf_path or not os.path.exists(pdf_path):
-        flash("No se pudo generar el reporte.", "danger")
+    """Genera y descarga el reporte PDF del usuario"""
+    try:
+        print(f"[Descargar Datos] Usuario: {current_user.id} - {current_user.username}")
+        
+        # Intentar importar la versión CORREGIDA sin matplotlib
+        try:
+            from utils.pdf_reports_simple import create_simple_pdf_report
+            pdf_path = create_simple_pdf_report(current_user.id)
+        except ImportError:
+            # Si no existe, usar función local
+            pdf_path = generate_local_pdf(current_user.id)
+        
+        if not pdf_path or not os.path.exists(pdf_path):
+            print(f"[Descargar Datos] Error: PDF no generado o no encontrado")
+            flash("No se pudo generar el reporte PDF. Contacte al administrador.", "danger")
+            return redirect(url_for("auth.perfil_usuario"))
+        
+        # Nombre amigable para descarga
+        timestamp = datetime.now().strftime('%Y%m%d')
+        filename = f"Reporte_Gerdau_{current_user.username}_{timestamp}.pdf"
+        
+        print(f"[Descargar Datos] Enviando PDF: {pdf_path}")
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"[Descargar Datos] ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error al generar el reporte: {str(e)[:100]}...", "danger")
         return redirect(url_for("auth.perfil_usuario"))
 
-    return send_file(pdf_path, as_attachment=True)
+
+def generate_local_pdf(user_id):
+    """Función local para generar PDF si falla el import"""
+    try:
+        from models.user import User
+        from models.inventory import InventoryItem
+        from models.bultos import Bulto
+        from models.alerts import Alert
+        
+        user = User.query.get(user_id)
+        if not user:
+            return None
+        
+        # Crear directorio temporal
+        temp_dir = os.path.join(current_app.root_path, "static", "temp_pdfs")
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Nombre archivo
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_path = os.path.join(temp_dir, f"reporte_{user_id}_{timestamp}.pdf")
+        
+        # Obtener datos
+        kpi_inventarios = InventoryItem.query.count()
+        kpi_bultos = Bulto.query.count()
+        kpi_alertas = Alert.query.count()
+        score = getattr(user, 'score', 0)
+        
+        # Generar PDF MUY simple
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib import colors
+        
+        c = canvas.Canvas(pdf_path, pagesize=letter)
+        width, height = letter
+        
+        # Colores Gerdau
+        gerdau_blue = colors.Color(0/255, 59/255, 113/255)
+        
+        # Encabezado
+        c.setFillColor(gerdau_blue)
+        c.rect(0, height - 70, width, 70, fill=True, stroke=False)
+        
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 18)
+        c.drawCentredString(width/2, height - 35, "REPORTE DE USUARIO")
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(width/2, height - 55, "Sistema Warehouse MRO - GERDAU")
+        
+        # Información
+        c.setFillColor(colors.black)
+        y = height - 100
+        
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, f"Usuario: {user.username}")
+        y -= 20
+        c.drawString(50, y, f"Correo: {user.email or 'No registrado'}")
+        y -= 20
+        c.drawString(50, y, f"Rol: {getattr(user, 'role', 'Usuario').upper()}")
+        y -= 20
+        c.drawString(50, y, f"Puntaje: {score} pts")
+        y -= 30
+        
+        # Estadísticas
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(50, y, "ESTADÍSTICAS:")
+        y -= 20
+        
+        c.setFont("Helvetica", 11)
+        stats = [
+            f"• Inventarios subidos: {kpi_inventarios}",
+            f"• Bultos registrados: {kpi_bultos}",
+            f"• Alertas reportadas: {kpi_alertas}",
+        ]
+        
+        for stat in stats:
+            c.drawString(70, y, stat)
+            y -= 18
+        
+        y -= 20
+        
+        # Fecha
+        c.setFont("Helvetica", 9)
+        fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
+        c.drawString(50, 50, f"Generado el: {fecha_gen}")
+        c.drawRightString(width - 50, 50, f"Código: GERDAU-{user_id:04d}")
+        
+        # Guardar
+        c.save()
+        
+        print(f"[generate_local_pdf] PDF generado: {pdf_path}")
+        return pdf_path
+        
+    except Exception as e:
+        print(f"[generate_local_pdf] Error: {e}")
+        return None
+
+
+# ============================================================
+# 📄 PDF 2 - RESUMEN (Alternativo)
+# ============================================================
+@auth_bp.route("/descargar-resumen")
+@login_required
+def descargar_resumen():
+    """Descarga un resumen simple en PDF"""
+    try:
+        pdf_path = generate_local_pdf(current_user.id)
+        
+        if pdf_path and os.path.exists(pdf_path):
+            filename = f"Resumen_{current_user.username}_{datetime.now().strftime('%Y%m%d')}.pdf"
+            return send_file(
+                pdf_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
+        
+        flash("No se pudo generar el resumen.", "danger")
+        return redirect(url_for("auth.perfil_usuario"))
+        
+    except Exception as e:
+        flash(f"Error: {str(e)[:50]}...", "danger")
+        return redirect(url_for("auth.perfil_usuario"))
+
+
+# ============================================================
+# 📄 LISTAR REPORTES GENERADOS (Opcional)
+# ============================================================
+@auth_bp.route("/mis-reportes")
+@login_required
+def mis_reportes():
+    """Muestra los reportes PDF generados por el usuario"""
+    try:
+        reports_dir = os.path.join(current_app.root_path, "static", "temp_pdfs")
+        if not os.path.exists(reports_dir):
+            os.makedirs(reports_dir, exist_ok=True)
+        
+        # Obtener archivos PDF del usuario
+        user_files = []
+        for filename in os.listdir(reports_dir):
+            if filename.startswith(f"reporte_{current_user.id}_") and filename.endswith(".pdf"):
+                filepath = os.path.join(reports_dir, filename)
+                stat = os.stat(filepath)
+                user_files.append({
+                    'name': filename,
+                    'path': filepath,
+                    'created': datetime.fromtimestamp(stat.st_ctime).strftime('%d/%m/%Y %H:%M'),
+                    'size': f"{stat.st_size / 1024:.1f} KB"
+                })
+        
+        # Ordenar por fecha (más reciente primero)
+        user_files.sort(key=lambda x: x['created'], reverse=True)
+        
+        return render_template("auth/mis_reportes.html", reports=user_files)
+        
+    except Exception as e:
+        print(f"[mis_reportes] Error: {e}")
+        flash("Error al cargar los reportes.", "danger")
+        return redirect(url_for("auth.perfil_usuario"))
+
+
+# ============================================================
+# 🗑 LIMPIAR REPORTES ANTIGUOS (Opcional)
+# ============================================================
+@auth_bp.route("/limpiar-reportes", methods=["POST"])
+@login_required
+def limpiar_reportes():
+    """Elimina reportes PDF antiguos del usuario"""
+    try:
+        reports_dir = os.path.join(current_app.root_path, "static", "temp_pdfs")
+        if not os.path.exists(reports_dir):
+            return redirect(url_for("auth.mis_reportes"))
+        
+        deleted = 0
+        for filename in os.listdir(reports_dir):
+            if filename.startswith(f"reporte_{current_user.id}_") and filename.endswith(".pdf"):
+                filepath = os.path.join(reports_dir, filename)
+                os.remove(filepath)
+                deleted += 1
+        
+        if deleted > 0:
+            flash(f"Se eliminaron {deleted} reportes antiguos.", "success")
+        else:
+            flash("No había reportes para eliminar.", "info")
+            
+        return redirect(url_for("auth.mis_reportes"))
+        
+    except Exception as e:
+        print(f"[limpiar_reportes] Error: {e}")
+        flash("Error al eliminar reportes.", "danger")
+        return redirect(url_for("auth.mis_reportes"))
