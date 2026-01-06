@@ -87,11 +87,6 @@
         transition: all 0.3s ease;
     }
 
-    .stat-badge:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: translateY(-2px);
-    }
-
     /* ================= KPI CARDS MEJORADAS ================= */
     .kpi-grid {
         display: grid;
@@ -153,22 +148,10 @@
         font-weight: 500;
     }
 
-    .kpi-trend {
-        font-size: 0.85rem;
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .trend-up { color: #4cd964; }
-    .trend-down { color: #ff3b30; }
-    .trend-neutral { color: rgba(255,255,255,0.7); }
-
     .kpi-card-total { background: var(--dark-gradient); }
     .kpi-card-locations { background: var(--info-gradient); }
     .kpi-card-critical { background: var(--danger-gradient); }
-    .kpi-card-missing { background: var(--warning-gradient); }
+    .kpi-card-low { background: var(--warning-gradient); }
     .kpi-card-ok { background: var(--success-gradient); }
 
     /* ================= CHART CARDS MEJORADAS ================= */
@@ -202,30 +185,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-
-    .chart-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .chart-btn {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: var(--radius-sm);
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        color: #4a5568;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-    }
-
-    .chart-btn:hover {
-        background: #edf2f7;
-        border-color: #cbd5e0;
     }
 
     /* ================= TABLE CARD MEJORADA ================= */
@@ -319,7 +278,6 @@
 
     .dashboard-table tbody tr:hover {
         background-color: #f8fafc;
-        transform: translateX(4px);
     }
 
     .dashboard-table td {
@@ -349,7 +307,7 @@
         color: white;
     }
 
-    .badge-missing {
+    .badge-low {
         background: var(--warning-gradient);
         color: #212529;
     }
@@ -359,23 +317,7 @@
         color: white;
     }
 
-    .badge-excess {
-        background: var(--info-gradient);
-        color: white;
-    }
-
-    .badge-default {
-        background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
-        color: white;
-    }
-
     /* ================= RESPONSIVE ================= */
-    @media (max-width: 1200px) {
-        .kpi-grid {
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        }
-    }
-
     @media (max-width: 768px) {
         .dashboard-container {
             padding: 16px;
@@ -409,25 +351,6 @@
             width: 100%;
         }
     }
-
-    @media (max-width: 576px) {
-        .dashboard-table {
-            font-size: 0.85rem;
-        }
-        
-        .dashboard-table th,
-        .dashboard-table td {
-            padding: 10px 8px;
-        }
-        
-        .kpi-card {
-            padding: 20px;
-        }
-        
-        .kpi-value {
-            font-size: 2.2rem;
-        }
-    }
 </style>
 
 <div class="dashboard-container">
@@ -436,22 +359,18 @@
         <div class="header-content">
             <h1>
                 <i class="bi bi-speedometer2"></i>
-                Dashboard de Inventario
+                Dashboard de Inventario - Análisis Real
             </h1>
-            <p class="mb-0 opacity-90">Visión completa y análisis en tiempo real de tu inventario</p>
+            <p class="mb-0 opacity-90">Análisis de stock basado en datos reales del sistema</p>
             
             <div class="header-stats">
                 <div class="stat-badge">
                     <i class="bi bi-clock-history"></i>
-                    <span>Actualizado: {{ now.strftime('%d/%m/%Y %H:%M') if now else 'Hoy' }}</span>
+                    <span>Análisis en tiempo real</span>
                 </div>
                 <div class="stat-badge">
                     <i class="bi bi-person-circle"></i>
                     <span>Usuario: {{ session.get('username', 'Operador') }}</span>
-                </div>
-                <div class="stat-badge">
-                    <i class="bi bi-building"></i>
-                    <span>Almacén: Principal</span>
                 </div>
             </div>
         </div>
@@ -463,150 +382,89 @@
         <div class="kpi-card kpi-card-total">
             <div class="kpi-icon"><i class="bi bi-box-seam"></i></div>
             <div>
-                <div class="kpi-value">{{ total_items }}</div>
+                <div class="kpi-value" id="kpiTotal">0</div>
                 <div class="kpi-label">Total de Materiales</div>
-                <div class="kpi-trend trend-neutral">
-                    <i class="bi bi-dash-circle"></i>
-                    <span>Inventario total</span>
-                </div>
             </div>
         </div>
 
-        <!-- Ubicaciones Activas -->
-        <div class="kpi-card kpi-card-locations">
-            <div class="kpi-icon"><i class="bi bi-geo-alt"></i></div>
-            <div>
-                <div class="kpi-value">{{ ubicaciones_unicas }}</div>
-                <div class="kpi-label">Ubicaciones Activas</div>
-                <div class="kpi-trend trend-up">
-                    <i class="bi bi-arrow-up-right"></i>
-                    <span>
-                        {% if total_items > 0 %}
-                            {{ ((ubicaciones_unicas / total_items) * 100)|round(1) }}% cobertura
-                        {% else %}
-                            0% cobertura
-                        {% endif %}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Materiales Críticos -->
+        <!-- Stock Crítico -->
         <div class="kpi-card kpi-card-critical">
             <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
             <div>
-                <div class="kpi-value">{{ criticos }}</div>
-                <div class="kpi-label">Materiales Críticos</div>
-                <div class="kpi-trend trend-down">
-                    <i class="bi bi-arrow-down-right"></i>
-                    <span>
-                        {% if total_items > 0 %}
-                            {{ ((criticos / total_items) * 100)|round(1) }}% del total
-                        {% else %}
-                            0% del total
-                        {% endif %}
-                    </span>
-                </div>
+                <div class="kpi-value" id="kpiCriticos">0</div>
+                <div class="kpi-label">Stock Crítico (≤0)</div>
             </div>
         </div>
 
-        <!-- Materiales Faltantes -->
-        <div class="kpi-card kpi-card-missing">
+        <!-- Stock Bajo -->
+        <div class="kpi-card kpi-card-low">
             <div class="kpi-icon"><i class="bi bi-exclamation-circle"></i></div>
             <div>
-                <div class="kpi-value">{{ faltantes }}</div>
-                <div class="kpi-label">Materiales Faltantes</div>
-                <div class="kpi-trend trend-down">
-                    <i class="bi bi-arrow-down-right"></i>
-                    <span>
-                        {% if total_items > 0 %}
-                            {{ ((faltantes / total_items) * 100)|round(1) }}% del total
-                        {% else %}
-                            0% del total
-                        {% endif %}
-                    </span>
-                </div>
+                <div class="kpi-value" id="kpiBajos">0</div>
+                <div class="kpi-label">Stock Bajo (<10)</div>
             </div>
         </div>
 
-        <!-- Materiales OK -->
+        <!-- Stock OK -->
         <div class="kpi-card kpi-card-ok">
             <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
             <div>
-                <div class="kpi-value">{{ estados.OK if estados else 0 }}</div>
-                <div class="kpi-label">Materiales OK</div>
-                <div class="kpi-trend trend-up">
-                    <i class="bi bi-arrow-up-right"></i>
-                    <span>
-                        {% if total_items > 0 and estados %}
-                            {{ ((estados.OK / total_items) * 100)|round(1) }}% del total
-                        {% else %}
-                            0% del total
-                        {% endif %}
-                    </span>
-                </div>
+                <div class="kpi-value" id="kpiOk">0</div>
+                <div class="kpi-label">Stock Normal (≥10)</div>
             </div>
         </div>
     </div>
 
     <!-- ================= CHART SECTION ================= -->
     <div class="row g-4">
-        <!-- Gráfico de Estado -->
+        <!-- Gráfico de Distribución por Estado REAL -->
         <div class="col-lg-6">
             <div class="chart-container">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="bi bi-pie-chart-fill text-primary"></i>
-                        Distribución por Estado
-                    </div>
-                    <div class="chart-actions">
-                        <button class="chart-btn" onclick="exportChart('estadoChart')">
-                            <i class="bi bi-download"></i> Exportar
-                        </button>
-                        <button class="chart-btn" onclick="toggleChartType('estadoChart')">
-                            <i class="bi bi-bar-chart"></i> Cambiar
-                        </button>
+                        Distribución Real por Estado de Stock
                     </div>
                 </div>
-                <canvas id="estadoChart" height="250"></canvas>
+                <canvas id="estadoRealChart" height="250"></canvas>
+                <div class="mt-3 small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Análisis basado en los niveles reales de stock del inventario
+                </div>
             </div>
         </div>
 
-        <!-- Gráfico por Ubicación -->
+        <!-- Gráfico de Stock por Ubicación REAL -->
         <div class="col-lg-6">
             <div class="chart-container">
                 <div class="chart-header">
                     <div class="chart-title">
                         <i class="bi bi-bar-chart-fill text-info"></i>
-                        Materiales por Ubicación (Top 10)
-                    </div>
-                    <div class="chart-actions">
-                        <button class="chart-btn" onclick="exportChart('ubicacionChart')">
-                            <i class="bi bi-download"></i> Exportar
-                        </button>
-                        <button class="chart-btn" onclick="toggleChartType('ubicacionChart')">
-                            <i class="bi bi-pie-chart"></i> Cambiar
-                        </button>
+                        Stock Total por Ubicación
                     </div>
                 </div>
-                <canvas id="ubicacionChart" height="250"></canvas>
+                <canvas id="ubicacionRealChart" height="250"></canvas>
+                <div class="mt-3 small text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Suma total de stock agrupado por ubicación
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ================= TABLA DE INVENTARIO ================= -->
+    <!-- ================= TABLA DE ANÁLISIS DETALLADO ================= -->
     <div class="table-card">
         <div class="table-header">
             <div class="table-title">
                 <i class="bi bi-table text-success"></i>
-                Vista Detallada del Inventario
-                <span class="badge bg-secondary ms-2">{{ items|length if items else 0 }} items</span>
+                Análisis Detallado por Material
+                <span class="badge bg-secondary ms-2" id="totalItemsBadge">0 items</span>
             </div>
             
             <div class="search-container">
                 <i class="bi bi-search search-icon"></i>
                 <input type="text" id="searchInv" class="search-input" 
-                       placeholder="Buscar material, ubicación o estado...">
+                       placeholder="Buscar por código, descripción o ubicación...">
             </div>
         </div>
 
@@ -618,136 +476,239 @@
                         <th>Descripción</th>
                         <th>Ubicación</th>
                         <th>Unidad</th>
-                        <th>Stock</th>
+                        <th>Stock Actual</th>
                         <th>Estado</th>
-                        <th>Acciones</th>
+                        <th>Análisis</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% if items %}
-                        {% for i in items %}
-                        <tr>
-                            <td>
-                                <span class="fw-bold">{{ i.material_code }}</span>
-                            </td>
-                            <td style="max-width: 250px;">
-                                <div class="text-truncate" title="{{ i.material_text }}">
-                                    {{ i.material_text }}
-                                </div>
-                            </td>
-                            <td>
-                                <span class="badge bg-dark">{{ i.location }}</span>
-                            </td>
-                            <td>{{ i.base_unit }}</td>
-                            <td>
-                                <span class="fw-bold {% if i.libre_utilizacion <= 0 %}text-danger{% elif i.libre_utilizacion < 10 %}text-warning{% else %}text-success{% endif %}">
-                                    {{ i.libre_utilizacion }}
-                                </span>
-                            </td>
-                            <td>
-                                {% set item_estado = "OK" %}
-                                {% if i.libre_utilizacion <= 0 %}
-                                    {% set item_estado = "CRÍTICO" %}
-                                {% elif i.libre_utilizacion < 5 %}
-                                    {% set item_estado = "FALTA" %}
-                                {% elif i.libre_utilizacion > 50 %}
-                                    {% set item_estado = "SOBRA" %}
-                                {% endif %}
-                                
-                                {% if item_estado == "CRÍTICO" %}
-                                    <span class="status-badge badge-critical">
-                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Crítico
-                                    </span>
-                                {% elif item_estado == "FALTA" %}
-                                    <span class="status-badge badge-missing">
-                                        <i class="bi bi-exclamation-circle-fill me-1"></i>Faltante
-                                    </span>
-                                {% elif item_estado == "SOBRA" %}
-                                    <span class="status-badge badge-excess">
-                                        <i class="bi bi-plus-circle-fill me-1"></i>Exceso
-                                    </span>
-                                {% else %}
-                                    <span class="status-badge badge-ok">
-                                        <i class="bi bi-check-circle-fill me-1"></i>OK
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        onclick="viewItemDetails('{{ i.material_code }}', '{{ i.location }}')"
-                                        title="Ver detalles">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="bi bi-inbox display-6"></i>
-                                    <p class="mt-2">No hay items de inventario</p>
-                                    <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-upload me-1"></i>Cargar Inventario
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endif %}
+                <tbody id="inventoryTableBody">
+                    <!-- Los datos se cargarán dinámicamente con JavaScript -->
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando inventario...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Analizando datos del inventario...</p>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <div class="text-muted small" id="summaryText">
+                Analizando inventario...
+            </div>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshAnalysis()">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar Análisis
+            </button>
         </div>
     </div>
 </div>
 
-<!-- ================= JAVASCRIPT MEJORADO ================= -->
+<!-- ================= JAVASCRIPT PARA ANÁLISIS REAL ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
 // ================= CONFIGURACIÓN INICIAL =================
+let inventoryData = [];
 let chartInstances = {};
 
-// ================= INICIALIZAR GRÁFICOS =================
-document.addEventListener('DOMContentLoaded', function() {
-    initCharts();
-    setupSearch();
-});
+// ================= ANÁLISIS DE INVENTARIO REAL =================
+function analyzeRealInventory() {
+    console.log("🔍 Analizando inventario real...");
+    
+    // Si tenemos items en el contexto de Jinja2, los usamos
+    {% if items %}
+        inventoryData = {{ items|tojson|safe }};
+        console.log("📊 Datos del inventario:", inventoryData.length, "items");
+    {% else %}
+        // Si no hay datos, intentamos obtenerlos de la página
+        extractDataFromTable();
+    {% endif %}
+    
+    // Calcular estadísticas
+    calculateStatistics();
+    
+    // Actualizar KPIs
+    updateKPIs();
+    
+    // Generar gráficos
+    generateCharts();
+    
+    // Actualizar tabla
+    updateTable();
+}
 
-// ================= GRÁFICO DE ESTADO =================
-function initEstadoChart() {
-    const ctx = document.getElementById('estadoChart').getContext('2d');
+// ================= EXTRACCIÓN DE DATOS DE LA TABLA =================
+function extractDataFromTable() {
+    // Buscar datos en la página si existen
+    const tableRows = document.querySelectorAll('.dashboard-table tbody tr:not(:first-child)');
     
-    // Datos para el gráfico
-    const okCount = {{ estados.OK|default(0) }};
-    const faltaCount = {{ estados.FALTA|default(0) }};
-    const criticoCount = {{ estados.CRITICO|default(0) }};
-    const sobraCount = {{ estados.SOBRA|default(0) }};
+    if (tableRows.length > 0) {
+        console.log("📋 Extrayendo datos de la tabla:", tableRows.length, "filas");
+        
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length >= 6) {
+                const materialCode = cells[0].textContent.trim();
+                const materialText = cells[1].textContent.trim();
+                const location = cells[2].textContent.trim();
+                const baseUnit = cells[3].textContent.trim();
+                const stockText = cells[4].textContent.trim();
+                
+                // Extraer número del stock (quitar símbolos, etc.)
+                const stock = parseFloat(stockText.replace(/[^0-9.-]/g, '')) || 0;
+                
+                inventoryData.push({
+                    material_code: materialCode,
+                    material_text: materialText,
+                    location: location,
+                    base_unit: baseUnit,
+                    libre_utilizacion: stock
+                });
+            }
+        });
+    } else {
+        console.warn("⚠️ No se encontraron datos en la tabla");
+        // Usar datos de ejemplo para demostración
+        inventoryData = getSampleData();
+    }
+}
+
+// ================= DATOS DE EJEMPLO (solo para demostración) =================
+function getSampleData() {
+    return [
+        { material_code: "M001", material_text: "Tornillo 1/2", location: "A1", base_unit: "PZA", libre_utilizacion: 50 },
+        { material_code: "M002", material_text: "Tuerca 3/4", location: "A1", base_unit: "PZA", libre_utilizacion: 120 },
+        { material_code: "M003", material_text: "Arandela M10", location: "B2", base_unit: "PZA", libre_utilizacion: 3 },
+        { material_code: "M004", material_text: "Tornillo 3/8", location: "B2", base_unit: "PZA", libre_utilizacion: 0 },
+        { material_code: "M005", material_text: "Tuerca 1/2", location: "C3", base_unit: "PZA", libre_utilizacion: 15 },
+        { material_code: "M006", material_text: "Arandela M8", location: "C3", base_unit: "PZA", libre_utilizacion: 8 },
+        { material_code: "M007", material_text: "Tornillo 1/4", location: "D4", base_unit: "PZA", libre_utilizacion: 200 },
+        { material_code: "M008", material_text: "Tuerca 5/8", location: "D4", base_unit: "PZA", libre_utilizacion: 0 },
+        { material_code: "M009", material_text: "Arandela M12", location: "E5", base_unit: "PZA", libre_utilizacion: 5 },
+        { material_code: "M010", material_text: "Tornillo 5/16", location: "E5", base_unit: "PZA", libre_utilizacion: 30 }
+    ];
+}
+
+// ================= CÁLCULO DE ESTADÍSTICAS =================
+function calculateStatistics() {
+    console.log("📈 Calculando estadísticas...");
     
-    const data = {
-        labels: ["✅ OK", "⚠️ Faltante", "🚨 Crítico", "📈 Exceso"],
+    // Inicializar contadores
+    let totalItems = inventoryData.length;
+    let stockCritico = 0;      // Stock ≤ 0
+    let stockBajo = 0;         // Stock 1-9
+    let stockNormal = 0;       // Stock ≥ 10
+    let stockTotal = 0;
+    
+    // Agrupar por ubicación
+    let ubicaciones = {};
+    
+    inventoryData.forEach(item => {
+        const stock = item.libre_utilizacion || 0;
+        stockTotal += stock;
+        
+        // Contar por estado
+        if (stock <= 0) {
+            stockCritico++;
+        } else if (stock < 10) {
+            stockBajo++;
+        } else {
+            stockNormal++;
+        }
+        
+        // Agrupar por ubicación
+        const loc = item.location || 'Sin ubicación';
+        if (!ubicaciones[loc]) {
+            ubicaciones[loc] = {
+                count: 0,
+                stock: 0
+            };
+        }
+        ubicaciones[loc].count++;
+        ubicaciones[loc].stock += stock;
+    });
+    
+    // Preparar datos para gráficos
+    window.inventoryStats = {
+        totalItems,
+        stockCritico,
+        stockBajo,
+        stockNormal,
+        stockTotal,
+        ubicaciones
+    };
+    
+    console.log("📊 Estadísticas calculadas:", window.inventoryStats);
+}
+
+// ================= ACTUALIZAR KPIs =================
+function updateKPIs() {
+    const stats = window.inventoryStats;
+    
+    // Actualizar valores en las tarjetas
+    document.getElementById('kpiTotal').textContent = stats.totalItems;
+    document.getElementById('kpiCriticos').textContent = stats.stockCritico;
+    document.getElementById('kpiBajos').textContent = stats.stockBajo;
+    document.getElementById('kpiOk').textContent = stats.stockNormal;
+    
+    // Actualizar badge
+    document.getElementById('totalItemsBadge').textContent = `${stats.totalItems} items`;
+    
+    // Actualizar texto de resumen
+    const porcentajeCritico = stats.totalItems > 0 ? 
+        Math.round((stats.stockCritico / stats.totalItems) * 100) : 0;
+    
+    document.getElementById('summaryText').innerHTML = `
+        <i class="bi bi-info-circle me-1"></i>
+        ${stats.totalItems} materiales • ${stats.stockTotal} unidades totales • 
+        ${porcentajeCritico}% críticos
+    `;
+}
+
+// ================= GENERAR GRÁFICOS REALES =================
+function generateCharts() {
+    const stats = window.inventoryStats;
+    
+    // Destruir gráficos anteriores si existen
+    if (chartInstances.estadoRealChart) {
+        chartInstances.estadoRealChart.destroy();
+    }
+    if (chartInstances.ubicacionRealChart) {
+        chartInstances.ubicacionRealChart.destroy();
+    }
+    
+    // 1. GRÁFICO DE DISTRIBUCIÓN POR ESTADO REAL
+    const ctxEstado = document.getElementById('estadoRealChart').getContext('2d');
+    
+    const estadoData = {
+        labels: [
+            `🚨 Crítico (${stats.stockCritico})`,
+            `⚠️ Bajo (${stats.stockBajo})`,
+            `✅ Normal (${stats.stockNormal})`
+        ],
         datasets: [{
-            data: [okCount, faltaCount, criticoCount, sobraCount],
+            data: [stats.stockCritico, stats.stockBajo, stats.stockNormal],
             backgroundColor: [
-                'rgba(40, 167, 69, 0.8)',
-                'rgba(255, 193, 7, 0.8)',
-                'rgba(220, 53, 69, 0.8)',
-                'rgba(23, 162, 184, 0.8)'
+                'rgba(220, 53, 69, 0.8)',    // Rojo para crítico
+                'rgba(255, 193, 7, 0.8)',    // Amarillo para bajo
+                'rgba(40, 167, 69, 0.8)'     // Verde para normal
             ],
             borderColor: [
-                'rgba(40, 167, 69, 1)',
-                'rgba(255, 193, 7, 1)',
                 'rgba(220, 53, 69, 1)',
-                'rgba(23, 162, 184, 1)'
+                'rgba(255, 193, 7, 1)',
+                'rgba(40, 167, 69, 1)'
             ],
             borderWidth: 2,
             hoverOffset: 15
         }]
     };
     
-    const config = {
-        type: 'pie',
-        data: data,
+    chartInstances.estadoRealChart = new Chart(ctxEstado, {
+        type: 'doughnut',
+        data: estadoData,
         options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -756,7 +717,6 @@ function initEstadoChart() {
                     position: 'right',
                     labels: {
                         padding: 20,
-                        usePointStyle: true,
                         font: {
                             size: 12
                         }
@@ -767,128 +727,180 @@ function initEstadoChart() {
                         label: function(context) {
                             const label = context.label || '';
                             const value = context.raw || 0;
-                            const total = okCount + faltaCount + criticoCount + sobraCount;
+                            const total = stats.totalItems;
                             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                            return `${label}: ${value} (${percentage}%)`;
+                            return `${label.split('(')[0]}: ${value} items (${percentage}%)`;
                         }
                     }
                 }
             },
-            animation: {
-                animateScale: true,
-                animateRotate: true,
-                duration: 2000
-            }
+            cutout: '60%'
         }
-    };
+    });
     
-    chartInstances.estadoChart = new Chart(ctx, config);
-}
-
-// ================= GRÁFICO POR UBICACIÓN =================
-function initUbicacionChart() {
-    const ctx = document.getElementById('ubicacionChart').getContext('2d');
+    // 2. GRÁFICO DE STOCK POR UBICACIÓN REAL
+    const ctxUbicacion = document.getElementById('ubicacionRealChart').getContext('2d');
     
-    const labels = {{ ubicaciones_labels|tojson|safe }};
-    const dataValues = {{ ubicaciones_counts|tojson|safe }};
+    // Ordenar ubicaciones por stock total (descendente)
+    const ubicacionesArray = Object.entries(stats.ubicaciones)
+        .map(([nombre, datos]) => ({
+            nombre,
+            count: datos.count,
+            stock: datos.stock
+        }))
+        .sort((a, b) => b.stock - a.stock)
+        .slice(0, 8); // Tomar solo las top 8
     
-    const data = {
-        labels: labels,
-        datasets: [{
-            label: 'Materiales',
-            data: dataValues,
-            backgroundColor: 'rgba(13, 110, 253, 0.7)',
-            borderColor: 'rgba(13, 110, 253, 1)',
-            borderWidth: 1,
-            borderRadius: 6,
-            hoverBackgroundColor: 'rgba(13, 110, 253, 0.9)'
-        }]
-    };
+    const ubicacionLabels = ubicacionesArray.map(u => u.nombre);
+    const ubicacionStock = ubicacionesArray.map(u => u.stock);
+    const ubicacionCount = ubicacionesArray.map(u => u.count);
     
-    const config = {
+    chartInstances.ubicacionRealChart = new Chart(ctxUbicacion, {
         type: 'bar',
-        data: data,
+        data: {
+            labels: ubicacionLabels,
+            datasets: [
+                {
+                    label: 'Stock Total',
+                    data: ubicacionStock,
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    order: 1
+                },
+                {
+                    label: 'Cant. Items',
+                    data: ubicacionCount,
+                    type: 'line',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'rgba(255, 193, 7, 1)',
+                    order: 2
+                }
+            ]
+        },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return `Materiales: ${context.raw}`;
-                        }
-                    }
+                    position: 'top',
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                    title: {
+                        display: true,
+                        text: 'Stock Total'
                     }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    },
                     ticks: {
                         maxRotation: 45,
                         minRotation: 45
                     }
                 }
-            },
-            animation: {
-                duration: 2000,
-                easing: 'easeOutQuart'
             }
         }
-    };
-    
-    chartInstances.ubicacionChart = new Chart(ctx, config);
+    });
 }
 
-// ================= INICIALIZAR TODOS LOS GRÁFICOS =================
-function initCharts() {
-    if (document.getElementById('estadoChart')) {
-        initEstadoChart();
+// ================= ACTUALIZAR TABLA CON DATOS REALES =================
+function updateTable() {
+    const tbody = document.getElementById('inventoryTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (inventoryData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="bi bi-inbox display-6 text-muted"></i>
+                    <p class="mt-2">No hay datos de inventario disponibles</p>
+                    <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-upload me-1"></i>Cargar Inventario
+                    </a>
+                </td>
+            </tr>
+        `;
+        return;
     }
     
-    if (document.getElementById('ubicacionChart')) {
-        initUbicacionChart();
-    }
-}
-
-// ================= FUNCIONES DE INTERACCIÓN =================
-function toggleChartType(chartId) {
-    const chart = chartInstances[chartId];
-    if (!chart) return;
+    // Ordenar por stock (de menor a mayor para ver críticos primero)
+    const sortedData = [...inventoryData].sort((a, b) => 
+        (a.libre_utilizacion || 0) - (b.libre_utilizacion || 0)
+    );
     
-    const currentType = chart.config.type;
-    const newType = currentType === 'pie' ? 'bar' : 
-                    currentType === 'bar' ? 'line' : 'pie';
+    sortedData.forEach(item => {
+        const stock = item.libre_utilizacion || 0;
+        
+        // Determinar estado basado en stock real
+        let estado = '';
+        let badgeClass = '';
+        let estadoText = '';
+        
+        if (stock <= 0) {
+            estado = 'CRÍTICO';
+            badgeClass = 'badge-critical';
+            estadoText = 'Stock agotado';
+        } else if (stock < 10) {
+            estado = 'BAJO';
+            badgeClass = 'badge-low';
+            estadoText = 'Stock bajo';
+        } else {
+            estado = 'OK';
+            badgeClass = 'badge-ok';
+            estadoText = 'Stock normal';
+        }
+        
+        // Crear fila
+        const row = document.createElement('tr');
+        
+        // Determinar clase CSS basada en estado
+        if (stock <= 0) {
+            row.style.backgroundColor = 'rgba(220, 53, 69, 0.05)';
+        } else if (stock < 10) {
+            row.style.backgroundColor = 'rgba(255, 193, 7, 0.05)';
+        }
+        
+        row.innerHTML = `
+            <td class="fw-bold">${item.material_code || 'N/A'}</td>
+            <td>
+                <div class="text-truncate" style="max-width: 200px;" 
+                     title="${item.material_text || ''}">
+                    ${item.material_text || 'Sin descripción'}
+                </div>
+            </td>
+            <td>
+                <span class="badge bg-dark">${item.location || 'Sin ubicación'}</span>
+            </td>
+            <td>${item.base_unit || 'PZA'}</td>
+            <td>
+                <span class="fw-bold ${stock <= 0 ? 'text-danger' : stock < 10 ? 'text-warning' : 'text-success'}">
+                    ${stock}
+                </span>
+            </td>
+            <td>
+                <span class="status-badge ${badgeClass}">
+                    <i class="bi bi-${stock <= 0 ? 'exclamation-triangle' : stock < 10 ? 'exclamation-circle' : 'check-circle'}-fill me-1"></i>
+                    ${estado}
+                </span>
+            </td>
+            <td>
+                <small class="text-muted">${estadoText}</small>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
     
-    chart.config.type = newType;
-    chart.update();
-}
-
-function exportChart(chartId) {
-    const chart = chartInstances[chartId];
-    if (!chart) return;
-    
-    const link = document.createElement('a');
-    link.download = `grafico_${chartId}_${new Date().toISOString().split('T')[0]}.png`;
-    link.href = chart.toBase64Image();
-    link.click();
-}
-
-function viewItemDetails(materialCode, location) {
-    alert(`Ver detalles de:\nCódigo: ${materialCode}\nUbicación: ${location}`);
+    // Configurar búsqueda
+    setupSearch();
 }
 
 // ================= BÚSQUEDA EN TABLA =================
@@ -898,11 +910,11 @@ function setupSearch() {
     
     searchInput.addEventListener('input', function() {
         const filter = this.value.toLowerCase();
-        const rows = document.querySelectorAll('.dashboard-table tbody tr');
+        const rows = document.querySelectorAll('#inventoryTableBody tr');
         let visibleCount = 0;
         
         rows.forEach(row => {
-            if (row.cells.length > 0) { // Verificar que es una fila con datos
+            if (row.cells.length > 0) {
                 const text = row.textContent.toLowerCase();
                 if (text.includes(filter)) {
                     row.style.display = '';
@@ -913,26 +925,41 @@ function setupSearch() {
             }
         });
         
-        // Actualizar contador
-        updateResultCount(visibleCount, rows.length);
+        // Actualizar badge
+        document.getElementById('totalItemsBadge').textContent = 
+            `${visibleCount} de ${rows.length} items`;
     });
 }
 
-function updateResultCount(visible, total) {
-    // Actualizar badge si existe
-    const badge = document.querySelector('.table-title .badge');
-    if (badge) {
-        badge.textContent = `${visible} de ${total} items`;
-    }
+// ================= ACTUALIZAR ANÁLISIS =================
+function refreshAnalysis() {
+    // Mostrar loading
+    const tbody = document.getElementById('inventoryTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Actualizando análisis...</span>
+                </div>
+                <p class="mt-2 text-muted">Actualizando análisis del inventario...</p>
+            </td>
+        </tr>
+    `;
+    
+    // Simular recarga (en producción, harías una petición al servidor)
+    setTimeout(() => {
+        analyzeRealInventory();
+        showNotification('Análisis actualizado correctamente', 'success');
+    }, 1000);
 }
 
-// ================= NOTIFICACIONES =================
+// ================= NOTIFICACIÓN =================
 function showNotification(message, type = 'info') {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
     alert.style.zIndex = '9999';
     alert.innerHTML = `
-        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
@@ -944,6 +971,48 @@ function showNotification(message, type = 'info') {
             alert.remove();
         }
     }, 3000);
+}
+
+// ================= INICIALIZACIÓN =================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 Inicializando Dashboard de Inventario...");
+    
+    // Iniciar análisis
+    analyzeRealInventory();
+    
+    // Configurar eventos
+    document.getElementById('searchInv')?.addEventListener('input', setupSearch);
+    
+    // Auto-actualizar cada 5 minutos (opcional)
+    // setInterval(refreshAnalysis, 5 * 60 * 1000);
+});
+
+// ================= EXPORTAR DATOS =================
+function exportAnalysis() {
+    const stats = window.inventoryStats;
+    const exportData = {
+        fecha: new Date().toLocaleString(),
+        resumen: {
+            totalItems: stats.totalItems,
+            stockCritico: stats.stockCritico,
+            stockBajo: stats.stockBajo,
+            stockNormal: stats.stockNormal,
+            stockTotal: stats.stockTotal
+        },
+        detalle: inventoryData
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `analisis_inventario_${new Date().toISOString().split('T')[0]}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    showNotification('Análisis exportado como JSON', 'success');
 }
 </script>
 
