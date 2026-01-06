@@ -2,6 +2,7 @@ from datetime import date
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 
+from datetime import date
 from models import db
 from models.task import Task
 from models.user import User
@@ -178,4 +179,6 @@ def ranking():
         .all()
     )
     
-    return render_template("tasks/ranking.html", usuarios=usuarios)
+    return render_template("tasks/ranking.html", 
+                         usuarios=usuarios,
+                         hoy=date.today())  # ✅ Pasar fecha actual
