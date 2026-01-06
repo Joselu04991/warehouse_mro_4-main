@@ -209,31 +209,31 @@ def reportes_usuario():
 # ============================================================
 # 📄 PDF 1 - GERENCIA - VERSIÓN CORREGIDA
 # ============================================================
-@auth_bp.route("/descargar-datos")
+@auth_bp.route("/descargar-datos-premium")
 @login_required
-def descargar_datos_gerencia():
-    """Genera y descarga el reporte PDF del usuario"""
+def descargar_datos_premium():
+    """Descarga el reporte PDF PREMIUM del usuario"""
     try:
-        print(f"[Descargar Datos] Usuario: {current_user.id} - {current_user.username}")
+        print(f"[Premium] Generando reporte premium para {current_user.id}")
         
-        # Intentar importar la versión CORREGIDA sin matplotlib
+        # Importar función premium
         try:
+            from utils.pdf_reports_premium import create_premium_pdf_report
+            pdf_path = create_premium_pdf_report(current_user.id)
+        except ImportError as e:
+            print(f"[Premium] Error importando: {e}")
+            # Fallback a versión simple
             from utils.pdf_reports_simple import create_simple_pdf_report
             pdf_path = create_simple_pdf_report(current_user.id)
-        except ImportError:
-            # Si no existe, usar función local
-            pdf_path = generate_local_pdf(current_user.id)
         
         if not pdf_path or not os.path.exists(pdf_path):
-            print(f"[Descargar Datos] Error: PDF no generado o no encontrado")
-            flash("No se pudo generar el reporte PDF. Contacte al administrador.", "danger")
+            flash("No se pudo generar el reporte premium.", "danger")
             return redirect(url_for("auth.perfil_usuario"))
         
-        # Nombre amigable para descarga
+        # Nombre del archivo
         timestamp = datetime.now().strftime('%Y%m%d')
-        filename = f"Reporte_Gerdau_{current_user.username}_{timestamp}.pdf"
+        filename = f"Reporte_Premium_{current_user.username}_{timestamp}.pdf"
         
-        print(f"[Descargar Datos] Enviando PDF: {pdf_path}")
         return send_file(
             pdf_path,
             as_attachment=True,
@@ -242,109 +242,11 @@ def descargar_datos_gerencia():
         )
         
     except Exception as e:
-        print(f"[Descargar Datos] ERROR: {str(e)}")
+        print(f"[Premium] Error: {str(e)}")
         import traceback
         traceback.print_exc()
-        flash(f"Error al generar el reporte: {str(e)[:100]}...", "danger")
+        flash(f"Error al generar reporte premium: {str(e)[:80]}...", "danger")
         return redirect(url_for("auth.perfil_usuario"))
-
-
-def generate_local_pdf(user_id):
-    """Función local para generar PDF si falla el import"""
-    try:
-        from models.user import User
-        from models.inventory import InventoryItem
-        from models.bultos import Bulto
-        from models.alerts import Alert
-        
-        user = User.query.get(user_id)
-        if not user:
-            return None
-        
-        # Crear directorio temporal
-        temp_dir = os.path.join(current_app.root_path, "static", "temp_pdfs")
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        # Nombre archivo
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        pdf_path = os.path.join(temp_dir, f"reporte_{user_id}_{timestamp}.pdf")
-        
-        # Obtener datos
-        kpi_inventarios = InventoryItem.query.count()
-        kpi_bultos = Bulto.query.count()
-        kpi_alertas = Alert.query.count()
-        score = getattr(user, 'score', 0)
-        
-        # Generar PDF MUY simple
-        from reportlab.pdfgen import canvas
-        from reportlab.lib.pagesizes import letter
-        from reportlab.lib import colors
-        
-        c = canvas.Canvas(pdf_path, pagesize=letter)
-        width, height = letter
-        
-        # Colores Gerdau
-        gerdau_blue = colors.Color(0/255, 59/255, 113/255)
-        
-        # Encabezado
-        c.setFillColor(gerdau_blue)
-        c.rect(0, height - 70, width, 70, fill=True, stroke=False)
-        
-        c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 18)
-        c.drawCentredString(width/2, height - 35, "REPORTE DE USUARIO")
-        c.setFont("Helvetica", 10)
-        c.drawCentredString(width/2, height - 55, "Sistema Warehouse MRO - GERDAU")
-        
-        # Información
-        c.setFillColor(colors.black)
-        y = height - 100
-        
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, f"Usuario: {user.username}")
-        y -= 20
-        c.drawString(50, y, f"Correo: {user.email or 'No registrado'}")
-        y -= 20
-        c.drawString(50, y, f"Rol: {getattr(user, 'role', 'Usuario').upper()}")
-        y -= 20
-        c.drawString(50, y, f"Puntaje: {score} pts")
-        y -= 30
-        
-        # Estadísticas
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(50, y, "ESTADÍSTICAS:")
-        y -= 20
-        
-        c.setFont("Helvetica", 11)
-        stats = [
-            f"• Inventarios subidos: {kpi_inventarios}",
-            f"• Bultos registrados: {kpi_bultos}",
-            f"• Alertas reportadas: {kpi_alertas}",
-        ]
-        
-        for stat in stats:
-            c.drawString(70, y, stat)
-            y -= 18
-        
-        y -= 20
-        
-        # Fecha
-        c.setFont("Helvetica", 9)
-        fecha_gen = datetime.now().strftime('%d/%m/%Y %H:%M')
-        c.drawString(50, 50, f"Generado el: {fecha_gen}")
-        c.drawRightString(width - 50, 50, f"Código: GERDAU-{user_id:04d}")
-        
-        # Guardar
-        c.save()
-        
-        print(f"[generate_local_pdf] PDF generado: {pdf_path}")
-        return pdf_path
-        
-    except Exception as e:
-        print(f"[generate_local_pdf] Error: {e}")
-        return None
-
-
 # ============================================================
 # 📄 PDF 2 - RESUMEN (Alternativo)
 # ============================================================
@@ -438,3 +340,4 @@ def limpiar_reportes():
         print(f"[limpiar_reportes] Error: {e}")
         flash("Error al eliminar reportes.", "danger")
         return redirect(url_for("auth.mis_reportes"))
+
