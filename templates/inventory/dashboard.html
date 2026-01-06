@@ -369,19 +369,6 @@
         color: white;
     }
 
-    /* ================= LOADING SKELETON ================= */
-    .skeleton {
-        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-        background-size: 200% 100%;
-        animation: loading 1.5s infinite;
-        border-radius: 4px;
-    }
-
-    @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-    }
-
     /* ================= RESPONSIVE ================= */
     @media (max-width: 1200px) {
         .kpi-grid {
@@ -456,7 +443,7 @@
             <div class="header-stats">
                 <div class="stat-badge">
                     <i class="bi bi-clock-history"></i>
-                    <span>Actualizado: {{ now().strftime('%d/%m/%Y %H:%M') if now else 'Hoy' }}</span>
+                    <span>Actualizado: {{ now.strftime('%d/%m/%Y %H:%M') if now else 'Hoy' }}</span>
                 </div>
                 <div class="stat-badge">
                     <i class="bi bi-person-circle"></i>
@@ -493,7 +480,13 @@
                 <div class="kpi-label">Ubicaciones Activas</div>
                 <div class="kpi-trend trend-up">
                     <i class="bi bi-arrow-up-right"></i>
-                    <span>{{ ((ubicaciones_unicas / total_items) * 100)|round(1) if total_items > 0 else 0 }}% cobertura</span>
+                    <span>
+                        {% if total_items > 0 %}
+                            {{ ((ubicaciones_unicas / total_items) * 100)|round(1) }}% cobertura
+                        {% else %}
+                            0% cobertura
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>
@@ -506,7 +499,13 @@
                 <div class="kpi-label">Materiales Críticos</div>
                 <div class="kpi-trend trend-down">
                     <i class="bi bi-arrow-down-right"></i>
-                    <span>{{ ((criticos / total_items) * 100)|round(1) if total_items > 0 else 0 }}% del total</span>
+                    <span>
+                        {% if total_items > 0 %}
+                            {{ ((criticos / total_items) * 100)|round(1) }}% del total
+                        {% else %}
+                            0% del total
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>
@@ -519,7 +518,13 @@
                 <div class="kpi-label">Materiales Faltantes</div>
                 <div class="kpi-trend trend-down">
                     <i class="bi bi-arrow-down-right"></i>
-                    <span>{{ ((faltantes / total_items) * 100)|round(1) if total_items > 0 else 0 }}% del total</span>
+                    <span>
+                        {% if total_items > 0 %}
+                            {{ ((faltantes / total_items) * 100)|round(1) }}% del total
+                        {% else %}
+                            0% del total
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>
@@ -532,7 +537,13 @@
                 <div class="kpi-label">Materiales OK</div>
                 <div class="kpi-trend trend-up">
                     <i class="bi bi-arrow-up-right"></i>
-                    <span>{{ ((estados.OK / total_items) * 100)|round(1) if total_items > 0 and estados else 0 }}% del total</span>
+                    <span>
+                        {% if total_items > 0 and estados %}
+                            {{ ((estados.OK / total_items) * 100)|round(1) }}% del total
+                        {% else %}
+                            0% del total
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>
@@ -589,7 +600,7 @@
             <div class="table-title">
                 <i class="bi bi-table text-success"></i>
                 Vista Detallada del Inventario
-                <span class="badge bg-secondary ms-2">{{ items|length }} items</span>
+                <span class="badge bg-secondary ms-2">{{ items|length if items else 0 }} items</span>
             </div>
             
             <div class="search-container">
@@ -613,106 +624,79 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for i in items %}
-                    <tr>
-                        <td>
-                            <span class="fw-bold">{{ i.material_code }}</span>
-                        </td>
-                        <td style="max-width: 250px;">
-                            <div class="text-truncate" title="{{ i.material_text }}">
-                                {{ i.material_text }}
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-dark">{{ i.location }}</span>
-                        </td>
-                        <td>{{ i.base_unit }}</td>
-                        <td>
-                            <span class="fw-bold {% if i.libre_utilizacion <= 0 %}text-danger{% elif i.libre_utilizacion < 10 %}text-warning{% else %}text-success{% endif %}">
-                                {{ i.libre_utilizacion }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if i.estado == "CRÍTICO" %}
-                                <span class="status-badge badge-critical">
-                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Crítico
+                    {% if items %}
+                        {% for i in items %}
+                        <tr>
+                            <td>
+                                <span class="fw-bold">{{ i.material_code }}</span>
+                            </td>
+                            <td style="max-width: 250px;">
+                                <div class="text-truncate" title="{{ i.material_text }}">
+                                    {{ i.material_text }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-dark">{{ i.location }}</span>
+                            </td>
+                            <td>{{ i.base_unit }}</td>
+                            <td>
+                                <span class="fw-bold {% if i.libre_utilizacion <= 0 %}text-danger{% elif i.libre_utilizacion < 10 %}text-warning{% else %}text-success{% endif %}">
+                                    {{ i.libre_utilizacion }}
                                 </span>
-                            {% elif i.estado == "FALTA" %}
-                                <span class="status-badge badge-missing">
-                                    <i class="bi bi-exclamation-circle-fill me-1"></i>Faltante
-                                </span>
-                            {% elif i.estado == "SOBRA" %}
-                                <span class="status-badge badge-excess">
-                                    <i class="bi bi-plus-circle-fill me-1"></i>Exceso
-                                </span>
-                            {% else %}
-                                <span class="status-badge badge-ok">
-                                    <i class="bi bi-check-circle-fill me-1"></i>OK
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" 
-                                    onclick="viewItemDetails('{{ i.material_code }}', '{{ i.location }}')"
-                                    title="Ver detalles">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </td>
-                    </tr>
+                            </td>
+                            <td>
+                                {% set item_estado = "OK" %}
+                                {% if i.libre_utilizacion <= 0 %}
+                                    {% set item_estado = "CRÍTICO" %}
+                                {% elif i.libre_utilizacion < 5 %}
+                                    {% set item_estado = "FALTA" %}
+                                {% elif i.libre_utilizacion > 50 %}
+                                    {% set item_estado = "SOBRA" %}
+                                {% endif %}
+                                
+                                {% if item_estado == "CRÍTICO" %}
+                                    <span class="status-badge badge-critical">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Crítico
+                                    </span>
+                                {% elif item_estado == "FALTA" %}
+                                    <span class="status-badge badge-missing">
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i>Faltante
+                                    </span>
+                                {% elif item_estado == "SOBRA" %}
+                                    <span class="status-badge badge-excess">
+                                        <i class="bi bi-plus-circle-fill me-1"></i>Exceso
+                                    </span>
+                                {% else %}
+                                    <span class="status-badge badge-ok">
+                                        <i class="bi bi-check-circle-fill me-1"></i>OK
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="viewItemDetails('{{ i.material_code }}', '{{ i.location }}')"
+                                        title="Ver detalles">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
                     {% else %}
-                    <tr>
-                        <td colspan="7" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="bi bi-inbox display-6"></i>
-                                <p class="mt-2">No hay items de inventario</p>
-                                <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-upload me-1"></i>Cargar Inventario
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox display-6"></i>
+                                    <p class="mt-2">No hay items de inventario</p>
+                                    <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
+                                        <i class="bi bi-upload me-1"></i>Cargar Inventario
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
         </div>
-
-        <!-- Paginación (si aplica) -->
-        {% if items.pages > 1 %}
-        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-            <div class="text-muted small">
-                Mostrando {{ items|length }} de {{ items.total }} items
-            </div>
-            <nav>
-                <ul class="pagination mb-0">
-                    {% if items.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=items.prev_num) }}">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    {% for page_num in items.iter_pages() %}
-                        {% if page_num %}
-                            <li class="page-item {% if page_num == items.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=page_num) }}">
-                                    {{ page_num }}
-                                </a>
-                            </li>
-                        {% endif %}
-                    {% endfor %}
-                    
-                    {% if items.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=items.next_num) }}">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </div>
-        {% endif %}
     </div>
 </div>
 
@@ -728,7 +712,6 @@ let chartInstances = {};
 document.addEventListener('DOMContentLoaded', function() {
     initCharts();
     setupSearch();
-    setupFilters();
 });
 
 // ================= GRÁFICO DE ESTADO =================
@@ -736,15 +719,15 @@ function initEstadoChart() {
     const ctx = document.getElementById('estadoChart').getContext('2d');
     
     // Datos para el gráfico
+    const okCount = {{ estados.OK|default(0) }};
+    const faltaCount = {{ estados.FALTA|default(0) }};
+    const criticoCount = {{ estados.CRITICO|default(0) }};
+    const sobraCount = {{ estados.SOBRA|default(0) }};
+    
     const data = {
         labels: ["✅ OK", "⚠️ Faltante", "🚨 Crítico", "📈 Exceso"],
         datasets: [{
-            data: [
-                {{ estados.OK|default(0) }},
-                {{ estados.FALTA|default(0) }},
-                {{ estados.CRITICO|default(0) }},
-                {{ estados.SOBRA|default(0) }}
-            ],
+            data: [okCount, faltaCount, criticoCount, sobraCount],
             backgroundColor: [
                 'rgba(40, 167, 69, 0.8)',
                 'rgba(255, 193, 7, 0.8)',
@@ -784,22 +767,10 @@ function initEstadoChart() {
                         label: function(context) {
                             const label = context.label || '';
                             const value = context.raw || 0;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const total = okCount + faltaCount + criticoCount + sobraCount;
                             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                             return `${label}: ${value} (${percentage}%)`;
                         }
-                    }
-                },
-                datalabels: {
-                    color: '#fff',
-                    font: {
-                        weight: 'bold',
-                        size: 14
-                    },
-                    formatter: (value, ctx) => {
-                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                        return `${percentage}%`;
                     }
                 }
             },
@@ -808,8 +779,7 @@ function initEstadoChart() {
                 animateRotate: true,
                 duration: 2000
             }
-        },
-        plugins: [ChartDataLabels]
+        }
     };
     
     chartInstances.estadoChart = new Chart(ctx, config);
@@ -819,18 +789,14 @@ function initEstadoChart() {
 function initUbicacionChart() {
     const ctx = document.getElementById('ubicacionChart').getContext('2d');
     
-    // Tomar solo las primeras 10 ubicaciones para mejor visualización
-    const labels = {{ ubicaciones_labels|safe }};
-    const dataValues = {{ ubicaciones_counts|safe }};
-    
-    const top10Labels = labels.slice(0, 10);
-    const top10Data = dataValues.slice(0, 10);
+    const labels = {{ ubicaciones_labels|tojson|safe }};
+    const dataValues = {{ ubicaciones_counts|tojson|safe }};
     
     const data = {
-        labels: top10Labels,
+        labels: labels,
         datasets: [{
             label: 'Materiales',
-            data: top10Data,
+            data: dataValues,
             backgroundColor: 'rgba(13, 110, 253, 0.7)',
             borderColor: 'rgba(13, 110, 253, 1)',
             borderWidth: 1,
@@ -922,13 +888,7 @@ function exportChart(chartId) {
 }
 
 function viewItemDetails(materialCode, location) {
-    // Aquí puedes implementar la lógica para ver detalles
-    // Por ejemplo, abrir un modal o redirigir
     alert(`Ver detalles de:\nCódigo: ${materialCode}\nUbicación: ${location}`);
-    
-    // O usar un modal de Bootstrap
-    // $('#itemDetailsModal').modal('show');
-    // cargarDetalles(materialCode, location);
 }
 
 // ================= BÚSQUEDA EN TABLA =================
@@ -939,52 +899,31 @@ function setupSearch() {
     searchInput.addEventListener('input', function() {
         const filter = this.value.toLowerCase();
         const rows = document.querySelectorAll('.dashboard-table tbody tr');
+        let visibleCount = 0;
         
         rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
+            if (row.cells.length > 0) { // Verificar que es una fila con datos
+                const text = row.textContent.toLowerCase();
+                if (text.includes(filter)) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
         });
         
-        // Mostrar contador de resultados
-        updateResultCount();
+        // Actualizar contador
+        updateResultCount(visibleCount, rows.length);
     });
 }
 
-function updateResultCount() {
-    const visibleRows = document.querySelectorAll('.dashboard-table tbody tr[style=""]').length;
-    const totalRows = document.querySelectorAll('.dashboard-table tbody tr').length;
-    
+function updateResultCount(visible, total) {
     // Actualizar badge si existe
     const badge = document.querySelector('.table-title .badge');
     if (badge) {
-        badge.textContent = `${visibleRows} de ${totalRows} items`;
+        badge.textContent = `${visible} de ${total} items`;
     }
-}
-
-// ================= FILTROS ADICIONALES =================
-function setupFilters() {
-    // Aquí puedes agregar filtros por estado, ubicación, etc.
-    // Por ejemplo, botones para filtrar por estado
-}
-
-// ================= ACTUALIZACIÓN EN TIEMPO REAL =================
-function refreshDashboard() {
-    // Simular actualización de datos
-    fetch("{{ url_for('inventory.get_dashboard_data') }}")
-        .then(response => response.json())
-        .then(data => {
-            // Actualizar KPIs
-            updateKPIs(data);
-            
-            // Actualizar gráficos
-            updateCharts(data);
-            
-            showNotification('Dashboard actualizado', 'success');
-        })
-        .catch(error => {
-            console.error('Error actualizando dashboard:', error);
-            showNotification('Error al actualizar', 'danger');
-        });
 }
 
 // ================= NOTIFICACIONES =================
@@ -1005,18 +944,6 @@ function showNotification(message, type = 'info') {
             alert.remove();
         }
     }, 3000);
-}
-
-// ================= INICIALIZACIÓN FINAL =================
-// Actualizar dashboard cada 5 minutos (opcional)
-// setInterval(refreshDashboard, 5 * 60 * 1000);
-
-// Inicializar tooltips de Bootstrap
-if (typeof bootstrap !== 'undefined') {
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
 }
 </script>
 
