@@ -439,6 +439,120 @@
     .badge-low { background: linear-gradient(135deg, #ffc107, #fd7e14); color: #212529; }
     .badge-ok { background: linear-gradient(135deg, #28a745, #20c997); color: white; }
 
+    /* ================= MODALES ================= */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 30px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modal-body {
+        margin-bottom: 25px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    /* ================= REPORT MODAL ================= */
+    .report-options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .option-group {
+        border: 1px solid #dee2e6;
+        border-radius: var(--radius-sm);
+        padding: 15px;
+    }
+
+    .option-group h5 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: var(--primary);
+    }
+
+    .checkbox-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .checkbox-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .checkbox-item label {
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* ================= SETTINGS MODAL ================= */
+    .settings-options {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: var(--radius-sm);
+    }
+
+    .setting-info h5 {
+        margin: 0 0 5px 0;
+    }
+
+    .setting-info p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
     /* ================= RESPONSIVE ================= */
     @media (max-width: 1200px) {
         .dashboard-layout {
@@ -477,6 +591,11 @@
         .kpi-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .modal-content {
+            width: 95%;
+            padding: 20px;
+        }
     }
 
     @media (max-width: 576px) {
@@ -499,6 +618,13 @@
         .quick-actions {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .modal-content {
+            width: 100%;
+            height: 100vh;
+            max-height: 100vh;
+            border-radius: 0;
+        }
     }
 
     /* ================= ANIMACIONES ================= */
@@ -511,27 +637,184 @@
         animation: fadeIn 0.5s ease-out;
     }
 
-    /* ================= SCROLLBAR PERSONALIZADA ================= */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+    /* ================= LOADING SPINNER ================= */
+    .spinner {
+        display: inline-block;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 3px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary);
+        animation: spin 1s linear infinite;
     }
 
-    ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 4px;
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
-    ::-webkit-scrollbar-thumb {
-        background: #cbd5e0;
-        border-radius: 4px;
+    /* ================= TOAST NOTIFICATIONS ================= */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
     }
 
-    ::-webkit-scrollbar-thumb:hover {
-        background: #a0aec0;
+    .toast {
+        min-width: 300px;
+        background: white;
+        border-radius: var(--radius-sm);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+        animation: slideInRight 0.3s ease-out;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOutRight {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
     }
 </style>
 
+<!-- MODALES -->
+<div id="reportModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-file-earmark-text"></i> Generar Reporte</h3>
+        </div>
+        <div class="modal-body">
+            <div class="report-options">
+                <div class="option-group">
+                    <h5>Seleccionar Tipo de Reporte</h5>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" id="report-summary" name="report-type" value="summary" checked>
+                            <label for="report-summary">Resumen General</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="report-detailed" name="report-type" value="detailed">
+                            <label for="report-detailed">Detallado Completo</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="report-critical" name="report-type" value="critical">
+                            <label for="report-critical">Stock Crítico</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="option-group">
+                    <h5>Incluir Secciones</h5>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="section-kpis" checked>
+                            <label for="section-kpis">KPIs y Estadísticas</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="section-charts" checked>
+                            <label for="section-charts">Gráficos y Visualizaciones</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="section-table" checked>
+                            <label for="section-table">Tabla de Inventario</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="option-group">
+                    <h5>Formato de Salida</h5>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="radio" id="format-pdf" name="output-format" value="pdf" checked>
+                            <label for="format-pdf">PDF</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="format-excel" name="output-format" value="excel">
+                            <label for="format-excel">Excel</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="radio" id="format-csv" name="output-format" value="csv">
+                            <label for="format-csv">CSV</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('reportModal')">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="generateReport()">
+                <i class="bi bi-download"></i> Generar Reporte
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="bi bi-gear"></i> Configuración del Dashboard</h3>
+        </div>
+        <div class="modal-body">
+            <div class="settings-options">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h5>Actualización Automática</h5>
+                        <p>Actualizar datos cada 30 segundos</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked 
+                               onchange="toggleAutoRefresh(this.checked)">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h5>Mostrar Notificaciones</h5>
+                        <p>Mostrar alertas de cambios importantes</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showNotifications" checked
+                               onchange="toggleNotifications(this.checked)">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h5>Modo Oscuro</h5>
+                        <p>Cambiar tema a modo oscuro</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="darkMode"
+                               onchange="toggleDarkMode(this.checked)">
+                    </div>
+                </div>
+                
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h5>Ordenar Tabla</h5>
+                        <p>Ordenar items por stock (descendente)</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="sortTable" checked
+                               onchange="toggleTableSort(this.checked)">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('settingsModal')">Cerrar</button>
+            <button type="button" class="btn btn-primary" onclick="saveSettings()">Guardar Cambios</button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
 <div class="dashboard-container">
     <!-- ================= HEADER COMPACTO ================= -->
     <div class="dashboard-header fade-in">
@@ -546,7 +829,7 @@
                 <button class="btn btn-sm btn-outline-primary" onclick="updateDashboard()">
                     <i class="bi bi-arrow-clockwise"></i> Actualizar
                 </button>
-                <button class="btn btn-sm btn-primary" onclick="exportDashboard()">
+                <button class="btn btn-sm btn-primary" onclick="showExportModal()">
                     <i class="bi bi-download"></i> Exportar
                 </button>
             </div>
@@ -643,7 +926,7 @@
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary" type="button" 
                                     onclick="toggleChartType('pie')">
-                                <i class="bi bi-arrows-angle-expand"></i>
+                                <i class="bi bi-arrows-angle-expand" id="pieChartIcon"></i>
                             </button>
                         </div>
                     </div>
@@ -661,7 +944,7 @@
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary" type="button" 
                                     onclick="toggleChartType('bar')">
-                                <i class="bi bi-arrows-angle-expand"></i>
+                                <i class="bi bi-arrows-angle-expand" id="barChartIcon"></i>
                             </button>
                         </div>
                     </div>
@@ -689,21 +972,33 @@
                         <button class="btn btn-sm btn-outline-secondary" onclick="clearFilters()" title="Limpiar filtros">
                             <i class="bi bi-x-circle"></i>
                         </button>
+                        <button class="btn btn-sm btn-outline-info" onclick="toggleTableView()" title="Cambiar vista">
+                            <i class="bi bi-list-ul"></i>
+                        </button>
                     </div>
                 </div>
                 
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                    <table class="dashboard-table">
+                    <table class="dashboard-table" id="inventoryTable">
                         <thead>
                             <tr>
-                                <th>Código</th>
-                                <th>Descripción</th>
-                                <th>Ubicación</th>
-                                <th>Stock</th>
+                                <th onclick="sortTable(0)" style="cursor: pointer;">
+                                    Código <i class="bi bi-arrow-down-up"></i>
+                                </th>
+                                <th onclick="sortTable(1)" style="cursor: pointer;">
+                                    Descripción <i class="bi bi-arrow-down-up"></i>
+                                </th>
+                                <th onclick="sortTable(2)" style="cursor: pointer;">
+                                    Ubicación <i class="bi bi-arrow-down-up"></i>
+                                </th>
+                                <th onclick="sortTable(3)" style="cursor: pointer;">
+                                    Stock <i class="bi bi-arrow-down-up"></i>
+                                </th>
                                 <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="inventoryTable">
+                        <tbody id="inventoryTableBody">
                             {% if items and items|length > 0 %}
                                 {% for item in items %}
                                 {% set stock = item.libre_utilizacion if item.libre_utilizacion is defined else 0 %}
@@ -740,11 +1035,17 @@
                                             </span>
                                         {% endif %}
                                     </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="editItem('{{ item.material_code|default('', true) }}')">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">
+                                    <td colspan="6" class="text-center py-4">
                                         <div class="text-muted">
                                             <i class="bi bi-inbox display-6"></i>
                                             <p class="mt-2 mb-3">No hay items de inventario</p>
@@ -757,6 +1058,17 @@
                             {% endif %}
                         </tbody>
                     </table>
+                </div>
+                
+                <div class="mt-3 d-flex justify-content-between align-items-center px-3">
+                    <small class="text-muted" id="filterInfo">
+                        Mostrando {{ items|length if items else 0 }} de {{ items|length if items else 0 }} items
+                    </small>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-secondary" onclick="exportTable('csv')">CSV</button>
+                        <button class="btn btn-outline-secondary" onclick="exportTable('excel')">Excel</button>
+                        <button class="btn btn-outline-secondary" onclick="printTable()">Imprimir</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -812,15 +1124,15 @@
                             <i class="bi bi-upload"></i>
                             <span>Cargar Inventario</span>
                         </a>
-                        <button class="action-btn" onclick="exportData()">
+                        <button class="action-btn" onclick="showExportOptions()">
                             <i class="bi bi-download"></i>
                             <span>Exportar Datos</span>
                         </button>
-                        <button class="action-btn" onclick="showReport()">
+                        <button class="action-btn" onclick="openReportModal()">
                             <i class="bi bi-file-earmark-text"></i>
                             <span>Generar Reporte</span>
                         </button>
-                        <button class="action-btn" onclick="showSettings()">
+                        <button class="action-btn" onclick="openSettingsModal()">
                             <i class="bi bi-gear"></i>
                             <span>Ajustes</span>
                         </button>
@@ -842,51 +1154,90 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- WIDGET: FILTROS RÁPIDOS -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h5><i class="bi bi-funnel"></i> Filtros Rápidos</h5>
+                </div>
+                <div class="widget-body">
+                    <div class="d-flex flex-column gap-2">
+                        <button class="btn btn-sm btn-outline-danger w-100" onclick="filterByStatus('critical')">
+                            <i class="bi bi-exclamation-triangle me-1"></i>Stock Crítico
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning w-100" onclick="filterByStatus('low')">
+                            <i class="bi bi-exclamation-circle me-1"></i>Stock Bajo
+                        </button>
+                        <button class="btn btn-sm btn-outline-success w-100" onclick="filterByStatus('ok')">
+                            <i class="bi bi-check-circle me-1"></i>Stock Normal
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary w-100" onclick="clearStatusFilter()">
+                            <i class="bi bi-x-circle me-1"></i>Limpiar Filtro
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- ================= JAVASCRIPT OPTIMIZADO ================= -->
+<!-- ================= JAVASCRIPT COMPLETO ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
-// ================= CONFIGURACIÓN INICIAL =================
+// ================= CONFIGURACIÓN GLOBAL =================
+const config = {
+    autoRefresh: true,
+    refreshInterval: 30000,
+    notifications: true,
+    darkMode: false,
+    tableSort: true,
+    currentSort: { column: 3, direction: 'desc' }
+};
+
 let charts = {};
 let inventoryData = [];
 let filteredData = [];
+let autoRefreshInterval = null;
 
-// ================= INICIALIZAR DATOS =================
-function initDashboard() {
-    console.log('🚀 Inicializando dashboard...');
+// ================= INICIALIZACIÓN =================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Inicializando dashboard completo...');
     
-    // Recopilar datos de la tabla
-    collectInventoryData();
-    
-    // Calcular métricas
-    calculateMetrics();
-    
-    // Renderizar gráficos
-    renderCharts();
-    
-    // Inicializar widgets
-    initWidgets();
-    
-    // Configurar búsqueda
-    setupSearch();
+    // Inicializar componentes
+    initDashboard();
+    initModals();
+    initSettings();
     
     // Configurar eventos
-    setupEvents();
+    setupEventListeners();
+});
+
+// ================= DASHBOARD FUNCTIONS =================
+function initDashboard() {
+    collectInventoryData();
+    calculateMetrics();
+    renderCharts();
+    updateTopLocations();
+    setupSearch();
+    
+    // Iniciar actualización automática si está habilitada
+    if (config.autoRefresh) {
+        startAutoRefresh();
+    }
 }
 
-// ================= RECOPILAR DATOS DEL INVENTARIO =================
 function collectInventoryData() {
     inventoryData = [];
-    document.querySelectorAll('.inventory-row').forEach(row => {
+    const rows = document.querySelectorAll('.inventory-row');
+    rows.forEach(row => {
         const data = {
             code: row.dataset.code || '',
             desc: row.dataset.desc || '',
             location: row.dataset.location || 'Sin ubicación',
             stock: parseInt(row.dataset.stock) || 0,
+            status: getStockStatus(parseInt(row.dataset.stock)),
             element: row
         };
         inventoryData.push(data);
@@ -895,7 +1246,12 @@ function collectInventoryData() {
     console.log(`📦 ${inventoryData.length} items cargados`);
 }
 
-// ================= CALCULAR MÉTRICAS =================
+function getStockStatus(stock) {
+    if (stock <= 0) return 'critical';
+    if (stock < 10) return 'low';
+    return 'ok';
+}
+
 function calculateMetrics() {
     if (inventoryData.length === 0) return;
     
@@ -910,19 +1266,14 @@ function calculateMetrics() {
     // Promedio por item
     const avgStock = totalStock / inventoryData.length;
     document.getElementById('avgStock').textContent = avgStock.toFixed(1);
-    
-    // Top ubicaciones
-    updateTopLocations();
 }
 
-// ================= ACTUALIZAR TOP UBICACIONES =================
 function updateTopLocations() {
     if (inventoryData.length === 0) {
-        document.getElementById('topLocations').innerHTML = '<p class="text-muted">No hay datos</p>';
+        document.getElementById('topLocations').innerHTML = '<p class="text-muted text-center">No hay datos</p>';
         return;
     }
     
-    // Agrupar por ubicación
     const locationMap = new Map();
     inventoryData.forEach(item => {
         if (!locationMap.has(item.location)) {
@@ -931,12 +1282,10 @@ function updateTopLocations() {
         locationMap.set(item.location, locationMap.get(item.location) + item.stock);
     });
     
-    // Ordenar y tomar top 5
     const topLocations = Array.from(locationMap.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5);
     
-    // Renderizar
     const html = topLocations.map(([location, stock], index) => `
         <div class="d-flex align-items-center justify-content-between mb-2 pb-2 ${index < topLocations.length - 1 ? 'border-bottom' : ''}">
             <div class="d-flex align-items-center">
@@ -952,28 +1301,24 @@ function updateTopLocations() {
     document.getElementById('topLocations').innerHTML = html || '<p class="text-muted">No hay datos</p>';
 }
 
-// ================= RENDERIZAR GRÁFICOS =================
+// ================= CHART FUNCTIONS =================
 function renderCharts() {
     renderEstadoChart();
     renderUbicacionChart();
 }
 
-// Gráfico de distribución por estado
 function renderEstadoChart() {
     const ctx = document.getElementById('estadoChart');
     if (!ctx) return;
     
-    // Calcular estadísticas
     const criticos = inventoryData.filter(item => item.stock <= 0).length;
     const bajos = inventoryData.filter(item => item.stock > 0 && item.stock < 10).length;
     const normales = inventoryData.filter(item => item.stock >= 10).length;
     
-    // Destruir gráfico anterior si existe
     if (charts.estado) {
         charts.estado.destroy();
     }
     
-    // Crear nuevo gráfico
     charts.estado = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -1002,27 +1347,19 @@ function renderEstadoChart() {
                     position: 'bottom',
                     labels: {
                         padding: 15,
-                        font: {
-                            size: 11
-                        }
+                        font: { size: 11 }
                     }
                 }
             },
-            cutout: '65%',
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            }
+            cutout: '65%'
         }
     });
 }
 
-// Gráfico de stock por ubicación
 function renderUbicacionChart() {
     const ctx = document.getElementById('ubicacionChart');
     if (!ctx) return;
     
-    // Agrupar por ubicación
     const locationMap = new Map();
     inventoryData.forEach(item => {
         if (!locationMap.has(item.location)) {
@@ -1031,17 +1368,14 @@ function renderUbicacionChart() {
         locationMap.set(item.location, locationMap.get(item.location) + item.stock);
     });
     
-    // Ordenar y tomar top 7
     const topLocations = Array.from(locationMap.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 7);
     
-    // Destruir gráfico anterior si existe
     if (charts.ubicacion) {
         charts.ubicacion.destroy();
     }
     
-    // Crear nuevo gráfico
     charts.ubicacion = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -1052,38 +1386,23 @@ function renderUbicacionChart() {
                 backgroundColor: 'rgba(23, 162, 184, 0.7)',
                 borderColor: 'rgba(23, 162, 184, 1)',
                 borderWidth: 1,
-                borderRadius: 4,
-                hoverBackgroundColor: 'rgba(23, 162, 184, 0.9)'
+                borderRadius: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                 y: {
                     beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    },
-                    ticks: {
-                        font: {
-                            size: 10
-                        }
-                    }
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    ticks: { font: { size: 10 } }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    },
+                    grid: { display: false },
                     ticks: {
-                        font: {
-                            size: 10
-                        },
+                        font: { size: 10 },
                         maxRotation: 45,
                         minRotation: 45
                     }
@@ -1093,7 +1412,7 @@ function renderUbicacionChart() {
     });
 }
 
-// ================= CONFIGURAR BÚSQUEDA =================
+// ================= SEARCH AND FILTER FUNCTIONS =================
 function setupSearch() {
     const searchInput = document.getElementById('searchInv');
     if (!searchInput) return;
@@ -1109,16 +1428,12 @@ function setupSearch() {
 
 function filterInventory(searchTerm) {
     if (!searchTerm) {
-        // Mostrar todos los items
         filteredData = [...inventoryData];
-        inventoryData.forEach(item => {
-            item.element.style.display = '';
-        });
-        document.getElementById('filteredCount').textContent = inventoryData.length;
+        inventoryData.forEach(item => item.element.style.display = '');
+        updateFilteredCount();
         return;
     }
     
-    // Filtrar datos
     filteredData = inventoryData.filter(item => {
         return item.code.toLowerCase().includes(searchTerm) ||
                item.desc.toLowerCase().includes(searchTerm) ||
@@ -1126,7 +1441,6 @@ function filterInventory(searchTerm) {
                item.stock.toString().includes(searchTerm);
     });
     
-    // Mostrar/ocultar filas
     let visibleCount = 0;
     inventoryData.forEach(item => {
         const isVisible = filteredData.includes(item);
@@ -1134,173 +1448,665 @@ function filterInventory(searchTerm) {
         if (isVisible) visibleCount++;
     });
     
-    // Actualizar contador
-    document.getElementById('filteredCount').textContent = visibleCount;
+    updateFilteredCount();
 }
 
-// ================= CONFIGURAR EVENTOS =================
-function setupEvents() {
-    // Eventos de clic en filas
-    document.querySelectorAll('.inventory-row').forEach(row => {
-        row.addEventListener('click', function() {
-            const code = this.dataset.code;
-            const desc = this.dataset.desc;
-            showToast(`Seleccionado: ${code}`, 'info');
-        });
+function filterByStatus(status) {
+    const searchInput = document.getElementById('searchInv');
+    if (searchInput) searchInput.value = '';
+    
+    filteredData = inventoryData.filter(item => item.status === status);
+    
+    let visibleCount = 0;
+    inventoryData.forEach(item => {
+        const isVisible = item.status === status;
+        item.element.style.display = isVisible ? '' : 'none';
+        if (isVisible) visibleCount++;
     });
     
-    // Actualización periódica
-    setInterval(() => {
-        updateDashboard();
-    }, 30000); // Cada 30 segundos
+    updateFilteredCount();
+    showToast(`Filtrado por: ${status === 'critical' ? 'Stock Crítico' : status === 'low' ? 'Stock Bajo' : 'Stock Normal'}`);
 }
 
-// ================= FUNCIONES UTILITARIAS =================
-function updateDashboard() {
-    console.log('🔄 Actualizando dashboard...');
-    collectInventoryData();
-    calculateMetrics();
-    renderCharts();
-    updateTopLocations();
-    showToast('Dashboard actualizado', 'success');
+function clearStatusFilter() {
+    const searchInput = document.getElementById('searchInv');
+    if (searchInput) searchInput.value = '';
+    filterInventory('');
 }
 
 function clearFilters() {
-    document.getElementById('searchInv').value = '';
+    const searchInput = document.getElementById('searchInv');
+    if (searchInput) {
+        searchInput.value = '';
+    }
     filterInventory('');
-    showToast('Filtros limpiados', 'info');
+    showToast('Filtros limpiados');
 }
 
-function toggleChartType(type) {
-    if (charts.estado && type === 'pie') {
-        charts.estado.config.type = charts.estado.config.type === 'doughnut' ? 'pie' : 'doughnut';
-        charts.estado.update();
+function updateFilteredCount() {
+    const visibleCount = filteredData.length;
+    document.getElementById('filteredCount').textContent = visibleCount;
+    document.getElementById('filterInfo').textContent = 
+        `Mostrando ${visibleCount} de ${inventoryData.length} items`;
+}
+
+// ================= TABLE FUNCTIONS =================
+function sortTable(columnIndex) {
+    if (!config.tableSort) return;
+    
+    const table = document.getElementById('inventoryTable');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
+    
+    if (rows.length <= 1) return;
+    
+    const direction = config.currentSort.column === columnIndex ? 
+                     config.currentSort.direction === 'asc' ? 'desc' : 'asc' : 'asc';
+    
+    rows.sort((a, b) => {
+        let aValue = a.cells[columnIndex].textContent.trim();
+        let bValue = b.cells[columnIndex].textContent.trim();
+        
+        // Para columna de stock, convertir a número
+        if (columnIndex === 3) {
+            aValue = parseFloat(aValue) || 0;
+            bValue = parseFloat(bValue) || 0;
+        }
+        
+        if (direction === 'asc') {
+            return aValue > bValue ? 1 : -1;
+        } else {
+            return aValue < bValue ? 1 : -1;
+        }
+    });
+    
+    // Reordenar filas
+    rows.forEach(row => tbody.appendChild(row));
+    
+    // Actualizar estado de ordenamiento
+    config.currentSort = { column: columnIndex, direction };
+    
+    showToast(`Tabla ordenada por columna ${columnIndex + 1} (${direction})`);
+}
+
+function toggleTableView() {
+    const table = document.getElementById('inventoryTable');
+    const isCondensed = table.classList.contains('table-sm');
+    
+    if (isCondensed) {
+        table.classList.remove('table-sm');
+        showToast('Vista normal activada');
+    } else {
+        table.classList.add('table-sm');
+        showToast('Vista compacta activada');
     }
 }
 
-function exportDashboard() {
-    const dataStr = JSON.stringify({
-        timestamp: new Date().toISOString(),
-        totalItems: inventoryData.length,
-        metrics: {
-            criticos: inventoryData.filter(item => item.stock <= 0).length,
-            bajos: inventoryData.filter(item => item.stock > 0 && item.stock < 10).length,
-            normales: inventoryData.filter(item => item.stock >= 10).length,
-            totalStock: inventoryData.reduce((sum, item) => sum + item.stock, 0)
-        }
-    }, null, 2);
+// ================= EXPORT FUNCTIONS =================
+function exportTable(format) {
+    if (filteredData.length === 0) {
+        showToast('No hay datos para exportar', 'warning');
+        return;
+    }
     
-    const blob = new Blob([dataStr], { type: 'application/json' });
+    try {
+        let content, filename, mimeType;
+        
+        if (format === 'csv') {
+            content = convertToCSV();
+            filename = `inventario_${getFormattedDate()}.csv`;
+            mimeType = 'text/csv';
+        } else if (format === 'excel') {
+            content = convertToExcel();
+            filename = `inventario_${getFormattedDate()}.xlsx`;
+            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        }
+        
+        downloadFile(content, filename, mimeType);
+        showToast(`Exportado como ${format.toUpperCase()}`, 'success');
+        
+    } catch (error) {
+        console.error('Error al exportar:', error);
+        showToast('Error al exportar los datos', 'danger');
+    }
+}
+
+function convertToCSV() {
+    const headers = ['Código', 'Descripción', 'Ubicación', 'Stock', 'Estado'];
+    const rows = filteredData.map(item => [
+        item.code,
+        item.desc,
+        item.location,
+        item.stock,
+        item.status === 'critical' ? 'Crítico' : item.status === 'low' ? 'Bajo' : 'Normal'
+    ]);
+    
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+    
+    return csvContent;
+}
+
+function convertToExcel() {
+    const wsData = [
+        ['Código', 'Descripción', 'Ubicación', 'Stock', 'Estado'],
+        ...filteredData.map(item => [
+            item.code,
+            item.desc,
+            item.location,
+            item.stock,
+            item.status === 'critical' ? 'Crítico' : item.status === 'low' ? 'Bajo' : 'Normal'
+        ])
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+    
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+}
+
+function downloadFile(content, filename, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function getFormattedDate() {
+    const now = new Date();
+    return now.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function printTable() {
+    const printContent = document.getElementById('inventoryTable').outerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Inventario - ${new Date().toLocaleDateString()}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    @media print {
+                        body { margin: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h2>Reporte de Inventario</h2>
+                <p>Generado: ${new Date().toLocaleString()}</p>
+                ${printContent}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+    showToast('Preparando para imprimir...');
+}
+
+// ================= MODAL FUNCTIONS =================
+function initModals() {
+    // Cerrar modales al hacer clic fuera
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal(this.id);
+            }
+        });
+    });
+    
+    // Cerrar con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
+        }
+    });
+}
+
+function openReportModal() {
+    document.getElementById('reportModal').style.display = 'flex';
+}
+
+function openSettingsModal() {
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function closeAllModals() {
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modal.style.display = 'none';
+    });
+}
+
+function generateReport() {
+    const reportType = document.querySelector('input[name="report-type"]:checked').value;
+    const includeKPIs = document.getElementById('section-kpis').checked;
+    const includeCharts = document.getElementById('section-charts').checked;
+    const includeTable = document.getElementById('section-table').checked;
+    const outputFormat = document.querySelector('input[name="output-format"]:checked').value;
+    
+    // Mostrar loading
+    const generateBtn = document.querySelector('#reportModal .btn-primary');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '<span class="spinner"></span> Generando...';
+    generateBtn.disabled = true;
+    
+    // Simular generación de reporte
+    setTimeout(() => {
+        generateBtn.innerHTML = originalText;
+        generateBtn.disabled = false;
+        
+        closeModal('reportModal');
+        
+        showToast(`Reporte ${reportType} generado exitosamente`, 'success');
+        
+        // Simular descarga
+        const reportData = {
+            type: reportType,
+            format: outputFormat,
+            timestamp: new Date().toISOString(),
+            includes: {
+                kpis: includeKPIs,
+                charts: includeCharts,
+                table: includeTable
+            }
+        };
+        
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_inventario_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+    }, 2000);
+}
+
+function showExportOptions() {
+    const exportData = {
+        totalItems: inventoryData.length,
+        totalStock: inventoryData.reduce((sum, item) => sum + item.stock, 0),
+        criticalItems: inventoryData.filter(item => item.status === 'critical').length,
+        lowItems: inventoryData.filter(item => item.status === 'low').length,
+        okItems: inventoryData.filter(item => item.status === 'ok').length,
+        data: filteredData.map(item => ({
+            codigo: item.code,
+            descripcion: item.desc,
+            ubicacion: item.location,
+            stock: item.stock,
+            estado: item.status
+        }))
+    };
+    
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `inventario_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showToast('Datos exportados en formato JSON', 'success');
+}
+
+function showExportModal() {
+    Swal.fire({
+        title: 'Exportar Dashboard',
+        text: 'Selecciona el formato de exportación',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Exportar Todo',
+        cancelButtonText: 'Cancelar',
+        showDenyButton: true,
+        denyButtonText: 'Solo Datos',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary',
+            denyButton: 'btn btn-info'
+        },
+        buttonsStyling: false
+    }).then((result) => {
+        if (result.isConfirmed) {
+            exportDashboard();
+        } else if (result.isDenied) {
+            showExportOptions();
+        }
+    });
+}
+
+function exportDashboard() {
+    const dashboardData = {
+        metadata: {
+            exportedAt: new Date().toISOString(),
+            totalItems: inventoryData.length,
+            version: '1.0'
+        },
+        summary: {
+            totalItems: inventoryData.length,
+            totalStock: inventoryData.reduce((sum, item) => sum + item.stock, 0),
+            averageStock: inventoryData.length > 0 ? 
+                inventoryData.reduce((sum, item) => sum + item.stock, 0) / inventoryData.length : 0,
+            uniqueLocations: new Set(inventoryData.map(item => item.location)).size
+        },
+        statusBreakdown: {
+            critical: inventoryData.filter(item => item.status === 'critical').length,
+            low: inventoryData.filter(item => item.status === 'low').length,
+            ok: inventoryData.filter(item => item.status === 'ok').length
+        },
+        topLocations: Array.from(
+            new Map(inventoryData.reduce((acc, item) => {
+                if (!acc.has(item.location)) acc.set(item.location, 0);
+                acc.set(item.location, acc.get(item.location) + item.stock);
+                return acc;
+            }, new Map()))
+            .entries()
+        ).sort((a, b) => b[1] - a[1]).slice(0, 10),
+        inventoryData: filteredData.map(item => ({
+            code: item.code,
+            description: item.desc,
+            location: item.location,
+            stock: item.stock,
+            status: item.status
+        }))
+    };
+    
+    const jsonStr = JSON.stringify(dashboardData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard_completo_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showToast('Dashboard exportado', 'success');
+    showToast('Dashboard completo exportado', 'success');
 }
 
-function exportData() {
-    // Aquí implementarías la exportación de datos
-    showToast('Funcionalidad de exportación en desarrollo', 'info');
+// ================= SETTINGS FUNCTIONS =================
+function initSettings() {
+    // Cargar configuración desde localStorage
+    const savedConfig = localStorage.getItem('dashboardConfig');
+    if (savedConfig) {
+        Object.assign(config, JSON.parse(savedConfig));
+    }
+    
+    // Aplicar configuración
+    document.getElementById('autoRefresh').checked = config.autoRefresh;
+    document.getElementById('showNotifications').checked = config.notifications;
+    document.getElementById('darkMode').checked = config.darkMode;
+    document.getElementById('sortTable').checked = config.tableSort;
+    
+    // Aplicar modo oscuro si está activado
+    if (config.darkMode) {
+        enableDarkMode();
+    }
 }
 
-function showReport() {
-    // Aquí implementarías la generación de reportes
-    showToast('Generando reporte...', 'info');
+function toggleAutoRefresh(enabled) {
+    config.autoRefresh = enabled;
+    if (enabled) {
+        startAutoRefresh();
+        showToast('Actualización automática activada');
+    } else {
+        stopAutoRefresh();
+        showToast('Actualización automática desactivada');
+    }
 }
 
-function showSettings() {
-    // Aquí implementarías la configuración
-    showToast('Ajustes del sistema', 'info');
+function toggleNotifications(enabled) {
+    config.notifications = enabled;
+    showToast(enabled ? 'Notificaciones activadas' : 'Notificaciones desactivadas');
 }
 
-function showToast(message, type = 'info') {
-    // Crear toast si no existe
-    let toastContainer = document.getElementById('toastContainer');
-    if (!toastContainer) {
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toastContainer';
-        toastContainer.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-        `;
-        document.body.appendChild(toastContainer);
+function toggleDarkMode(enabled) {
+    config.darkMode = enabled;
+    if (enabled) {
+        enableDarkMode();
+    } else {
+        disableDarkMode();
+    }
+}
+
+function toggleTableSort(enabled) {
+    config.tableSort = enabled;
+    showToast(enabled ? 'Ordenamiento de tabla activado' : 'Ordenamiento de tabla desactivado');
+}
+
+function enableDarkMode() {
+    document.documentElement.setAttribute('data-bs-theme', 'dark');
+    document.body.classList.add('dark-mode');
+}
+
+function disableDarkMode() {
+    document.documentElement.setAttribute('data-bs-theme', 'light');
+    document.body.classList.remove('dark-mode');
+}
+
+function saveSettings() {
+    localStorage.setItem('dashboardConfig', JSON.stringify(config));
+    closeModal('settingsModal');
+    showToast('Configuración guardada', 'success');
+}
+
+// ================= AUTO REFRESH FUNCTIONS =================
+function startAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+    autoRefreshInterval = setInterval(updateDashboard, config.refreshInterval);
+    console.log(`🔄 Auto-refresh iniciado (cada ${config.refreshInterval/1000}s)`);
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('⏹️ Auto-refresh detenido');
+    }
+}
+
+function updateDashboard() {
+    console.log('🔄 Actualizando dashboard...');
+    
+    // Simular actualización de datos
+    const loadingToast = showToast('Actualizando datos...', 'info', 1000);
+    
+    setTimeout(() => {
+        // En un sistema real, aquí harías una petición al servidor
+        collectInventoryData();
+        calculateMetrics();
+        renderCharts();
+        updateTopLocations();
+        
+        if (config.notifications) {
+            showToast('Dashboard actualizado', 'success');
+        }
+    }, 1000);
+}
+
+// ================= CHART INTERACTION FUNCTIONS =================
+function toggleChartType(type) {
+    if (type === 'pie' && charts.estado) {
+        const currentType = charts.estado.config.type;
+        const newType = currentType === 'doughnut' ? 'pie' : 'doughnut';
+        charts.estado.config.type = newType;
+        charts.estado.update();
+        
+        const icon = document.getElementById('pieChartIcon');
+        icon.className = newType === 'pie' ? 'bi bi-circle' : 'bi bi-arrows-angle-expand';
+        
+        showToast(`Gráfico cambiado a ${newType}`);
+    }
+}
+
+// ================= UTILITY FUNCTIONS =================
+function showToast(message, type = 'info', duration = 3000) {
+    if (!config.notifications && type !== 'danger') return;
+    
+    // Crear contenedor si no existe
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
     }
     
     const toastId = 'toast-' + Date.now();
     const toast = document.createElement('div');
     toast.id = toastId;
-    toast.className = `toast show`;
-    toast.style.cssText = `
-        min-width: 250px;
-        margin-bottom: 10px;
-        animation: slideInRight 0.3s ease-out;
-    `;
+    toast.className = `toast border-${type}`;
     
     const typeIcons = {
         'success': 'check-circle-fill',
         'danger': 'exclamation-triangle-fill',
         'warning': 'exclamation-circle-fill',
-        'info': 'info-circle'
+        'info': 'info-circle-fill'
     };
     
     toast.innerHTML = `
         <div class="toast-header bg-${type} text-white">
             <i class="bi bi-${typeIcons[type] || 'info-circle'} me-2"></i>
             <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            <button type="button" class="btn-close btn-close-white" onclick="document.getElementById('${toastId}').remove()"></button>
         </div>
         <div class="toast-body">
             ${message}
         </div>
     `;
     
-    toastContainer.appendChild(toast);
+    container.appendChild(toast);
     
-    // Auto-remover después de 3 segundos
+    // Auto-remover
     setTimeout(() => {
         const toastEl = document.getElementById(toastId);
         if (toastEl) {
             toastEl.style.animation = 'slideOutRight 0.3s ease-in forwards';
             setTimeout(() => toastEl.remove(), 300);
         }
-    }, 3000);
+    }, duration);
+    
+    return toastId;
 }
 
-// ================= INICIALIZACIÓN =================
-document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que el DOM esté completamente cargado
-    setTimeout(() => {
-        initDashboard();
-        
-        // Agregar estilos CSS para las animaciones
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideInRight {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes slideOutRight {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-    }, 100);
-});
+function editItem(itemCode) {
+    showToast(`Editando item: ${itemCode}`, 'info');
+    // Aquí iría la lógica para abrir un formulario de edición
+    // Por ahora solo mostramos un mensaje
+}
 
-// ================= MANEJAR EVENTOS DE VISIBILIDAD =================
-document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        updateDashboard();
-    }
-});
+function setupEventListeners() {
+    // Eventos de clic en filas
+    document.querySelectorAll('.inventory-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (!e.target.closest('button')) {
+                const code = this.dataset.code;
+                const desc = this.dataset.desc;
+                showToast(`Seleccionado: ${code} - ${desc}`, 'info');
+            }
+        });
+    });
+    
+    // Prevenir cierre de modales al hacer clic dentro
+    document.querySelectorAll('.modal-content').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+}
+
+// ================= EXPORTAR FUNCIONES GLOBALES =================
+// Hacer funciones disponibles globalmente
+window.updateDashboard = updateDashboard;
+window.clearFilters = clearFilters;
+window.filterByStatus = filterByStatus;
+window.clearStatusFilter = clearStatusFilter;
+window.toggleTableView = toggleTableView;
+window.sortTable = sortTable;
+window.exportTable = exportTable;
+window.printTable = printTable;
+window.toggleChartType = toggleChartType;
+window.openReportModal = openReportModal;
+window.openSettingsModal = openSettingsModal;
+window.closeModal = closeModal;
+window.generateReport = generateReport;
+window.showExportOptions = showExportOptions;
+window.showExportModal = showExportModal;
+window.exportDashboard = exportDashboard;
+window.toggleAutoRefresh = toggleAutoRefresh;
+window.toggleNotifications = toggleNotifications;
+window.toggleDarkMode = toggleDarkMode;
+window.toggleTableSort = toggleTableSort;
+window.saveSettings = saveSettings;
+window.editItem = editItem;
 </script>
+
+<!-- SweetAlert2 para mejores diálogos -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+.dark-mode .dashboard-header,
+.dark-mode .kpi-card,
+.dark-mode .chart-card,
+.dark-mode .widget,
+.dark-mode .table-card {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+.dark-mode .search-input {
+    background-color: #495057;
+    border-color: #6c757d;
+    color: #f8f9fa;
+}
+
+.dark-mode .search-input:focus {
+    background-color: #495057;
+    border-color: #0d6efd;
+}
+
+.dark-mode .dashboard-table thead {
+    background-color: #495057;
+}
+
+.dark-mode .dashboard-table th {
+    color: #dee2e6;
+    border-color: #6c757d;
+}
+
+.dark-mode .dashboard-table td {
+    color: #e9ecef;
+    border-color: #495057;
+}
+
+.dark-mode .dashboard-table tbody tr:hover {
+    background-color: #495057;
+}
+</style>
 
 {% endblock %}
