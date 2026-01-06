@@ -267,13 +267,15 @@
             </p>
         </div>
         <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
+            <!-- ⭐⭐ BOTÓN CORREGIDO - USA LA RUTA CORRECTA ⭐⭐ -->
             <a href="{{ url_for('bultos.new_bulto') }}" class="btn btn-primary-glow d-flex align-items-center gap-2">
                 <i class="bi bi-plus-circle"></i>
                 Registrar Nuevo Bulto
             </a>
-            <a href="{{ url_for('bultos.list_bultos') }}" class="btn btn-warning-glow d-flex align-items-center gap-2">
-                <i class="bi bi-list-check"></i>
-                Ver Historial
+            <!-- ⭐⭐ ESTE ES EL BOTÓN QUE DEBES USAR PARA POST-REGISTRO ⭐⭐ -->
+            <a href="{{ url_for('bultos.historial_post') }}" class="btn btn-warning-glow d-flex align-items-center gap-2">
+                <i class="bi bi-clipboard-check"></i>
+                Historial Post-Registro
             </a>
         </div>
     </div>
@@ -287,10 +289,10 @@
                 <i class="bi bi-box-seam"></i>
             </div>
             <div class="kpi-value" id="kpi-total">{{ total_bultos or 0 }}</div>
-            <div class="kpi-label">Total de Bultos</div>
+            <div class="kpi-label">Total de Bultos Registrados</div>
             <div class="kpi-trend">
                 <i class="bi bi-arrow-up-right"></i>
-                +{{ ((bultos_hoy|default(0) / total_bultos * 100) if total_bultos > 0 else 0)|round(1) }}% hoy
+                Total acumulado
             </div>
         </div>
     </div>
@@ -302,9 +304,9 @@
             </div>
             <div class="kpi-value" id="kpi-hoy">{{ bultos_hoy or 0 }}</div>
             <div class="kpi-label">Bultos Hoy</div>
-            <div class="kpi-trend" style="background: rgba(255, 0, 84, 0.1); color: var(--danger);">
-                <i class="bi bi-arrow-down-right"></i>
-                {{ (((bultos_hoy|default(0) - bultos_ayer|default(0)) / bultos_ayer * 100) if bultos_ayer > 0 else 0)|round(1) }}% vs ayer
+            <div class="kpi-trend" style="background: rgba(76, 201, 240, 0.1); color: var(--success);">
+                <i class="bi bi-clock-history"></i>
+                Actualizado al momento
             </div>
         </div>
     </div>
@@ -312,13 +314,13 @@
     <div class="col-xl-3 col-md-6">
         <div class="kpi-card animate-card delay-3">
             <div class="kpi-icon">
-                <i class="bi bi-calendar-week"></i>
+                <i class="bi bi-truck"></i>
             </div>
-            <div class="kpi-value">{{ semanas_totales or 0 }}</div>
-            <div class="kpi-label">Semanas Procesadas</div>
+            <div class="kpi-value">{{ total_trailers or 0 }}</div>
+            <div class="kpi-label">Trailers Únicos</div>
             <div class="kpi-trend">
-                <i class="bi bi-arrow-up-right"></i>
-                +{{ (semanas_totales|default(0) - 1) if semanas_totales > 1 else 0 }} vs semana pasada
+                <i class="bi bi-truck-front"></i>
+                Vehículos diferentes
             </div>
         </div>
     </div>
@@ -326,13 +328,13 @@
     <div class="col-xl-3 col-md-6">
         <div class="kpi-card animate-card delay-4">
             <div class="kpi-icon">
-                <i class="bi bi-exclamation-triangle"></i>
+                <i class="bi bi-calendar-week"></i>
             </div>
-            <div class="kpi-value">{{ inconsistencias or 0 }}</div>
-            <div class="kpi-label">Inconsistencias Activas</div>
-            <div class="kpi-trend" style="background: rgba(247, 37, 133, 0.1); color: var(--warning);">
-                <i class="bi bi-arrow-up-right"></i>
-                {{ (((inconsistencias|default(0) - inconsistencias_ayer|default(0)) / inconsistencias_ayer * 100) if inconsistencias_ayer > 0 else 0)|round(1) }}% vs ayer
+            <div class="kpi-value">{{ semanas_totales or 0 }}</div>
+            <div class="kpi-label">Semanas con Actividad</div>
+            <div class="kpi-trend">
+                <i class="bi bi-bar-chart"></i>
+                Historial semanal
             </div>
         </div>
     </div>
@@ -368,6 +370,11 @@
                     <canvas id="donut_trailers"></canvas>
                 </div>
             </div>
+            <div class="text-center mt-3">
+                <div class="badge bg-primary bg-opacity-10 text-primary">
+                    {{ total_trailers or 0 }} trailers únicos
+                </div>
+            </div>
         </div>
     </div>
 
@@ -397,39 +404,69 @@
         </div>
     </div>
 
-    <!-- Inconsistencias -->
-    <div class="col-lg-6">
-        <div class="chart-container animate-card">
+</div>
+
+<!-- ===== QUICK ACTIONS ===== -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="chart-container">
             <div class="chart-header">
                 <h5 class="chart-title">
-                    <i class="bi bi-exclamation-triangle" style="color: var(--danger);"></i>
-                    Inconsistencias por Mes
+                    <i class="bi bi-lightning-charge" style="color: var(--primary);"></i>
+                    Acciones Rápidas
                 </h5>
             </div>
-            <canvas id="line_incons" height="180"></canvas>
-        </div>
-    </div>
-
-    <!-- Material Faltante -->
-    <div class="col-lg-6">
-        <div class="chart-container animate-card">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="bi bi-box-seam" style="color: #00cc66;"></i>
-                    Material Faltante
-                </h5>
+            <div class="row">
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="{{ url_for('bultos.new_bulto') }}" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center py-3">
+                        <i class="bi bi-plus-circle display-6 mb-2"></i>
+                        <span>Nuevo Bulto</span>
+                    </a>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="{{ url_for('bultos.list_bultos') }}" class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center py-3">
+                        <i class="bi bi-list-ul display-6 mb-2"></i>
+                        <span>Ver Todos</span>
+                    </a>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="{{ url_for('bultos.historial_post') }}" class="btn btn-outline-warning w-100 d-flex flex-column align-items-center py-3">
+                        <i class="bi bi-clipboard-check display-6 mb-2"></i>
+                        <span>Post-Registro</span>
+                    </a>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <a href="{{ url_for('bultos.contar_bultos') }}" class="btn btn-outline-info w-100 d-flex flex-column align-items-center py-3">
+                        <i class="bi bi-calculator display-6 mb-2"></i>
+                        <span>Conteo Real</span>
+                    </a>
+                </div>
             </div>
-            <canvas id="bar_faltante" height="180"></canvas>
         </div>
     </div>
-
 </div>
 
 <!-- ===== SCRIPTS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// Función para animar números
+// Animación de números
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar KPI si tienen IDs
+    const kpiTotal = document.getElementById('kpi-total');
+    const kpiHoy = document.getElementById('kpi-hoy');
+    
+    if (kpiTotal) {
+        const finalTotal = parseInt(kpiTotal.textContent) || 0;
+        animateCounter('kpi-total', finalTotal);
+    }
+    
+    if (kpiHoy) {
+        const finalHoy = parseInt(kpiHoy.textContent) || 0;
+        animateCounter('kpi-hoy', finalHoy);
+    }
+});
+
 function animateCounter(elementId, finalValue, duration = 1000) {
     const element = document.getElementById(elementId);
     if (!element) return;
@@ -448,12 +485,6 @@ function animateCounter(elementId, finalValue, duration = 1000) {
         }
     }, 16);
 }
-
-// Animar KPIs al cargar
-document.addEventListener('DOMContentLoaded', function() {
-    animateCounter('kpi-total', {{ total_bultos or 0 }});
-    animateCounter('kpi-hoy', {{ bultos_hoy or 0 }});
-});
 
 // Configuración común para gráficos
 const chartOptions = {
@@ -494,7 +525,7 @@ new Chart(document.getElementById('donut_trailers'), {
     data: {
         labels: ['Trailers Activos', 'Otros'],
         datasets: [{
-            data: [{{ total_trailers or 0 }}, 100],
+            data: [{{ total_trailers or 0 }}, {{ (total_trailers or 0) > 0 ? 100 - (total_trailers or 0) : 100 }}],
             backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(0,0,0,0.1)']
         }]
     },
@@ -512,7 +543,8 @@ new Chart(document.getElementById('bar_sem'), {
         datasets: [{
             label: 'Bultos por Semana',
             data: {{ bultos_sem|tojson if bultos_sem else [] }},
-            backgroundColor: 'rgba(247, 37, 133, 0.8)'
+            backgroundColor: 'rgba(247, 37, 133, 0.8)',
+            borderRadius: 6
         }]
     },
     options: chartOptions
@@ -526,38 +558,8 @@ new Chart(document.getElementById('bar_mes'), {
         datasets: [{
             label: 'Bultos por Mes',
             data: {{ bultos_mes|tojson if bultos_mes else [] }},
-            backgroundColor: 'rgba(76, 201, 240, 0.8)'
-        }]
-    },
-    options: chartOptions
-});
-
-// Gráfico de línea - Inconsistencias
-new Chart(document.getElementById('line_incons'), {
-    type: 'line',
-    data: {
-        labels: {{ meses|tojson if meses else [] }},
-        datasets: [{
-            label: 'Inconsistencias',
-            data: {{ inconsistencias_mes|tojson if inconsistencias_mes else [] }},
-            borderColor: 'rgba(255, 0, 84, 1)',
-            backgroundColor: 'rgba(255, 0, 84, 0.1)',
-            tension: 0.3,
-            fill: true
-        }]
-    },
-    options: chartOptions
-});
-
-// Gráfico de barras - Material faltante
-new Chart(document.getElementById('bar_faltante'), {
-    type: 'bar',
-    data: {
-        labels: {{ meses|tojson if meses else [] }},
-        datasets: [{
-            label: 'Material Faltante',
-            data: {{ faltante_mes|tojson if faltante_mes else [] }},
-            backgroundColor: 'rgba(0, 204, 102, 0.8)'
+            backgroundColor: 'rgba(76, 201, 240, 0.8)',
+            borderRadius: 6
         }]
     },
     options: chartOptions
