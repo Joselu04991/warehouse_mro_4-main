@@ -209,6 +209,47 @@ def reportes_usuario():
 # ============================================================
 # 📄 PDF 1 - GERENCIA - VERSIÓN CORREGIDA
 # ============================================================
+@auth_bp.route("/descargar-datos")
+@login_required
+def descargar_datos_gerencia():
+    """Descarga el reporte PDF básico del usuario"""
+    try:
+        print(f"[Básico] Generando reporte para {current_user.id}")
+        
+        # Primero intentar importar la función simple
+        try:
+            from utils.pdf_reports_simple import create_simple_pdf_report
+            pdf_path = create_simple_pdf_report(current_user.id)
+        except ImportError as e:
+            print(f"[Básico] Error importando: {e}")
+            pdf_path = generate_basic_pdf_fallback(current_user.id)
+        
+        if not pdf_path or not os.path.exists(pdf_path):
+            flash("No se pudo generar el reporte.", "danger")
+            return redirect(url_for("auth.perfil_usuario"))
+        
+        # Nombre del archivo
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"Reporte_Gerdau_{current_user.username}_{timestamp}.pdf"
+        
+        return send_file(
+            pdf_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        print(f"[Básico] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f"Error al generar reporte: {str(e)[:80]}...", "danger")
+        return redirect(url_for("auth.perfil_usuario"))
+
+
+# ============================================================
+# 📄 PDF PREMIUM - VERSIÓN MEJORADA
+# ============================================================
 @auth_bp.route("/descargar-datos-premium")
 @login_required
 def descargar_datos_premium():
@@ -216,24 +257,25 @@ def descargar_datos_premium():
     try:
         print(f"[Premium] Generando reporte premium para {current_user.id}")
         
-        # Importar función premium
+        # Intentar importar función premium
         try:
             from utils.pdf_reports_premium import create_premium_pdf_report
             pdf_path = create_premium_pdf_report(current_user.id)
         except ImportError as e:
-            print(f"[Premium] Error importando: {e}")
-            # Fallback a versión simple
-            from utils.pdf_reports_simple import create_simple_pdf_report
-            pdf_path = create_simple_pdf_report(current_user.id)
+            print(f"[Premium] Error importando premium: {e}")
+            # Si no funciona, usar función local mejorada
+            pdf_path = generate_premium_pdf_local(current_user.id)
         
         if not pdf_path or not os.path.exists(pdf_path):
+            print(f"[Premium] Error: PDF no generado o no encontrado")
             flash("No se pudo generar el reporte premium.", "danger")
             return redirect(url_for("auth.perfil_usuario"))
         
         # Nombre del archivo
-        timestamp = datetime.now().strftime('%Y%m%d')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"Reporte_Premium_{current_user.username}_{timestamp}.pdf"
         
+        print(f"[Premium] Enviando PDF: {pdf_path}")
         return send_file(
             pdf_path,
             as_attachment=True,
@@ -245,33 +287,242 @@ def descargar_datos_premium():
         print(f"[Premium] Error: {str(e)}")
         import traceback
         traceback.print_exc()
-        flash(f"Error al generar reporte premium: {str(e)[:80]}...", "danger")
+        flash(f"Error al generar reporte premium.", "danger")
         return redirect(url_for("auth.perfil_usuario"))
+
+
 # ============================================================
-# 📄 PDF 2 - RESUMEN (Alternativo)
+# FUNCIONES DE RESPALDO PARA PDFs
 # ============================================================
-@auth_bp.route("/descargar-resumen")
-@login_required
-def descargar_resumen():
-    """Descarga un resumen simple en PDF"""
+
+def generate_basic_pdf_fallback(user_id):
+    """Función de respaldo para PDF básico"""
     try:
-        pdf_path = generate_local_pdf(current_user.id)
+        from models.user import User
+        from models.inventory import InventoryItem
+        from models.bultos import Bulto
+        from models.alerts import Alert
         
-        if pdf_path and os.path.exists(pdf_path):
-            filename = f"Resumen_{current_user.username}_{datetime.now().strftime('%Y%m%d')}.pdf"
-            return send_file(
-                pdf_path,
-                as_attachment=True,
-                download_name=filename,
-                mimetype='application/pdf'
-            )
+        user = User.query.get(user_id)
+        if not user:
+            return None
         
-        flash("No se pudo generar el resumen.", "danger")
-        return redirect(url_for("auth.perfil_usuario"))
+        # Crear directorio
+        reports_dir = os.path.join(current_app.root_path, "static", "temp_pdfs")
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_path = os.path.join(reports_dir, f"basico_{user_id}_{timestamp}.pdf")
+        
+        # Obtener datos
+        kpi_inventarios = InventoryItem.query.count()
+        kpi_bultos = Bulto.query.count()
+        kpi_alertas = Alert.query.count()
+        
+        # Crear PDF simple
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+        from reportlab.lib import colors
+        
+        c = canvas.Canvas(pdf_path, pagesize=letter)
+        width, height = letter
+        
+        # Encabezado
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(50, height - 50, f"Reporte Básico - {user.username}")
+        
+        c.setFont("Helvetica", 10)
+        c.drawString(50, height - 80, f"Correo: {user.email or 'No registrado'}")
+        c.drawString(50, height - 100, f"Rol: {getattr(user, 'role', 'Usuario').upper()}")
+        
+        # Estadísticas
+        y = height - 140
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, "Estadísticas:")
+        
+        c.setFont("Helvetica", 10)
+        stats = [
+            f"Inventarios subidos: {kpi_inventarios}",
+            f"Bultos registrados: {kpi_bultos}",
+            f"Alertas reportadas: {kpi_alertas}",
+        ]
+        
+        for stat in stats:
+            y -= 20
+            c.drawString(70, y, stat)
+        
+        # Pie de página
+        c.setFont("Helvetica", 8)
+        c.drawString(50, 50, f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        
+        c.save()
+        return pdf_path
         
     except Exception as e:
-        flash(f"Error: {str(e)[:50]}...", "danger")
-        return redirect(url_for("auth.perfil_usuario"))
+        print(f"[Fallback Básico] Error: {e}")
+        return None
+
+
+def generate_premium_pdf_local(user_id):
+    """Función local para generar PDF premium"""
+    try:
+        from models.user import User
+        from models.inventory import InventoryItem
+        from models.bultos import Bulto
+        from models.alerts import Alert
+        
+        user = User.query.get(user_id)
+        if not user:
+            return None
+        
+        # Crear directorio premium
+        premium_dir = os.path.join(current_app.root_path, "static", "reports_premium")
+        os.makedirs(premium_dir, exist_ok=True)
+        
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        pdf_path = os.path.join(premium_dir, f"premium_{user_id}_{timestamp}.pdf")
+        
+        # Obtener datos
+        kpi_inventarios = InventoryItem.query.count()
+        kpi_bultos = Bulto.query.count()
+        kpi_alertas = Alert.query.count()
+        score = getattr(user, 'score', 0)
+        
+        # ========== CREAR PDF PREMIUM SIMPLE ==========
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfgen import canvas
+        from reportlab.lib import colors
+        
+        c = canvas.Canvas(pdf_path, pagesize=A4)
+        width, height = A4
+        
+        # Colores Gerdau
+        gerdau_blue = colors.Color(0/255, 59/255, 113/255)
+        gerdau_yellow = colors.Color(248/255, 192/255, 0/255)
+        
+        # ===== PÁGINA 1: PORTADA =====
+        # Fondo
+        c.setFillColor(gerdau_blue)
+        c.rect(0, 0, width, height, fill=True, stroke=False)
+        
+        # Título
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 28)
+        c.drawCentredString(width/2, height/2 + 50, "REPORTE PREMIUM")
+        c.setFont("Helvetica", 18)
+        c.drawCentredString(width/2, height/2, "Sistema Warehouse MRO")
+        c.drawCentredString(width/2, height/2 - 30, "GERDAU")
+        
+        # Información usuario
+        c.setFont("Helvetica", 14)
+        c.drawCentredString(width/2, height/2 - 80, f"Usuario: {user.username}")
+        c.drawCentredString(width/2, height/2 - 110, f"Fecha: {datetime.now().strftime('%d/%m/%Y')}")
+        
+        # Código
+        codigo = f"GERDAU-PRM-{user.id:04d}-{timestamp}"
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(width/2, 100, f"Código: {codigo}")
+        
+        c.showPage()
+        
+        # ===== PÁGINA 2: ESTADÍSTICAS =====
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", 20)
+        c.drawString(50, height - 50, "ESTADÍSTICAS DETALLADAS")
+        
+        y = height - 100
+        c.setFont("Helvetica", 12)
+        
+        stats = [
+            f"• Inventarios subidos: {kpi_inventarios}",
+            f"• Bultos registrados: {kpi_bultos}",
+            f"• Alertas reportadas: {kpi_alertas}",
+            f"• Puntaje técnico: {score} pts",
+            f"• Perfil completado: {getattr(user, 'perfil_completado', 0)}%",
+            f"• Fecha registro: {user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A'}",
+        ]
+        
+        for stat in stats:
+            c.drawString(70, y, stat)
+            y -= 25
+        
+        # ===== GRÁFICO SIMPLE =====
+        try:
+            # Dibujar barras
+            bar_start_y = y - 100
+            max_value = max(kpi_inventarios, kpi_bultos, kpi_alertas, 1)
+            
+            # Inventarios
+            bar_height = (kpi_inventarios / max_value) * 100
+            c.setFillColor(gerdau_blue)
+            c.rect(100, bar_start_y, 40, bar_height, fill=True, stroke=True)
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica", 8)
+            c.drawString(100, bar_start_y - 10, f"Inventarios: {kpi_inventarios}")
+            
+            # Bultos
+            bar_height = (kpi_bultos / max_value) * 100
+            c.setFillColor(gerdau_yellow)
+            c.rect(160, bar_start_y, 40, bar_height, fill=True, stroke=True)
+            c.setFillColor(colors.black)
+            c.drawString(160, bar_start_y - 10, f"Bultos: {kpi_bultos}")
+            
+            # Alertas
+            bar_height = (kpi_alertas / max_value) * 100
+            c.setFillColor(colors.red)
+            c.rect(220, bar_start_y, 40, bar_height, fill=True, stroke=True)
+            c.setFillColor(colors.black)
+            c.drawString(220, bar_start_y - 10, f"Alertas: {kpi_alertas}")
+            
+        except Exception as e:
+            print(f"[PDF Local] Error gráfico: {e}")
+        
+        # Pie de página
+        c.setFont("Helvetica", 8)
+        c.setFillColor(colors.gray)
+        c.drawString(50, 50, f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}")
+        c.drawCentredString(width/2, 50, "Documento confidencial - GERDAU")
+        
+        c.save()
+        
+        print(f"[PDF Local Premium] Generado: {pdf_path}")
+        return pdf_path
+        
+    except Exception as e:
+        print(f"[generate_premium_pdf_local] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+# ============================================================
+# RUTA DE PRUEBA PARA PDF
+# ============================================================
+@auth_bp.route("/test-pdf")
+@login_required
+def test_pdf():
+    """Ruta de prueba para verificar PDFs"""
+    try:
+        # Crear un PDF de prueba MUY simple
+        from reportlab.pdfgen import canvas
+        from io import BytesIO
+        
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer)
+        c.drawString(100, 750, f"Test PDF - Usuario: {current_user.username}")
+        c.drawString(100, 730, f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        c.save()
+        
+        buffer.seek(0)
+        return send_file(
+            buffer,
+            as_attachment=True,
+            download_name=f"test_{current_user.username}.pdf",
+            mimetype='application/pdf'
+        )
+        
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 
 # ============================================================
@@ -340,4 +591,3 @@ def limpiar_reportes():
         print(f"[limpiar_reportes] Error: {e}")
         flash("Error al eliminar reportes.", "danger")
         return redirect(url_for("auth.mis_reportes"))
-
