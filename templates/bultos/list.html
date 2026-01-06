@@ -634,7 +634,7 @@ new Chart(document.getElementById('donut_trailers'), {
     data: {
         labels: ['Trailers Activos', 'Otros'],
         datasets: [{
-            data: [{{ total_trailers or 0 }}, {{ (total_trailers or 0) > 0 ? 100 - (total_trailers or 0) : 100 }}],
+            data: [{{ total_trailers or 0 }}, {{ 100 - (total_trailers or 0) if (total_trailers or 0) > 0 else 100 }}],
             backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(0,0,0,0.1)']
         }]
     },
@@ -676,3 +676,4 @@ new Chart(document.getElementById('bar_mes'), {
 </script>
 
 {% endblock %}
+
