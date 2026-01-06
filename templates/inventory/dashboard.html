@@ -1,161 +1,1023 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2 class="fw-bold mb-4">
-    <i class="bi bi-pie-chart-fill me-2"></i> Dashboard de Inventario
-</h2>
+<style>
+    /* ================= VARIABLES Y ESTILOS GENERALES ================= */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #1a5f7a 0%, #0d4c6e 100%);
+        --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        --warning-gradient: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        --danger-gradient: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        --info-gradient: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        --dark-gradient: linear-gradient(135deg, #343a40 0%, #212529 100%);
+        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --radius-sm: 8px;
+    }
 
-<!-- ========================= KPIs SUPERIORES ========================= -->
-<div class="row g-3 mb-4">
+    .dashboard-container {
+        padding: 24px;
+        background: #f8fafc;
+        min-height: calc(100vh - 80px);
+    }
 
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 text-center p-3 bg-primary text-white">
-            <div class="fs-3 fw-bold">{{ total_items }}</div>
-            <div>Total de Materiales</div>
+    /* ================= HEADER MEJORADO ================= */
+    .dashboard-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 28px 32px;
+        border-radius: var(--radius-lg);
+        margin-bottom: 30px;
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .header-content h1 {
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .header-content h1 i {
+        font-size: 2.2rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 10px 24px;
+        border-radius: 50px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-badge:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-2px);
+    }
+
+    /* ================= KPI CARDS MEJORADAS ================= */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .kpi-card {
+        border-radius: var(--radius-md);
+        padding: 24px;
+        color: white;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0 0 0 100%;
+    }
+
+    .kpi-icon {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        font-size: 2.5rem;
+        opacity: 0.2;
+    }
+
+    .kpi-value {
+        font-size: 2.8rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 5px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .kpi-label {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+
+    .kpi-trend {
+        font-size: 0.85rem;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .trend-up { color: #4cd964; }
+    .trend-down { color: #ff3b30; }
+    .trend-neutral { color: rgba(255,255,255,0.7); }
+
+    .kpi-card-total { background: var(--dark-gradient); }
+    .kpi-card-locations { background: var(--info-gradient); }
+    .kpi-card-critical { background: var(--danger-gradient); }
+    .kpi-card-missing { background: var(--warning-gradient); }
+    .kpi-card-ok { background: var(--success-gradient); }
+
+    /* ================= CHART CARDS MEJORADAS ================= */
+    .chart-container {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 30px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+    .chart-container:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .chart-title {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chart-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .chart-btn {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: var(--radius-sm);
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        color: #4a5568;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .chart-btn:hover {
+        background: #edf2f7;
+        border-color: #cbd5e0;
+    }
+
+    /* ================= TABLE CARD MEJORADA ================= */
+    .table-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid #e9ecef;
+        margin-top: 20px;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .table-title {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .search-container {
+        position: relative;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border: 1px solid #e2e8f0;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: #f8fafc;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #1a5f7a;
+        box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
+        background: white;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a0aec0;
+    }
+
+    /* ================= TABLE STYLES ================= */
+    .dashboard-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .dashboard-table thead {
+        background: #f1f5f9;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .dashboard-table th {
+        color: #4a5568;
+        font-weight: 600;
+        padding: 16px 12px;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .dashboard-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+
+    .dashboard-table tbody tr:hover {
+        background-color: #f8fafc;
+        transform: translateX(4px);
+    }
+
+    .dashboard-table td {
+        padding: 14px 12px;
+        color: #2d3748;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    /* ================= BADGES MEJORADOS ================= */
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        border: none;
+        min-width: 80px;
+        text-align: center;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .badge-critical {
+        background: var(--danger-gradient);
+        color: white;
+    }
+
+    .badge-missing {
+        background: var(--warning-gradient);
+        color: #212529;
+    }
+
+    .badge-ok {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .badge-excess {
+        background: var(--info-gradient);
+        color: white;
+    }
+
+    .badge-default {
+        background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+        color: white;
+    }
+
+    /* ================= LOADING SKELETON ================= */
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    @keyframes loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    /* ================= RESPONSIVE ================= */
+    @media (max-width: 1200px) {
+        .kpi-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 16px;
+        }
+        
+        .dashboard-header {
+            padding: 20px 24px;
+        }
+        
+        .header-stats {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-container {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .dashboard-table {
+            font-size: 0.85rem;
+        }
+        
+        .dashboard-table th,
+        .dashboard-table td {
+            padding: 10px 8px;
+        }
+        
+        .kpi-card {
+            padding: 20px;
+        }
+        
+        .kpi-value {
+            font-size: 2.2rem;
+        }
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- ================= HEADER MEJORADO ================= -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>
+                <i class="bi bi-speedometer2"></i>
+                Dashboard de Inventario
+            </h1>
+            <p class="mb-0 opacity-90">Visión completa y análisis en tiempo real de tu inventario</p>
+            
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Actualizado: {{ now().strftime('%d/%m/%Y %H:%M') if now else 'Hoy' }}</span>
+                </div>
+                <div class="stat-badge">
+                    <i class="bi bi-person-circle"></i>
+                    <span>Usuario: {{ session.get('username', 'Operador') }}</span>
+                </div>
+                <div class="stat-badge">
+                    <i class="bi bi-building"></i>
+                    <span>Almacén: Principal</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 text-center p-3 bg-success text-white">
-            <div class="fs-3 fw-bold">{{ ubicaciones_unicas }}</div>
-            <div>Ubicaciones Activas</div>
+    <!-- ================= KPI CARDS MEJORADAS ================= -->
+    <div class="kpi-grid">
+        <!-- Total Materiales -->
+        <div class="kpi-card kpi-card-total">
+            <div class="kpi-icon"><i class="bi bi-box-seam"></i></div>
+            <div>
+                <div class="kpi-value">{{ total_items }}</div>
+                <div class="kpi-label">Total de Materiales</div>
+                <div class="kpi-trend trend-neutral">
+                    <i class="bi bi-dash-circle"></i>
+                    <span>Inventario total</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicaciones Activas -->
+        <div class="kpi-card kpi-card-locations">
+            <div class="kpi-icon"><i class="bi bi-geo-alt"></i></div>
+            <div>
+                <div class="kpi-value">{{ ubicaciones_unicas }}</div>
+                <div class="kpi-label">Ubicaciones Activas</div>
+                <div class="kpi-trend trend-up">
+                    <i class="bi bi-arrow-up-right"></i>
+                    <span>{{ ((ubicaciones_unicas / total_items) * 100)|round(1) if total_items > 0 else 0 }}% cobertura</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materiales Críticos -->
+        <div class="kpi-card kpi-card-critical">
+            <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+            <div>
+                <div class="kpi-value">{{ criticos }}</div>
+                <div class="kpi-label">Materiales Críticos</div>
+                <div class="kpi-trend trend-down">
+                    <i class="bi bi-arrow-down-right"></i>
+                    <span>{{ ((criticos / total_items) * 100)|round(1) if total_items > 0 else 0 }}% del total</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materiales Faltantes -->
+        <div class="kpi-card kpi-card-missing">
+            <div class="kpi-icon"><i class="bi bi-exclamation-circle"></i></div>
+            <div>
+                <div class="kpi-value">{{ faltantes }}</div>
+                <div class="kpi-label">Materiales Faltantes</div>
+                <div class="kpi-trend trend-down">
+                    <i class="bi bi-arrow-down-right"></i>
+                    <span>{{ ((faltantes / total_items) * 100)|round(1) if total_items > 0 else 0 }}% del total</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materiales OK -->
+        <div class="kpi-card kpi-card-ok">
+            <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
+            <div>
+                <div class="kpi-value">{{ estados.OK if estados else 0 }}</div>
+                <div class="kpi-label">Materiales OK</div>
+                <div class="kpi-trend trend-up">
+                    <i class="bi bi-arrow-up-right"></i>
+                    <span>{{ ((estados.OK / total_items) * 100)|round(1) if total_items > 0 and estados else 0 }}% del total</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 text-center p-3 bg-warning text-dark">
-            <div class="fs-3 fw-bold">{{ criticos }}</div>
-            <div>Materiales Críticos</div>
+    <!-- ================= CHART SECTION ================= -->
+    <div class="row g-4">
+        <!-- Gráfico de Estado -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <i class="bi bi-pie-chart-fill text-primary"></i>
+                        Distribución por Estado
+                    </div>
+                    <div class="chart-actions">
+                        <button class="chart-btn" onclick="exportChart('estadoChart')">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                        <button class="chart-btn" onclick="toggleChartType('estadoChart')">
+                            <i class="bi bi-bar-chart"></i> Cambiar
+                        </button>
+                    </div>
+                </div>
+                <canvas id="estadoChart" height="250"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico por Ubicación -->
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <i class="bi bi-bar-chart-fill text-info"></i>
+                        Materiales por Ubicación (Top 10)
+                    </div>
+                    <div class="chart-actions">
+                        <button class="chart-btn" onclick="exportChart('ubicacionChart')">
+                            <i class="bi bi-download"></i> Exportar
+                        </button>
+                        <button class="chart-btn" onclick="toggleChartType('ubicacionChart')">
+                            <i class="bi bi-pie-chart"></i> Cambiar
+                        </button>
+                    </div>
+                </div>
+                <canvas id="ubicacionChart" height="250"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="card shadow-sm border-0 text-center p-3 bg-danger text-white">
-            <div class="fs-3 fw-bold">{{ faltantes }}</div>
-            <div>Materiales con Faltante</div>
+    <!-- ================= TABLA DE INVENTARIO ================= -->
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">
+                <i class="bi bi-table text-success"></i>
+                Vista Detallada del Inventario
+                <span class="badge bg-secondary ms-2">{{ items|length }} items</span>
+            </div>
+            
+            <div class="search-container">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="searchInv" class="search-input" 
+                       placeholder="Buscar material, ubicación o estado...">
+            </div>
         </div>
-    </div>
 
-</div>
-
-
-
-<!-- ========================= GRÁFICOS ========================= -->
-<div class="row g-4">
-
-    <!-- PIE CHART: Estado del stock -->
-    <div class="col-md-6">
-        <div class="card shadow-sm p-3">
-            <h5 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow me-2"></i>Estado del Inventario</h5>
-            <canvas id="estadoChart" height="200"></canvas>
+        <div class="table-responsive">
+            <table class="dashboard-table">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Ubicación</th>
+                        <th>Unidad</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in items %}
+                    <tr>
+                        <td>
+                            <span class="fw-bold">{{ i.material_code }}</span>
+                        </td>
+                        <td style="max-width: 250px;">
+                            <div class="text-truncate" title="{{ i.material_text }}">
+                                {{ i.material_text }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-dark">{{ i.location }}</span>
+                        </td>
+                        <td>{{ i.base_unit }}</td>
+                        <td>
+                            <span class="fw-bold {% if i.libre_utilizacion <= 0 %}text-danger{% elif i.libre_utilizacion < 10 %}text-warning{% else %}text-success{% endif %}">
+                                {{ i.libre_utilizacion }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if i.estado == "CRÍTICO" %}
+                                <span class="status-badge badge-critical">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Crítico
+                                </span>
+                            {% elif i.estado == "FALTA" %}
+                                <span class="status-badge badge-missing">
+                                    <i class="bi bi-exclamation-circle-fill me-1"></i>Faltante
+                                </span>
+                            {% elif i.estado == "SOBRA" %}
+                                <span class="status-badge badge-excess">
+                                    <i class="bi bi-plus-circle-fill me-1"></i>Exceso
+                                </span>
+                            {% else %}
+                                <span class="status-badge badge-ok">
+                                    <i class="bi bi-check-circle-fill me-1"></i>OK
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" 
+                                    onclick="viewItemDetails('{{ i.material_code }}', '{{ i.location }}')"
+                                    title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox display-6"></i>
+                                <p class="mt-2">No hay items de inventario</p>
+                                <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-upload me-1"></i>Cargar Inventario
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
 
-    <!-- BAR CHART: Materiales por ubicación -->
-    <div class="col-md-6">
-        <div class="card shadow-sm p-3">
-            <h5 class="fw-bold mb-3"><i class="bi bi-diagram-3 me-2"></i>Materiales por Ubicación</h5>
-            <canvas id="ubicacionChart" height="200"></canvas>
-        </div>
-    </div>
-
-</div>
-
-
-
-<!-- ========================= TABLA DE LISTADO SIMPLE ========================= -->
-<div class="card shadow-sm p-4 mt-4">
-
-    <h5 class="fw-bold mb-3">
-        <i class="bi bi-table me-2"></i>Vista Rápida del Inventario
-    </h5>
-
-    <input type="text" id="searchInv" class="form-control mb-3"
-           placeholder="🔍 Buscar materiales o ubicaciones...">
-
-    <div class="table-responsive">
-        <table class="table table-hover" id="dashboardTable">
-            <thead class="table-dark">
-                <tr>
-                    <th>Código</th>
-                    <th>Descripción</th>
-                    <th>Ubicación</th>
-                    <th>Unidad</th>
-                    <th>Stock</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for i in items %}
-                <tr>
-                    <td>{{ i.material_code }}</td>
-                    <td>{{ i.material_text }}</td>
-                    <td>{{ i.location }}</td>
-                    <td>{{ i.base_unit }}</td>
-                    <td>{{ i.libre_utilizacion }}</td>
-                    <td>
-                        {% if i.estado == "CRÍTICO" %}
-                            <span class="badge bg-danger">Crítico</span>
-                        {% elif i.estado == "FALTA" %}
-                            <span class="badge bg-warning text-dark">Falta</span>
-                        {% elif i.estado == "SOBRA" %}
-                            <span class="badge bg-info">Sobra</span>
-                        {% else %}
-                            <span class="badge bg-success">OK</span>
+        <!-- Paginación (si aplica) -->
+        {% if items.pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+            <div class="text-muted small">
+                Mostrando {{ items|length }} de {{ items.total }} items
+            </div>
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if items.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=items.prev_num) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in items.iter_pages() %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == items.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=page_num) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
                         {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endfor %}
+                    
+                    {% if items.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('inventory.dashboard_inventory', page=items.next_num) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
-
 </div>
 
-
-
-
-<!-- ========================= JS CHARTS ========================= -->
+<!-- ================= JAVASCRIPT MEJORADO ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
-// ------ GRAFICO PIE ------
-new Chart(document.getElementById("estadoChart"), {
-    type: "pie",
-    data: {
-        labels: ["OK", "Faltante", "Crítico", "Sobra"],
+// ================= CONFIGURACIÓN INICIAL =================
+let chartInstances = {};
+
+// ================= INICIALIZAR GRÁFICOS =================
+document.addEventListener('DOMContentLoaded', function() {
+    initCharts();
+    setupSearch();
+    setupFilters();
+});
+
+// ================= GRÁFICO DE ESTADO =================
+function initEstadoChart() {
+    const ctx = document.getElementById('estadoChart').getContext('2d');
+    
+    // Datos para el gráfico
+    const data = {
+        labels: ["✅ OK", "⚠️ Faltante", "🚨 Crítico", "📈 Exceso"],
         datasets: [{
             data: [
-                {{ estados.OK }},
-                {{ estados.FALTA }},
-                {{ estados.CRITICO }},
-                {{ estados.SOBRA }}
+                {{ estados.OK|default(0) }},
+                {{ estados.FALTA|default(0) }},
+                {{ estados.CRITICO|default(0) }},
+                {{ estados.SOBRA|default(0) }}
             ],
-            backgroundColor: ["#28a745", "#ffc107", "#dc3545", "#0dcaf0"]
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(220, 53, 69, 0.8)',
+                'rgba(23, 162, 184, 0.8)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(220, 53, 69, 1)',
+                'rgba(23, 162, 184, 1)'
+            ],
+            borderWidth: 2,
+            hoverOffset: 15
         }]
-    }
-});
+    };
+    
+    const config = {
+        type: 'pie',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value, ctx) => {
+                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                        return `${percentage}%`;
+                    }
+                }
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true,
+                duration: 2000
+            }
+        },
+        plugins: [ChartDataLabels]
+    };
+    
+    chartInstances.estadoChart = new Chart(ctx, config);
+}
 
-// ------ GRAFICO BARRAS ------
-new Chart(document.getElementById("ubicacionChart"), {
-    type: "bar",
-    data: {
-        labels: {{ ubicaciones_labels | safe }},
+// ================= GRÁFICO POR UBICACIÓN =================
+function initUbicacionChart() {
+    const ctx = document.getElementById('ubicacionChart').getContext('2d');
+    
+    // Tomar solo las primeras 10 ubicaciones para mejor visualización
+    const labels = {{ ubicaciones_labels|safe }};
+    const dataValues = {{ ubicaciones_counts|safe }};
+    
+    const top10Labels = labels.slice(0, 10);
+    const top10Data = dataValues.slice(0, 10);
+    
+    const data = {
+        labels: top10Labels,
         datasets: [{
-            label: "Materiales",
-            data: {{ ubicaciones_counts | safe }},
-            backgroundColor: "#0d6efd"
+            label: 'Materiales',
+            data: top10Data,
+            backgroundColor: 'rgba(13, 110, 253, 0.7)',
+            borderColor: 'rgba(13, 110, 253, 1)',
+            borderWidth: 1,
+            borderRadius: 6,
+            hoverBackgroundColor: 'rgba(13, 110, 253, 0.9)'
         }]
-    }
-});
+    };
+    
+    const config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Materiales: ${context.raw}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    };
+    
+    chartInstances.ubicacionChart = new Chart(ctx, config);
+}
 
-// ------ BUSCADOR ------
-document.getElementById("searchInv").addEventListener("keyup", function() {
-    const filter = this.value.toLowerCase();
-    document.querySelectorAll("#dashboardTable tbody tr").forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+// ================= INICIALIZAR TODOS LOS GRÁFICOS =================
+function initCharts() {
+    if (document.getElementById('estadoChart')) {
+        initEstadoChart();
+    }
+    
+    if (document.getElementById('ubicacionChart')) {
+        initUbicacionChart();
+    }
+}
+
+// ================= FUNCIONES DE INTERACCIÓN =================
+function toggleChartType(chartId) {
+    const chart = chartInstances[chartId];
+    if (!chart) return;
+    
+    const currentType = chart.config.type;
+    const newType = currentType === 'pie' ? 'bar' : 
+                    currentType === 'bar' ? 'line' : 'pie';
+    
+    chart.config.type = newType;
+    chart.update();
+}
+
+function exportChart(chartId) {
+    const chart = chartInstances[chartId];
+    if (!chart) return;
+    
+    const link = document.createElement('a');
+    link.download = `grafico_${chartId}_${new Date().toISOString().split('T')[0]}.png`;
+    link.href = chart.toBase64Image();
+    link.click();
+}
+
+function viewItemDetails(materialCode, location) {
+    // Aquí puedes implementar la lógica para ver detalles
+    // Por ejemplo, abrir un modal o redirigir
+    alert(`Ver detalles de:\nCódigo: ${materialCode}\nUbicación: ${location}`);
+    
+    // O usar un modal de Bootstrap
+    // $('#itemDetailsModal').modal('show');
+    // cargarDetalles(materialCode, location);
+}
+
+// ================= BÚSQUEDA EN TABLA =================
+function setupSearch() {
+    const searchInput = document.getElementById('searchInv');
+    if (!searchInput) return;
+    
+    searchInput.addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.dashboard-table tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(filter) ? '' : 'none';
+        });
+        
+        // Mostrar contador de resultados
+        updateResultCount();
     });
-});
+}
+
+function updateResultCount() {
+    const visibleRows = document.querySelectorAll('.dashboard-table tbody tr[style=""]').length;
+    const totalRows = document.querySelectorAll('.dashboard-table tbody tr').length;
+    
+    // Actualizar badge si existe
+    const badge = document.querySelector('.table-title .badge');
+    if (badge) {
+        badge.textContent = `${visibleRows} de ${totalRows} items`;
+    }
+}
+
+// ================= FILTROS ADICIONALES =================
+function setupFilters() {
+    // Aquí puedes agregar filtros por estado, ubicación, etc.
+    // Por ejemplo, botones para filtrar por estado
+}
+
+// ================= ACTUALIZACIÓN EN TIEMPO REAL =================
+function refreshDashboard() {
+    // Simular actualización de datos
+    fetch("{{ url_for('inventory.get_dashboard_data') }}")
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar KPIs
+            updateKPIs(data);
+            
+            // Actualizar gráficos
+            updateCharts(data);
+            
+            showNotification('Dashboard actualizado', 'success');
+        })
+        .catch(error => {
+            console.error('Error actualizando dashboard:', error);
+            showNotification('Error al actualizar', 'danger');
+        });
+}
+
+// ================= NOTIFICACIONES =================
+function showNotification(message, type = 'info') {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 3000);
+}
+
+// ================= INICIALIZACIÓN FINAL =================
+// Actualizar dashboard cada 5 minutos (opcional)
+// setInterval(refreshDashboard, 5 * 60 * 1000);
+
+// Inicializar tooltips de Bootstrap
+if (typeof bootstrap !== 'undefined') {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
 </script>
 
 {% endblock %}
