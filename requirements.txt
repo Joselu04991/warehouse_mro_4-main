@@ -13,7 +13,7 @@ gunicorn==21.2.0
 # BASES DE DATOS
 ##########################
 pymysql==1.1.1          # MySQL (opcional)
-psycopg2-binary==2.9.9  # PostgreSQL (opcional)
+psycopg2-binary==2.9.9  # PostgreSQL (Railway usa PostgreSQL)
 sqlite-web==0.3.9       # Explorador SQLite
 
 ##########################
@@ -26,13 +26,14 @@ xlsxwriter==3.2.0
 numpy==2.2.2
 
 ##########################
-# REPORTES / PDF
+# REPORTES / PDF - AGREGADOS
 ##########################
 reportlab==4.1.0
 fpdf2==2.7.7
+PyPDF2==3.0.1
 
 ##########################
-# IMÁGENES Y QR
+# IMÁGENES Y QR - AGREGADOS
 ##########################
 Pillow==10.2.0
 qrcode==7.4.2
@@ -72,4 +73,19 @@ pyyaml==6.0.1
 scikit-learn==1.4.2
 joblib==1.4.0
 
+##########################
+# DEPENDENCIAS ESPECÍFICAS PARA RAILWAY - AGREGADAS
+##########################
+# Para compatibilidad con PostgreSQL en Railway
 psycopg2-binary==2.9.9
+# Para manejo de archivos temporales
+python-magic==0.4.27
+# Para scheduling (limpieza de archivos)
+APScheduler==3.10.4
+
+##########################
+# DEPENDENCIAS DE DESARROLLO (opcional)
+##########################
+# python-multipart==0.0.6  # Para uploads grandes
+# flask-cors==4.0.0       # Para APIs
+# flask-limiter==3.3.5    # Para rate limiting
