@@ -59,6 +59,7 @@
         display: flex;
         align-items: center;
         gap: 15px;
+        font-size: 2rem;
     }
 
     .header-content h1 i {
@@ -149,7 +150,6 @@
     }
 
     .kpi-card-total { background: var(--dark-gradient); }
-    .kpi-card-locations { background: var(--info-gradient); }
     .kpi-card-critical { background: var(--danger-gradient); }
     .kpi-card-low { background: var(--warning-gradient); }
     .kpi-card-ok { background: var(--success-gradient); }
@@ -163,6 +163,7 @@
         margin-bottom: 30px;
         border: 1px solid #e9ecef;
         transition: all 0.3s ease;
+        height: 100%;
     }
 
     .chart-container:hover {
@@ -278,6 +279,7 @@
 
     .dashboard-table tbody tr:hover {
         background-color: #f8fafc;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .dashboard-table td {
@@ -317,7 +319,30 @@
         color: white;
     }
 
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+    }
+
     /* ================= RESPONSIVE ================= */
+    @media (max-width: 992px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
     @media (max-width: 768px) {
         .dashboard-container {
             padding: 16px;
@@ -325,6 +350,10 @@
         
         .dashboard-header {
             padding: 20px 24px;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 1.5rem;
         }
         
         .header-stats {
@@ -350,6 +379,26 @@
         .search-container {
             width: 100%;
         }
+        
+        .dashboard-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .kpi-card {
+            padding: 20px;
+            min-height: 120px;
+        }
+        
+        .kpi-value {
+            font-size: 2.2rem;
+        }
+        
+        .kpi-icon {
+            font-size: 2rem;
+        }
     }
 </style>
 
@@ -362,6 +411,17 @@
                 Dashboard de Inventario
             </h1>
             <p class="mb-0 opacity-90">Análisis en tiempo real de tu inventario</p>
+            
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <i class="bi bi-calendar-week"></i>
+                    Última actualización: {{ fecha_actualizacion if fecha_actualizacion else 'Hoy' }}
+                </div>
+                <div class="stat-badge">
+                    <i class="bi bi-clock-history"></i>
+                    Actualizado en tiempo real
+                </div>
+            </div>
         </div>
     </div>
 
@@ -380,7 +440,8 @@
         <div class="kpi-card kpi-card-critical">
             <div class="kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
             <div>
-                <div class="kpi-value">{{ criticos if criticos is defined else 0 }}</div>
+                {% set criticos = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '<=', 0)|list|length if items else 0 %}
+                <div class="kpi-value">{{ criticos }}</div>
                 <div class="kpi-label">Stock Crítico (≤0)</div>
             </div>
         </div>
@@ -389,7 +450,8 @@
         <div class="kpi-card kpi-card-low">
             <div class="kpi-icon"><i class="bi bi-exclamation-circle"></i></div>
             <div>
-                <div class="kpi-value">{{ bajos if bajos is defined else 0 }}</div>
+                {% set bajos = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '>', 0)|selectattr('libre_utilizacion', '<', 10)|list|length if items else 0 %}
+                <div class="kpi-value">{{ bajos }}</div>
                 <div class="kpi-label">Stock Bajo (1-9)</div>
             </div>
         </div>
@@ -398,7 +460,8 @@
         <div class="kpi-card kpi-card-ok">
             <div class="kpi-icon"><i class="bi bi-check-circle"></i></div>
             <div>
-                <div class="kpi-value">{{ normales if normales is defined else 0 }}</div>
+                {% set normales = items|selectattr('libre_utilizacion', 'defined')|selectattr('libre_utilizacion', '>=', 10)|list|length if items else 0 %}
+                <div class="kpi-value">{{ normales }}</div>
                 <div class="kpi-label">Stock Normal (≥10)</div>
             </div>
         </div>
@@ -414,6 +477,9 @@
                         <i class="bi bi-pie-chart-fill text-primary"></i>
                         Distribución por Estado de Stock
                     </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="updateCharts()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
                 </div>
                 <canvas id="estadoChart" height="250"></canvas>
                 <div class="mt-3 small text-muted">
@@ -431,6 +497,9 @@
                         <i class="bi bi-bar-chart-fill text-info"></i>
                         Stock Total por Ubicación
                     </div>
+                    <button class="btn btn-sm btn-outline-info" onclick="updateCharts()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
                 </div>
                 <canvas id="ubicacionChart" height="250"></canvas>
                 <div class="mt-3 small text-muted">
@@ -447,13 +516,18 @@
             <div class="table-title">
                 <i class="bi bi-table text-success"></i>
                 Vista Detallada del Inventario
-                <span class="badge bg-secondary ms-2">{{ items|length if items else 0 }} items</span>
+                <span id="itemCount" class="badge bg-secondary ms-2">{{ items|length if items else 0 }} items</span>
             </div>
             
-            <div class="search-container">
-                <i class="bi bi-search search-icon"></i>
-                <input type="text" id="searchInv" class="search-input" 
-                       placeholder="Buscar material, ubicación o estado...">
+            <div class="d-flex align-items-center gap-2">
+                <div class="search-container">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInv" class="search-input" 
+                           placeholder="Buscar material, ubicación o estado...">
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetSearch()">
+                    <i class="bi bi-x-circle"></i>
+                </button>
             </div>
         </div>
 
@@ -469,10 +543,14 @@
                         <th>Estado</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% if items %}
+                <tbody id="inventoryTableBody">
+                    {% if items and items|length > 0 %}
                         {% for item in items %}
-                        <tr>
+                        <tr class="inventory-item" 
+                            data-code="{{ item.material_code if item.material_code else '' }}" 
+                            data-desc="{{ item.material_text if item.material_text else '' }}" 
+                            data-location="{{ item.location if item.location else '' }}"
+                            data-stock="{{ item.libre_utilizacion if item.libre_utilizacion is defined else 0 }}">
                             <td>
                                 <span class="fw-bold">{{ item.material_code if item.material_code else 'N/A' }}</span>
                             </td>
@@ -511,11 +589,11 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="bi bi-inbox display-6"></i>
-                                    <p class="mt-2">No hay items de inventario</p>
-                                    <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-sm btn-primary">
+                            <td colspan="6" class="text-center py-5">
+                                <div class="empty-state">
+                                    <i class="bi bi-inbox"></i>
+                                    <p>No hay items de inventario cargados</p>
+                                    <a href="{{ url_for('inventory.upload_inventory') }}" class="btn btn-primary">
                                         <i class="bi bi-upload me-1"></i>Cargar Inventario
                                     </a>
                                 </div>
@@ -525,104 +603,184 @@
                 </tbody>
             </table>
         </div>
+        
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+            <small class="text-muted" id="filterInfo">
+                Mostrando {{ items|length if items else 0 }} de {{ items|length if items else 0 }} items
+            </small>
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Haz clic en cualquier fila para ver detalles
+            </small>
+        </div>
     </div>
 </div>
 
-<!-- ================= JAVASCRIPT CORREGIDO - SIN DATOS DE MUESTRA ================= -->
+<!-- ================= JAVASCRIPT OPTIMIZADO ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
-// ================= CONFIGURACIÓN INICIAL =================
+// ================= VARIABLES GLOBALES =================
 let chartInstances = {};
+let inventoryData = [];
 
-// ================= CALCULAR ESTADÍSTICAS DESDE LOS DATOS REALES =================
-function calculateRealStatistics() {
-    console.log("📊 Calculando estadísticas desde datos reales...");
+// ================= INICIALIZAR DATOS =================
+function initializeData() {
+    console.log("📊 Inicializando datos del inventario...");
     
-    // Obtener datos de la tabla (no de muestras)
-    const tableRows = document.querySelectorAll('.dashboard-table tbody tr');
-    let totalItems = 0;
-    let stockCritico = 0;
-    let stockBajo = 0;
-    let stockNormal = 0;
+    // Recopilar datos de la tabla
+    inventoryData = [];
+    document.querySelectorAll('.inventory-item').forEach(row => {
+        const stock = parseInt(row.dataset.stock) || 0;
+        const location = row.dataset.location || 'Sin ubicación';
+        const materialCode = row.dataset.code || '';
+        const materialDesc = row.dataset.desc || '';
+        
+        inventoryData.push({
+            stock: stock,
+            location: location,
+            materialCode: materialCode,
+            materialDesc: materialDesc
+        });
+    });
     
-    // Agrupar por ubicación para el gráfico
-    const ubicacionesMap = new Map();
+    console.log(`✅ ${inventoryData.length} items cargados`);
+    return inventoryData;
+}
+
+// ================= CALCULAR ESTADÍSTICAS =================
+function calculateStatistics() {
+    if (inventoryData.length === 0) {
+        initializeData();
+    }
     
-    tableRows.forEach(row => {
-        // Saltar filas vacías o de "no hay datos"
-        if (row.cells.length < 6) return;
-        
-        totalItems++;
-        
-        const stockCell = row.cells[4];
-        const ubicacionCell = row.cells[2];
-        
-        // Extraer stock del texto (puede tener HTML)
-        const stockText = stockCell.textContent || stockCell.innerText;
-        const stockMatch = stockText.match(/\d+/);
-        const stock = stockMatch ? parseInt(stockMatch[0]) : 0;
-        
-        // Extraer ubicación
-        const ubicacion = ubicacionCell.textContent.trim() || 'Sin ubicación';
-        
+    let stats = {
+        total: inventoryData.length,
+        criticos: 0,
+        bajos: 0,
+        normales: 0,
+        ubicaciones: new Map()
+    };
+    
+    inventoryData.forEach(item => {
         // Contar por estado
-        if (stock <= 0) {
-            stockCritico++;
-        } else if (stock < 10) {
-            stockBajo++;
+        if (item.stock <= 0) {
+            stats.criticos++;
+        } else if (item.stock < 10) {
+            stats.bajos++;
         } else {
-            stockNormal++;
+            stats.normales++;
         }
         
         // Acumular por ubicación
-        if (!ubicacionesMap.has(ubicacion)) {
-            ubicacionesMap.set(ubicacion, 0);
+        const loc = item.location;
+        if (!stats.ubicaciones.has(loc)) {
+            stats.ubicaciones.set(loc, 0);
         }
-        ubicacionesMap.set(ubicacion, ubicacionesMap.get(ubicacion) + stock);
+        stats.ubicaciones.set(loc, stats.ubicaciones.get(loc) + item.stock);
     });
     
-    console.log("📈 Estadísticas calculadas:", {
-        totalItems,
-        stockCritico,
-        stockBajo,
-        stockNormal,
-        ubicaciones: Array.from(ubicacionesMap.entries())
-    });
-    
-    return {
-        totalItems,
-        stockCritico,
-        stockBajo,
-        stockNormal,
-        ubicacionesMap
-    };
+    return stats;
 }
 
-// ================= GENERAR GRÁFICOS CON DATOS REALES =================
-function generateRealCharts() {
-    // Destruir gráficos anteriores si existen
+// ================= GRÁFICO DE ESTADO =================
+function renderEstadoChart() {
+    const ctx = document.getElementById('estadoChart');
+    if (!ctx) return;
+    
+    const stats = calculateStatistics();
+    
     if (chartInstances.estadoChart) {
         chartInstances.estadoChart.destroy();
     }
-    if (chartInstances.ubicacionChart) {
-        chartInstances.ubicacionChart.destroy();
-    }
     
-    // Calcular estadísticas desde datos reales
-    const stats = calculateRealStatistics();
-    
-    // Si no hay datos, mostrar mensaje
-    if (stats.totalItems === 0) {
-        document.getElementById('estadoChart').parentElement.innerHTML = `
+    if (stats.total === 0) {
+        ctx.parentElement.innerHTML = `
             <div class="text-center py-5">
                 <i class="bi bi-bar-chart display-4 text-muted"></i>
                 <p class="mt-3">No hay datos para mostrar</p>
                 <small class="text-muted">Carga un inventario primero</small>
             </div>
         `;
-        
-        document.getElementById('ubicacionChart').parentElement.innerHTML = `
+        return;
+    }
+    
+    const data = [stats.criticos, stats.bajos, stats.normales];
+    const labels = [
+        `Crítico (${stats.criticos})`,
+        `Bajo (${stats.bajos})`,
+        `Normal (${stats.normales})`
+    ];
+    
+    chartInstances.estadoChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: [
+                    'rgba(220, 53, 69, 0.9)',
+                    'rgba(255, 193, 7, 0.9)',
+                    'rgba(40, 167, 69, 0.9)'
+                ],
+                borderColor: [
+                    'rgba(220, 53, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(40, 167, 69, 1)'
+                ],
+                borderWidth: 2,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        font: {
+                            size: 12,
+                            family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                        },
+                        color: '#4a5568'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const percentage = stats.total > 0 ? ((value / stats.total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%',
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    });
+}
+
+// ================= GRÁFICO DE UBICACIÓN =================
+function renderUbicacionChart() {
+    const ctx = document.getElementById('ubicacionChart');
+    if (!ctx) return;
+    
+    const stats = calculateStatistics();
+    
+    if (chartInstances.ubicacionChart) {
+        chartInstances.ubicacionChart.destroy();
+    }
+    
+    if (stats.ubicaciones.size === 0) {
+        ctx.parentElement.innerHTML = `
             <div class="text-center py-5">
                 <i class="bi bi-pie-chart display-4 text-muted"></i>
                 <p class="mt-3">No hay datos para mostrar</p>
@@ -632,201 +790,235 @@ function generateRealCharts() {
         return;
     }
     
-    // 1. GRÁFICO DE DISTRIBUCIÓN POR ESTADO (PIE CHART)
-    const ctxEstado = document.getElementById('estadoChart');
-    if (ctxEstado) {
-        chartInstances.estadoChart = new Chart(ctxEstado, {
-            type: 'doughnut',
-            data: {
-                labels: [
-                    `🚨 Crítico (${stats.stockCritico})`,
-                    `⚠️ Bajo (${stats.stockBajo})`,
-                    `✅ Normal (${stats.stockNormal})`
-                ],
-                datasets: [{
-                    data: [stats.stockCritico, stats.stockBajo, stats.stockNormal],
-                    backgroundColor: [
-                        'rgba(220, 53, 69, 0.8)',
-                        'rgba(255, 193, 7, 0.8)',
-                        'rgba(40, 167, 69, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(220, 53, 69, 1)',
-                        'rgba(255, 193, 7, 1)',
-                        'rgba(40, 167, 69, 1)'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            padding: 20,
-                            font: {
-                                size: 12
-                            }
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const label = context.label || '';
-                                const value = context.raw || 0;
-                                const total = stats.totalItems;
-                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                                return `${label.split('(')[0].trim()}: ${value} (${percentage}%)`;
-                            }
-                        }
-                    }
-                },
-                cutout: '60%'
-            }
-        });
-    }
+    // Ordenar ubicaciones por stock descendente
+    const ubicacionesArray = Array.from(stats.ubicaciones.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10); // Top 10
     
-    // 2. GRÁFICO DE STOCK POR UBICACIÓN (BAR CHART)
-    const ctxUbicacion = document.getElementById('ubicacionChart');
-    if (ctxUbicacion && stats.ubicacionesMap.size > 0) {
-        // Convertir mapa a arrays ordenados
-        const ubicacionesArray = Array.from(stats.ubicacionesMap.entries())
-            .sort((a, b) => b[1] - a[1]) // Ordenar por stock descendente
-            .slice(0, 8); // Tomar solo top 8
-        
-        const ubicacionLabels = ubicacionesArray.map(u => u[0]);
-        const ubicacionStock = ubicacionesArray.map(u => u[1]);
-        
-        // Encontrar máximo para establecer límite del eje Y
-        const maxStock = Math.max(...ubicacionStock);
-        const yMax = Math.ceil(maxStock * 1.1); // 10% más alto que el máximo
-        
-        chartInstances.ubicacionChart = new Chart(ctxUbicacion, {
-            type: 'bar',
-            data: {
-                labels: ubicacionLabels,
-                datasets: [{
-                    label: 'Stock Total',
-                    data: ubicacionStock,
-                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                    borderColor: 'rgba(13, 110, 253, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+    const labels = ubicacionesArray.map(u => u[0]);
+    const data = ubicacionesArray.map(u => u[1]);
+    
+    // Calcular máximo para el eje Y
+    const maxValue = Math.max(...data);
+    const yMax = Math.ceil(maxValue * 1.1);
+    
+    chartInstances.ubicacionChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Stock Total',
+                data: data,
+                backgroundColor: 'rgba(23, 162, 184, 0.7)',
+                borderColor: 'rgba(23, 162, 184, 1)',
+                borderWidth: 1,
+                borderRadius: 6,
+                hoverBackgroundColor: 'rgba(23, 162, 184, 0.9)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: yMax, // ESTO ARREGLA EL PROBLEMA DEL INFINITO
-                        title: {
-                            display: true,
-                            text: 'Stock Total'
-                        },
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            maxRotation: 45,
-                            minRotation: 45
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Stock: ${context.raw}`;
                         }
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: yMax,
+                    title: {
+                        display: true,
+                        text: 'Stock Total',
+                        color: '#4a5568',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        color: '#718096'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#718096',
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
             }
-        });
-    }
+        }
+    });
 }
 
-// ================= CONFIGURAR BÚSQUEDA =================
+// ================= FUNCIONALIDAD DE BÚSQUEDA =================
 function setupSearch() {
     const searchInput = document.getElementById('searchInv');
     if (!searchInput) return;
     
     searchInput.addEventListener('input', function() {
-        const filter = this.value.toLowerCase();
-        const rows = document.querySelectorAll('.dashboard-table tbody tr');
+        const filter = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.inventory-item');
         let visibleCount = 0;
         
         rows.forEach(row => {
-            if (row.cells.length >= 6) { // Solo filas con datos
-                const text = row.textContent.toLowerCase();
-                if (text.includes(filter)) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
+            const text = row.textContent.toLowerCase();
+            const code = row.dataset.code || '';
+            const desc = row.dataset.desc || '';
+            const location = row.dataset.location || '';
+            
+            if (filter === '' || 
+                text.includes(filter) || 
+                code.toLowerCase().includes(filter) ||
+                desc.toLowerCase().includes(filter) ||
+                location.toLowerCase().includes(filter)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
             }
         });
         
-        // Actualizar contador
-        const badge = document.querySelector('.table-title .badge');
-        if (badge) {
-            badge.textContent = `${visibleCount} items`;
+        // Actualizar contadores
+        document.getElementById('itemCount').textContent = `${visibleCount} items`;
+        document.getElementById('filterInfo').textContent = 
+            `Mostrando ${visibleCount} de ${rows.length} items`;
+        
+        // Si no hay resultados
+        if (visibleCount === 0 && filter !== '') {
+            const tbody = document.getElementById('inventoryTableBody');
+            if (!tbody.querySelector('.no-results')) {
+                const noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results';
+                noResultsRow.innerHTML = `
+                    <td colspan="6" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="bi bi-search display-6"></i>
+                            <p class="mt-2">No se encontraron resultados para "${filter}"</p>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="resetSearch()">
+                                <i class="bi bi-x-circle me-1"></i>Limpiar búsqueda
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(noResultsRow);
+            }
+        } else {
+            // Remover mensaje de no resultados si existe
+            const noResults = document.querySelector('.no-results');
+            if (noResults) {
+                noResults.remove();
+            }
         }
     });
 }
 
-// ================= INICIALIZAR DASHBOARD =================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("🚀 Inicializando Dashboard...");
-    
-    // Generar gráficos con datos reales
-    setTimeout(() => {
-        generateRealCharts();
-        setupSearch();
-    }, 100); // Pequeño delay para asegurar que el DOM está listo
-    
-    // También regenerar si hay cambios en la tabla
-    const observer = new MutationObserver(function() {
-        generateRealCharts();
-    });
-    
-    const table = document.querySelector('.dashboard-table tbody');
-    if (table) {
-        observer.observe(table, { childList: true, subtree: true });
+// ================= FUNCIONES AUXILIARES =================
+function resetSearch() {
+    const searchInput = document.getElementById('searchInv');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
     }
-});
-
-// ================= FUNCIÓN PARA ACTUALIZAR GRÁFICOS =================
-function updateCharts() {
-    generateRealCharts();
-    showNotification('Gráficos actualizados', 'info');
 }
 
-// ================= NOTIFICACIÓN =================
+function updateCharts() {
+    initializeData();
+    renderEstadoChart();
+    renderUbicacionChart();
+    showNotification('Gráficos actualizados correctamente', 'success');
+}
+
 function showNotification(message, type = 'info') {
+    // Remover notificaciones anteriores
+    const oldAlerts = document.querySelectorAll('.alert-notification');
+    oldAlerts.forEach(alert => alert.remove());
+    
+    // Crear nueva notificación
     const alert = document.createElement('div');
-    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
-    alert.style.zIndex = '9999';
+    alert.className = `alert alert-${type} alert-notification alert-dismissible fade show`;
+    alert.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    
+    const icons = {
+        'success': 'check-circle-fill',
+        'danger': 'exclamation-triangle-fill',
+        'warning': 'exclamation-circle-fill',
+        'info': 'info-circle-fill'
+    };
+    
     alert.innerHTML = `
-        <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${icons[type] || 'info-circle'} me-2"></i>
+            <span>${message}</span>
+        </div>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
     `;
     
     document.body.appendChild(alert);
     
+    // Auto-remover después de 3 segundos
     setTimeout(() => {
         if (alert.parentNode) {
             alert.remove();
         }
     }, 3000);
 }
+
+// ================= INICIALIZACIÓN =================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("🚀 Inicializando Dashboard de Inventario...");
+    
+    // Inicializar datos y gráficos
+    initializeData();
+    renderEstadoChart();
+    renderUbicacionChart();
+    setupSearch();
+    
+    // Agregar funcionalidad de clic a las filas
+    document.querySelectorAll('.inventory-item').forEach(row => {
+        row.addEventListener('click', function() {
+            const code = this.dataset.code;
+            const desc = this.dataset.desc;
+            showNotification(`Seleccionado: ${code} - ${desc}`, 'info');
+        });
+    });
+    
+    // Actualizar automáticamente cada 60 segundos
+    setInterval(updateCharts, 60000);
+});
+
+// ================= MANEJAR EVENTOS DE VISIBILIDAD =================
+document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+        // Cuando la pestaña se vuelve visible, actualizar gráficos
+        updateCharts();
+    }
+});
 </script>
 
 {% endblock %}
