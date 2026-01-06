@@ -269,7 +269,15 @@
 {% if tareas %}
 <div class="row g-4">
     {% for t in tareas %}
-    {% set task_class = 'urgent' if t.is_overdue else ('warning' if t.days_left <= 3 else 'normal') %}
+    {% if t.fecha_limite %}
+        {% set days_left = (t.fecha_limite - today).days %}
+        {% set is_overdue = days_left < 0 %}
+    {% else %}
+        {% set days_left = 999 %}
+        {% set is_overdue = false %}
+    {% endif %}
+    
+    {% set task_class = 'urgent' if is_overdue else ('warning' if days_left <= 3 else 'normal') %}
     {% if t.estado == 'completada' %}
         {% set task_class = 'completed' %}
     {% endif %}
@@ -279,9 +287,9 @@
             <div class="task-priority"></div>
             
             <div class="task-title">
-                {% if t.is_overdue %}
+                {% if is_overdue %}
                     <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                {% elif t.days_left <= 3 %}
+                {% elif days_left <= 3 %}
                     <i class="bi bi-clock-fill text-warning"></i>
                 {% else %}
                     <i class="bi bi-check-circle-fill text-success"></i>
@@ -296,17 +304,23 @@
             <div class="task-meta">
                 <div class="task-date">
                     <i class="bi bi-calendar-check"></i>
-                    <span>Fecha límite: <strong>{{ t.fecha_limite }}</strong></span>
+                    <span>Fecha límite: <strong>
+                        {% if t.fecha_limite %}
+                            {{ t.fecha_limite.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            Sin fecha
+                        {% endif %}
+                    </strong></span>
                 </div>
                 
                 <div class="task-days">
                     <i class="bi bi-clock-history"></i>
-                    {% if t.is_overdue %}
-                        <span class="text-danger">VENCIDA hace {{ -t.days_left }} días</span>
-                    {% elif t.days_left <= 3 %}
-                        <span class="text-warning">{{ t.days_left }} días restantes</span>
+                    {% if is_overdue %}
+                        <span class="text-danger">VENCIDA hace {{ -days_left }} días</span>
+                    {% elif days_left <= 3 %}
+                        <span class="text-warning">{{ days_left }} días restantes</span>
                     {% else %}
-                        <span class="text-success">{{ t.days_left }} días restantes</span>
+                        <span class="text-success">{{ days_left }} días restantes</span>
                     {% endif %}
                 </div>
             </div>
@@ -319,12 +333,12 @@
                     Completar
                 </a>
                 
-                <!-- BOTÓN PARA ENVIAR CORREO -->
+                <!-- BOTÓN DE EMAIL DESHABILITADO TEMPORALMENTE -->
                 <button type="button" 
                         class="btn-email d-flex align-items-center justify-content-center gap-2"
-                        onclick="sendTaskEmail('{{ t.id }}', '{{ t.titulo }}', '{{ t.descripcion }}', '{{ t.fecha_limite }}', '{{ t.days_left }}')"
+                        disabled
                         data-bs-toggle="tooltip" 
-                        title="Enviar recordatorio por correo">
+                        title="Función de email temporalmente deshabilitada">
                     <i class="bi bi-envelope"></i>
                 </button>
             </div>
@@ -344,160 +358,28 @@
     <i class="bi bi-check-all display-1 text-success mb-3"></i>
     <h3 class="mb-3">¡No hay tareas pendientes!</h3>
     <p class="text-muted mb-4">Todas tus tareas están completadas o no tienes asignaciones pendientes.</p>
-    <button class="btn btn-primary" onclick="window.location.reload()">
-        <i class="bi bi-arrow-clockwise"></i>
-        Actualizar
-    </button>
+    <a href="{{ url_for('tasks.create_task_form') if current_user.role in ['admin', 'owner'] else '#' }}" 
+       class="btn btn-primary {% if current_user.role not in ['admin', 'owner'] %}disabled{% endif %}">
+        {% if current_user.role in ['admin', 'owner'] %}
+            <i class="bi bi-plus-circle"></i> Crear Nueva Tarea
+        {% else %}
+            <i class="bi bi-lock"></i> Solo administradores
+        {% endif %}
+    </a>
 </div>
 {% endif %}
 
-<!-- ===== MODAL PARA ENVÍO DE CORREO ===== -->
-<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="emailModalLabel">📧 Enviar Recordatorio de Tarea</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="emailForm">
-                    <div class="mb-3">
-                        <label for="recipientEmail" class="form-label">Correo destinatario</label>
-                        <input type="email" 
-                               class="form-control" 
-                               id="recipientEmail" 
-                               value="jose.castillo@sider.com.pe"
-                               required>
-                        <small class="text-muted">Se enviará a este correo electrónico</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Detalles de la tarea</label>
-                        <div class="alert alert-info">
-                            <strong id="modalTaskTitle"></strong>
-                            <p class="mb-1"><small>Descripción: <span id="modalTaskDesc"></span></small></p>
-                            <p class="mb-0"><small>Fecha límite: <span id="modalTaskDate"></span></small></p>
-                            <p class="mb-0"><small>Días restantes: <span id="modalTaskDays"></span></small></p>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="emailMessage" class="form-label">Mensaje adicional (opcional)</label>
-                        <textarea class="form-control" 
-                                  id="emailMessage" 
-                                  rows="3"
-                                  placeholder="Agregue un mensaje personalizado..."></textarea>
-                    </div>
-                </form>
-                <div id="emailResult" class="d-none"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="confirmSendEmail()">
-                    <i class="bi bi-send"></i>
-                    Enviar Correo
-                </button>
-            </div>
-        </div>
-    </div>
+<!-- ===== BOTÓN PARA CREAR TAREAS (SI ES ADMIN/OWNER) ===== -->
+{% if current_user.role in ['admin', 'owner'] %}
+<div class="text-center mt-4">
+    <a href="{{ url_for('tasks.create_task_form') }}" class="btn btn-success btn-lg">
+        <i class="bi bi-plus-circle me-2"></i> Crear Nueva Tarea
+    </a>
 </div>
+{% endif %}
 
 <!-- ===== SCRIPTS ===== -->
 <script>
-let currentTaskData = {};
-
-function sendTaskEmail(taskId, title, desc, date, days) {
-    currentTaskData = {
-        taskId: taskId,
-        title: title,
-        desc: desc || 'Sin descripción',
-        date: date,
-        days: days
-    };
-    
-    // Actualizar contenido del modal
-    document.getElementById('modalTaskTitle').textContent = title;
-    document.getElementById('modalTaskDesc').textContent = desc || 'Sin descripción';
-    document.getElementById('modalTaskDate').textContent = date;
-    document.getElementById('modalTaskDays').textContent = days + ' días';
-    
-    // Mostrar modal
-    const emailModal = new bootstrap.Modal(document.getElementById('emailModal'));
-    emailModal.show();
-}
-
-function confirmSendEmail() {
-    const recipientEmail = document.getElementById('recipientEmail').value;
-    const message = document.getElementById('emailMessage').value;
-    
-    // Validar email
-    if (!recipientEmail || !recipientEmail.includes('@')) {
-        alert('Por favor ingrese un correo electrónico válido');
-        return;
-    }
-    
-    // Mostrar loading
-    const sendBtn = document.querySelector('#emailModal .btn-primary');
-    const originalText = sendBtn.innerHTML;
-    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
-    sendBtn.disabled = true;
-    
-    // Enviar solicitud al servidor
-    fetch('{{ url_for("tasks.send_task_email") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            task_id: currentTaskData.taskId,
-            recipient_email: recipientEmail,
-            task_title: currentTaskData.title,
-            task_desc: currentTaskData.desc,
-            task_date: currentTaskData.date,
-            task_days: currentTaskData.days,
-            additional_message: message
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Mostrar éxito
-            document.getElementById('emailForm').classList.add('d-none');
-            document.getElementById('emailResult').classList.remove('d-none');
-            document.getElementById('emailResult').innerHTML = `
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle-fill"></i>
-                    <strong>¡Correo enviado exitosamente!</strong>
-                    <p class="mb-0">Se ha enviado un recordatorio a ${recipientEmail}</p>
-                </div>
-            `;
-            
-            // Cerrar modal después de 2 segundos
-            setTimeout(() => {
-                bootstrap.Modal.getInstance(document.getElementById('emailModal')).hide();
-                // Resetear formulario
-                setTimeout(() => {
-                    document.getElementById('emailForm').classList.remove('d-none');
-                    document.getElementById('emailResult').classList.add('d-none');
-                    document.getElementById('emailResult').innerHTML = '';
-                    document.getElementById('emailMessage').value = '';
-                }, 300);
-            }, 2000);
-        } else {
-            alert('Error al enviar el correo: ' + data.error);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error al enviar el correo. Por favor intente nuevamente.');
-    })
-    .finally(() => {
-        // Restaurar botón
-        sendBtn.innerHTML = originalText;
-        sendBtn.disabled = false;
-    });
-}
-
 // Inicializar tooltips
 document.addEventListener('DOMContentLoaded', function() {
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -506,7 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Si hay tareas vencidas, mostrar alerta
-    const overdueTasks = {{ tareas|selectattr('is_overdue')|list|length }};
+    const overdueTasks = document.querySelectorAll('.urgent').length;
     if (overdueTasks > 0) {
         setTimeout(() => {
             showOverdueAlert(overdueTasks);
@@ -533,37 +415,10 @@ function showOverdueAlert(count) {
     }, 5000);
 }
 
-// Función para enviar correo de recordatorio semanal (opcional)
-function sendWeeklySummary() {
-    if (confirm('¿Deseas recibir un resumen semanal de tus tareas por correo?')) {
-        fetch('{{ url_for("tasks.send_weekly_summary") }}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: 'jose.castillo@sider.com.pe'
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Resumen semanal enviado a tu correo');
-            } else {
-                alert('Error: ' + data.error);
-            }
-        });
-    }
-}
+// Función para refrescar la página cada 30 segundos (opcional)
+setTimeout(() => {
+    window.location.reload();
+}, 30000); // 30 segundos
 </script>
-
-<!-- Botón flotante para resumen semanal -->
-<button type="button" 
-        class="btn btn-primary position-fixed bottom-0 end-0 m-3 rounded-pill shadow-lg"
-        onclick="sendWeeklySummary()"
-        style="z-index: 1030; padding: 1rem 1.5rem;">
-    <i class="bi bi-envelope-paper me-2"></i>
-    Resumen Semanal
-</button>
 
 {% endblock %}
