@@ -58,6 +58,15 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   }
   
+  .action-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
   .status-badge {
     font-weight: 600;
     padding: 0.4rem 0.8rem;
@@ -170,6 +179,97 @@
     100% { opacity: 1; }
   }
   
+  /* ================= ACTION BUTTONS ================= */
+  .btn-save-inventory {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+  }
+  
+  .btn-save-inventory:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+  }
+  
+  .btn-save-inventory:disabled {
+    background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .btn-export-differences {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    border: none;
+    color: #212529;
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(255, 193, 7, 0.2);
+  }
+  
+  .btn-export-differences:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 193, 7, 0.3);
+  }
+  
+  /* ================= PROGRESS BAR ================= */
+  .progress-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 0.8rem;
+    margin: 1rem 0;
+    border: 1px solid #e9ecef;
+  }
+  
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #495057;
+  }
+  
+  .progress-bar {
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #20c997, #28a745);
+    border-radius: 5px;
+    transition: width 0.5s ease;
+  }
+  
+  /* ================= MODAL STYLES ================= */
+  .summary-modal .modal-header {
+    background: linear-gradient(135deg, #0d4c6e 0%, #1a5f7a 100%);
+    color: white;
+  }
+  
+  .summary-item {
+    padding: 0.8rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .summary-item:last-child {
+    border-bottom: none;
+  }
+  
+  .summary-item label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.2rem;
+  }
+  
   /* ================= SAVE FEEDBACK ================= */
   .saving-indicator {
     display: none;
@@ -213,6 +313,10 @@
       padding: 0.8rem;
     }
     
+    .action-panel {
+      padding: 0.8rem;
+    }
+    
     .table-responsive {
       font-size: 0.85rem;
     }
@@ -238,6 +342,12 @@
     
     .main-content {
       margin-bottom: 120px;
+    }
+    
+    .btn-save-inventory,
+    .btn-export-differences {
+      width: 100%;
+      margin-bottom: 0.5rem;
     }
   }
   
@@ -296,6 +406,48 @@
             Dictado por voz • Guardado automático • Modo guantes
           </p>
         </div>
+        <div class="col-md-4 text-md-end">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-1"></i>
+            <span id="currentUser">{{ session.get('username', 'Usuario') }}</span>
+            <div class="small">{{ session.get('role', 'Operador') }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ACTION PANEL ================= -->
+  <div class="action-panel">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="d-flex flex-wrap gap-2">
+          <button id="btnSaveInventory" class="btn btn-save-inventory">
+            <i class="bi bi-floppy-fill me-2"></i>
+            <span>Guardar Inventario</span>
+          </button>
+          
+          <button id="btnExportDifferences" class="btn btn-export-differences">
+            <i class="bi bi-file-earmark-excel me-2"></i>
+            <span>Descargar Diferencias</span>
+          </button>
+          
+          <button id="btnViewSummary" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#summaryModal">
+            <i class="bi bi-graph-up me-2"></i>
+            <span>Ver Resumen</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="progress-container">
+          <div class="progress-info">
+            <span>Progreso de Conteo</span>
+            <span id="progressText">0/0 (0%)</span>
+          </div>
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -454,6 +606,63 @@
     </div>
   </div>
 
+  <!-- ================= MODAL DE RESUMEN ================= -->
+  <div class="modal fade summary-modal" id="summaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-graph-up me-2"></i>Resumen del Inventario
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="summary-item">
+                <label>Total de Items:</label>
+                <div class="h4" id="summaryTotal">{{ items|length }}</div>
+              </div>
+              <div class="summary-item">
+                <label>Contados:</label>
+                <div class="h4 text-success" id="summaryContados">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Pendientes:</label>
+                <div class="h4 text-warning" id="summaryPendientes">0</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="summary-item">
+                <label>Coinciden:</label>
+                <div class="h4 text-success" id="summaryCoinciden">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Diferencias:</label>
+                <div class="h4 text-danger" id="summaryDiferencias">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Progreso:</label>
+                <div class="h4 text-primary" id="summaryProgreso">0%</div>
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Información:</strong> El inventario se guarda automáticamente cuando ingresas un conteo. 
+            El botón "Guardar Inventario" cierra oficialmente el proceso de conteo.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" onclick="printSummary()">
+            <i class="bi bi-printer me-1"></i> Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= VOICE CONTROLS FOOTER ================= -->
   <div class="voice-controls">
     <div class="container">
@@ -479,11 +688,11 @@
   </div>
 </div>
 
-<!-- ================= SCRIPT CORREGIDO - DICTADO FUNCIONAL ================= -->
+<!-- ================= SCRIPT MEJORADO CON NUEVA FUNCIONALIDAD ================= -->
 <script>
 /**
- * Sistema de Conteo Físico - Dictado por Voz Funcional para Android
- * Versión simplificada y probada
+ * Sistema de Conteo Físico - Versión Mejorada
+ * Agrega botones para guardar inventario y exportar diferencias
  */
 
 (function() {
@@ -492,7 +701,12 @@
   // ================= CONFIGURACIÓN =================
   const CONFIG = {
     DEBOUNCE_DELAY: 800,
-    SPEECH_LANG: 'es-PE'
+    SPEECH_LANG: 'es-PE',
+    INVENTORY_API: {
+      save: "{{ url_for('inventory.save_inventory') }}",
+      export: "{{ url_for('inventory.export_differences') }}",
+      summary: "{{ url_for('inventory.get_summary') }}"
+    }
   };
   
   // ================= ESTADO =================
@@ -505,12 +719,20 @@
     },
     ui: {
       glovesMode: false,
-      savingRows: new Set()
+      savingRows: new Set(),
+      inventorySaved: false
+    },
+    stats: {
+      total: {{ items|length }},
+      counted: 0,
+      ok: 0,
+      differences: 0
     }
   };
   
   // ================= ELEMENTOS DOM =================
   const DOM = {
+    // Elementos existentes
     btnVoice: document.getElementById('btnVoice'),
     btnGloves: document.getElementById('btnGloves'),
     voiceStatus: document.getElementById('voiceStatus'),
@@ -518,7 +740,22 @@
     voiceInstructions: document.getElementById('voiceInstructions'),
     toggleContinuous: document.getElementById('toggleContinuous'),
     toggleSpeak: document.getElementById('toggleSpeak'),
-    pageContainer: document.querySelector('.page-container')
+    pageContainer: document.querySelector('.page-container'),
+    
+    // Nuevos elementos
+    btnSaveInventory: document.getElementById('btnSaveInventory'),
+    btnExportDifferences: document.getElementById('btnExportDifferences'),
+    btnViewSummary: document.getElementById('btnViewSummary'),
+    progressText: document.getElementById('progressText'),
+    progressFill: document.getElementById('progressFill'),
+    
+    // Elementos del modal
+    summaryTotal: document.getElementById('summaryTotal'),
+    summaryContados: document.getElementById('summaryContados'),
+    summaryPendientes: document.getElementById('summaryPendientes'),
+    summaryCoinciden: document.getElementById('summaryCoinciden'),
+    summaryDiferencias: document.getElementById('summaryDiferencias'),
+    summaryProgreso: document.getElementById('summaryProgreso')
   };
   
   // ================= FUNCIONES UTILITARIAS =================
@@ -550,16 +787,13 @@
     
     const config = states[state] || states.idle;
     
-    // Actualizar botón de voz
     DOM.btnVoice.innerHTML = `<i class="bi ${config.icon} me-1"></i><span>Dictado por Voz</span>`;
     DOM.btnVoice.className = DOM.btnVoice.className.replace(/btn-(primary|danger|outline-danger)/g, '');
     DOM.btnVoice.classList.add(config.btnClass);
     
-    // Actualizar estado
     DOM.statusText.textContent = message || config.defaultMsg;
     DOM.voiceInstructions.textContent = config.instructions;
     
-    // Para móviles
     if (/Mobi|Android/i.test(navigator.userAgent) && state === 'idle') {
       DOM.voiceInstructions.textContent = 'Toca el botón de dictado y habla claramente';
     }
@@ -595,6 +829,54 @@
   }
   
   /**
+   * Actualiza estadísticas y progreso
+   */
+  function updateStatistics() {
+    const inputs = document.querySelectorAll('.count-input');
+    let counted = 0;
+    let ok = 0;
+    let differences = 0;
+    
+    inputs.forEach(input => {
+      const value = parseInt(input.value) || 0;
+      const stock = parseInt(input.dataset.stock) || 0;
+      
+      if (value > 0) {
+        counted++;
+        
+        if (value === stock) {
+          ok++;
+        } else if (value !== 0) {
+          differences++;
+        }
+      }
+    });
+    
+    State.stats.counted = counted;
+    State.stats.ok = ok;
+    State.stats.differences = differences;
+    
+    const percentage = State.stats.total > 0 ? Math.round((counted / State.stats.total) * 100) : 0;
+    
+    // Actualizar progreso
+    DOM.progressText.textContent = `${counted}/${State.stats.total} (${percentage}%)`;
+    DOM.progressFill.style.width = `${percentage}%`;
+    
+    // Actualizar resumen modal
+    DOM.summaryTotal.textContent = State.stats.total;
+    DOM.summaryContados.textContent = counted;
+    DOM.summaryPendientes.textContent = State.stats.total - counted;
+    DOM.summaryCoinciden.textContent = ok;
+    DOM.summaryDiferencias.textContent = differences;
+    DOM.summaryProgreso.textContent = `${percentage}%`;
+    
+    // Habilitar/deshabilitar botón guardar
+    DOM.btnSaveInventory.disabled = counted === 0;
+    
+    return { counted, ok, differences, percentage };
+  }
+  
+  /**
    * Muestra feedback visual al guardar
    */
   function showSaveFeedback(input, success = true) {
@@ -616,7 +898,6 @@
         row.classList.remove('row-saving');
         row.classList.add('row-saved');
         
-        // Actualizar estado visual
         const badge = row.querySelector('.status-badge');
         if (badge) {
           if (count === 0) {
@@ -630,6 +911,8 @@
             badge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Diferencia';
           }
         }
+        
+        updateStatistics();
       }, 600);
       
       setTimeout(() => row.classList.remove('row-saved'), 2000);
@@ -680,13 +963,224 @@
     }
   }
   
-  // ================= RECONOCIMIENTO DE VOZ SIMPLIFICADO =================
+  // ================= NUEVAS FUNCIONES =================
   
   /**
-   * Inicializa el reconocimiento de voz
+   * Guarda el inventario completo
    */
+  async function saveInventory() {
+    if (State.stats.counted === 0) {
+      showNotification('No hay items contados para guardar', 'warning');
+      speak('No hay items contados');
+      return;
+    }
+    
+    if (State.ui.inventorySaved) {
+      showNotification('El inventario ya fue guardado', 'info');
+      speak('Inventario ya guardado');
+      return;
+    }
+    
+    const confirmSave = confirm(`¿Está seguro de guardar el inventario?\n\nTotal: ${State.stats.total} items\nContados: ${State.stats.counted} (${Math.round((State.stats.counted/State.stats.total)*100)}%)\nDiferencias: ${State.stats.differences}`);
+    
+    if (!confirmSave) return;
+    
+    DOM.btnSaveInventory.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><span>Guardando...</span>';
+    DOM.btnSaveInventory.disabled = true;
+    
+    try {
+      const response = await fetch(CONFIG.INVENTORY_API.save, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        State.ui.inventorySaved = true;
+        showNotification('¡Inventario guardado correctamente!', 'success');
+        speak('Inventario guardado exitosamente');
+        
+        DOM.btnSaveInventory.innerHTML = '<i class="bi bi-check-circle me-2"></i><span>Guardado</span>';
+        DOM.btnSaveInventory.classList.remove('btn-save-inventory');
+        DOM.btnSaveInventory.classList.add('btn-success');
+        
+        // Generar resumen final
+        generateFinalReport();
+      } else {
+        throw new Error(result.error || 'Error desconocido');
+      }
+      
+    } catch (error) {
+      console.error('Error guardando inventario:', error);
+      showNotification('Error al guardar el inventario', 'danger');
+      speak('Error al guardar inventario');
+      
+      DOM.btnSaveInventory.innerHTML = '<i class="bi bi-floppy-fill me-2"></i><span>Guardar Inventario</span>';
+      DOM.btnSaveInventory.disabled = false;
+    }
+  }
+  
+  /**
+   * Exporta diferencias a Excel
+   */
+  async function exportDifferences() {
+    if (State.stats.differences === 0) {
+      showNotification('No hay diferencias para exportar', 'warning');
+      speak('No hay diferencias');
+      return;
+    }
+    
+    DOM.btnExportDifferences.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><span>Generando...</span>';
+    DOM.btnExportDifferences.disabled = true;
+    
+    try {
+      const response = await fetch(CONFIG.INVENTORY_API.export);
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      // Crear blob y descargar
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      
+      a.href = url;
+      a.download = `diferencias_inventario_${date}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showNotification('Diferencias exportadas correctamente', 'success');
+      speak('Reporte de diferencias descargado');
+      
+    } catch (error) {
+      console.error('Error exportando diferencias:', error);
+      showNotification('Error al exportar diferencias', 'danger');
+      speak('Error al exportar');
+    } finally {
+      setTimeout(() => {
+        DOM.btnExportDifferences.innerHTML = '<i class="bi bi-file-earmark-excel me-2"></i><span>Descargar Diferencias</span>';
+        DOM.btnExportDifferences.disabled = false;
+      }, 1000);
+    }
+  }
+  
+  /**
+   * Genera reporte final del inventario
+   */
+  function generateFinalReport() {
+    const report = `
+      === REPORTE DE INVENTARIO ===
+      Fecha: ${new Date().toLocaleString()}
+      Usuario: {{ session.get('username', 'Usuario') }}
+      Total Items: ${State.stats.total}
+      Items Contados: ${State.stats.counted} (${Math.round((State.stats.counted/State.stats.total)*100)}%)
+      Coincidencias: ${State.stats.ok}
+      Diferencias: ${State.stats.differences}
+      
+      === RESUMEN ===
+      - ${State.stats.counted} de ${State.stats.total} items contados
+      - ${State.stats.differences} diferencias detectadas
+      - Progreso completado: ${Math.round((State.stats.counted/State.stats.total)*100)}%
+    `;
+    
+    console.log('Reporte de inventario:', report);
+    
+    // Podrías enviar este reporte al servidor o mostrarlo
+    showNotification('Reporte generado en consola', 'info');
+  }
+  
+  /**
+   * Muestra notificación
+   */
+  function showNotification(message, type = 'info') {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+      <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove();
+      }
+    }, 5000);
+  }
+  
+  /**
+   * Imprime resumen
+   */
+  function printSummary() {
+    const printContent = `
+      <html>
+        <head>
+          <title>Resumen de Inventario</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            .summary { margin: 20px 0; }
+            .summary-item { margin: 10px 0; }
+            .label { font-weight: bold; }
+            .total { font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <h1>Resumen de Inventario</h1>
+          <p>Fecha: ${new Date().toLocaleString()}</p>
+          <p>Usuario: {{ session.get('username', 'Usuario') }}</p>
+          <div class="summary">
+            <div class="summary-item">
+              <span class="label">Total de Items:</span>
+              <span class="total">${State.stats.total}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Items Contados:</span>
+              <span>${State.stats.counted}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Pendientes:</span>
+              <span>${State.stats.total - State.stats.counted}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Coincidencias:</span>
+              <span>${State.stats.ok}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Diferencias:</span>
+              <span>${State.stats.differences}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Progreso:</span>
+              <span>${Math.round((State.stats.counted/State.stats.total)*100)}%</span>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
+  
+  // ================= RECONOCIMIENTO DE VOZ (código existente) =================
+  
   function initVoiceRecognition() {
-    // Verificar compatibilidad
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
@@ -700,10 +1194,9 @@
       State.voice.recognition = new SpeechRecognition();
       State.voice.recognition.lang = CONFIG.SPEECH_LANG;
       State.voice.recognition.interimResults = false;
-      State.voice.recognition.continuous = false; // Importante para Android
+      State.voice.recognition.continuous = false;
       State.voice.recognition.maxAlternatives = 1;
       
-      // Configurar eventos
       State.voice.recognition.onstart = () => {
         State.voice.isListening = true;
         updateVoiceUI('listening');
@@ -713,11 +1206,9 @@
         const transcript = event.results[0][0].transcript.toLowerCase();
         console.log('Voz reconocida:', transcript);
         
-        // Buscar números en el texto
         const numbers = transcript.match(/\d+/g) || [];
         
         if (numbers.length >= 2) {
-          // El número más largo es el código, el más corto es la cantidad
           const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
           const quantity = numbers.find(n => n !== code) || numbers[1];
           
@@ -738,7 +1229,6 @@
           speak('Por favor di código y cantidad');
         }
         
-        // Reiniciar si está en modo continuo
         if (State.voice.continuous && State.voice.isListening) {
           setTimeout(() => {
             if (State.voice.isListening) {
@@ -781,13 +1271,9 @@
     }
   }
   
-  /**
-   * Inicia el reconocimiento de voz
-   */
   function startVoiceRecognition() {
     if (State.voice.isListening) return;
     
-    // Para Android, verificar permisos de micrófono
     if (/Mobi|Android/i.test(navigator.userAgent) && navigator.mediaDevices) {
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
@@ -810,24 +1296,16 @@
     }
   }
   
-  /**
-   * Detiene el reconocimiento de voz
-   */
   function stopVoiceRecognition() {
     if (State.voice.recognition && State.voice.isListening) {
       try {
         State.voice.recognition.stop();
-      } catch (error) {
-        // Ignorar errores al detener
-      }
+      } catch (error) {}
     }
     State.voice.isListening = false;
     updateVoiceUI('idle');
   }
   
-  /**
-   * Alterna el reconocimiento de voz
-   */
   function toggleVoiceRecognition() {
     if (State.voice.isListening) {
       stopVoiceRecognition();
@@ -838,9 +1316,6 @@
   
   // ================= MODO GUANTES =================
   
-  /**
-   * Alterna el modo guantes
-   */
   function toggleGlovesMode() {
     State.ui.glovesMode = !State.ui.glovesMode;
     
@@ -860,9 +1335,6 @@
   
   // ================= MANEJO DE INPUTS =================
   
-  /**
-   * Configura los handlers para inputs
-   */
   function setupInputHandlers() {
     let saveTimer;
     
@@ -870,16 +1342,13 @@
       input.addEventListener('input', function() {
         clearTimeout(saveTimer);
         
-        // Solo permitir números
         this.value = this.value.replace(/[^0-9]/g, '');
         
-        // Mostrar feedback visual
         const row = this.closest('tr');
         if (row) {
           row.classList.add('row-saving');
         }
         
-        // Programar guardado
         if (this.value && this.value !== '0') {
           saveTimer = setTimeout(() => {
             saveRow(this);
@@ -900,11 +1369,8 @@
   
   // ================= INICIALIZACIÓN =================
   
-  /**
-   * Inicializa la aplicación
-   */
   function initApp() {
-    console.log('Inicializando sistema de conteo...');
+    console.log('Inicializando sistema de conteo mejorado...');
     
     // Inicializar reconocimiento de voz
     if (initVoiceRecognition()) {
@@ -923,20 +1389,27 @@
     // Configurar modo guantes
     DOM.btnGloves.addEventListener('click', toggleGlovesMode);
     
+    // Configurar nuevos botones
+    DOM.btnSaveInventory.addEventListener('click', saveInventory);
+    DOM.btnExportDifferences.addEventListener('click', exportDifferences);
+    
     // Configurar handlers de inputs
     setupInputHandlers();
     
-    // Pausar dictado cuando la página no es visible
+    // Actualizar estadísticas iniciales
+    updateStatistics();
+    
+    // Eventos de visibilidad
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && State.voice.isListening) {
         stopVoiceRecognition();
       }
     });
     
-    console.log('Sistema de conteo inicializado correctamente');
+    console.log('Sistema de conteo mejorado inicializado correctamente');
   }
   
-  // Iniciar aplicación cuando el DOM esté listo
+  // Iniciar aplicación
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
   } else {
@@ -946,4 +1419,3 @@
 })();
 </script>
 {% endblock %}
-
