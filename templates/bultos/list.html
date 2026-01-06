@@ -10,11 +10,11 @@
         --success: #4cc9f0;
         --warning: #f72585;
         --danger: #ff0054;
-        --dark-bg: #0f1117;
-        --card-bg: #1a1d25;
-        --border-color: #2a2e3a;
-        --text-primary: #ffffff;
-        --text-secondary: #a0aec0;
+        --light-bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --border-color: #e0e0e0;
+        --text-primary: #212529;
+        --text-secondary: #6c757d;
         --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
         --gradient-warning: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
         --gradient-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
@@ -22,18 +22,18 @@
     }
 
     body {
-        background: var(--dark-bg) !important;
+        background: var(--light-bg) !important;
         color: var(--text-primary) !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     /* ===== HEADER ===== */
     .dashboard-header {
-        background: linear-gradient(135deg, rgba(67, 97, 238, 0.15) 0%, rgba(58, 12, 163, 0.1) 100%);
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(58, 12, 163, 0.05) 100%);
         border-radius: 20px;
         padding: 2rem;
         margin-bottom: 2rem;
-        border: 1px solid rgba(67, 97, 238, 0.2);
+        border: 1px solid rgba(67, 97, 238, 0.1);
         position: relative;
         overflow: hidden;
     }
@@ -45,13 +45,13 @@
         right: 0;
         width: 300px;
         height: 300px;
-        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.05) 0%, transparent 70%);
     }
 
     .header-title {
         font-size: 2.5rem;
         font-weight: 800;
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--success) 100%);
+        background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -74,6 +74,7 @@
         position: relative;
         overflow: hidden;
         height: 100%;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
 
     .kpi-card::before {
@@ -93,7 +94,7 @@
     .kpi-card:hover {
         transform: translateY(-5px);
         border-color: var(--primary);
-        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.2);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.15);
     }
 
     .kpi-icon {
@@ -107,38 +108,17 @@
         font-size: 1.5rem;
     }
 
-    .kpi-card:nth-child(1) .kpi-icon { background: rgba(67, 97, 238, 0.15); color: var(--primary); }
-    .kpi-card:nth-child(2) .kpi-icon { background: rgba(76, 201, 240, 0.15); color: var(--success); }
-    .kpi-card:nth-child(3) .kpi-icon { background: rgba(247, 37, 133, 0.15); color: var(--warning); }
-    .kpi-card:nth-child(4) .kpi-icon { background: rgba(255, 0, 84, 0.15); color: var(--danger); }
+    .kpi-card:nth-child(1) .kpi-icon { background: rgba(67, 97, 238, 0.1); color: var(--primary); }
+    .kpi-card:nth-child(2) .kpi-icon { background: rgba(76, 201, 240, 0.1); color: var(--success); }
+    .kpi-card:nth-child(3) .kpi-icon { background: rgba(247, 37, 133, 0.1); color: var(--warning); }
+    .kpi-card:nth-child(4) .kpi-icon { background: rgba(255, 0, 84, 0.1); color: var(--danger); }
 
     .kpi-value {
         font-size: 2.8rem;
         font-weight: 800;
         line-height: 1;
         margin: 0.5rem 0;
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .kpi-card:nth-child(2) .kpi-value {
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--success) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .kpi-card:nth-child(3) .kpi-value {
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--warning) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .kpi-card:nth-child(4) .kpi-value {
-        background: linear-gradient(135deg, var(--text-primary) 0%, var(--danger) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: var(--text-primary);
     }
 
     .kpi-label {
@@ -176,7 +156,7 @@
 
     .btn-primary-glow:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
         color: white;
     }
 
@@ -192,7 +172,7 @@
 
     .btn-warning-glow:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(247, 37, 133, 0.4);
+        box-shadow: 0 10px 25px rgba(247, 37, 133, 0.3);
         color: white;
     }
 
@@ -204,11 +184,12 @@
         border: 1px solid var(--border-color);
         height: 100%;
         transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
 
     .chart-container:hover {
         border-color: var(--primary);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
     }
 
     .chart-header {
@@ -227,30 +208,6 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-    }
-
-    .chart-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .chart-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.05);
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-        transition: all 0.2s;
-    }
-
-    .chart-btn:hover {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
     }
 
     /* ===== RESPONSIVE ===== */
@@ -314,9 +271,9 @@
                 <i class="bi bi-plus-circle"></i>
                 Registrar Nuevo Bulto
             </a>
-            <a href="{{ url_for('bultos.historial_post') }}" class="btn btn-warning-glow d-flex align-items-center gap-2">
-                <i class="bi bi-clipboard-data"></i>
-                Post-Registro
+            <a href="{{ url_for('bultos.list_bultos') }}" class="btn btn-warning-glow d-flex align-items-center gap-2">
+                <i class="bi bi-list-check"></i>
+                Ver Historial
             </a>
         </div>
     </div>
@@ -329,11 +286,11 @@
             <div class="kpi-icon">
                 <i class="bi bi-box-seam"></i>
             </div>
-            <div class="kpi-value" id="kpi-total">{{ total_bultos }}</div>
+            <div class="kpi-value" id="kpi-total">{{ total_bultos or 0 }}</div>
             <div class="kpi-label">Total de Bultos</div>
             <div class="kpi-trend">
                 <i class="bi bi-arrow-up-right"></i>
-                +12% vs mes anterior
+                +{{ ((bultos_hoy|default(0) / total_bultos * 100) if total_bultos > 0 else 0)|round(1) }}% hoy
             </div>
         </div>
     </div>
@@ -343,11 +300,11 @@
             <div class="kpi-icon">
                 <i class="bi bi-calendar-day"></i>
             </div>
-            <div class="kpi-value" id="kpi-hoy">{{ bultos_hoy }}</div>
+            <div class="kpi-value" id="kpi-hoy">{{ bultos_hoy or 0 }}</div>
             <div class="kpi-label">Bultos Hoy</div>
             <div class="kpi-trend" style="background: rgba(255, 0, 84, 0.1); color: var(--danger);">
                 <i class="bi bi-arrow-down-right"></i>
-                -3% vs ayer
+                {{ (((bultos_hoy|default(0) - bultos_ayer|default(0)) / bultos_ayer * 100) if bultos_ayer > 0 else 0)|round(1) }}% vs ayer
             </div>
         </div>
     </div>
@@ -357,11 +314,11 @@
             <div class="kpi-icon">
                 <i class="bi bi-calendar-week"></i>
             </div>
-            <div class="kpi-value">{{ semanas_totales }}</div>
+            <div class="kpi-value">{{ semanas_totales or 0 }}</div>
             <div class="kpi-label">Semanas Procesadas</div>
             <div class="kpi-trend">
                 <i class="bi bi-arrow-up-right"></i>
-                +2 esta semana
+                +{{ (semanas_totales|default(0) - 1) if semanas_totales > 1 else 0 }} vs semana pasada
             </div>
         </div>
     </div>
@@ -371,18 +328,20 @@
             <div class="kpi-icon">
                 <i class="bi bi-exclamation-triangle"></i>
             </div>
-            <div class="kpi-value">{{ inconsistencias }}</div>
+            <div class="kpi-value">{{ inconsistencias or 0 }}</div>
             <div class="kpi-label">Inconsistencias Activas</div>
             <div class="kpi-trend" style="background: rgba(247, 37, 133, 0.1); color: var(--warning);">
                 <i class="bi bi-arrow-up-right"></i>
-                +5% vs mes anterior
+                {{ (((inconsistencias|default(0) - inconsistencias_ayer|default(0)) / inconsistencias_ayer * 100) if inconsistencias_ayer > 0 else 0)|round(1) }}% vs ayer
             </div>
         </div>
     </div>
 </div>
 
-<!-- ===== PRIMERA FILA DE GRÁFICOS ===== -->
-<div class="row g-4 mb-4">
+<!-- ===== GRÁFICOS ===== -->
+<div class="row g-4">
+    
+    <!-- Gráfico de Bultos por Día -->
     <div class="col-lg-8">
         <div class="chart-container animate-card delay-5">
             <div class="chart-header">
@@ -390,19 +349,12 @@
                     <i class="bi bi-bar-chart" style="color: var(--primary);"></i>
                     Tendencia Diaria de Bultos
                 </h5>
-                <div class="chart-actions">
-                    <button class="chart-btn" title="Descargar">
-                        <i class="bi bi-download"></i>
-                    </button>
-                    <button class="chart-btn" title="Filtrar">
-                        <i class="bi bi-funnel"></i>
-                    </button>
-                </div>
             </div>
             <canvas id="bar_dias" height="250"></canvas>
         </div>
     </div>
 
+    <!-- Gráfico de Trailers -->
     <div class="col-lg-4">
         <div class="chart-container animate-card delay-6">
             <div class="chart-header">
@@ -416,20 +368,10 @@
                     <canvas id="donut_trailers"></canvas>
                 </div>
             </div>
-            <div class="text-center mt-3">
-                <div class="d-flex justify-content-center gap-3">
-                    <div class="d-flex align-items-center gap-1">
-                        <div style="width: 12px; height: 12px; background: var(--primary); border-radius: 2px;"></div>
-                        <small class="text-muted">Trailers Activos</small>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- ===== SEGUNDA FILA DE GRÁFICOS ===== -->
-<div class="row g-4 mb-4">
+    <!-- Gráfico Semanal -->
     <div class="col-lg-6">
         <div class="chart-container animate-card">
             <div class="chart-header">
@@ -437,22 +379,12 @@
                     <i class="bi bi-calendar-week" style="color: var(--warning);"></i>
                     Rendimiento Semanal
                 </h5>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                            data-bs-toggle="dropdown">
-                        Últimas 8 semanas
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Últimas 4 semanas</a></li>
-                        <li><a class="dropdown-item" href="#">Últimas 8 semanas</a></li>
-                        <li><a class="dropdown-item" href="#">Este trimestre</a></li>
-                    </ul>
-                </div>
             </div>
             <canvas id="bar_sem" height="200"></canvas>
         </div>
     </div>
 
+    <!-- Gráfico Mensual -->
     <div class="col-lg-6">
         <div class="chart-container animate-card">
             <div class="chart-header">
@@ -460,54 +392,25 @@
                     <i class="bi bi-calendar-month" style="color: var(--success);"></i>
                     Progresión Mensual
                 </h5>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
-                            data-bs-toggle="dropdown">
-                        Este año
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Este año</a></li>
-                        <li><a class="dropdown-item" href="#">Año anterior</a></li>
-                        <li><a class="dropdown-item" href="#">Últimos 2 años</a></li>
-                    </ul>
-                </div>
             </div>
             <canvas id="bar_mes" height="200"></canvas>
         </div>
     </div>
-</div>
 
-<!-- ===== TERCERA FILA DE GRÁFICOS ===== -->
-<div class="row g-4 mb-4">
+    <!-- Inconsistencias -->
     <div class="col-lg-6">
         <div class="chart-container animate-card">
             <div class="chart-header">
                 <h5 class="chart-title">
-                    <i class="bi bi-graph-up-arrow" style="color: var(--danger);"></i>
+                    <i class="bi bi-exclamation-triangle" style="color: var(--danger);"></i>
                     Inconsistencias por Mes
                 </h5>
-                <span class="badge bg-danger bg-opacity-10 text-danger">Monitoreo Crítico</span>
             </div>
             <canvas id="line_incons" height="180"></canvas>
-            <div class="row text-center mt-3">
-                <div class="col-4">
-                    <small class="text-muted">Pico máximo</small>
-                    <div class="fw-bold">{{ (inconsistencias_mes|max if inconsistencias_mes else 0)|int }}</div>
-                </div>
-                <div class="col-4">
-                    <small class="text-muted">Promedio</small>
-                    <div class="fw-bold">{{ (inconsistencias_mes|sum/inconsistencias_mes|length if inconsistencias_mes else 0)|int }}</div>
-                </div>
-                <div class="col-4">
-                    <small class="text-muted">Tendencia</small>
-                    <div class="fw-bold {% if (inconsistencias_mes|last if inconsistencias_mes else 0) > (inconsistencias_mes|first if inconsistencias_mes else 0) %}text-danger{% else %}text-success{% endif %}">
-                        {% if (inconsistencias_mes|last if inconsistencias_mes else 0) > (inconsistencias_mes|first if inconsistencias_mes else 0) %}↑{% else %}↓{% endif %}
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
+    <!-- Material Faltante -->
     <div class="col-lg-6">
         <div class="chart-container animate-card">
             <div class="chart-header">
@@ -515,176 +418,89 @@
                     <i class="bi bi-box-seam" style="color: #00cc66;"></i>
                     Material Faltante
                 </h5>
-                <span class="badge bg-success bg-opacity-10 text-success">En mejora</span>
             </div>
             <canvas id="bar_faltante" height="180"></canvas>
-            <div class="row text-center mt-3">
-                <div class="col-4">
-                    <small class="text-muted">Total anual</small>
-                    <div class="fw-bold">{{ (faltante_mes|sum if faltante_mes else 0)|int }}</div>
-                </div>
-                <div class="col-4">
-                    <small class="text-muted">Mes actual</small>
-                    <div class="fw-bold">{{ (faltante_mes|last if faltante_mes else 0)|int }}</div>
-                </div>
-                <div class="col-4">
-                    <small class="text-muted">Variación</small>
-                    <div class="fw-bold {% if (faltante_mes|last if faltante_mes else 0) > (faltante_mes|first if faltante_mes else 0) %}text-danger{% else %}text-success{% endif %}">
-                        {% if (faltante_mes|last if faltante_mes else 0) > (faltante_mes|first if faltante_mes else 0) %}+{% endif %}
-                        {{ (((faltante_mes|last if faltante_mes else 0) - (faltante_mes|first if faltante_mes else 0)) / (faltante_mes|first if faltante_mes and faltante_mes|first > 0 else 1) * 100)|int }}%
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-</div>
 
-<!-- ===== RESUMEN ESTADÍSTICO ===== -->
-<div class="row g-4">
-    <div class="col-12">
-        <div class="chart-container">
-            <div class="chart-header">
-                <h5 class="chart-title">
-                    <i class="bi bi-speedometer2" style="color: var(--primary);"></i>
-                    Resumen Estadístico
-                </h5>
-                <div class="text-muted small">Última actualización: {{ fecha_actual }}</div>
-            </div>
-            <div class="row">
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="text-center p-3">
-                        <div class="display-6 fw-bold" style="color: var(--primary);">
-                            {{ (bultos_dias|sum/7 if bultos_dias else 0)|int }}
-                        </div>
-                        <small class="text-muted">Promedio semanal</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="text-center p-3">
-                        <div class="display-6 fw-bold" style="color: var(--success);">
-                            {{ (bultos_mes|max if bultos_mes else 0)|int }}
-                        </div>
-                        <small class="text-muted">Máximo mensual</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="text-center p-3">
-                        <div class="display-6 fw-bold" style="color: var(--warning);">
-                            {{ (inconsistencias_mes|max if inconsistencias_mes else 0)|int }}
-                        </div>
-                        <small class="text-muted">Máx. inconsistencias</small>
-                    </div>
-                </div>
-                <div class="col-md-3 col-6 mb-3">
-                    <div class="text-center p-3">
-                        <div class="display-6 fw-bold" style="color: #00cc66;">
-                            {{ ((total_trailers / total_bultos * 100) if total_bultos > 0 else 0)|round(1) }}%
-                        </div>
-                        <small class="text-muted">Eficiencia por trailer</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- ===== SCRIPTS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
-// Animación de números en KPIs
-function animateNumber(elementId, finalValue, duration = 1500) {
+// Función para animar números
+function animateCounter(elementId, finalValue, duration = 1000) {
     const element = document.getElementById(elementId);
     if (!element) return;
     
-    const start = 0;
+    let start = 0;
     const increment = finalValue / (duration / 16);
     let current = start;
 
     const timer = setInterval(() => {
         current += increment;
         if (current >= finalValue) {
-            element.textContent = finalValue.toLocaleString();
+            element.textContent = finalValue;
             clearInterval(timer);
         } else {
-            element.textContent = Math.floor(current).toLocaleString();
+            element.textContent = Math.floor(current);
         }
     }, 16);
 }
 
-// Inicializar animaciones
+// Animar KPIs al cargar
 document.addEventListener('DOMContentLoaded', function() {
-    animateNumber('kpi-total', {{ total_bultos }});
-    animateNumber('kpi-hoy', {{ bultos_hoy }});
+    animateCounter('kpi-total', {{ total_bultos or 0 }});
+    animateCounter('kpi-hoy', {{ bultos_hoy or 0 }});
 });
+
+// Configuración común para gráficos
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+        legend: { display: false }
+    },
+    scales: {
+        y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+            grid: { display: false }
+        }
+    }
+};
 
 // Gráfico de barras - Bultos por día
 new Chart(document.getElementById('bar_dias'), {
     type: 'bar',
     data: {
-        labels: {{ dias | tojson }},
+        labels: {{ dias|tojson if dias else [] }},
         datasets: [{
             label: 'Bultos',
-            data: {{ bultos_dias | tojson }},
+            data: {{ bultos_dias|tojson if bultos_dias else [] }},
             backgroundColor: 'rgba(67, 97, 238, 0.8)',
-            borderColor: 'rgba(67, 97, 238, 1)',
-            borderWidth: 2,
-            borderRadius: 8,
-            borderSkipped: false
+            borderRadius: 6
         }]
     },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return `${context.parsed.y} bultos`;
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: 'rgba(255, 255, 255, 0.6)' }
-            },
-            x: {
-                grid: { display: false },
-                ticks: { color: 'rgba(255, 255, 255, 0.6)' }
-            }
-        }
-    }
+    options: chartOptions
 });
 
 // Gráfico de donut - Trailers
 new Chart(document.getElementById('donut_trailers'), {
     type: 'doughnut',
     data: {
-        labels: ['Trailers Activos', 'Capacidad Restante'],
+        labels: ['Trailers Activos', 'Otros'],
         datasets: [{
-            data: [{{ total_trailers }}, 100 - {{ total_trailers }}],
-            backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(255, 255, 255, 0.1)'],
-            borderWidth: 0,
-            spacing: 2
+            data: [{{ total_trailers or 0 }}, 100],
+            backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(0,0,0,0.1)']
         }]
     },
     options: {
         cutout: '70%',
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return `${context.label}: ${context.parsed}`;
-                    }
-                }
-            }
-        }
+        plugins: { legend: { display: false } }
     }
 });
 
@@ -692,121 +508,59 @@ new Chart(document.getElementById('donut_trailers'), {
 new Chart(document.getElementById('bar_sem'), {
     type: 'bar',
     data: {
-        labels: {{ semanas | tojson }},
+        labels: {{ semanas|tojson if semanas else [] }},
         datasets: [{
             label: 'Bultos por Semana',
-            data: {{ bultos_sem | tojson }},
-            backgroundColor: 'rgba(247, 37, 133, 0.8)',
-            borderColor: 'rgba(247, 37, 133, 1)',
-            borderWidth: 2,
-            borderRadius: 6
+            data: {{ bultos_sem|tojson if bultos_sem else [] }},
+            backgroundColor: 'rgba(247, 37, 133, 0.8)'
         }]
     },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-            },
-            x: {
-                grid: { display: false }
-            }
-        }
-    }
+    options: chartOptions
 });
 
 // Gráfico de barras - Bultos por mes
 new Chart(document.getElementById('bar_mes'), {
     type: 'bar',
     data: {
-        labels: {{ meses | tojson }},
+        labels: {{ meses|tojson if meses else [] }},
         datasets: [{
             label: 'Bultos por Mes',
-            data: {{ bultos_mes | tojson }},
-            backgroundColor: 'rgba(76, 201, 240, 0.8)',
-            borderColor: 'rgba(76, 201, 240, 1)',
-            borderWidth: 2,
-            borderRadius: 6
+            data: {{ bultos_mes|tojson if bultos_mes else [] }},
+            backgroundColor: 'rgba(76, 201, 240, 0.8)'
         }]
     },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-            },
-            x: {
-                grid: { display: false }
-            }
-        }
-    }
+    options: chartOptions
 });
 
 // Gráfico de línea - Inconsistencias
 new Chart(document.getElementById('line_incons'), {
     type: 'line',
     data: {
-        labels: {{ meses | tojson }},
+        labels: {{ meses|tojson if meses else [] }},
         datasets: [{
             label: 'Inconsistencias',
-            data: {{ inconsistencias_mes | tojson }},
+            data: {{ inconsistencias_mes|tojson if inconsistencias_mes else [] }},
             borderColor: 'rgba(255, 0, 84, 1)',
             backgroundColor: 'rgba(255, 0, 84, 0.1)',
-            borderWidth: 3,
-            tension: 0.4,
-            fill: true,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: 'rgba(255, 0, 84, 1)',
-            pointBorderWidth: 2,
-            pointRadius: 5
+            tension: 0.3,
+            fill: true
         }]
     },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-            },
-            x: {
-                grid: { display: false }
-            }
-        }
-    }
+    options: chartOptions
 });
 
 // Gráfico de barras - Material faltante
 new Chart(document.getElementById('bar_faltante'), {
     type: 'bar',
     data: {
-        labels: {{ meses | tojson }},
+        labels: {{ meses|tojson if meses else [] }},
         datasets: [{
             label: 'Material Faltante',
-            data: {{ faltante_mes | tojson }},
-            backgroundColor: 'rgba(0, 204, 102, 0.8)',
-            borderColor: 'rgba(0, 204, 102, 1)',
-            borderWidth: 2,
-            borderRadius: 6
+            data: {{ faltante_mes|tojson if faltante_mes else [] }},
+            backgroundColor: 'rgba(0, 204, 102, 0.8)'
         }]
     },
-    options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 255, 255, 0.05)' }
-            },
-            x: {
-                grid: { display: false }
-            }
-        }
-    }
+    options: chartOptions
 });
 </script>
 
