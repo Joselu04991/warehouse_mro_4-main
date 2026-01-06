@@ -1,96 +1,567 @@
 {% extends "base.html" %}
-{% block content %}
 
+{% block content %}
 <style>
-    .audit-header {
-        background: linear-gradient(135deg, #001d38, #003b71);
-        color:#fff;
-        padding:18px 22px;
-        border-radius:12px;
-        margin-bottom:20px;
+    /* Variables de color */
+    :root {
+        --primary-blue: #001d38;
+        --secondary-blue: #003b71;
+        --accent-blue: #2c80ff;
+        --light-bg: #f8fafc;
+        --border-color: #e2e8f0;
+        --text-muted: #64748b;
     }
+
+    .audit-container {
+        background: var(--light-bg);
+        min-height: calc(100vh - 80px);
+        padding: 24px;
+    }
+
+    /* Header mejorado */
+    .audit-header {
+        background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+        color: white;
+        padding: 24px 28px;
+        border-radius: 16px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 29, 56, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .audit-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200px;
+        height: 200px;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+
+    .header-content h4 {
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 6px;
+    }
+
+    .header-content small {
+        opacity: 0.9;
+        font-weight: 300;
+    }
+
+    .stats-badge {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Filtros mejorados */
     .audit-filter {
-        background:#fff;
-        border-radius:12px;
-        padding:12px 16px;
-        box-shadow:0 2px 6px rgba(0,0,0,0.08);
-        margin-bottom:15px;
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .audit-filter:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-label {
+        font-weight: 500;
+        color: var(--primary-blue);
+        margin-bottom: 8px;
+        font-size: 0.875rem;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 3px rgba(44, 128, 255, 0.1);
+    }
+
+    /* Tabla mejorada */
+    .audit-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        border: 1px solid var(--border-color);
+    }
+
+    .table-header {
+        background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .table-header h5 {
+        color: var(--primary-blue);
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .export-btn {
+        background: var(--accent-blue);
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .export-btn:hover {
+        background: #1a6eff;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(44, 128, 255, 0.2);
+    }
+
+    .table-responsive {
+        border-radius: 0 0 16px 16px;
+        overflow: hidden;
+    }
+
+    .audit-table {
+        margin: 0;
+        width: 100%;
+    }
+
+    .audit-table thead th {
+        background: #f1f5f9;
+        color: var(--primary-blue);
+        font-weight: 600;
+        padding: 16px 20px;
+        border-bottom: 2px solid var(--border-color);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+    }
+
+    .audit-table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+
+    .audit-table tbody tr:hover {
+        background-color: #f8fafc;
+        transform: translateX(2px);
+    }
+
+    .audit-table tbody td {
+        padding: 16px 20px;
+        color: #334155;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    /* Badges para acciones */
+    .action-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+
+    .badge-create { background: #d1fae5; color: #065f46; }
+    .badge-update { background: #dbeafe; color: #1e40af; }
+    .badge-delete { background: #fee2e2; color: #991b1b; }
+    .badge-login { background: #fef3c7; color: #92400e; }
+    .badge-system { background: #e0e7ff; color: #3730a3; }
+
+    /* IP con tooltip */
+    .ip-address {
+        font-family: 'Monaco', 'Menlo', monospace;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        cursor: help;
+        position: relative;
+    }
+
+    .ip-address:hover::after {
+        content: 'Haz clic para copiar';
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+
+    /* Estado vacío */
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #cbd5e1;
+        margin-bottom: 16px;
+    }
+
+    .empty-state h5 {
+        color: var(--text-muted);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* Paginación */
+    .pagination-container {
+        padding: 20px;
+        border-top: 1px solid var(--border-color);
+        background: white;
+    }
+
+    .page-info {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+
+    /* Animaciones */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .audit-container {
+            padding: 16px;
+        }
+        
+        .audit-header {
+            padding: 20px;
+        }
+        
+        .audit-table thead th,
+        .audit-table tbody td {
+            padding: 12px 16px;
+        }
     }
 </style>
 
-<div class="container-fluid mt-3">
-
-    <div class="audit-header d-flex justify-content-between align-items-center">
-        <div>
-            <h4 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Auditoría del sistema</h4>
-            <small>Registro de acciones realizadas por los usuarios</small>
+<div class="audit-container">
+    <!-- Header con estadísticas -->
+    <div class="audit-header d-flex justify-content-between align-items-center fade-in">
+        <div class="header-content">
+            <h4 class="mb-1"><i class="bi bi-shield-check me-2"></i>Auditoría del Sistema</h4>
+            <small>Registro completo de todas las acciones realizadas en la plataforma</small>
+        </div>
+        <div class="stats-badge">
+            <i class="bi bi-clock-history me-1"></i>
+            {{ auditoria|length }} registros
         </div>
     </div>
 
-    <!-- Filtros -->
-    <div class="audit-filter">
-        <form class="row g-2" method="get">
-            <div class="col-md-3">
-                <label class="form-label mb-1">Usuario</label>
-                <input type="text" name="usuario" class="form-control" value="{{ request.args.get('usuario','') }}">
+    <!-- Filtros avanzados -->
+    <div class="audit-filter fade-in">
+        <form class="row g-3 align-items-end" method="get">
+            <div class="col-lg-2 col-md-6">
+                <label class="filter-label">Usuario</label>
+                <input type="text" name="usuario" class="form-control" 
+                       placeholder="Buscar usuario..." 
+                       value="{{ request.args.get('usuario', '') }}">
             </div>
-            <div class="col-md-3">
-                <label class="form-label mb-1">Desde</label>
-                <input type="date" name="desde" class="form-control" value="{{ request.args.get('desde','') }}">
+            
+            <div class="col-lg-2 col-md-6">
+                <label class="filter-label">Módulo</label>
+                <select name="modulo" class="form-select">
+                    <option value="">Todos los módulos</option>
+                    <option value="usuarios" {% if request.args.get('modulo') == 'usuarios' %}selected{% endif %}>Usuarios</option>
+                    <option value="sistema" {% if request.args.get('modulo') == 'sistema' %}selected{% endif %}>Sistema</option>
+                    <option value="seguridad" {% if request.args.get('modulo') == 'seguridad' %}selected{% endif %}>Seguridad</option>
+                    <!-- Agrega más opciones según tus módulos -->
+                </select>
             </div>
-            <div class="col-md-3">
-                <label class="form-label mb-1">Hasta</label>
-                <input type="date" name="hasta" class="form-control" value="{{ request.args.get('hasta','') }}">
+            
+            <div class="col-lg-2 col-md-6">
+                <label class="filter-label">Acción</label>
+                <select name="accion" class="form-select">
+                    <option value="">Todas las acciones</option>
+                    <option value="login" {% if request.args.get('accion') == 'login' %}selected{% endif %}>Login</option>
+                    <option value="logout" {% if request.args.get('accion') == 'logout' %}selected{% endif %}>Logout</option>
+                    <option value="crear" {% if request.args.get('accion') == 'crear' %}selected{% endif %}>Crear</option>
+                    <option value="editar" {% if request.args.get('accion') == 'editar' %}selected{% endif %}>Editar</option>
+                    <option value="eliminar" {% if request.args.get('accion') == 'eliminar' %}selected{% endif %}>Eliminar</option>
+                </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end justify-content-end">
-                <button class="btn btn-primary me-2" type="submit">
-                    <i class="bi bi-search"></i>
+            
+            <div class="col-lg-2 col-md-6">
+                <label class="filter-label">Desde</label>
+                <input type="date" name="desde" class="form-control" 
+                       value="{{ request.args.get('desde', '') }}">
+            </div>
+            
+            <div class="col-lg-2 col-md-6">
+                <label class="filter-label">Hasta</label>
+                <input type="date" name="hasta" class="form-control" 
+                       value="{{ request.args.get('hasta', '') }}">
+            </div>
+            
+            <div class="col-lg-2 col-md-6 d-flex gap-2">
+                <button class="btn btn-primary flex-grow-1" type="submit">
+                    <i class="bi bi-funnel me-2"></i>Filtrar
                 </button>
-                <a href="{{ url_for('auditoria.vista_auditoria') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-repeat"></i>
+                <a href="{{ url_for('auditoria.vista_auditoria') }}" class="btn btn-outline-secondary" title="Limpiar filtros">
+                    <i class="bi bi-x-lg"></i>
                 </a>
             </div>
         </form>
     </div>
 
-    <!-- Tabla -->
-    <div class="card shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha y hora</th>
-                            <th>Usuario</th>
-                            <th>Acción</th>
-                            <th>Detalle</th>
-                            <th>IP</th>
-                            <th>Módulo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for log in auditoria %}
-                        <tr>
-                            <td>{{ log.fecha.strftime("%d/%m/%Y %H:%M") if log.fecha else "" }}</td>
-                            <td>{{ log.usuario }}</td>
-                            <td>{{ log.accion }}</td>
-                            <td>{{ log.detalle }}</td>
-                            <td>{{ log.ip or '-' }}</td>
-                            <td>{{ log.modulo or '-' }}</td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">
-                                No se encontraron registros para los filtros aplicados.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- Tabla de auditoría -->
+    <div class="audit-card fade-in">
+        <div class="table-header d-flex justify-content-between align-items-center">
+            <h5><i class="bi bi-list-check me-2"></i>Registros de Auditoría</h5>
+            <button class="export-btn" onclick="exportToCSV()">
+                <i class="bi bi-download me-2"></i>Exportar CSV
+            </button>
         </div>
+        
+        <div class="table-responsive">
+            <table class="table audit-table">
+                <thead>
+                    <tr>
+                        <th width="160">Fecha y Hora</th>
+                        <th width="120">Usuario</th>
+                        <th width="100">Acción</th>
+                        <th>Detalle</th>
+                        <th width="120">IP</th>
+                        <th width="120">Módulo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in auditoria %}
+                    <tr>
+                        <td>
+                            <span class="text-muted" style="font-size:0.8rem;">
+                                {{ log.fecha.strftime("%d/%m/%Y") if log.fecha else "N/A" }}
+                            </span><br>
+                            <strong>{{ log.fecha.strftime("%H:%M:%S") if log.fecha else "" }}</strong>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width:32px;height:32px;margin-right:10px;">
+                                    <i class="bi bi-person" style="font-size:0.8rem;"></i>
+                                </div>
+                                <span style="font-weight:500;">{{ log.usuario }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% set badge_class = {
+                                'crear': 'badge-create',
+                                'actualizar': 'badge-update',
+                                'editar': 'badge-update',
+                                'eliminar': 'badge-delete',
+                                'login': 'badge-login',
+                                'logout': 'badge-login'
+                            } %}
+                            <span class="action-badge {{ badge_class.get(log.accion|lower, 'badge-system') }}">
+                                {{ log.accion }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="max-width:300px;white-space:normal;">
+                                {{ log.detalle }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="ip-address" onclick="copyToClipboard('{{ log.ip }}')" 
+                                  title="Click para copiar">
+                                {{ log.ip or '-' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-muted">{{ log.modulo or 'Sistema' }}</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <h5>No se encontraron registros</h5>
+                                <p>No hay registros de auditoría para los filtros aplicados. Intenta con otros criterios de búsqueda.</p>
+                                <a href="{{ url_for('auditoria.vista_auditoria') }}" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Mostrar todos
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación (si la hay) -->
+        {% if pagination %}
+        <div class="pagination-container d-flex justify-content-between align-items-center">
+            <div class="page-info">
+                Mostrando {{ ((pagination.page - 1) * pagination.per_page) + 1 }} - 
+                {{ min(pagination.page * pagination.per_page, pagination.total) }} 
+                de {{ pagination.total }} registros
+            </div>
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('auditoria.vista_auditoria', page=pagination.prev_num, **request.args) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                    <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('auditoria.vista_auditoria', page=page, **request.args) }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('auditoria.vista_auditoria', page=pagination.next_num, **request.args) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
     </div>
-
 </div>
+
+<script>
+    // Copiar IP al portapapeles
+    function copyToClipboard(text) {
+        if (text && text !== '-') {
+            navigator.clipboard.writeText(text).then(() => {
+                // Mostrar notificación temporal
+                showToast('IP copiada al portapapeles');
+            });
+        }
+    }
+    
+    // Exportar a CSV
+    function exportToCSV() {
+        const table = document.querySelector('.audit-table');
+        const rows = table.querySelectorAll('tr');
+        const csv = [];
+        
+        // Encabezados
+        const headers = [];
+        table.querySelectorAll('thead th').forEach(th => {
+            headers.push(th.textContent.trim());
+        });
+        csv.push(headers.join(','));
+        
+        // Datos
+        rows.forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(td => {
+                // Limpiar texto para CSV
+                let text = td.textContent.trim();
+                text = text.replace(/,/g, ';'); // Reemplazar comas
+                text = text.replace(/\n/g, ' '); // Reemplazar saltos de línea
+                rowData.push(`"${text}"`);
+            });
+            if (rowData.length > 0) {
+                csv.push(rowData.join(','));
+            }
+        });
+        
+        // Descargar archivo
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `auditoria_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Función para mostrar toasts
+    function showToast(message) {
+        // Crear toast si no existe
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        const toastId = 'toast-' + Date.now();
+        const toast = document.createElement('div');
+        toast.className = 'toast align-items-center text-white bg-success border-0';
+        toast.id = toastId;
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        // Remover después de ocultar
+        toast.addEventListener('hidden.bs.toast', function () {
+            toast.remove();
+        });
+    }
+    
+    // Auto-focus en primer campo de filtro
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstFilter = document.querySelector('input[name="usuario"]');
+        if (firstFilter) {
+            firstFilter.focus();
+        }
+    });
+</script>
 
 {% endblock %}
