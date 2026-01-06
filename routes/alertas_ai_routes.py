@@ -1,9 +1,14 @@
 # routes/alertas_ai_routes.py
 
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, request, jsonify, Response
 from flask_login import login_required
-from models.alertas_ai import AlertaIA
 from datetime import datetime, timedelta
+import csv
+from io import StringIO
+
+# Importar desde tu aplicación
+from app import db, app  # Ajusta estos imports según tu estructura
+from models.alertas_ai import AlertaIA
 
 alertas_ai_bp = Blueprint("alertas_ai", __name__, url_prefix="/alertas-ai")
 
@@ -66,13 +71,13 @@ def listado_ai():
                 "descripcion": a.descripcion,
                 "nivel": a.nivel.capitalize() if a.nivel else "No especificado",
                 "fecha": a.fecha.strftime("%Y-%m-%d %H:%M") if a.fecha else "Sin fecha",
-                "origen": a.origen if hasattr(a, 'origen') else "Sistema IA",
-                "usuario": a.usuario_nombre if hasattr(a, 'usuario_nombre') else None
+                "origen": getattr(a, 'origen', 'Sistema IA'),
+                "usuario": getattr(a, 'usuario_nombre', None)
             })
 
         # Obtener estadísticas para el dashboard
         total_alertas = len(alertas)
-        alertas_criticas = len([a for a in alertas if a['nivel'].lower() == 'alto'])
+        alertas_criticas = len([a for a in alertas if a['nivel'].lower() in ['alto', 'critical', 'crítico']])
         ultima_alerta = alertas[0]['fecha'] if alertas else "N/A"
 
         # Renderizar vista
@@ -85,8 +90,9 @@ def listado_ai():
         )
 
     except Exception as e:
-        # Log del error
-        app.logger.error(f"Error en listado_ai: {str(e)}")
+        # Log del error usando current_app si app no está disponible
+        from flask import current_app
+        current_app.logger.error(f"Error en listado_ai: {str(e)}")
         
         # En caso de error, mostrar vista vacía
         return render_template(
@@ -95,7 +101,7 @@ def listado_ai():
             total_alertas=0,
             alertas_criticas=0,
             ultima_alerta="N/A",
-            error=str(e)
+            error_message=f"Error al cargar alertas: {str(e)}"
         )
 
 
@@ -230,11 +236,8 @@ def exportar_csv():
     try:
         # Obtener todas las alertas
         alertas_bd = AlertaIA.query.order_by(AlertaIA.fecha.desc()).all()
-
-        # Crear contenido CSV
-        import csv
-        from io import StringIO
         
+        # Crear contenido CSV
         output = StringIO()
         writer = csv.writer(output)
         
@@ -253,7 +256,6 @@ def exportar_csv():
             ])
         
         # Preparar respuesta
-        from flask import Response
         output.seek(0)
         
         return Response(
