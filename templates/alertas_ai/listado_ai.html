@@ -347,50 +347,6 @@
     .critical-alert .message-content::before { content: '🚨'; }
     .warning-alert .message-content::before { content: '⚠️'; }
 
-    /* Estado con switch */
-    .status-switch {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-    }
-
-    .switch {
-        position: relative;
-        width: 52px;
-        height: 26px;
-        background: #cbd5e0;
-        border-radius: 13px;
-        transition: all 0.3s;
-    }
-
-    .switch::after {
-        content: '';
-        position: absolute;
-        width: 22px;
-        height: 22px;
-        background: white;
-        border-radius: 50%;
-        top: 2px;
-        left: 2px;
-        transition: all 0.3s;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }
-
-    .switch.active {
-        background: #48bb78;
-    }
-
-    .switch.active::after {
-        transform: translateX(26px);
-    }
-
-    .switch-text {
-        font-size: 0.8rem;
-        font-weight: 500;
-        color: #4a5568;
-    }
-
     /* Estado vacío */
     .empty-state {
         padding: 60px 24px;
@@ -503,13 +459,14 @@
                     <i class="bi bi-exclamation-triangle-fill text-warning"></i>
                     <span>Total: {{ alertas|length }}</span>
                 </div>
+                {% set critical_count = alertas|selectattr('nivel', 'equalto', 'Alto')|list|length %}
                 <div class="stat-item critical">
                     <i class="bi bi-exclamation-octagon-fill"></i>
-                    <span>Críticas: {{ alertas|selectattr('nivel', 'equalto', 'critical')|list|length }}</span>
+                    <span>Críticas: {{ critical_count }}</span>
                 </div>
                 <div class="stat-item">
                     <i class="bi bi-clock-history"></i>
-                    <span>Última: {{ alertas|sort(attribute='fecha', reverse=true)|first|attr('fecha')|format_fecha if alertas else 'N/A' }}</span>
+                    <span>Última: {{ alertas[0].fecha if alertas else 'N/A' }}</span>
                 </div>
             </div>
         </div>
@@ -522,33 +479,27 @@
                 <label class="filter-label">Nivel de Alerta</label>
                 <select name="nivel" class="filter-select" onchange="document.getElementById('filterForm').submit()">
                     <option value="">Todos los niveles</option>
-                    <option value="critical" {% if request.args.get('nivel') == 'critical' %}selected{% endif %}>Crítico</option>
-                    <option value="warning" {% if request.args.get('nivel') == 'warning' %}selected{% endif %}>Advertencia</option>
-                    <option value="info" {% if request.args.get('nivel') == 'info' %}selected{% endif %}>Información</option>
+                    <option value="Alto">Alto</option>
+                    <option value="Medio">Medio</option>
+                    <option value="Bajo">Bajo</option>
                 </select>
             </div>
             
             <div class="filter-group">
-                <label class="filter-label">Estado</label>
-                <select name="estado" class="filter-select" onchange="document.getElementById('filterForm').submit()">
-                    <option value="">Todos los estados</option>
-                    <option value="activo" {% if request.args.get('estado') == 'activo' %}selected{% endif %}>Activo</option>
-                    <option value="cerrado" {% if request.args.get('estado') == 'cerrado' %}selected{% endif %}>Cerrado</option>
+                <label class="filter-label">Categoría</label>
+                <select name="categoria" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Todas las categorías</option>
+                    {% set categorias = [] %}
+                    {% for a in alertas %}
+                        {% if a.categoria not in categorias %}
+                            {% set _ = categorias.append(a.categoria) %}
+                            <option value="{{ a.categoria }}" 
+                                {% if request.args.get('categoria') == a.categoria %}selected{% endif %}>
+                                {{ a.categoria }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
                 </select>
-            </div>
-            
-            <div class="filter-group">
-                <label class="filter-label">Tipo</label>
-                <input type="text" name="tipo" class="filter-input" 
-                       placeholder="Filtrar por tipo..." 
-                       value="{{ request.args.get('tipo', '') }}">
-            </div>
-            
-            <div class="filter-group">
-                <label class="filter-label">Usuario</label>
-                <input type="text" name="usuario" class="filter-input" 
-                       placeholder="Buscar usuario..." 
-                       value="{{ request.args.get('usuario', '') }}">
             </div>
             
             <div class="filter-group">
@@ -563,13 +514,20 @@
                        value="{{ request.args.get('hasta', '') }}">
             </div>
             
+            <div class="filter-group">
+                <label class="filter-label">Palabra clave</label>
+                <input type="text" name="q" class="filter-input" 
+                       placeholder="Buscar en descripción..." 
+                       value="{{ request.args.get('q', '') }}">
+            </div>
+            
             <div class="filter-group" style="grid-column: span 2;">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn-export" style="flex: 1;">
                         <i class="bi bi-funnel"></i>
                         Aplicar Filtros
                     </button>
-                    <button type="button" onclick="location.href='{{ url_for('alertas.alertas_ia') }}'" 
+                    <button type="button" onclick="location.href='{{ url_for('alertas_ai.listado_ai') }}'" 
                             class="btn-refresh" style="flex: 1;">
                         <i class="bi bi-x-lg"></i>
                         Limpiar
@@ -586,11 +544,10 @@
                 <i class="bi bi-robot"></i>
                 <h4>No hay alertas generadas</h4>
                 <p>El sistema de IA no ha detectado anomalías o eventos que requieran atención en este momento.</p>
-                <button onclick="location.href='{{ url_for('dashboard.dashboard') }}'" 
-                        class="btn-export">
+                <a href="{{ url_for('dashboard.dashboard') }}" class="btn-export">
                     <i class="bi bi-speedometer2 me-2"></i>
                     Ir al Dashboard
-                </button>
+                </a>
             </div>
         {% else %}
             <!-- Header de tabla -->
@@ -618,98 +575,64 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Tipo</th>
-                            <th>Mensaje IA</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
                             <th>Nivel</th>
-                            <th>Origen</th>
-                            <th>Usuario</th>
                             <th>Fecha</th>
-                            <th>Estado</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for a in alertas %}
-                        <tr class="{{ a.nivel }}-alert" data-alert-id="{{ a.id }}">
+                        {% set nivel_class = 'critical-alert' if a.nivel == 'Alto' else 'warning-alert' if a.nivel == 'Medio' else 'info-alert' %}
+                        <tr class="{{ nivel_class }}">
                             <!-- ID -->
                             <td data-label="ID">
-                                <span class="badge bg-dark rounded-pill">#{{ a.id }}</span>
+                                <span class="badge bg-dark rounded-pill">#{{ loop.index }}</span>
                             </td>
 
-                            <!-- Tipo -->
-                            <td data-label="Tipo" class="fw-bold">
+                            <!-- Categoría -->
+                            <td data-label="Categoría" class="fw-bold">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-{{ 'shield-exclamation' if a.nivel == 'critical' else 'exclamation-triangle' if a.nivel == 'warning' else 'info-circle' }} text-{{ a.nivel }}"></i>
-                                    {{ a.tipo }}
+                                    <i class="bi bi-{{ 'shield-exclamation' if a.nivel == 'Alto' else 'exclamation-triangle' if a.nivel == 'Medio' else 'info-circle' }} 
+                                              {{ 'text-danger' if a.nivel == 'Alto' else 'text-warning' if a.nivel == 'Medio' else 'text-info' }}"></i>
+                                    {{ a.categoria }}
                                 </div>
                             </td>
 
-                            <!-- Mensaje IA -->
-                            <td data-label="Mensaje" class="message-cell">
+                            <!-- Descripción -->
+                            <td data-label="Descripción" class="message-cell">
                                 <div class="message-content">
-                                    {{ a.mensaje }}
+                                    {{ a.descripcion }}
                                 </div>
                             </td>
 
                             <!-- Nivel -->
                             <td data-label="Nivel">
-                                {% if a.nivel == "critical" %}
+                                {% if a.nivel == "Alto" %}
                                     <span class="alert-badge badge-critical">
                                         <i class="bi bi-exclamation-octagon-fill me-1"></i>
-                                        Crítico
+                                        {{ a.nivel }}
                                     </span>
-                                {% elif a.nivel == "warning" %}
+                                {% elif a.nivel == "Medio" %}
                                     <span class="alert-badge badge-warning">
                                         <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                        Alerta
+                                        {{ a.nivel }}
                                     </span>
-                                {% elif a.nivel == "info" %}
+                                {% elif a.nivel == "Bajo" %}
                                     <span class="alert-badge badge-info">
                                         <i class="bi bi-info-circle-fill me-1"></i>
-                                        Informativo
+                                        {{ a.nivel }}
                                     </span>
                                 {% else %}
                                     <span class="alert-badge badge-secondary">{{ a.nivel }}</span>
                                 {% endif %}
                             </td>
 
-                            <!-- Origen -->
-                            <td data-label="Origen">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-{{ 'cpu' if 'sistema' in a.origen|lower else 'database' if 'base' in a.origen|lower else 'cloud' }} text-muted"></i>
-                                    {{ a.origen }}
-                                </div>
-                            </td>
-
-                            <!-- Usuario -->
-                            <td data-label="Usuario">
-                                {% if a.usuario %}
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" 
-                                             style="width: 28px; height: 28px;">
-                                            <i class="bi bi-person text-primary" style="font-size: 0.8rem;"></i>
-                                        </div>
-                                        <span>{{ a.usuario }}</span>
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-
                             <!-- Fecha -->
                             <td data-label="Fecha">
                                 <div class="d-flex flex-column">
-                                    <span class="fw-semibold">{{ a.fecha|format_fecha }}</span>
-                                    <small class="text-muted">{{ a.fecha.strftime('%H:%M:%S') if a.fecha else '' }}</small>
-                                </div>
-                            </td>
-
-                            <!-- Estado -->
-                            <td data-label="Estado">
-                                <div class="status-switch" onclick="toggleAlertStatus({{ a.id }}, this)">
-                                    <div class="switch {% if a.estado == 'activo' %}active{% endif %}"></div>
-                                    <span class="switch-text">
-                                        {% if a.estado == 'activo' %}Activo{% else %}Cerrado{% endif %}
-                                    </span>
+                                    <span class="fw-semibold">{{ a.fecha[:10] }}</span>
+                                    <small class="text-muted">{{ a.fecha[11:] if a.fecha|length > 10 else '' }}</small>
                                 </div>
                             </td>
                         </tr>
@@ -717,44 +640,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Paginación (si aplica) -->
-            {% if alertas.pages > 1 %}
-            <div class="pagination-container d-flex justify-content-between align-items-center p-4 border-top">
-                <div class="text-muted">
-                    Mostrando {{ alertas|length }} de {{ alertas.total }} alertas
-                </div>
-                <nav>
-                    <ul class="pagination mb-0">
-                        {% if alertas.has_prev %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('alertas.alertas_ia', page=alertas.prev_num) }}">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                        
-                        {% for page_num in alertas.iter_pages() %}
-                            {% if page_num %}
-                                <li class="page-item {% if page_num == alertas.page %}active{% endif %}">
-                                    <a class="page-link" href="{{ url_for('alertas.alertas_ia', page=page_num) }}">
-                                        {{ page_num }}
-                                    </a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-                        
-                        {% if alertas.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('alertas.alertas_ia', page=alertas.next_num) }}">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-            </div>
-            {% endif %}
         {% endif %}
     </div>
 </div>
@@ -815,44 +700,10 @@
         btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Actualizando...';
         btn.disabled = true;
         
-        // Simular recarga
+        // Recargar la página
         setTimeout(() => {
             window.location.reload();
         }, 800);
-    }
-    
-    // Función para cambiar estado de alerta
-    function toggleAlertStatus(alertId, element) {
-        const switchElement = element.querySelector('.switch');
-        const isActive = switchElement.classList.contains('active');
-        
-        // Cambiar visualmente
-        switchElement.classList.toggle('active');
-        const textElement = element.querySelector('.switch-text');
-        textElement.textContent = isActive ? 'Cerrado' : 'Activo';
-        
-        // Aquí iría la llamada AJAX al backend
-        console.log(`Cambiando estado de alerta ${alertId} a ${isActive ? 'cerrado' : 'activo'}`);
-        
-        // Simular llamada a API
-        fetch(`/api/alertas/${alertId}/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ estado: isActive ? 'cerrado' : 'activo' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            showNotification(`Alerta ${isActive ? 'cerrada' : 'reactivada'} correctamente`, 'success');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            // Revertir cambios si hay error
-            switchElement.classList.toggle('active');
-            textElement.textContent = isActive ? 'Activo' : 'Cerrado';
-            showNotification('Error al cambiar estado', 'error');
-        });
     }
     
     // Función para mostrar notificaciones
@@ -905,12 +756,18 @@
     
     // Inicialización
     document.addEventListener('DOMContentLoaded', function() {
-        // Agregar tooltips a celdas específicas
+        // Agregar tooltips a descripciones largas
         document.querySelectorAll('.message-content').forEach(el => {
             if (el.scrollWidth > el.clientWidth) {
                 el.parentElement.title = el.textContent;
             }
         });
+        
+        // Auto-focus en campo de búsqueda
+        const searchInput = document.querySelector('input[name="q"]');
+        if (searchInput) {
+            searchInput.focus();
+        }
     });
 </script>
 
