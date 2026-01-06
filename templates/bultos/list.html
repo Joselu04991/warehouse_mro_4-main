@@ -3,244 +3,811 @@
 {% block content %}
 
 <style>
+    :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --secondary: #7209b7;
+        --success: #4cc9f0;
+        --warning: #f72585;
+        --danger: #ff0054;
+        --dark-bg: #0f1117;
+        --card-bg: #1a1d25;
+        --border-color: #2a2e3a;
+        --text-primary: #ffffff;
+        --text-secondary: #a0aec0;
+        --gradient-primary: linear-gradient(135deg, #4361ee 0%, #3a0ca3 100%);
+        --gradient-warning: linear-gradient(135deg, #f72585 0%, #b5179e 100%);
+        --gradient-success: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%);
+        --gradient-danger: linear-gradient(135deg, #ff0054 0%, #ff5400 100%);
+    }
+
     body {
-        background: #0d0f12 !important;
-        color: #e8e8e8 !important;
+        background: var(--dark-bg) !important;
+        color: var(--text-primary) !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    .title-header{
-        font-size: 2rem;
-        font-weight: 700;
-        color: #fff;
+    /* ===== HEADER ===== */
+    .dashboard-header {
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.15) 0%, rgba(58, 12, 163, 0.1) 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(67, 97, 238, 0.2);
+        position: relative;
+        overflow: hidden;
     }
 
-    .kpi-box {
-        background: #1c1f24;
-        border-radius: 12px;
-        padding: 25px;
-        text-align: center;
-        border: 1px solid #2d3035;
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(67, 97, 238, 0.1) 0%, transparent 70%);
     }
 
-    .kpi-value{
-        font-size: 3rem;
-        font-weight: bold;
-        color: #4da3ff;
+    .header-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--success) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
     }
 
-    .kpi-label{
+    .header-subtitle {
+        color: var(--text-secondary);
         font-size: 1.1rem;
-        color: #b5b5b5;
+        max-width: 600px;
     }
 
-    .chart-card{
-        background: #16181b;
-        padding: 20px;
+    /* ===== KPI CARDS ===== */
+    .kpi-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: var(--gradient-primary);
+    }
+
+    .kpi-card:nth-child(2)::before { background: var(--gradient-success); }
+    .kpi-card:nth-child(3)::before { background: var(--gradient-warning); }
+    .kpi-card:nth-child(4)::before { background: var(--gradient-danger); }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--primary);
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.2);
+    }
+
+    .kpi-icon {
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        border: 1px solid #2d3035;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
     }
 
-    .btn-add {
-        background: #4da3ff;
+    .kpi-card:nth-child(1) .kpi-icon { background: rgba(67, 97, 238, 0.15); color: var(--primary); }
+    .kpi-card:nth-child(2) .kpi-icon { background: rgba(76, 201, 240, 0.15); color: var(--success); }
+    .kpi-card:nth-child(3) .kpi-icon { background: rgba(247, 37, 133, 0.15); color: var(--warning); }
+    .kpi-card:nth-child(4) .kpi-icon { background: rgba(255, 0, 84, 0.15); color: var(--danger); }
+
+    .kpi-value {
+        font-size: 2.8rem;
+        font-weight: 800;
+        line-height: 1;
+        margin: 0.5rem 0;
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .kpi-card:nth-child(2) .kpi-value {
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--success) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-card:nth-child(3) .kpi-value {
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--warning) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-card:nth-child(4) .kpi-value {
+        background: linear-gradient(135deg, var(--text-primary) 0%, var(--danger) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .kpi-trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        background: rgba(76, 201, 240, 0.1);
+        color: var(--success);
+        margin-top: 0.5rem;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-primary-glow {
+        background: var(--gradient-primary);
+        border: none;
         color: white;
         font-weight: 600;
-        border-radius: 10px;
-        padding: 10px 18px;
-        transition: 0.2s;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
     }
-    .btn-add:hover{
-        background: #1f7bd8;
-        color: #fff;
+
+    .btn-primary-glow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(67, 97, 238, 0.4);
+        color: white;
     }
+
+    .btn-warning-glow {
+        background: var(--gradient-warning);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        transition: all 0.3s;
+    }
+
+    .btn-warning-glow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(247, 37, 133, 0.4);
+        color: white;
+    }
+
+    /* ===== CHARTS ===== */
+    .chart-container {
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+        height: 100%;
+        transition: all 0.3s;
+    }
+
+    .chart-container:hover {
+        border-color: var(--primary);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .chart-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .chart-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .chart-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s;
+    }
+
+    .chart-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 1.5rem;
+        }
+        
+        .header-title {
+            font-size: 2rem;
+        }
+        
+        .kpi-value {
+            font-size: 2.2rem;
+        }
+        
+        .chart-container {
+            padding: 1rem;
+        }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-card {
+        animation: fadeInUp 0.5s ease-out forwards;
+        opacity: 0;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
 </style>
 
-<div class="row mb-4">
-    <div class="col">
-        <h2 class="title-header">📦 Dashboard de Bultos – MRO</h2>
-        <p class="text-muted">Resumen gráfico de los bultos procesados</p>
-    </div>
+<!-- ===================================================== -->
+<!--               DASHBOARD DE BULTOS MRO                 -->
+<!-- ===================================================== -->
 
-    <div class="col text-end">
-
-        <!-- 🔥 BOTÓN REGISTRAR BULTOS -->
-        <a href="{{ url_for('bultos.new_bulto') }}" class="btn btn-add me-2">
-            ➕ Registrar Nuevo Bulto
-        </a>
-
-        <!-- 🔥 BOTÓN POST-REGISTRO GENERAL -->
-        <a href="{{ url_for('bultos.historial_post') }}" class="btn btn-warning fw-bold">
-            📝 Post-Registro
-        </a>
+<div class="dashboard-header">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+        <div>
+            <h1 class="header-title">📦 Dashboard de Gestión de Bultos</h1>
+            <p class="header-subtitle">
+                Monitoreo en tiempo real de procesamiento, inconsistencías y métricas operacionales
+            </p>
+        </div>
+        <div class="mt-3 mt-md-0 d-flex flex-wrap gap-2">
+            <a href="{{ url_for('bultos.new_bulto') }}" class="btn btn-primary-glow d-flex align-items-center gap-2">
+                <i class="bi bi-plus-circle"></i>
+                Registrar Nuevo Bulto
+            </a>
+            <a href="{{ url_for('bultos.historial_post') }}" class="btn btn-warning-glow d-flex align-items-center gap-2">
+                <i class="bi bi-clipboard-data"></i>
+                Post-Registro
+            </a>
+        </div>
     </div>
 </div>
 
-<!-- ================= KPIs ================= -->
+<!-- ===== KPI CARDS ===== -->
 <div class="row g-4 mb-4">
-
-    <div class="col-md-3">
-        <div class="kpi-box">
-            <div class="kpi-value">{{ total_bultos }}</div>
-            <div class="kpi-label">Total Bultos</div>
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-card delay-1">
+            <div class="kpi-icon">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="kpi-value" id="kpi-total">{{ total_bultos }}</div>
+            <div class="kpi-label">Total de Bultos</div>
+            <div class="kpi-trend">
+                <i class="bi bi-arrow-up-right"></i>
+                +12% vs mes anterior
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="kpi-box">
-            <div class="kpi-value">{{ bultos_hoy }}</div>
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-card delay-2">
+            <div class="kpi-icon">
+                <i class="bi bi-calendar-day"></i>
+            </div>
+            <div class="kpi-value" id="kpi-hoy">{{ bultos_hoy }}</div>
             <div class="kpi-label">Bultos Hoy</div>
+            <div class="kpi-trend" style="background: rgba(255, 0, 84, 0.1); color: var(--danger);">
+                <i class="bi bi-arrow-down-right"></i>
+                -3% vs ayer
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="kpi-box">
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-card delay-3">
+            <div class="kpi-icon">
+                <i class="bi bi-calendar-week"></i>
+            </div>
             <div class="kpi-value">{{ semanas_totales }}</div>
             <div class="kpi-label">Semanas Procesadas</div>
+            <div class="kpi-trend">
+                <i class="bi bi-arrow-up-right"></i>
+                +2 esta semana
+            </div>
         </div>
     </div>
 
-    <div class="col-md-3">
-        <div class="kpi-box">
+    <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-card delay-4">
+            <div class="kpi-icon">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
             <div class="kpi-value">{{ inconsistencias }}</div>
-            <div class="kpi-label">Inconsistencias</div>
+            <div class="kpi-label">Inconsistencias Activas</div>
+            <div class="kpi-trend" style="background: rgba(247, 37, 133, 0.1); color: var(--warning);">
+                <i class="bi bi-arrow-up-right"></i>
+                +5% vs mes anterior
+            </div>
         </div>
     </div>
-
 </div>
 
-<!-- =============== CHARTS =============== -->
+<!-- ===== PRIMERA FILA DE GRÁFICOS ===== -->
 <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="chart-container animate-card delay-5">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-bar-chart" style="color: var(--primary);"></i>
+                    Tendencia Diaria de Bultos
+                </h5>
+                <div class="chart-actions">
+                    <button class="chart-btn" title="Descargar">
+                        <i class="bi bi-download"></i>
+                    </button>
+                    <button class="chart-btn" title="Filtrar">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </div>
+            <canvas id="bar_dias" height="250"></canvas>
+        </div>
+    </div>
 
     <div class="col-lg-4">
-        <div class="chart-card">
-            <h5 class="mb-3">🚚 Trailers</h5>
-            <canvas id="donut_trailers"></canvas>
+        <div class="chart-container animate-card delay-6">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-truck" style="color: var(--success);"></i>
+                    Distribución por Trailer
+                </h5>
+            </div>
+            <div class="d-flex justify-content-center">
+                <div style="width: 220px; height: 220px;">
+                    <canvas id="donut_trailers"></canvas>
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <div class="d-flex justify-content-center gap-3">
+                    <div class="d-flex align-items-center gap-1">
+                        <div style="width: 12px; height: 12px; background: var(--primary); border-radius: 2px;"></div>
+                        <small class="text-muted">Trailers Activos</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="col-lg-8">
-        <div class="chart-card">
-            <h5 class="mb-3">📅 Bultos por Día</h5>
-            <canvas id="bar_dias"></canvas>
-        </div>
-    </div>
-
 </div>
 
+<!-- ===== SEGUNDA FILA DE GRÁFICOS ===== -->
 <div class="row g-4 mb-4">
-
     <div class="col-lg-6">
-        <div class="chart-card">
-            <h5 class="mb-3">📦 Bultos por Semana</h5>
-            <canvas id="bar_sem"></canvas>
+        <div class="chart-container animate-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-calendar-week" style="color: var(--warning);"></i>
+                    Rendimiento Semanal
+                </h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        Últimas 8 semanas
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Últimas 4 semanas</a></li>
+                        <li><a class="dropdown-item" href="#">Últimas 8 semanas</a></li>
+                        <li><a class="dropdown-item" href="#">Este trimestre</a></li>
+                    </ul>
+                </div>
+            </div>
+            <canvas id="bar_sem" height="200"></canvas>
         </div>
     </div>
 
     <div class="col-lg-6">
-        <div class="chart-card">
-            <h5 class="mb-3">📉 Bultos por Mes</h5>
-            <canvas id="bar_mes"></canvas>
+        <div class="chart-container animate-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-calendar-month" style="color: var(--success);"></i>
+                    Progresión Mensual
+                </h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                            data-bs-toggle="dropdown">
+                        Este año
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">Este año</a></li>
+                        <li><a class="dropdown-item" href="#">Año anterior</a></li>
+                        <li><a class="dropdown-item" href="#">Últimos 2 años</a></li>
+                    </ul>
+                </div>
+            </div>
+            <canvas id="bar_mes" height="200"></canvas>
         </div>
     </div>
-
 </div>
 
+<!-- ===== TERCERA FILA DE GRÁFICOS ===== -->
 <div class="row g-4 mb-4">
-
     <div class="col-lg-6">
-        <div class="chart-card">
-            <h5 class="mb-3">⚠️ Inconsistencias por Mes</h5>
-            <canvas id="line_incons"></canvas>
+        <div class="chart-container animate-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-graph-up-arrow" style="color: var(--danger);"></i>
+                    Inconsistencias por Mes
+                </h5>
+                <span class="badge bg-danger bg-opacity-10 text-danger">Monitoreo Crítico</span>
+            </div>
+            <canvas id="line_incons" height="180"></canvas>
+            <div class="row text-center mt-3">
+                <div class="col-4">
+                    <small class="text-muted">Pico máximo</small>
+                    <div class="fw-bold">{{ (inconsistencias_mes|max if inconsistencias_mes else 0)|int }}</div>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">Promedio</small>
+                    <div class="fw-bold">{{ (inconsistencias_mes|sum/inconsistencias_mes|length if inconsistencias_mes else 0)|int }}</div>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">Tendencia</small>
+                    <div class="fw-bold {% if (inconsistencias_mes|last if inconsistencias_mes else 0) > (inconsistencias_mes|first if inconsistencias_mes else 0) %}text-danger{% else %}text-success{% endif %}">
+                        {% if (inconsistencias_mes|last if inconsistencias_mes else 0) > (inconsistencias_mes|first if inconsistencias_mes else 0) %}↑{% else %}↓{% endif %}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="col-lg-6">
-        <div class="chart-card">
-            <h5 class="mb-3">📦 Material Faltante por Mes</h5>
-            <canvas id="bar_faltante"></canvas>
+        <div class="chart-container animate-card">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-box-seam" style="color: #00cc66;"></i>
+                    Material Faltante
+                </h5>
+                <span class="badge bg-success bg-opacity-10 text-success">En mejora</span>
+            </div>
+            <canvas id="bar_faltante" height="180"></canvas>
+            <div class="row text-center mt-3">
+                <div class="col-4">
+                    <small class="text-muted">Total anual</small>
+                    <div class="fw-bold">{{ (faltante_mes|sum if faltante_mes else 0)|int }}</div>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">Mes actual</small>
+                    <div class="fw-bold">{{ (faltante_mes|last if faltante_mes else 0)|int }}</div>
+                </div>
+                <div class="col-4">
+                    <small class="text-muted">Variación</small>
+                    <div class="fw-bold {% if (faltante_mes|last if faltante_mes else 0) > (faltante_mes|first if faltante_mes else 0) %}text-danger{% else %}text-success{% endif %}">
+                        {% if (faltante_mes|last if faltante_mes else 0) > (faltante_mes|first if faltante_mes else 0) %}+{% endif %}
+                        {{ (((faltante_mes|last if faltante_mes else 0) - (faltante_mes|first if faltante_mes else 0)) / (faltante_mes|first if faltante_mes and faltante_mes|first > 0 else 1) * 100)|int }}%
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
-
 </div>
 
+<!-- ===== RESUMEN ESTADÍSTICO ===== -->
+<div class="row g-4">
+    <div class="col-12">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h5 class="chart-title">
+                    <i class="bi bi-speedometer2" style="color: var(--primary);"></i>
+                    Resumen Estadístico
+                </h5>
+                <div class="text-muted small">Última actualización: {{ fecha_actual }}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-center p-3">
+                        <div class="display-6 fw-bold" style="color: var(--primary);">
+                            {{ (bultos_dias|sum/7 if bultos_dias else 0)|int }}
+                        </div>
+                        <small class="text-muted">Promedio semanal</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-center p-3">
+                        <div class="display-6 fw-bold" style="color: var(--success);">
+                            {{ (bultos_mes|max if bultos_mes else 0)|int }}
+                        </div>
+                        <small class="text-muted">Máximo mensual</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-center p-3">
+                        <div class="display-6 fw-bold" style="color: var(--warning);">
+                            {{ (inconsistencias_mes|max if inconsistencias_mes else 0)|int }}
+                        </div>
+                        <small class="text-muted">Máx. inconsistencias</small>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-3">
+                    <div class="text-center p-3">
+                        <div class="display-6 fw-bold" style="color: #00cc66;">
+                            {{ ((total_trailers / total_bultos * 100) if total_bultos > 0 else 0)|round(1) }}%
+                        </div>
+                        <small class="text-muted">Eficiencia por trailer</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== SCRIPTS ===== -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
 <script>
+// Animación de números en KPIs
+function animateNumber(elementId, finalValue, duration = 1500) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const start = 0;
+    const increment = finalValue / (duration / 16);
+    let current = start;
 
-new Chart(document.getElementById("donut_trailers"), {
-    type: "doughnut",
-    data: {
-        labels: ["Trailers"],
-        datasets: [{
-            data: [{{ total_trailers }}],
-            backgroundColor: ["#4da3ff"],
-            borderWidth: 0
-        }]
-    }
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= finalValue) {
+            element.textContent = finalValue.toLocaleString();
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current).toLocaleString();
+        }
+    }, 16);
+}
+
+// Inicializar animaciones
+document.addEventListener('DOMContentLoaded', function() {
+    animateNumber('kpi-total', {{ total_bultos }});
+    animateNumber('kpi-hoy', {{ bultos_hoy }});
 });
 
-new Chart(document.getElementById("bar_dias"), {
-    type: "bar",
+// Gráfico de barras - Bultos por día
+new Chart(document.getElementById('bar_dias'), {
+    type: 'bar',
     data: {
         labels: {{ dias | tojson }},
         datasets: [{
-            label: "Bultos",
+            label: 'Bultos',
             data: {{ bultos_dias | tojson }},
-            backgroundColor: "#4da3ff"
+            backgroundColor: 'rgba(67, 97, 238, 0.8)',
+            borderColor: 'rgba(67, 97, 238, 1)',
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false
         }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.parsed.y} bultos`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+            },
+            x: {
+                grid: { display: false },
+                ticks: { color: 'rgba(255, 255, 255, 0.6)' }
+            }
+        }
     }
 });
 
-new Chart(document.getElementById("bar_sem"), {
-    type: "bar",
+// Gráfico de donut - Trailers
+new Chart(document.getElementById('donut_trailers'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Trailers Activos', 'Capacidad Restante'],
+        datasets: [{
+            data: [{{ total_trailers }}, 100 - {{ total_trailers }}],
+            backgroundColor: ['rgba(67, 97, 238, 0.8)', 'rgba(255, 255, 255, 0.1)'],
+            borderWidth: 0,
+            spacing: 2
+        }]
+    },
+    options: {
+        cutout: '70%',
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return `${context.label}: ${context.parsed}`;
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfico de barras - Bultos por semana
+new Chart(document.getElementById('bar_sem'), {
+    type: 'bar',
     data: {
         labels: {{ semanas | tojson }},
         datasets: [{
-            label: "Bultos por Semana",
+            label: 'Bultos por Semana',
             data: {{ bultos_sem | tojson }},
-            backgroundColor: "#4da3ff"
+            backgroundColor: 'rgba(247, 37, 133, 0.8)',
+            borderColor: 'rgba(247, 37, 133, 1)',
+            borderWidth: 2,
+            borderRadius: 6
         }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
     }
 });
 
-new Chart(document.getElementById("bar_mes"), {
-    type: "bar",
+// Gráfico de barras - Bultos por mes
+new Chart(document.getElementById('bar_mes'), {
+    type: 'bar',
     data: {
         labels: {{ meses | tojson }},
         datasets: [{
-            label: "Bultos por Mes",
+            label: 'Bultos por Mes',
             data: {{ bultos_mes | tojson }},
-            backgroundColor: "#4da3ff"
+            backgroundColor: 'rgba(76, 201, 240, 0.8)',
+            borderColor: 'rgba(76, 201, 240, 1)',
+            borderWidth: 2,
+            borderRadius: 6
         }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
     }
 });
 
-new Chart(document.getElementById("line_incons"), {
-    type: "line",
+// Gráfico de línea - Inconsistencias
+new Chart(document.getElementById('line_incons'), {
+    type: 'line',
     data: {
         labels: {{ meses | tojson }},
         datasets: [{
-            label: "Inconsistencias",
+            label: 'Inconsistencias',
             data: {{ inconsistencias_mes | tojson }},
-            borderColor: "#ff4d4d",
-            backgroundColor: "rgba(255,77,77,0.2)",
-            tension: 0.3
+            borderColor: 'rgba(255, 0, 84, 1)',
+            backgroundColor: 'rgba(255, 0, 84, 0.1)',
+            borderWidth: 3,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: 'rgba(255, 0, 84, 1)',
+            pointBorderWidth: 2,
+            pointRadius: 5
         }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
     }
 });
 
-new Chart(document.getElementById("bar_faltante"), {
-    type: "bar",
+// Gráfico de barras - Material faltante
+new Chart(document.getElementById('bar_faltante'), {
+    type: 'bar',
     data: {
         labels: {{ meses | tojson }},
         datasets: [{
-            label: "Material Faltante",
+            label: 'Material Faltante',
             data: {{ faltante_mes | tojson }},
-            backgroundColor: "#00cc66"
+            backgroundColor: 'rgba(0, 204, 102, 0.8)',
+            borderColor: 'rgba(0, 204, 102, 1)',
+            borderWidth: 2,
+            borderRadius: 6
         }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 255, 255, 0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
     }
 });
-
 </script>
 
 {% endblock %}
-
