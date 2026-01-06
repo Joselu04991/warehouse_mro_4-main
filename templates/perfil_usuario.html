@@ -742,27 +742,27 @@
     </div>
     
     <!-- ========== ACTION BUTTONS ========== -->
-    <div class="action-grid">
-        <a href="{{ url_for('auth.edit_user') }}" class="action-btn action-btn-primary">
-            <i class="bi bi-pencil-square"></i>
-            <span>Editar Perfil</span>
-        </a>
-        
-        <a href="{{ url_for('auth.cambiar_password') }}" class="action-btn action-btn-warning">
-            <i class="bi bi-key-fill"></i>
-            <span>Cambiar Contraseña</span>
-        </a>
-        
-        <a href="{{ url_for('auth.descargar_datos_premium') }}" class="action-btn action-btn-pdf" id="pdfBtn">
-            <i class="bi bi-file-earmark-pdf-fill"></i>
-            <span>Descargar PDF</span>
-        </a>
-        
-        <a href="{{ url_for('dashboard.dashboard') }}" class="action-btn action-btn-dark">
-            <i class="bi bi-arrow-left"></i>
-            <span>Volver al Dashboard</span>
-        </a>
-    </div>
+<div class="action-grid">
+    <a href="{{ url_for('auth.edit_user') }}" class="action-btn action-btn-primary">
+        <i class="bi bi-pencil-square"></i>
+        <span>Editar Perfil</span>
+    </a>
+    
+    <a href="{{ url_for('auth.cambiar_password') }}" class="action-btn action-btn-warning">
+        <i class="bi bi-key-fill"></i>
+        <span>Cambiar Contraseña</span>
+    </a>
+    
+    <!-- Este es el botón que debe usar la ruta correcta -->
+    <a href="{{ url_for('auth.descargar_datos_premium') }}" class="action-btn action-btn-pdf" id="pdfBtn">
+        <i class="bi bi-file-earmark-pdf-fill"></i>
+        <span>Descargar PDF Premium</span>
+    </a>
+    
+    <a href="{{ url_for('dashboard.dashboard') }}" class="action-btn action-btn-dark">
+        <i class="bi bi-arrow-left"></i>
+        <span>Volver al Dashboard</span>
+    </a>
 </div>
 
 <!-- ========== LOADING SPINNER PARA PDF ========== -->
@@ -868,4 +868,5 @@
 </script>
 
 {% endblock %}
+
 
