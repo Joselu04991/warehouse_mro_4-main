@@ -14,31 +14,30 @@ gunicorn==21.2.0
 ##########################
 pymysql==1.1.1          # MySQL (opcional)
 psycopg2-binary==2.9.9  # PostgreSQL (Railway usa PostgreSQL)
-sqlite-web==0.3.9       # Explorador SQLite
+# sqlite-web==0.3.9     # REMOVIDO - Causa problemas en Railway
 
 ##########################
 # ARCHIVOS EXCEL / CSV
 ##########################
 pandas==2.2.3
 openpyxl==3.1.2
-xlrd==2.0.1
+# xlrd==2.0.1          # REMOVIDO - Conflictos con pandas
 xlsxwriter==3.2.0
 numpy==2.2.2
 
 ##########################
-# REPORTES / PDF - AGREGADOS
+# REPORTES / PDF
 ##########################
 reportlab==4.1.0
 fpdf2==2.7.7
-PyPDF2==3.0.1
-reportlab-german==1.0    
-svglib==1.5.1             
+PyPDF2==2.12.1          # VERSIÓN CORREGIDA - Compatible con Python 3.10
+
 ##########################
-# IMÁGENES Y QR - AGREGADOS
+# IMÁGENES Y QR
 ##########################
 Pillow==10.2.0
 qrcode==7.4.2
-python-barcode==0.15.1
+# python-barcode==0.15.1  # REMOVIDO - Opcional
 
 ##########################
 # FECHAS Y TIEMPO
@@ -65,29 +64,16 @@ requests==2.32.3
 ##########################
 # MANIPULACIÓN AVANZADA (OPCIONAL)
 ##########################
-regex==2023.12.25
-pyyaml==6.0.1
+# regex==2023.12.25      # REMOVIDO - Opcional
+# pyyaml==6.0.1          # REMOVIDO - Opcional
 
 ##########################
 # IA / MACHINE LEARNING (OPCIONAL)
 ##########################
-scikit-learn==1.4.2
-joblib==1.4.0
+# scikit-learn==1.4.2    # REMOVIDO - Muy pesado para Railway
+# joblib==1.4.0          # REMOVIDO - Dependencia de scikit-learn
 
 ##########################
-# DEPENDENCIAS ESPECÍFICAS PARA RAILWAY - AGREGADAS
+# SVG Y GRÁFICOS (opcional)
 ##########################
-# Para compatibilidad con PostgreSQL en Railway
-psycopg2-binary==2.9.9
-# Para manejo de archivos temporales
-python-magic==0.4.27
-# Para scheduling (limpieza de archivos)
-APScheduler==3.10.4
-
-##########################
-# DEPENDENCIAS DE DESARROLLO (opcional)
-##########################
-# python-multipart==0.0.6  # Para uploads grandes
-# flask-cors==4.0.0       # Para APIs
-# flask-limiter==3.3.5    # Para rate limiting
-
+# svglib==1.5.1          # REMOVIDO - Puede causar problemas
