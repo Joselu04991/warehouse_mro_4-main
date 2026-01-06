@@ -69,25 +69,56 @@ def parse_snapshot_from_filename(filename: str):
 # -----------------------------------------------------------------------------
 # DASHBOARD
 # -----------------------------------------------------------------------------
+# routes/inventory_routes.py - Función dashboard_inventory corregida
 
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard_inventory():
+    # Obtener todos los items del usuario actual
     items = InventoryItem.query.filter_by(user_id=current_user.id).all()
-
-    crit = sum(1 for i in items if i.libre_utilizacion <= 0)
-    bajo = sum(1 for i in items if 0 < i.libre_utilizacion < 5)
-
+    
+    # Calcular KPIs
+    total_items = len(items)
+    
+    # Ubicaciones únicas
+    ubicaciones = set(item.location for item in items if item.location)
+    ubicaciones_unicas = len(ubicaciones)
+    
+    # Materiales críticos (stock <= 0)
+    criticos = sum(1 for item in items if item.libre_utilizacion <= 0)
+    
+    # Materiales con faltante (stock < mínimo, ajusta según tu lógica)
+    faltantes = sum(1 for item in items if item.libre_utilizacion < 5)  # Ejemplo: stock menor a 5
+    
+    # Calcular estados
+    estados = {
+        "OK": sum(1 for item in items if item.libre_utilizacion >= 10),  # Ejemplo: stock >= 10
+        "FALTA": faltantes,
+        "CRITICO": criticos,
+        "SOBRA": sum(1 for item in items if item.libre_utilizacion > 50)  # Ejemplo: stock > 50
+    }
+    
+    # Top ubicaciones para gráfico
+    from collections import Counter
+    ubicaciones_counter = Counter(item.location for item in items if item.location)
+    
+    # Obtener top 10 ubicaciones
+    top_ubicaciones = ubicaciones_counter.most_common(10)
+    ubicaciones_labels = [str(loc) for loc, _ in top_ubicaciones]
+    ubicaciones_counts = [count for _, count in top_ubicaciones]
+    
     return render_template(
         "inventory/dashboard.html",
-        total_items=len(items),
-        estados={
-            "OK": len(items) - crit - bajo,
-            "BAJO": bajo,
-            "CRITICO": crit
-        }
+        items=items,  # ¡IMPORTANTE! Esto estaba faltando
+        total_items=total_items,
+        ubicaciones_unicas=ubicaciones_unicas,
+        criticos=criticos,
+        faltantes=faltantes,
+        estados=estados,
+        ubicaciones_labels=ubicaciones_labels,
+        ubicaciones_counts=ubicaciones_counts,
+        now=datetime.now(TZ)
     )
-
 # -----------------------------------------------------------------------------
 # INVENTARIO ACTUAL
 # -----------------------------------------------------------------------------
