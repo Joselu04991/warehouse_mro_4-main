@@ -66,6 +66,18 @@
         transform: translateX(-50%);
         object-fit: cover;
         background: var(--gerdau-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        color: var(--gerdau-blue);
+    }
+
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
 
     .profile-info {
@@ -98,6 +110,7 @@
         margin-top: 1rem;
         color: #6c757d;
         font-size: 0.9rem;
+        flex-wrap: wrap;
     }
 
     .profile-meta-item {
@@ -387,6 +400,17 @@
         color: white;
     }
 
+    .action-btn-premium {
+        background: linear-gradient(135deg, #ffc107, #ff9800);
+        color: #212529;
+    }
+
+    .action-btn-premium:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(255, 193, 7, 0.3);
+        color: #212529;
+    }
+
     /* ========== RESPONSIVE ========== */
     @media (max-width: 768px) {
         .profile-avatar {
@@ -477,6 +501,16 @@
     .shadow-soft {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
+
+    .initials-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 2.5rem;
+        background: linear-gradient(135deg, var(--gerdau-blue), var(--gerdau-purple));
+        color: white;
+    }
 </style>
 
 <div class="container profile-container mt-4">
@@ -492,22 +526,31 @@
         </div>
         
         <div class="profile-content">
-            <img src="{{ current_user.photo or url_for('static', filename='img/default_avatar.png') }}" 
-                 class="profile-avatar"
-                 alt="Avatar de {{ current_user.username }}">
+            <!-- Avatar con fallback si no hay imagen -->
+            {% if current_user.photo %}
+            <div class="profile-avatar">
+                <img src="{{ current_user.photo }}" 
+                     alt="Avatar de {{ current_user.username }}"
+                     onerror="this.style.display='none'; this.parentElement.classList.add('initials-avatar'); this.parentElement.innerHTML='{{ current_user.username[:2].upper() }}';">
+            </div>
+            {% else %}
+            <div class="profile-avatar initials-avatar">
+                {{ current_user.username[:2].upper() }}
+            </div>
+            {% endif %}
             
             <div class="profile-info">
                 <h1 class="profile-name">{{ current_user.username }}</h1>
                 
                 <div class="profile-role">
                     <i class="bi bi-person-badge-fill me-1"></i>
-                    {{ current_user.role | upper }}
+                    {{ current_user.role | default('USUARIO') | upper }}
                 </div>
                 
                 <div class="profile-meta">
                     <div class="profile-meta-item">
                         <i class="bi bi-envelope-at-fill text-primary"></i>
-                        <span>{{ current_user.email or "Sin correo" }}</span>
+                        <span>{{ current_user.email or "Sin correo registrado" }}</span>
                     </div>
                     
                     <div class="profile-meta-item">
@@ -538,7 +581,7 @@
                 <i class="bi bi-box-seam-fill"></i>
             </div>
             <div class="kpi-content">
-                <div class="kpi-value">{{ kpi_inventarios }}</div>
+                <div class="kpi-value">{{ kpi_inventarios | default(0) }}</div>
                 <div class="kpi-label">Inventarios Subidos</div>
             </div>
         </div>
@@ -548,7 +591,7 @@
                 <i class="bi bi-truck"></i>
             </div>
             <div class="kpi-content">
-                <div class="kpi-value">{{ kpi_bultos }}</div>
+                <div class="kpi-value">{{ kpi_bultos | default(0) }}</div>
                 <div class="kpi-label">Bultos Registrados</div>
             </div>
         </div>
@@ -558,7 +601,7 @@
                 <i class="bi bi-bell-fill"></i>
             </div>
             <div class="kpi-content">
-                <div class="kpi-value">{{ kpi_alertas }}</div>
+                <div class="kpi-value">{{ kpi_alertas | default(0) }}</div>
                 <div class="kpi-label">Alertas Reportadas</div>
             </div>
         </div>
@@ -568,7 +611,7 @@
                 <i class="bi bi-award-fill"></i>
             </div>
             <div class="kpi-content">
-                <div class="kpi-value">{{ current_user.score }}</div>
+                <div class="kpi-value">{{ current_user.score | default(0) }}</div>
                 <div class="kpi-label">Puntaje Técnico</div>
             </div>
         </div>
@@ -637,10 +680,16 @@
         
         {% if actividad %}
         <div class="timeline">
-            {% for log in actividad %}
+            {% for log in actividad[:10] %} <!-- Limitar a 10 actividades recientes -->
             <div class="timeline-item">
-                <div class="timeline-date">{{ log.fecha }}</div>
-                <div class="timeline-text">{{ log.descripcion }}</div>
+                <div class="timeline-date">
+                    {% if log.fecha %}
+                        {{ log.fecha.strftime('%d/%m/%Y %H:%M') if log.fecha is string else log.fecha }}
+                    {% else %}
+                        Sin fecha
+                    {% endif %}
+                </div>
+                <div class="timeline-text">{{ log.descripcion or "Actividad sin descripción" }}</div>
             </div>
             {% endfor %}
         </div>
@@ -667,9 +716,12 @@
             <span>Cambiar Contraseña</span>
         </a>
         
-        <a href="{{ url_for('auth.descargar_datos_premium') }}" class="btn btn-warning mt-2">
-            <i class="bi bi-file-earmark-pdf-fill"></i> Descargar Reporte Premium
+        {% if current_user.has_premium_access %}
+        <a href="{{ url_for('auth.descargar_datos_premium') }}" class="action-btn action-btn-premium">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <span>Reporte Premium</span>
         </a>
+        {% endif %}
         
         <a href="{{ url_for('dashboard.dashboard') }}" class="action-btn action-btn-dark">
             <i class="bi bi-arrow-left"></i>
@@ -709,13 +761,34 @@
         animateOnScroll();
         window.addEventListener('scroll', animateOnScroll);
         
-        // Tooltips para íconos
+        // Tooltips para íconos (si se agregan)
         const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
+        if (tooltipTriggerList.length > 0) {
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+        
+        // Manejo de errores en imágenes
+        document.querySelectorAll('.profile-avatar img').forEach(img => {
+            img.addEventListener('error', function() {
+                const avatarContainer = this.closest('.profile-avatar');
+                if (avatarContainer) {
+                    const username = "{{ current_user.username }}";
+                    const initials = username ? username.substring(0, 2).toUpperCase() : "US";
+                    avatarContainer.innerHTML = initials;
+                    avatarContainer.classList.add('initials-avatar');
+                    avatarContainer.style.display = 'flex';
+                    avatarContainer.style.alignItems = 'center';
+                    avatarContainer.style.justifyContent = 'center';
+                    avatarContainer.style.fontWeight = 'bold';
+                    avatarContainer.style.fontSize = '2.5rem';
+                    avatarContainer.style.background = 'linear-gradient(135deg, #003b71, #6f42c1)';
+                    avatarContainer.style.color = 'white';
+                }
+            });
         });
     });
 </script>
 
 {% endblock %}
-
