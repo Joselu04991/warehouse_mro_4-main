@@ -528,9 +528,11 @@
                 <button class="btn btn-sm btn-outline-primary" onclick="loadLatestData()">
                     <i class="bi bi-arrow-clockwise"></i> Actualizar
                 </button>
-                <a href="{{ url_for('inventory.conteo_fisico') }}" class="btn btn-sm btn-success">
+                {% if url_for('inventory.count_inventory') %}
+                <a href="{{ url_for('inventory.count_inventory') }}" class="btn btn-sm btn-success">
                     <i class="bi bi-clipboard-check"></i> Ir a Conteo
                 </a>
+                {% endif %}
             </div>
         </div>
         
@@ -773,9 +775,11 @@
                                         <div class="text-muted">
                                             <i class="bi bi-inbox display-6"></i>
                                             <p class="mt-2 mb-3">No hay datos de conteo físico</p>
-                                            <a href="{{ url_for('inventory.conteo_fisico') }}" class="btn btn-sm btn-primary">
+                                            {% if url_for('inventory.count_inventory') %}
+                                            <a href="{{ url_for('inventory.count_inventory') }}" class="btn btn-sm btn-primary">
                                                 <i class="bi bi-clipboard-check me-1"></i>Realizar Conteo
                                             </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -841,10 +845,12 @@
                 </div>
                 <div class="widget-body">
                     <div class="quick-actions">
-                        <a href="{{ url_for('inventory.conteo_fisico') }}" class="action-btn">
+                        {% if url_for('inventory.count_inventory') %}
+                        <a href="{{ url_for('inventory.count_inventory') }}" class="action-btn">
                             <i class="bi bi-clipboard-check"></i>
                             <span>Continuar Conteo</span>
                         </a>
+                        {% endif %}
                         <button class="action-btn" onclick="exportDifferences()">
                             <i class="bi bi-file-earmark-excel"></i>
                             <span>Exportar Diferencias</span>
@@ -911,10 +917,10 @@
 // ================= CONFIGURACIÓN =================
 const CONFIG = {
     API: {
-        get_latest: "{{ url_for('inventory.get_latest_counts') }}",
-        export_diff: "{{ url_for('inventory.export_differences') }}",
-        export_all: "{{ url_for('inventory.export_inventory') }}",
-        reconcile: "{{ url_for('inventory.reconcile_inventory') }}"
+        get_latest: "{{ url_for('inventory.get_latest_counts') if 'get_latest_counts' in url_for.__globals__ else '#' }}",
+        export_diff: "{{ url_for('inventory.export_differences') if 'export_differences' in url_for.__globals__ else '#' }}",
+        export_all: "{{ url_for('inventory.export_inventory') if 'export_inventory' in url_for.__globals__ else '#' }}",
+        reconcile: "{{ url_for('inventory.reconcile_inventory') if 'reconcile_inventory' in url_for.__globals__ else '#' }}"
     }
 };
 
@@ -1298,6 +1304,12 @@ async function exportDifferences() {
         return;
     }
     
+    // Si la API no está disponible, generar Excel localmente
+    if (CONFIG.API.export_diff === '#') {
+        generateDifferencesExcel(differences);
+        return;
+    }
+    
     try {
         // Descargar desde el servidor
         const response = await fetch(CONFIG.API.export_diff);
@@ -1369,6 +1381,12 @@ function generateDifferencesExcel(differences) {
 function exportToExcel() {
     if (filteredData.length === 0) {
         showToast('No hay datos para exportar', 'warning');
+        return;
+    }
+    
+    // Si la API no está disponible, generar Excel localmente
+    if (CONFIG.API.export_all === '#') {
+        generateCompleteExcel();
         return;
     }
     
@@ -1497,6 +1515,15 @@ function printTable() {
 async function loadLatestData() {
     showLoading('Actualizando datos...');
     
+    // Si la API no está disponible, recargar la página
+    if (CONFIG.API.get_latest === '#') {
+        setTimeout(() => {
+            hideLoading();
+            location.reload();
+        }, 1000);
+        return;
+    }
+    
     try {
         const response = await fetch(CONFIG.API.get_latest);
         
@@ -1577,6 +1604,15 @@ function showReconciliation() {
 
 async function performReconciliation(differences) {
     showLoading(`Conciliando ${differences.length} diferencias...`);
+    
+    // Si la API no está disponible, mostrar mensaje
+    if (CONFIG.API.reconcile === '#') {
+        setTimeout(() => {
+            hideLoading();
+            showToast('Funcionalidad de conciliación no disponible', 'warning');
+        }, 1000);
+        return;
+    }
     
     try {
         const response = await fetch(CONFIG.API.reconcile, {
