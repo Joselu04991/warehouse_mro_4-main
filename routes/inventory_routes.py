@@ -1379,3 +1379,64 @@ def reset_dashboard():
 def index():
     # Redirige al dashboard o muestra página principal
     return redirect(url_for('inventory.dashboard_inventory'))
+@inventory_bp.route('/update_count', methods=['POST'])
+@login_required
+def update_count():
+    """Actualizar el conteo físico de un item"""
+    try:
+        data = request.get_json()
+        item_id = data.get('id')
+        real_count = data.get('real_count')
+        notes = data.get('notes', '')
+        
+        if not item_id or real_count is None:
+            return jsonify({'success': False, 'message': 'Datos incompletos'}), 400
+        
+        # Buscar el item en la base de datos
+        from models.inventory import InventoryCount
+        item = InventoryCount.query.get(item_id)
+        
+        if not item:
+            return jsonify({'success': False, 'message': 'Item no encontrado'}), 404
+        
+        # Actualizar el conteo
+        item.real_count = int(real_count)
+        item.notes = notes
+        
+        # Calcular estado
+        if item.real_count == item.stock:
+            item.estado = 'OK'
+        elif item.real_count > 0:
+            item.estado = 'Diferencia'
+        else:
+            item.estado = 'Pendiente'
+        
+        # Actualizar usuario y timestamp
+        item.usuario = current_user.username
+        item.timestamp = datetime.now()
+        
+        # Guardar en base de datos
+        db.session.commit()
+        
+        # Retornar éxito
+        return jsonify({
+            'success': True,
+            'message': 'Conteo actualizado exitosamente',
+            'item': {
+                'id': item.id,
+                'material_code': item.material_code,
+                'material_text': item.material_text,
+                'location': item.location,
+                'stock': item.stock,
+                'real_count': item.real_count,
+                'diferencia': item.real_count - item.stock,
+                'estado': item.estado,
+                'usuario': item.usuario,
+                'timestamp': item.timestamp.isoformat() if item.timestamp else None
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error actualizando conteo: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error al actualizar: {str(e)}'}), 500
