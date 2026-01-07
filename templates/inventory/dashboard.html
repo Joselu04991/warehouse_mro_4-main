@@ -2017,48 +2017,13 @@
     </div>
 </div>
 
-<!-- MODALES -->
-<div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-pencil me-2"></i>
-                    Editar Conteo Físico
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="itemModalBody">
-                <!-- Cargado dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-question-circle me-2"></i>
-                    Ayuda del Dashboard
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Contenido de ayuda -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
 // ================= CONFIGURACIÓN =================
@@ -2112,13 +2077,14 @@ function initDashboard() {
 function initCharts() {
     console.log('📈 Inicializando gráficos...');
     
+    // Datos para los gráficos
+    const okCount = {{ coinciden|default(0) }};
+    const diffCount = {{ (sobras|default(0) + faltantes|default(0)) }};
+    const pendCount = {{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }};
+    
     // Gráfico de estado
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
-        const okCount = {{ coinciden|default(0) }};
-        const diffCount = {{ (sobras|default(0) + faltantes|default(0)) }};
-        const pendCount = {{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }};
-        
         CONFIG.charts.statusChart = new Chart(statusCtx, {
             type: 'doughnut',
             data: {
@@ -2168,7 +2134,16 @@ function initCharts() {
                             weight: '600'
                         },
                         padding: 12,
-                        cornerRadius: 8
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 },
                 animation: {
@@ -2277,149 +2252,512 @@ function refreshDashboard() {
     
     showLoading('Actualizando datos del dashboard...', 'Obteniendo información en tiempo real');
     
-    // Simular actualización (en producción sería fetch a la API)
-    setTimeout(() => {
-        if (CONFIG.charts.statusChart) {
-            CONFIG.charts.statusChart.update();
-        }
-        if (CONFIG.charts.trendChart) {
-            CONFIG.charts.trendChart.update();
-        }
-        
-        updateTableInfo();
-        showNotification('Dashboard actualizado', 'Datos refrescados correctamente', 'success');
-        
-        if (refreshBtn) {
-            refreshBtn.disabled = false;
-            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-        }
-        
-        hideLoading();
-    }, 1500);
-}
-
-function updateDashboard(data) {
-    console.log('📊 Actualizando dashboard con nuevos datos:', data);
-    
     // Actualizar estadísticas
-    if (data.stats) {
-        document.getElementById('totalItems').innerHTML = `${data.stats.total} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +5%</span>`;
-        document.getElementById('correctItems').innerHTML = `${data.stats.ok} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +3%</span>`;
-        document.getElementById('diffItems').innerHTML = `${data.stats.differences} <span class="stat-trend trend-down"><i class="bi bi-arrow-down-right"></i> -2%</span>`;
-        document.getElementById('progressPercent').innerHTML = `${data.stats.percentage}% <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +1%</span>`;
+    updateRealTimeStats();
+    
+    // Actualizar gráficos
+    if (CONFIG.charts.statusChart) {
+        CONFIG.charts.statusChart.update();
     }
-    
-    // Actualizar tabla si hay items
-    if (data.items && data.items.length > 0) {
-        updateTable(data.items);
+    if (CONFIG.charts.trendChart) {
+        CONFIG.charts.trendChart.update();
     }
-}
-
-function updateTable(items) {
-    console.log('📋 Actualizando tabla con', items.length, 'items');
-    
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    items.forEach(item => {
-        const diff = item.diferencia || 0;
-        const diffAbs = Math.abs(diff);
-        const statusColor = item.estado === 'OK' ? 'success' : 
-                          item.estado === 'Diferencia' ? 'warning' : 'info';
-        
-        const row = document.createElement('tr');
-        row.className = 'hover-lift';
-        row.setAttribute('data-item', JSON.stringify(item));
-        
-        row.innerHTML = `
-            <td>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold text-primary">${item.material_code || 'N/A'}</span>
-                    ${diffAbs > 10 ? '<span class="badge bg-danger pulse" title="Diferencia crítica"><i class="bi bi-exclamation-lg"></i></span>' : ''}
-                </div>
-            </td>
-            <td>
-                <span class="text-truncate d-inline-block" style="max-width: 220px;" 
-                      title="${item.material_text || ''}">
-                    ${item.material_text || 'Sin descripción'}
-                </span>
-            </td>
-            <td>
-                <span class="badge bg-dark">
-                    <i class="bi bi-geo-alt me-1"></i>
-                    ${item.location || 'N/A'}
-                </span>
-            </td>
-            <td class="fw-bold">${item.stock || 0}</td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                ${item.real_count || item.count || '-'}
-            </td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                ${diff > 0 ? `<i class="bi bi-plus-circle me-1"></i>+${diffAbs}` : 
-                  diff < 0 ? `<i class="bi bi-dash-circle me-1"></i>-${diffAbs}` : 
-                  '<span class="text-muted">0</span>'}
-            </td>
-            <td>
-                <span class="status-indicator status-${statusColor}">
-                    <i class="bi ${item.estado === 'OK' ? 'bi-check-circle' : item.estado === 'Diferencia' ? 'bi-exclamation-triangle' : 'bi-clock'} me-1"></i>
-                    ${item.estado || 'Pendiente'}
-                </span>
-            </td>
-            <td>
-                ${item.timestamp || item.contado_en ? 
-                  `<div class="small fw-bold">${formatTime(item.timestamp || item.contado_en)}</div>
-                   <div class="extra-small text-muted">${formatDate(item.timestamp || item.contado_en)}</div>` : 
-                  '<span class="text-muted small">No registrado</span>'}
-            </td>
-            <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary btn-sm" onclick="editItem(this)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-outline-success btn-sm" onclick="recountItem(this)">
-                        <i class="bi bi-arrow-repeat"></i>
-                    </button>
-                    <button class="btn btn-outline-warning btn-sm" onclick="flagItem(this)">
-                        <i class="bi bi-flag"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
     
     updateTableInfo();
+    showNotification('Dashboard actualizado', 'Datos refrescados correctamente', 'success');
+    
+    if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+    }
+    
+    hideLoading();
 }
 
-function updateTableInfo() {
-    const visibleRows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])').length;
-    const totalRows = document.querySelectorAll('#tableBody tr').length;
+function updateRealTimeStats() {
+    // Actualizar los valores de estadísticas
+    const stats = {
+        total: {{ total_items|default(0) }},
+        ok: {{ coinciden|default(0) }},
+        differences: {{ (sobras|default(0) + faltantes|default(0)) }},
+        percentage: {{ porcentaje_progreso|default(0) }}
+    };
     
-    document.getElementById('visibleCount').textContent = visibleRows;
-    document.getElementById('totalCount').textContent = totalRows;
+    console.log('📊 Actualizando estadísticas:', stats);
 }
 
-function setupTableFilters() {
-    console.log('🔍 Configurando filtros de tabla...');
+// ================= FUNCIONALIDADES DE PDF =================
+async function exportTableToPDF() {
+    console.log('📄 Exportando a PDF...');
     
-    const searchInput = document.getElementById('tableSearch');
-    const statusFilter = document.getElementById('tableStatusFilter');
-    const locationFilter = document.getElementById('tableLocationFilter');
-    const sortBy = document.getElementById('tableSortBy');
+    showLoading('Generando PDF...', 'Creando reporte con gráficos incluidos');
     
-    // Configurar búsqueda con debounce
-    let searchTimeout;
-    searchInput?.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterTable, 350);
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 15;
+        let yPos = margin;
+        
+        // Título
+        doc.setFontSize(20);
+        doc.setTextColor(44, 62, 80);
+        doc.setFont('helvetica', 'bold');
+        doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+        
+        // Información
+        doc.setFontSize(10);
+        doc.setTextColor(108, 117, 125);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
+        doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 15;
+        
+        // Estadísticas
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ESTADÍSTICAS', margin, yPos);
+        yPos += 8;
+        
+        const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+        const okCount = Array.from(rows).filter(r => {
+            try {
+                const item = JSON.parse(r.getAttribute('data-item'));
+                return item.estado === 'OK';
+            } catch { return false; }
+        }).length;
+        
+        const diffCount = Array.from(rows).filter(r => {
+            try {
+                const item = JSON.parse(r.getAttribute('data-item'));
+                return item.estado === 'Diferencia';
+            } catch { return false; }
+        }).length;
+        
+        const pendCount = rows.length - okCount - diffCount;
+        
+        const stats = [
+            `• Total items: ${rows.length}`,
+            `• Coincidencias (OK): ${okCount} (${Math.round((okCount / rows.length) * 100)}%)`,
+            `• Diferencias: ${diffCount} (${Math.round((diffCount / rows.length) * 100)}%)`,
+            `• Pendientes: ${pendCount} (${Math.round((pendCount / rows.length) * 100)}%)`
+        ];
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        stats.forEach(stat => {
+            doc.text(stat, margin + 5, yPos);
+            yPos += 6;
+        });
+        
+        yPos += 10;
+        
+        // CAPTURAR Y AGREGAR GRÁFICOS AL PDF
+        try {
+            // Capturar gráfico de estado
+            const chart1Canvas = document.getElementById('statusChart');
+            if (chart1Canvas) {
+                const chart1Image = await captureChartAsImage(chart1Canvas);
+                doc.addImage(chart1Image, 'PNG', margin, yPos, pageWidth - (margin * 2), 80);
+                yPos += 90;
+            }
+            
+            // Capturar gráfico de tendencia
+            const chart2Canvas = document.getElementById('trendChart');
+            if (chart2Canvas) {
+                const chart2Image = await captureChartAsImage(chart2Canvas);
+                doc.addImage(chart2Image, 'PNG', margin, yPos, pageWidth - (margin * 2), 80);
+                yPos += 90;
+            }
+            
+            // Si hay espacio, agregar tabla
+            if (yPos < 250) {
+                doc.addPage();
+                yPos = margin;
+                
+                // Tabla de datos
+                const tableData = [];
+                
+                rows.forEach(row => {
+                    try {
+                        const item = JSON.parse(row.getAttribute('data-item'));
+                        const diff = item.diferencia || (item.real_count - item.stock) || 0;
+                        
+                        tableData.push([
+                            item.material_code || '',
+                            (item.material_text || '').substring(0, 25) + ((item.material_text || '').length > 25 ? '...' : ''),
+                            item.location || '',
+                            (item.stock || 0).toString(),
+                            (item.real_count || item.count || 0).toString(),
+                            diff > 0 ? `+${diff}` : diff.toString(),
+                            item.estado || ''
+                        ]);
+                    } catch (error) {
+                        console.error('Error procesando fila para PDF:', error);
+                    }
+                });
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
+                    body: tableData,
+                    margin: { left: margin, right: margin },
+                    styles: { 
+                        fontSize: 8,
+                        cellPadding: 2
+                    },
+                    headStyles: { 
+                        fillColor: [44, 62, 80],
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 249, 250]
+                    },
+                    didDrawPage: function(data) {
+                        // Footer
+                        doc.setFontSize(10);
+                        doc.setTextColor(150);
+                        doc.text(
+                            `Página ${doc.internal.getNumberOfPages()}`,
+                            pageWidth / 2,
+                            doc.internal.pageSize.getHeight() - 10,
+                            { align: 'center' }
+                        );
+                    }
+                });
+            }
+        } catch (chartError) {
+            console.warn('No se pudieron capturar los gráficos:', chartError);
+            doc.text('Gráficos no disponibles', margin, yPos);
+            yPos += 10;
+        }
+        
+        // Generar nombre de archivo y guardar
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `reporte_inventario_${date}.pdf`;
+        
+        doc.save(filename);
+        
+        hideLoading();
+        showNotification('PDF generado', `Archivo ${filename} descargado con gráficos incluidos`, 'success');
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        hideLoading();
+        showNotification('Error', 'No se pudo generar el PDF', 'error');
+    }
+}
+
+async function captureChartAsImage(canvas) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Crear un canvas temporal
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Configurar tamaño
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            
+            // Fondo blanco
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Dibujar el gráfico
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            // Convertir a imagen
+            const imageData = tempCanvas.toDataURL('image/png');
+            resolve(imageData);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+function exportDifferences() {
+    console.log('📤 Exportando diferencias...');
+    
+    showLoading('Preparando exportación...', 'Generando archivo Excel de diferencias');
+    
+    // Obtener solo items con diferencias
+    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    const differences = [];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            if (item.estado === 'Diferencia' && row.style.display !== 'none') {
+                differences.push(item);
+            }
+        } catch (error) {
+            console.error('Error procesando fila para exportación:', error);
+        }
     });
     
-    // Configurar filtros
-    [statusFilter, locationFilter, sortBy].forEach(element => {
-        element?.addEventListener('change', filterTable);
+    if (differences.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin diferencias',
+            text: 'No hay diferencias para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Crear datos para Excel
+    const excelData = [
+        ['REPORTE DE DIFERENCIAS - INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Total diferencias:', differences.length],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo']
+    ];
+    
+    differences.forEach(item => {
+        const diff = item.diferencia || (item.real_count - item.stock) || 0;
+        excelData.push([
+            item.material_code || '',
+            item.material_text || '',
+            item.location || '',
+            item.stock || 0,
+            item.real_count || item.count || 0,
+            diff,
+            item.estado || '',
+            item.usuario || 'N/A',
+            item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'
+        ]);
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
+    
+    // Aplicar estilos (ancho de columnas)
+    const wscols = [
+        {wch: 15}, // Código
+        {wch: 40}, // Descripción
+        {wch: 12}, // Ubicación
+        {wch: 12}, // Stock
+        {wch: 12}, // Conteo
+        {wch: 12}, // Diferencia
+        {wch: 12}, // Estado
+        {wch: 15}, // Usuario
+        {wch: 15}  // Fecha
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `diferencias_inventario_${date}.xlsx`;
+    
+    // Descargar archivo
+    XLSX.writeFile(wb, fileName);
+    hideLoading();
+    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+}
+
+function exportTableToExcel() {
+    console.log('📊 Exportando tabla completa a Excel...');
+    
+    showLoading('Exportando tabla...', 'Preparando archivo Excel');
+    
+    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+    
+    if (rows.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos visibles para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    const excelData = [
+        ['REPORTE COMPLETO DE INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Total items:', rows.length],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones']
+    ];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            const diff = item.diferencia || (item.real_count - item.stock) || 0;
+            
+            excelData.push([
+                item.material_code || '',
+                item.material_text || '',
+                item.location || '',
+                item.stock || 0,
+                item.real_count || item.count || 0,
+                diff,
+                item.estado || '',
+                item.usuario || 'N/A',
+                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
+                item.notes || ''
+            ]);
+        } catch (error) {
+            console.error('Error exportando fila:', error);
+        }
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+    
+    // Aplicar estilos
+    const wscols = [
+        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
+        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
+        {wch: 15}, {wch: 30}
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `inventario_completo_${date}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    hideLoading();
+    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+}
+
+// ================= FUNCIONES DE UTILIDAD =================
+function editItem(button) {
+    console.log('✏️ Editando item...');
+    
+    const row = button.closest('tr');
+    const item = JSON.parse(row.getAttribute('data-item'));
+    
+    Swal.fire({
+        title: `<div class="text-primary"><i class="bi bi-pencil me-2"></i>Editar Conteo</div>`,
+        html: `
+            <div class="text-start">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Editando: <strong>${item.material_code}</strong> en <strong>${item.location}</strong>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Stock Sistema</label>
+                        <input type="number" class="form-control" value="${item.stock || 0}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Conteo Físico *</label>
+                        <input type="number" id="editCount" class="form-control" 
+                               value="${item.real_count || item.count || ''}" 
+                               min="0" step="1" required>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Observaciones</label>
+                    <textarea id="editNotes" class="form-control" rows="3" 
+                              placeholder="Notas adicionales sobre el conteo...">${item.notes || ''}</textarea>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Los cambios se guardarán inmediatamente
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Guardar Cambios',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#e74c3c',
+        width: '600px',
+        preConfirm: () => {
+            const countInput = document.getElementById('editCount');
+            const count = countInput.value.trim();
+            
+            if (!count) {
+                Swal.showValidationMessage('Por favor, ingrese el conteo físico');
+                countInput.focus();
+                return false;
+            }
+            
+            if (isNaN(count) || parseInt(count) < 0) {
+                Swal.showValidationMessage('El conteo debe ser un número positivo');
+                countInput.focus();
+                return false;
+            }
+            
+            return {
+                count: parseInt(count),
+                notes: document.getElementById('editNotes').value.trim()
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading('Guardando cambios...', 'Actualizando base de datos');
+            
+            // Simular guardado
+            setTimeout(() => {
+                hideLoading();
+                
+                // Actualizar fila localmente
+                const newCount = result.value.count;
+                const newDiff = newCount - (item.stock || 0);
+                const newStatus = newCount === (item.stock || 0) ? 'OK' : 'Diferencia';
+                
+                // Actualizar celdas
+                row.cells[4].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">${newCount}</span>`;
+                row.cells[5].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">
+                    ${newDiff > 0 ? '<i class="bi bi-plus-circle me-1"></i>+' : newDiff < 0 ? '<i class="bi bi-dash-circle me-1"></i>-' : ''}${Math.abs(newDiff)}
+                </span>`;
+                row.cells[6].innerHTML = `<span class="status-indicator status-${newStatus === 'OK' ? 'success' : 'warning'}">
+                    <i class="bi ${newStatus === 'OK' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-1"></i>${newStatus}
+                </span>`;
+                
+                // Actualizar timestamp
+                const now = new Date();
+                row.cells[7].innerHTML = `
+                    <div class="small fw-bold">${formatTime(now)}</div>
+                    <div class="extra-small text-muted">${formatDate(now)}</div>
+                `;
+                
+                // Actualizar datos en el atributo data-item
+                item.real_count = newCount;
+                item.count = newCount;
+                item.diferencia = newDiff;
+                item.estado = newStatus;
+                item.notes = result.value.notes;
+                item.timestamp = now.toISOString();
+                row.setAttribute('data-item', JSON.stringify(item));
+                
+                showNotification('¡Cambios guardados!', 'El conteo ha sido actualizado correctamente', 'success');
+                
+                // Actualizar gráficos
+                if (CONFIG.charts.statusChart) {
+                    // Actualizar datos del gráfico
+                    const okCount = document.querySelectorAll('.status-success').length;
+                    const diffCount = document.querySelectorAll('.status-warning').length;
+                    const pendCount = document.querySelectorAll('.status-info').length;
+                    
+                    CONFIG.charts.statusChart.data.datasets[0].data = [okCount, diffCount, pendCount];
+                    CONFIG.charts.statusChart.update();
+                }
+                
+            }, 1000);
+        }
     });
 }
 
@@ -2524,754 +2862,32 @@ function sortTable(sortBy) {
     console.log('✅ Tabla ordenada');
 }
 
-// ================= FUNCIONALIDADES =================
-function editItem(button) {
-    console.log('✏️ Editando item...');
+function updateTableInfo() {
+    const visibleRows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])').length;
+    const totalRows = document.querySelectorAll('#tableBody tr').length;
     
-    const row = button.closest('tr');
-    const item = JSON.parse(row.getAttribute('data-item'));
-    
-    Swal.fire({
-        title: `<div class="text-primary"><i class="bi bi-pencil me-2"></i>Editar Conteo</div>`,
-        html: `
-            <div class="text-start">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Editando: <strong>${item.material_code}</strong> en <strong>${item.location}</strong>
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Stock Sistema</label>
-                        <input type="number" class="form-control" value="${item.stock || 0}" readonly>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Conteo Físico *</label>
-                        <input type="number" id="editCount" class="form-control" 
-                               value="${item.real_count || item.count || ''}" 
-                               min="0" step="1" required>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Observaciones</label>
-                    <textarea id="editNotes" class="form-control" rows="3" 
-                              placeholder="Notas adicionales sobre el conteo...">${item.notes || ''}</textarea>
-                </div>
-                
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Los cambios se guardarán inmediatamente
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Guardar Cambios',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
-        confirmButtonColor: '#27ae60',
-        cancelButtonColor: '#e74c3c',
-        width: '600px',
-        preConfirm: () => {
-            const countInput = document.getElementById('editCount');
-            const count = countInput.value.trim();
-            
-            if (!count) {
-                Swal.showValidationMessage('Por favor, ingrese el conteo físico');
-                countInput.focus();
-                return false;
-            }
-            
-            if (isNaN(count) || parseInt(count) < 0) {
-                Swal.showValidationMessage('El conteo debe ser un número positivo');
-                countInput.focus();
-                return false;
-            }
-            
-            return {
-                count: parseInt(count),
-                notes: document.getElementById('editNotes').value.trim()
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading('Guardando cambios...', 'Actualizando base de datos');
-            
-            // Simular guardado (en producción sería fetch a la API)
-            setTimeout(() => {
-                hideLoading();
-                
-                // Actualizar fila localmente
-                const newCount = result.value.count;
-                const newDiff = newCount - (item.stock || 0);
-                const newStatus = newCount === (item.stock || 0) ? 'OK' : 'Diferencia';
-                
-                // Actualizar celdas
-                row.cells[4].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">${newCount}</span>`;
-                row.cells[5].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">
-                    ${newDiff > 0 ? '<i class="bi bi-plus-circle me-1"></i>+' : newDiff < 0 ? '<i class="bi bi-dash-circle me-1"></i>-' : ''}${Math.abs(newDiff)}
-                </span>`;
-                row.cells[6].innerHTML = `<span class="status-indicator status-${newStatus === 'OK' ? 'success' : 'warning'}">
-                    <i class="bi ${newStatus === 'OK' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-1"></i>${newStatus}
-                </span>`;
-                
-                // Actualizar timestamp
-                const now = new Date();
-                row.cells[7].innerHTML = `
-                    <div class="small fw-bold">${formatTime(now)}</div>
-                    <div class="extra-small text-muted">${formatDate(now)}</div>
-                `;
-                
-                // Actualizar datos en el atributo data-item
-                item.real_count = newCount;
-                item.count = newCount;
-                item.diferencia = newDiff;
-                item.estado = newStatus;
-                item.notes = result.value.notes;
-                item.timestamp = now.toISOString();
-                row.setAttribute('data-item', JSON.stringify(item));
-                
-                showNotification('¡Cambios guardados!', 'El conteo ha sido actualizado correctamente', 'success');
-                
-                // Actualizar estadísticas
-                setTimeout(refreshDashboard, 500);
-                
-            }, 2000);
-        }
-    });
+    document.getElementById('visibleCount').textContent = visibleRows;
+    document.getElementById('totalCount').textContent = totalRows;
 }
 
-function recountItem(button) {
-    const row = button.closest('tr');
-    const item = JSON.parse(row.getAttribute('data-item'));
+function setupTableFilters() {
+    console.log('🔍 Configurando filtros de tabla...');
     
-    Swal.fire({
-        title: `<div class="text-warning"><i class="bi bi-arrow-repeat me-2"></i>Recontar Item</div>`,
-        html: `
-            <div class="text-center">
-                <i class="bi bi-arrow-repeat fs-1 text-warning mb-3"></i>
-                <h5>¿Recontar ${item.material_code}?</h5>
-                <p class="text-muted">Ubicación: <strong>${item.location}</strong></p>
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Esta acción marcará el item para reconteo físico
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Sí, recontar',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
-        confirmButtonColor: '#f39c12',
-        cancelButtonColor: '#95a5a6',
-        showLoaderOnConfirm: true,
-        preConfirm: () => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    resolve();
-                }, 1500);
-            });
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showNotification('Reconteo solicitado', `El item ${item.material_code} ha sido marcado para reconteo`, 'info');
-        }
-    });
-}
-
-function flagItem(button) {
-    const row = button.closest('tr');
-    const item = JSON.parse(row.getAttribute('data-item'));
+    const searchInput = document.getElementById('tableSearch');
+    const statusFilter = document.getElementById('tableStatusFilter');
+    const locationFilter = document.getElementById('tableLocationFilter');
+    const sortBy = document.getElementById('tableSortBy');
     
-    Swal.fire({
-        title: `<div class="text-danger"><i class="bi bi-flag me-2"></i>Marcar Problema</div>`,
-        html: `
-            <div class="text-start">
-                <p>Reportar problema con: <strong>${item.material_code}</strong></p>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Tipo de problema</label>
-                    <select id="problemType" class="form-select">
-                        <option value="">Seleccione un tipo...</option>
-                        <option value="stock">Stock incorrecto en sistema</option>
-                        <option value="location">Ubicación incorrecta</option>
-                        <option value="damaged">Material dañado</option>
-                        <option value="missing">Material faltante</option>
-                        <option value="duplicate">Material duplicado</option>
-                        <option value="other">Otro problema</option>
-                    </select>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Descripción detallada</label>
-                    <textarea id="problemDesc" class="form-control" rows="4" 
-                              placeholder="Describa el problema encontrado..."></textarea>
-                </div>
-                
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="urgentFlag">
-                    <label class="form-check-label text-danger fw-bold" for="urgentFlag">
-                        <i class="bi bi-exclamation-triangle me-1"></i>Marcar como urgente
-                    </label>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-flag me-1"></i>Marcar Problema',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
-        confirmButtonColor: '#e74c3c',
-        width: '600px',
-        preConfirm: () => {
-            const problemType = document.getElementById('problemType').value;
-            const problemDesc = document.getElementById('problemDesc').value.trim();
-            
-            if (!problemType) {
-                Swal.showValidationMessage('Seleccione el tipo de problema');
-                return false;
-            }
-            
-            if (!problemDesc) {
-                Swal.showValidationMessage('Describa el problema encontrado');
-                return false;
-            }
-            
-            return {
-                type: problemType,
-                description: problemDesc,
-                urgent: document.getElementById('urgentFlag').checked
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading('Registrando problema...', 'Guardando en el sistema');
-            
-            setTimeout(() => {
-                hideLoading();
-                
-                // Marcar fila visualmente
-                row.classList.add('table-danger');
-                const flagBtn = button.querySelector('i');
-                flagBtn.className = 'bi bi-flag-fill text-danger';
-                button.title = 'Problema reportado';
-                
-                showNotification(
-                    'Problema reportado', 
-                    `El item ${item.material_code} ha sido marcado con un problema`, 
-                    'warning'
-                );
-                
-            }, 1500);
-        }
-    });
-}
-
-function exportDifferences() {
-    console.log('📤 Exportando diferencias...');
-    
-    showLoading('Preparando exportación...', 'Generando archivo Excel de diferencias');
-    
-    // Obtener solo items con diferencias
-    const rows = document.querySelectorAll('#tableBody tr[data-item]');
-    const differences = [];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            if (item.estado === 'Diferencia' && row.style.display !== 'none') {
-                differences.push(item);
-            }
-        } catch (error) {
-            console.error('Error procesando fila para exportación:', error);
-        }
+    // Configurar búsqueda con debounce
+    let searchTimeout;
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterTable, 350);
     });
     
-    if (differences.length === 0) {
-        hideLoading();
-        Swal.fire({
-            icon: 'info',
-            title: 'Sin diferencias',
-            text: 'No hay diferencias para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear datos para Excel
-    const excelData = [
-        ['REPORTE DE DIFERENCIAS - INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Total diferencias:', differences.length],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo']
-    ];
-    
-    differences.forEach(item => {
-        const diff = item.diferencia || (item.real_count - item.stock) || 0;
-        excelData.push([
-            item.material_code || '',
-            item.material_text || '',
-            item.location || '',
-            item.stock || 0,
-            item.real_count || item.count || 0,
-            diff,
-            item.estado || '',
-            item.usuario || 'N/A',
-            item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'
-        ]);
-    });
-    
-    // Crear libro de trabajo
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
-    
-    // Aplicar estilos (ancho de columnas)
-    const wscols = [
-        {wch: 15}, // Código
-        {wch: 40}, // Descripción
-        {wch: 12}, // Ubicación
-        {wch: 12}, // Stock
-        {wch: 12}, // Conteo
-        {wch: 12}, // Diferencia
-        {wch: 12}, // Estado
-        {wch: 15}, // Usuario
-        {wch: 15}  // Fecha
-    ];
-    ws['!cols'] = wscols;
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `diferencias_inventario_${date}.xlsx`;
-    
-    // Simular descarga (en producción sería desde el servidor)
-    setTimeout(() => {
-        XLSX.writeFile(wb, fileName);
-        hideLoading();
-        showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
-    }, 2000);
-}
-
-function exportTableToExcel() {
-    console.log('📊 Exportando tabla completa a Excel...');
-    
-    showLoading('Exportando tabla...', 'Preparando archivo Excel');
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    
-    if (rows.length === 0) {
-        hideLoading();
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos visibles para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    const excelData = [
-        ['REPORTE COMPLETO DE INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Total items:', rows.length],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones']
-    ];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            
-            excelData.push([
-                item.material_code || '',
-                item.material_text || '',
-                item.location || '',
-                item.stock || 0,
-                item.real_count || item.count || 0,
-                diff,
-                item.estado || '',
-                item.usuario || 'N/A',
-                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
-                item.notes || ''
-            ]);
-        } catch (error) {
-            console.error('Error exportando fila:', error);
-        }
-    });
-    
-    // Crear libro de trabajo
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
-    
-    // Aplicar estilos
-    const wscols = [
-        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
-        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
-        {wch: 15}, {wch: 30}
-    ];
-    ws['!cols'] = wscols;
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `inventario_completo_${date}.xlsx`;
-    
-    setTimeout(() => {
-        XLSX.writeFile(wb, fileName);
-        hideLoading();
-        showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
-    }, 2000);
-}
-
-function exportTableToPDF() {
-    console.log('📄 Exportando a PDF...');
-    
-    showLoading('Generando PDF...', 'Creando reporte en formato PDF');
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
-    let yPos = margin;
-    
-    // Título
-    doc.setFontSize(20);
-    doc.setTextColor(44, 62, 80);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 10;
-    
-    // Información
-    doc.setFontSize(10);
-    doc.setTextColor(108, 117, 125);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
-    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
-    yPos += 15;
-    
-    // Estadísticas
-    doc.setFontSize(12);
-    doc.setTextColor(33, 37, 41);
-    doc.setFont('helvetica', 'bold');
-    doc.text('ESTADÍSTICAS', margin, yPos);
-    yPos += 8;
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    const okCount = Array.from(rows).filter(r => {
-        try {
-            const item = JSON.parse(r.getAttribute('data-item'));
-            return item.estado === 'OK';
-        } catch { return false; }
-    }).length;
-    
-    const diffCount = Array.from(rows).filter(r => {
-        try {
-            const item = JSON.parse(r.getAttribute('data-item'));
-            return item.estado === 'Diferencia';
-        } catch { return false; }
-    }).length;
-    
-    const pendCount = rows.length - okCount - diffCount;
-    
-    const stats = [
-        `• Total items: ${rows.length}`,
-        `• Coincidencias (OK): ${okCount} (${Math.round((okCount / rows.length) * 100)}%)`,
-        `• Diferencias: ${diffCount} (${Math.round((diffCount / rows.length) * 100)}%)`,
-        `• Pendientes: ${pendCount} (${Math.round((pendCount / rows.length) * 100)}%)`
-    ];
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    stats.forEach(stat => {
-        doc.text(stat, margin + 5, yPos);
-        yPos += 6;
-    });
-    
-    yPos += 10;
-    
-    // Tabla de datos
-    const tableData = [];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            
-            tableData.push([
-                item.material_code || '',
-                (item.material_text || '').substring(0, 25) + ((item.material_text || '').length > 25 ? '...' : ''),
-                item.location || '',
-                (item.stock || 0).toString(),
-                (item.real_count || item.count || 0).toString(),
-                diff > 0 ? `+${diff}` : diff.toString(),
-                item.estado || ''
-            ]);
-        } catch (error) {
-            console.error('Error procesando fila para PDF:', error);
-        }
-    });
-    
-    doc.autoTable({
-        startY: yPos,
-        head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
-        body: tableData,
-        margin: { left: margin, right: margin },
-        styles: { 
-            fontSize: 8,
-            cellPadding: 2
-        },
-        headStyles: { 
-            fillColor: [44, 62, 80],
-            textColor: 255,
-            fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-            fillColor: [248, 249, 250]
-        }
-    });
-    
-    // Guardar PDF
-    const date = new Date().toISOString().split('T')[0];
-    const filename = `reporte_inventario_${date}.pdf`;
-    
-    setTimeout(() => {
-        doc.save(filename);
-        hideLoading();
-        showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
-    }, 2000);
-}
-
-function startReconciliation() {
-    console.log('⚖️ Iniciando conciliación...');
-    
-    Swal.fire({
-        title: `<div class="text-primary"><i class="bi bi-arrow-repeat me-2"></i>Conciliar Inventario</div>`,
-        html: `
-            <div class="text-start">
-                <p>Esta acción ajustará el stock del sistema con los conteos físicos realizados.</p>
-                
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Atención:</strong> Esta operación actualizará los registros del sistema y no se puede deshacer.
-                </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Fecha de conciliación</label>
-                        <input type="date" id="reconcileDate" class="form-control" 
-                               value="${new Date().toISOString().split('T')[0]}">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Referencia</label>
-                        <input type="text" id="reconcileRef" class="form-control" 
-                               placeholder="Ej: AJUSTE-INV-001">
-                    </div>
-                </div>
-                
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="confirmReconcile">
-                    <label class="form-check-label fw-bold" for="confirmReconcile">
-                        Confirmo la conciliación del inventario y entiendo que los cambios son permanentes
-                    </label>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Iniciar Conciliación',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
-        confirmButtonColor: '#27ae60',
-        cancelButtonColor: '#e74c3c',
-        width: '650px',
-        preConfirm: () => {
-            if (!document.getElementById('confirmReconcile').checked) {
-                Swal.showValidationMessage('Debe confirmar la conciliación');
-                return false;
-            }
-            
-            const ref = document.getElementById('reconcileRef').value.trim();
-            if (!ref) {
-                Swal.showValidationMessage('Ingrese una referencia para la conciliación');
-                return false;
-            }
-            
-            return {
-                date: document.getElementById('reconcileDate').value,
-                reference: ref
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading('Conciliando inventario...', 'Actualizando stock del sistema', true);
-            
-            // Simular progreso
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += 10;
-                document.getElementById('loadingProgress').style.width = `${progress}%`;
-                
-                if (progress >= 100) {
-                    clearInterval(progressInterval);
-                    
-                    setTimeout(() => {
-                        hideLoading();
-                        showNotification(
-                            '¡Conciliación completada!', 
-                            'El inventario ha sido actualizado correctamente', 
-                            'success'
-                        );
-                        
-                        // Recargar dashboard después de 2 segundos
-                        setTimeout(() => {
-                            refreshDashboard();
-                        }, 2000);
-                        
-                    }, 1000);
-                }
-            }, 300);
-        }
-    });
-}
-
-function generateReport() {
-    console.log('📈 Generando reporte avanzado...');
-    
-    showLoading('Generando reporte analítico...', 'Procesando datos y estadísticas');
-    
-    // Simular generación de reporte
-    setTimeout(() => {
-        hideLoading();
-        
-        Swal.fire({
-            title: `<div class="text-info"><i class="bi bi-file-earmark-pdf me-2"></i>Reporte Analítico</div>`,
-            html: `
-                <div class="text-start">
-                    <p>Se ha generado un reporte analítico completo del inventario.</p>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>El reporte incluye:</strong>
-                        <ul class="mt-2">
-                            <li>Resumen ejecutivo con KPIs</li>
-                            <li>Análisis estadístico de diferencias</li>
-                            <li>Tendencias y patrones identificados</li>
-                            <li>Recomendaciones de mejora</li>
-                            <li>Gráficos y visualizaciones</li>
-                            <li>Anexos técnicos</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Formato</label>
-                            <select class="form-select" id="reportFormat">
-                                <option value="pdf">PDF Estándar</option>
-                                <option value="pdf_detailed">PDF Detallado</option>
-                                <option value="excel">Excel con Datos</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Nivel de detalle</label>
-                            <select class="form-select" id="reportDetail">
-                                <option value="summary">Resumen</option>
-                                <option value="detailed" selected>Detallado</option>
-                                <option value="full">Completo</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-download me-1"></i>Descargar Reporte',
-            cancelButtonText: '<i class="bi bi-eye me-1"></i>Vista Previa',
-            confirmButtonColor: '#2980b9',
-            cancelButtonColor: '#95a5a6',
-            width: '700px',
-            preConfirm: () => {
-                return {
-                    format: document.getElementById('reportFormat').value,
-                    detail: document.getElementById('reportDetail').value
-                };
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                showNotification('Reporte en proceso', 'El archivo se está generando y descargará automáticamente', 'info');
-                // Aquí iría la lógica real de generación del reporte
-            }
-        });
-    }, 2000);
-}
-
-function showAnalytics() {
-    console.log('📊 Mostrando analítica avanzada...');
-    
-    Swal.fire({
-        title: `<div class="text-purple"><i class="bi bi-graph-up me-2"></i>Analítica Avanzada</div>`,
-        html: `
-            <div class="text-center">
-                <i class="bi bi-bar-chart fs-1 text-purple mb-3"></i>
-                <h5>Análisis de Inventario</h5>
-                <p class="text-muted">Funcionalidad en desarrollo</p>
-                
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-lightbulb me-2"></i>
-                    Próximamente: Análisis predictivo, tendencias, optimización de stock y más.
-                </div>
-            </div>
-        `,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
-        confirmButtonColor: '#8e44ad',
-        width: '500px'
-    });
-}
-
-function showHelpModal() {
-    console.log('❓ Mostrando ayuda...');
-    
-    Swal.fire({
-        title: `<div class="text-info"><i class="bi bi-question-circle me-2"></i>Ayuda del Dashboard</div>`,
-        html: `
-            <div class="text-start">
-                <h6 class="text-primary mb-3">📊 Dashboard de Inventario</h6>
-                
-                <div class="mb-4">
-                    <h6 class="fw-bold"><i class="bi bi-speedometer2 me-2"></i>Funcionalidades principales:</h6>
-                    <ul>
-                        <li><strong>Monitoreo en tiempo real</strong> del conteo físico</li>
-                        <li><strong>Filtrado avanzado</strong> por estado y ubicación</li>
-                        <li><strong>Edición directa</strong> de conteos físicos</li>
-                        <li><strong>Exportación</strong> a Excel y PDF</li>
-                        <li><strong>Conciliación automática</strong> de inventario</li>
-                    </ul>
-                </div>
-                
-                <div class="mb-4">
-                    <h6 class="fw-bold"><i class="bi bi-keyboard me-2"></i>Atajos de teclado:</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <kbd>Ctrl</kbd> + <kbd>R</kbd> - Actualizar dashboard<br>
-                            <kbd>Ctrl</kbd> + <kbd>F</kbd> - Buscar en tabla<br>
-                            <kbd>Ctrl</kbd> + <kbd>E</kbd> - Exportar Excel
-                        </div>
-                        <div class="col-md-6">
-                            <kbd>Ctrl</kbd> + <kbd>P</kbd> - Exportar PDF<br>
-                            <kbd>Esc</kbd> - Limpiar filtros<br>
-                            <kbd>F1</kbd> - Esta ayuda
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Nota:</strong> Los cambios en conteos físicos se guardan inmediatamente.
-                </div>
-            </div>
-        `,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
-        confirmButtonColor: '#2980b9',
-        width: '700px'
+    // Configurar filtros
+    [statusFilter, locationFilter, sortBy].forEach(element => {
+        element?.addEventListener('change', filterTable);
     });
 }
 
@@ -3380,18 +2996,22 @@ function closeNotification(id) {
     }
 }
 
-function formatTime(dateString) {
+function formatTime(date) {
     try {
-        const date = new Date(dateString);
+        if (typeof date === 'string') {
+            date = new Date(date);
+        }
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } catch {
         return '--:--';
     }
 }
 
-function formatDate(dateString) {
+function formatDate(date) {
     try {
-        const date = new Date(dateString);
+        if (typeof date === 'string') {
+            date = new Date(date);
+        }
         return date.toLocaleDateString();
     } catch {
         return '--/--/----';
@@ -3465,14 +3085,6 @@ function initEventListeners() {
         }
     });
     
-    // Configurar tooltips de Bootstrap si están disponibles
-    if (typeof bootstrap !== 'undefined') {
-        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    }
-    
     console.log('✅ Event listeners configurados');
 }
 
@@ -3486,15 +3098,9 @@ function setupAutoRefresh() {
 // ================= FUNCIONES GLOBALES =================
 window.refreshDashboard = refreshDashboard;
 window.editItem = editItem;
-window.recountItem = recountItem;
-window.flagItem = flagItem;
 window.exportDifferences = exportDifferences;
 window.exportTableToExcel = exportTableToExcel;
 window.exportTableToPDF = exportTableToPDF;
-window.startReconciliation = startReconciliation;
-window.generateReport = generateReport;
-window.showAnalytics = showAnalytics;
-window.showHelpModal = showHelpModal;
 window.toggleAutoRefresh = toggleAutoRefresh;
 window.changeChartType = changeChartType;
 window.filterTable = filterTable;
