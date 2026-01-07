@@ -101,11 +101,24 @@ def dashboard_inventory():
     faltantes = 0
     coinciden = 0
     
+    # Para cálculos de stock
+    criticos = 0
+    bajos = 0
+    normales = 0
+    
     for item in items:
         key = f"{item.material_code}_{item.location}"
         stock_sistema = item.libre_utilizacion or 0
         conteo_fisico = counts_dict.get(key, 0)
         diferencia = conteo_fisico - stock_sistema
+        
+        # Calcular categorías de stock
+        if stock_sistema <= 0:
+            criticos += 1
+        elif 1 <= stock_sistema < 10:
+            bajos += 1
+        elif stock_sistema >= 10:
+            normales += 1
         
         # Determinar estado
         if conteo_fisico == 0:
@@ -143,14 +156,7 @@ def dashboard_inventory():
     total_items = len(items)
     ubicaciones_unicas = len(ubicaciones)
     
-    # Items con stock crítico (<= 0)
-    criticos = sum(1 for item in items if item.libre_utilizacion <= 0)
-    
-    # Items con stock bajo (1-9)
-    bajos = sum(1 for item in items if 1 <= item.libre_utilizacion < 10)
-    
-    # Items con stock normal (>= 10)
-    normales = sum(1 for item in item.libre_utilizacion >= 10)
+    # Ya se calcularon arriba: criticos, bajos, normales
     
     # Progreso de conteo
     items_contados = len([i for i in dashboard_items if i["real_count"] > 0])
