@@ -1,2975 +1,970 @@
-{% extends "base.html" %}
-{% block content %}
-
-<style>
-    /* ================= VARIABLES GLOBALES ================= */
-    :root {
-        --primary: #1a5f7a;
-        --primary-light: rgba(26, 95, 122, 0.1);
-        --primary-dark: #0d4c6e;
-        --secondary: #6c757d;
-        --success: #28a745;
-        --success-light: rgba(40, 167, 69, 0.1);
-        --warning: #ffc107;
-        --warning-light: rgba(255, 193, 7, 0.1);
-        --danger: #dc3545;
-        --danger-light: rgba(220, 53, 69, 0.1);
-        --info: #17a2b8;
-        --light: #f8f9fa;
-        --dark: #343a40;
-        --gray-100: #f8f9fa;
-        --gray-200: #e9ecef;
-        --gray-300: #dee2e6;
-        --gray-400: #ced4da;
-        --gray-500: #adb5bd;
-        --gray-600: #6c757d;
-        --gray-700: #495057;
-        --gray-800: #343a40;
-        --gray-900: #212529;
-        
-        --primary-gradient: linear-gradient(135deg, #1a5f7a 0%, #0d4c6e 100%);
-        --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        --warning-gradient: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-        --danger-gradient: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        --info-gradient: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-        --dark-gradient: linear-gradient(135deg, #343a40 0%, #212529 100%);
-        --purple-gradient: linear-gradient(135deg, #6f42c1 0%, #6610f2 100%);
-        
-        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-        --shadow-md: 0 4px 8px rgba(0,0,0,0.1);
-        --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
-        --shadow-xl: 0 12px 24px rgba(0,0,0,0.2);
-        
-        --radius-sm: 6px;
-        --radius-md: 10px;
-        --radius-lg: 14px;
-        --radius-xl: 18px;
-        
-        --transition-fast: 0.2s ease;
-        --transition-normal: 0.3s ease;
-        --transition-slow: 0.5s ease;
-    }
-
-    /* ================= RESET Y ESTILOS BASE ================= */
-    .dashboard-container {
-        padding: 24px;
-        background: linear-gradient(135deg, #f8fafc 0%, #e9ecef 100%);
-        min-height: 100vh;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    /* ================= HEADER SUPERIOR ================= */
-    .dashboard-header {
-        background: white;
-        border-radius: var(--radius-lg);
-        padding: 28px 32px;
-        margin-bottom: 24px;
-        box-shadow: var(--shadow-lg);
-        border: 1px solid var(--gray-200);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .dashboard-header::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-gradient);
-    }
-
-    .header-content {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-
-    .header-left h1 {
-        font-size: 2rem;
-        font-weight: 800;
-        color: var(--primary);
-        margin: 0 0 8px 0;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .header-subtitle {
-        color: var(--gray-600);
-        font-size: 1rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .btn-action {
-        padding: 10px 20px;
-        border-radius: var(--radius-md);
-        font-weight: 600;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all var(--transition-normal);
-        border: 2px solid transparent;
-    }
-
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .btn-primary-action {
-        background: var(--primary-gradient);
-        color: white;
-        border: none;
-    }
-
-    .btn-primary-action:hover {
-        background: linear-gradient(135deg, #0d4c6e 0%, #1a5f7a 100%);
-        color: white;
-    }
-
-    .btn-outline-action {
-        background: white;
-        color: var(--primary);
-        border-color: var(--primary);
-    }
-
-    .btn-outline-action:hover {
-        background: var(--primary);
-        color: white;
-    }
-
-    .btn-success-action {
-        background: var(--success-gradient);
-        color: white;
-        border: none;
-    }
-
-    .btn-success-action:hover {
-        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
-    }
-
-    .btn-warning-action {
-        background: var(--warning-gradient);
-        color: var(--gray-900);
-        border: none;
-    }
-
-    .btn-warning-action:hover {
-        background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
-    }
-
-    /* ================= STATS GRID MEJORADO ================= */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 20px;
-        padding-top: 24px;
-        border-top: 2px solid var(--gray-200);
-    }
-
-    .stat-card {
-        background: white;
-        padding: 20px;
-        border-radius: var(--radius-md);
-        border: 1px solid var(--gray-200);
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        transition: all var(--transition-normal);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
-    }
-
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-gradient);
-        transform: scaleX(0);
-        transition: transform var(--transition-normal);
-    }
-
-    .stat-card:hover::before {
-        transform: scaleX(1);
-    }
-
-    .stat-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: var(--radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: white;
-        flex-shrink: 0;
-        box-shadow: var(--shadow-md);
-    }
-
-    .stat-content {
-        flex: 1;
-    }
-
-    .stat-value {
-        font-size: 2.2rem;
-        font-weight: 800;
-        line-height: 1;
-        margin: 0 0 6px 0;
-        color: var(--gray-900);
-    }
-
-    .stat-label {
-        font-size: 0.9rem;
-        color: var(--gray-600);
-        font-weight: 600;
-        margin-bottom: 4px;
-    }
-
-    .stat-trend {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.8rem;
-        padding: 4px 10px;
-        border-radius: 20px;
-        font-weight: 600;
-    }
-
-    .trend-up {
-        background: rgba(40, 167, 69, 0.15);
-        color: var(--success);
-    }
-
-    .trend-down {
-        background: rgba(220, 53, 69, 0.15);
-        color: var(--danger);
-    }
-
-    .trend-neutral {
-        background: rgba(108, 117, 125, 0.15);
-        color: var(--gray-600);
-    }
-
-    /* ================= LAYOUT PRINCIPAL ================= */
-    .dashboard-layout {
-        display: grid;
-        grid-template-columns: 1fr 380px;
-        gap: 24px;
-        margin-bottom: 24px;
-    }
-
-    .main-content {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    .sidebar {
-        display: flex;
-        flex-direction: column;
-        gap: 24px;
-    }
-
-    /* ================= KPI CARDS MEJORADAS ================= */
-    .kpi-section {
-        background: white;
-        border-radius: var(--radius-lg);
-        padding: 24px;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-    }
-
-    .kpi-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    .kpi-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--gray-900);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 20px;
-    }
-
-    .kpi-card {
-        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border-radius: var(--radius-md);
-        padding: 24px;
-        border: 1px solid var(--gray-200);
-        transition: all var(--transition-normal);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
-    }
-
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: var(--primary-gradient);
-        opacity: 0;
-        transition: opacity var(--transition-normal);
-    }
-
-    .kpi-card:hover::before {
-        opacity: 1;
-    }
-
-    .kpi-content {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .kpi-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        color: white;
-        flex-shrink: 0;
-        box-shadow: var(--shadow-md);
-    }
-
-    .kpi-details {
-        flex: 1;
-    }
-
-    .kpi-value {
-        font-size: 2.4rem;
-        font-weight: 800;
-        line-height: 1;
-        margin: 0 0 6px 0;
-        color: var(--gray-900);
-    }
-
-    .kpi-label {
-        font-size: 0.95rem;
-        color: var(--gray-600);
-        font-weight: 600;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .kpi-progress {
-        margin-top: 12px;
-    }
-
-    .kpi-progress-bar {
-        height: 6px;
-        border-radius: 3px;
-        background: var(--gray-200);
-        overflow: hidden;
-    }
-
-    .kpi-progress-fill {
-        height: 100%;
-        background: var(--primary-gradient);
-        border-radius: 3px;
-        transition: width 1s ease-in-out;
-    }
-
-    /* ================= CHART SECTION MEJORADA ================= */
-    .chart-section {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-    }
-
-    .chart-container {
-        background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-        transition: all var(--transition-normal);
-    }
-
-    .chart-container:hover {
-        box-shadow: var(--shadow-lg);
-    }
-
-    .chart-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: linear-gradient(to right, rgba(248, 249, 250, 0.5), rgba(241, 245, 249, 0.8));
-    }
-
-    .chart-title {
-        font-weight: 700;
-        color: var(--gray-900);
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .chart-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .chart-btn-group {
-        display: flex;
-        gap: 4px;
-    }
-
-    .chart-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        border: 1px solid var(--gray-300);
-        background: white;
-        color: var(--gray-700);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-
-    .chart-btn:first-child {
-        border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-    }
-
-    .chart-btn:last-child {
-        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    }
-
-    .chart-btn:hover {
-        background: var(--gray-100);
-        border-color: var(--gray-400);
-    }
-
-    .chart-btn.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    .chart-body {
-        padding: 20px;
-        height: 280px;
-        position: relative;
-    }
-
-    .chart-legend {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 16px;
-        flex-wrap: wrap;
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.85rem;
-    }
-
-    .legend-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
-    }
-
-    /* ================= TABLE SECTION MEJORADA ================= */
-    .table-section {
-        background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-        transition: all var(--transition-normal);
-    }
-
-    .table-section:hover {
-        box-shadow: var(--shadow-lg);
-    }
-
-    .table-header {
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--gray-200);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        background: linear-gradient(to right, rgba(248, 249, 250, 0.5), rgba(241, 245, 249, 0.8));
-    }
-
-    .table-title-area {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .table-title {
-        font-weight: 700;
-        color: var(--gray-900);
-        font-size: 1rem;
-        margin: 0;
-    }
-
-    .table-badges {
-        display: flex;
-        gap: 8px;
-    }
-
-    .table-badge {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .table-controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .search-container {
-        position: relative;
-        min-width: 280px;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 10px 16px 10px 42px;
-        border: 2px solid var(--gray-300);
-        border-radius: var(--radius-md);
-        font-size: 0.9rem;
-        transition: all var(--transition-normal);
-        background: white;
-    }
-
-    .search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.1);
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-500);
-        pointer-events: none;
-    }
-
-    .filter-group {
-        display: flex;
-        gap: 8px;
-    }
-
-    .filter-select {
-        padding: 8px 12px;
-        border: 2px solid var(--gray-300);
-        border-radius: var(--radius-md);
-        background: white;
-        font-size: 0.9rem;
-        color: var(--gray-700);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-
-    .filter-select:focus {
-        outline: none;
-        border-color: var(--primary);
-    }
-
-    .table-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .table-btn {
-        padding: 8px 16px;
-        border: 2px solid var(--gray-300);
-        border-radius: var(--radius-md);
-        background: white;
-        color: var(--gray-700);
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-
-    .table-btn:hover {
-        background: var(--gray-100);
-        border-color: var(--gray-400);
-    }
-
-    .table-btn-primary {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    .table-btn-primary:hover {
-        background: var(--primary-dark);
-        border-color: var(--primary-dark);
-    }
-
-    .table-btn-success {
-        background: var(--success);
-        color: white;
-        border-color: var(--success);
-    }
-
-    .table-btn-success:hover {
-        background: #218838;
-        border-color: #218838;
-    }
-
-    /* ================= TABLA MEJORADA ================= */
-    .table-wrapper {
-        position: relative;
-        max-height: 500px;
-        overflow-y: auto;
-    }
-
-    .table-wrapper::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-track {
-        background: var(--gray-100);
-        border-radius: 4px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-thumb {
-        background: var(--gray-400);
-        border-radius: 4px;
-    }
-
-    .table-wrapper::-webkit-scrollbar-thumb:hover {
-        background: var(--gray-500);
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 0.9rem;
-    }
-
-    .data-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 10;
-        background: var(--gray-100);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
-    .data-table th {
-        padding: 16px;
-        text-align: left;
-        font-weight: 700;
-        color: var(--gray-800);
-        border-bottom: 2px solid var(--gray-300);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.85rem;
-        white-space: nowrap;
-        position: relative;
-        user-select: none;
-    }
-
-    .data-table th.sortable {
-        cursor: pointer;
-        transition: background var(--transition-fast);
-        padding-right: 30px;
-    }
-
-    .data-table th.sortable:hover {
-        background: rgba(26, 95, 122, 0.05);
-    }
-
-    .data-table th.sortable::after {
-        content: '↕';
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.8em;
-        opacity: 0.5;
-        transition: opacity var(--transition-fast);
-    }
-
-    .data-table th.sortable:hover::after {
-        opacity: 1;
-    }
-
-    .data-table th.sort-asc::after {
-        content: '↑';
-        opacity: 1;
-    }
-
-    .data-table th.sort-desc::after {
-        content: '↓';
-        opacity: 1;
-    }
-
-    .data-table td {
-        padding: 14px 16px;
-        color: var(--gray-800);
-        vertical-align: middle;
-        border-bottom: 1px solid var(--gray-200);
-        transition: background var(--transition-fast);
-    }
-
-    .data-table tbody tr {
-        transition: all var(--transition-fast);
-    }
-
-    .data-table tbody tr:hover {
-        background: rgba(26, 95, 122, 0.03);
-    }
-
-    .data-table tbody tr.selected {
-        background: rgba(26, 95, 122, 0.08);
-    }
-
-    .data-table tbody tr.critical {
-        background: rgba(220, 53, 69, 0.05);
-    }
-
-    .data-table tbody tr.critical:hover {
-        background: rgba(220, 53, 69, 0.08);
-    }
-
-    /* ================= STATUS BADGES ================= */
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        min-width: 100px;
-        justify-content: center;
-        transition: all var(--transition-fast);
-    }
-
-    .status-badge:hover {
-        transform: scale(1.05);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .badge-success {
-        background: linear-gradient(135deg, #28a745, #20c997);
-        color: white;
-        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
-    }
-
-    .badge-warning {
-        background: linear-gradient(135deg, #ffc107, #fd7e14);
-        color: var(--gray-900);
-        font-weight: 800;
-        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
-    }
-
-    .badge-danger {
-        background: linear-gradient(135deg, #dc3545, #c82333);
-        color: white;
-        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
-    }
-
-    .badge-secondary {
-        background: linear-gradient(135deg, #6c757d, #868e96);
-        color: white;
-        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
-    }
-
-    .badge-info {
-        background: linear-gradient(135deg, #17a2b8, #138496);
-        color: white;
-        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
-    }
-
-    /* ================= SIDEBAR WIDGETS MEJORADOS ================= */
-    .widget {
-        background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
-        transition: all var(--transition-normal);
-    }
-
-    .widget:hover {
-        box-shadow: var(--shadow-lg);
-    }
-
-    .widget-header {
-        padding: 20px;
-        background: var(--primary-gradient);
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .widget-title {
-        font-weight: 700;
-        font-size: 1rem;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .widget-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-    .widget-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-
-    .widget-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: rotate(90deg);
-    }
-
-    .widget-body {
-        padding: 20px;
-    }
-
-    /* Status List Widget */
-    .status-list {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px;
-        border-radius: var(--radius-md);
-        background: linear-gradient(to right, #f8f9fa, #f1f5f9);
-        border-left: 4px solid transparent;
-        transition: all var(--transition-fast);
-    }
-
-    .status-item:hover {
-        transform: translateX(4px);
-        background: linear-gradient(to right, #e9ecef, #dee2e6);
-    }
-
-    .status-item.ok {
-        border-left-color: var(--success);
-    }
-
-    .status-item.diff {
-        border-left-color: var(--warning);
-    }
-
-    .status-item.pend {
-        border-left-color: var(--secondary);
-    }
-
-    .status-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .status-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        color: white;
-    }
-
-    .status-text {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .status-label {
-        font-weight: 600;
-        color: var(--gray-800);
-        font-size: 0.95rem;
-    }
-
-    .status-desc {
-        font-size: 0.85rem;
-        color: var(--gray-600);
-    }
-
-    .status-count {
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: white;
-        min-width: 60px;
-        text-align: center;
-        box-shadow: var(--shadow-sm);
-    }
-
-    /* Quick Actions Widget */
-    .quick-actions-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
-    }
-
-    .action-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: 2px solid var(--gray-300);
-        border-radius: var(--radius-md);
-        padding: 20px;
-        text-align: center;
-        transition: all var(--transition-normal);
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        text-decoration: none;
-        color: inherit;
-    }
-
-    .action-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
-        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
-    }
-
-    .action-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: var(--primary-gradient);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        transition: all var(--transition-normal);
-    }
-
-    .action-card:hover .action-icon {
-        transform: scale(1.1) rotate(5deg);
-    }
-
-    .action-title {
-        font-weight: 700;
-        font-size: 0.95rem;
-        color: var(--gray-800);
-        margin: 0;
-    }
-
-    .action-desc {
-        font-size: 0.85rem;
-        color: var(--gray-600);
-        margin: 0;
-    }
-
-    /* Activity Timeline Widget */
-    .timeline {
-        position: relative;
-        padding-left: 24px;
-    }
-
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 8px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(to bottom, var(--primary), var(--info));
-    }
-
-    .timeline-item {
-        position: relative;
-        margin-bottom: 16px;
-        padding: 12px;
-        background: var(--gray-100);
-        border-radius: var(--radius-md);
-        border-left: 3px solid var(--primary);
-    }
-
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -20px;
-        top: 16px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--primary);
-        border: 3px solid white;
-        box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.2);
-    }
-
-    .timeline-time {
-        font-size: 0.8rem;
-        color: var(--gray-600);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 4px;
-    }
-
-    .timeline-content {
-        font-size: 0.9rem;
-        color: var(--gray-800);
-    }
-
-    .timeline-user {
-        font-weight: 600;
-        color: var(--primary);
-    }
-
-    /* ================= NOTIFICATIONS ================= */
-    .notification-panel {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 9999;
-        width: 350px;
-    }
-
-    .notification-toast {
-        background: white;
-        border-radius: var(--radius-md);
-        padding: 16px;
-        margin-bottom: 12px;
-        box-shadow: var(--shadow-lg);
-        border-left: 4px solid var(--primary);
-        animation: slideInRight 0.3s ease-out;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .notification-content {
-        flex: 1;
-    }
-
-    .notification-title {
-        font-weight: 700;
-        color: var(--gray-900);
-        margin-bottom: 4px;
-    }
-
-    .notification-message {
-        color: var(--gray-600);
-        font-size: 0.9rem;
-    }
-
-    .notification-close {
-        background: none;
-        border: none;
-        color: var(--gray-500);
-        cursor: pointer;
-        padding: 4px;
-        margin-left: 8px;
-    }
-
-    .notification-success {
-        border-left-color: var(--success);
-    }
-
-    .notification-warning {
-        border-left-color: var(--warning);
-    }
-
-    .notification-error {
-        border-left-color: var(--danger);
-    }
-
-    /* ================= LOADING OVERLAY ================= */
-    .loading-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 99999;
-        backdrop-filter: blur(4px);
-    }
-
-    .loading-spinner {
-        width: 80px;
-        height: 80px;
-        border: 6px solid rgba(255, 255, 255, 0.1);
-        border-top-color: var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    .loading-content {
-        text-align: center;
-        color: white;
-        margin-top: 20px;
-    }
-
-    /* ================= ANIMATIONS ================= */
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.05);
-        }
-        100% {
-            transform: scale(1);
-        }
-    }
-
-    .fade-in {
-        animation: fadeIn 0.6s ease-out;
-    }
-
-    .pulse {
-        animation: pulse 2s infinite;
-    }
-
-    /* ================= RESPONSIVE DESIGN ================= */
-    @media (max-width: 1400px) {
-        .chart-section {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 1200px) {
-        .dashboard-layout {
-            grid-template-columns: 1fr;
-        }
-        
-        .sidebar {
-            grid-template-columns: repeat(2, 1fr);
-            display: grid;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .dashboard-container {
-            padding: 16px;
-        }
-        
-        .dashboard-header {
-            padding: 20px 24px;
-        }
-        
-        .kpi-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .quick-actions-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .header-content {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .header-actions {
-            width: 100%;
-        }
-        
-        .table-header {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .table-controls {
-            width: 100%;
-        }
-        
-        .search-container {
-            width: 100%;
-            min-width: auto;
-        }
-        
-        .kpi-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .sidebar {
-            grid-template-columns: 1fr;
-        }
-        
-        .quick-actions-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 576px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .quick-actions-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .filter-group {
-            width: 100%;
-        }
-        
-        .filter-select {
-            flex: 1;
-        }
-        
-        .table-actions {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    /* ================= UTILITY CLASSES ================= */
-    .text-gradient {
-        background: var(--primary-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .shadow-hover {
-        transition: box-shadow var(--transition-normal);
-    }
-
-    .shadow-hover:hover {
-        box-shadow: var(--shadow-lg);
-    }
-
-    .cursor-pointer {
-        cursor: pointer;
-    }
-
-    .select-none {
-        user-select: none;
-    }
-
-    .transition-all {
-        transition: all var(--transition-normal);
-    }
-</style>
-
-<!-- ================= DASHBOARD HTML ================= -->
-<div class="dashboard-container fade-in">
-    <!-- NOTIFICATIONS PANEL -->
-    <div id="notificationPanel" class="notification-panel"></div>
-    
-    <!-- LOADING OVERLAY -->
-    <div id="loadingOverlay" class="loading-overlay d-none">
-        <div>
-            <div class="loading-spinner"></div>
-            <div class="loading-content">
-                <h4 id="loadingMessage">Cargando...</h4>
-                <p id="loadingDetail"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- HEADER -->
-    <div class="dashboard-header">
-        <div class="header-content">
-            <div class="header-left">
-                <h1>
-                    <i class="bi bi-clipboard-data"></i>
-                    Dashboard de Conteo Físico
-                    <span class="badge bg-primary ms-2">v3.0</span>
-                </h1>
-                <p class="header-subtitle">
-                    <i class="bi bi-info-circle"></i>
-                    Sistema de gestión de inventario en tiempo real
-                </p>
-            </div>
-            <div class="header-actions">
-                <button class="btn-action btn-primary-action" onclick="loadLatestData()" id="refreshBtn">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar
-                </button>
-                <button class="btn-action btn-outline-action" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
-                    <i class="bi bi-clock"></i> Auto-Refresh
-                </button>
-                {% if url_for('inventory.count_inventory') %}
-                <a href="{{ url_for('inventory.count_inventory') }}" class="btn-action btn-success-action">
-                    <i class="bi bi-clipboard-check"></i> Nuevo Conteo
-                </a>
-                {% endif %}
-                <button class="btn-action btn-warning-action" onclick="showSettings()">
-                    <i class="bi bi-gear"></i> Configuración
-                </button>
-                <button class="btn-action" style="background: var(--danger-gradient); color: white;" onclick="showHelp()">
-                    <i class="bi bi-question-circle"></i> Ayuda
-                </button>
-            </div>
-        </div>
-        
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="background: var(--primary-gradient);">
-                    <i class="bi bi-boxes"></i>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-value" id="totalItems">{{ items|length if items else 0 }}</div>
-                    <div class="stat-label">Total Materiales</div>
-                    <span class="stat-trend trend-up" id="itemsTrend">+0%</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon" style="background: var(--success-gradient);">
-                    <i class="bi bi-check-all"></i>
-                </div>
-                <div class="stat-content">
-                    {% set ok_count = items|selectattr('estado', 'equalto', 'OK')|list|length if items else 0 %}
-                    <div class="stat-value" id="okItems">{{ ok_count }}</div>
-                    <div class="stat-label">Coinciden</div>
-                    <span class="stat-trend trend-up" id="okTrend">+0%</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon" style="background: var(--warning-gradient);">
-                    <i class="bi bi-exclamation-triangle"></i>
-                </div>
-                <div class="stat-content">
-                    {% set diff_count = items|selectattr('estado', 'equalto', 'Diferencia')|list|length if items else 0 %}
-                    <div class="stat-value" id="diffItems">{{ diff_count }}</div>
-                    <div class="stat-label">Diferencias</div>
-                    <span class="stat-trend trend-down" id="diffTrend">+0%</span>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon" style="background: var(--dark-gradient);">
-                    <i class="bi bi-hourglass-split"></i>
-                </div>
-                <div class="stat-content">
-                    {% set pend_count = items|length - ok_count - diff_count if items else 0 %}
-                    <div class="stat-value" id="pendItems">{{ pend_count }}</div>
-                    <div class="stat-label">Pendientes</div>
-                    <span class="stat-trend trend-down" id="pendTrend">-0%</span>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-4 pt-4 border-top">
-            <div class="alert alert-info d-flex justify-content-between align-items-center mb-0 py-3">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-info-circle me-3 fs-5"></i>
-                    <div>
-                        <strong>Última actualización</strong>
-                        <div class="text-muted" id="lastUpdateTime">
-                            {% if last_update %}
-                            {{ last_update.strftime('%d/%m/%Y %H:%M:%S') }}
-                            {% else %}
-                            Sin datos
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex gap-3">
-                    <div class="text-end">
-                        <div class="text-muted small">Sesión activa</div>
-                        <div class="fw-bold" id="sessionTimer">00:00:00</div>
-                    </div>
-                    <div class="text-end">
-                        <div class="text-muted small">Actualizado hace</div>
-                        <div class="fw-bold" id="dataAge">0 seg</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- LAYOUT PRINCIPAL -->
-    <div class="dashboard-layout">
-        <!-- CONTENIDO PRINCIPAL -->
-        <div class="main-content">
-            <!-- KPI SECTION -->
-            <div class="kpi-section">
-                <div class="kpi-header">
-                    <h2 class="kpi-title">
-                        <i class="bi bi-speedometer2"></i>
-                        Indicadores Clave
-                    </h2>
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshKPIs()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="exportKPIs()">
-                            <i class="bi bi-download"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="kpi-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-icon" style="background: var(--primary-gradient);">
-                                <i class="bi bi-geo-alt-fill"></i>
-                            </div>
-                            <div class="kpi-details">
-                                <div class="kpi-value" id="totalLocations">0</div>
-                                <div class="kpi-label">
-                                    Ubicaciones
-                                    <span class="stat-trend trend-up" id="locationTrend">+0%</span>
-                                </div>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar">
-                                        <div class="kpi-progress-fill" id="locationProgress" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-icon" style="background: var(--info-gradient);">
-                                <i class="bi bi-calculator-fill"></i>
-                            </div>
-                            <div class="kpi-details">
-                                <div class="kpi-value" id="totalStock">0</div>
-                                <div class="kpi-label">
-                                    Stock Sistema
-                                    <span class="stat-trend trend-neutral" id="stockTrend">0%</span>
-                                </div>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar">
-                                        <div class="kpi-progress-fill" id="stockProgress" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-icon" style="background: var(--success-gradient);">
-                                <i class="bi bi-check-all"></i>
-                            </div>
-                            <div class="kpi-details">
-                                <div class="kpi-value" id="totalCounted">0</div>
-                                <div class="kpi-label">
-                                    Contados
-                                    <span class="stat-trend trend-up" id="countedTrend">+0%</span>
-                                </div>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar">
-                                        <div class="kpi-progress-fill" id="countedProgress" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="kpi-card">
-                        <div class="kpi-content">
-                            <div class="kpi-icon" style="background: var(--purple-gradient);">
-                                <i class="bi bi-speedometer2"></i>
-                            </div>
-                            <div class="kpi-details">
-                                <div class="kpi-value" id="progressPercent">0%</div>
-                                <div class="kpi-label">
-                                    Progreso Total
-                                    <span class="stat-trend trend-up" id="progressTrend">+0%</span>
-                                </div>
-                                <div class="kpi-progress">
-                                    <div class="kpi-progress-bar">
-                                        <div class="kpi-progress-fill" id="progressBar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TABLE SECTION -->
-            <div class="table-section">
-                <div class="table-header">
-                    <div class="table-title-area">
-                        <h3 class="table-title">
-                            <i class="bi bi-table"></i>
-                            Resultados Detallados
-                        </h3>
-                        <div class="table-badges">
-                            <span class="table-badge bg-primary" id="filteredCount">{{ items|length if items else 0 }}</span>
-                            <span class="table-badge bg-success d-none" id="selectedCount">0 seleccionados</span>
-                        </div>
-                    </div>
-                    
-                    <div class="table-controls">
-                        <div class="search-container">
-                            <i class="bi bi-search search-icon"></i>
-                            <input type="text" id="searchInput" class="search-input" 
-                                   placeholder="Buscar código, descripción, ubicación...">
-                        </div>
-                        
-                        <div class="filter-group">
-                            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
-                                <option value="all">Todos los estados</option>
-                                <option value="OK">Solo OK</option>
-                                <option value="Diferencia">Solo Diferencias</option>
-                                <option value="Pendiente">Solo Pendientes</option>
-                            </select>
-                            
-                            <select class="filter-select" id="locationFilter" onchange="applyFilters()">
-                                <option value="all">Todas las ubicaciones</option>
-                                {% if items %}
-                                    {% set locations = [] %}
-                                    {% for item in items %}
-                                        {% if item.location and item.location not in locations %}
-                                            {% set _ = locations.append(item.location) %}
-                                            <option value="{{ item.location }}">{{ item.location }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                            
-                            <select class="filter-select" id="userFilterTable" onchange="applyFilters()">
-                                <option value="all">Todos los usuarios</option>
-                                {% if items %}
-                                    {% set users = [] %}
-                                    {% for item in items %}
-                                        {% if item.usuario and item.usuario not in users %}
-                                            {% set _ = users.append(item.usuario) %}
-                                            <option value="{{ item.usuario }}">{{ item.usuario }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endif %}
-                            </select>
-                        </div>
-                        
-                        <div class="table-actions">
-                            <button class="table-btn" onclick="clearFilters()" title="Limpiar filtros">
-                                <i class="bi bi-x-circle"></i>
-                            </button>
-                            <button class="table-btn table-btn-primary" onclick="exportToExcel()" title="Exportar Excel">
-                                <i class="bi bi-file-earmark-excel"></i>
-                            </button>
-                            <button class="table-btn" onclick="showAdvancedFilters()" title="Filtros avanzados">
-                                <i class="bi bi-funnel"></i>
-                            </button>
-                            <button class="table-btn table-btn-success" onclick="showBulkActions()" title="Acciones masivas">
-                                <i class="bi bi-tools"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="table-wrapper">
-                    <table class="data-table" id="inventoryTable">
-                        <thead>
-                            <tr>
-                                <th class="sortable" onclick="sortTable(this, 0)">Código</th>
-                                <th>Descripción</th>
-                                <th>Ubicación</th>
-                                <th class="sortable" onclick="sortTable(this, 3)">Stock Sistema</th>
-                                <th class="sortable" onclick="sortTable(this, 4)">Conteo Físico</th>
-                                <th class="sortable" onclick="sortTable(this, 5)">Diferencia</th>
-                                <th>Estado</th>
-                                <th>Usuario</th>
-                                <th>Fecha</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            {% if items and items|length > 0 %}
-                                {% for item in items %}
-                                {% set stock_sistema = item.stock if item.stock is defined else 0 %}
-                                {% set conteo_fisico = item.real_count if item.real_count is defined else 0 %}
-                                {% set diferencia = conteo_fisico - stock_sistema %}
-                                {% set diferencia_abs = diferencia|abs %}
-                                {% set is_critical = diferencia_abs > (stock_sistema * 0.5) and diferencia_abs > 10 %}
-                                <tr data-id="{{ loop.index }}" 
-                                    data-code="{{ item.material_code|default('', true) }}"
-                                    data-desc="{{ item.material_text|default('', true) }}"
-                                    data-location="{{ item.location|default('Sin ubicación', true) }}"
-                                    data-stock="{{ stock_sistema }}"
-                                    data-count="{{ conteo_fisico }}"
-                                    data-diferencia="{{ diferencia }}"
-                                    data-estado="{{ item.estado|default('Pendiente', true) }}"
-                                    data-user="{{ item.usuario|default('', true) }}"
-                                    data-timestamp="{{ item.timestamp|default('', true) }}"
-                                    data-ubicacion="{{ item.location|default('', true) }}"
-                                    data-unidad="{{ item.base_unit|default('', true) }}"
-                                    class="{{ 'critical' if is_critical else '' }}">
-                                    <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <input type="checkbox" class="form-check-input row-selector" 
-                                                   onchange="toggleRowSelection(this)">
-                                            <span class="fw-bold">{{ item.material_code|default('N/A', true) }}</span>
-                                            {% if is_critical %}
-                                            <i class="bi bi-fire text-danger" title="Diferencia crítica"></i>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="text-truncate" style="max-width: 200px;" 
-                                             title="{{ item.material_text|default('', true) }}">
-                                            {{ item.material_text|default('Sin descripción', true) }}
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-dark">
-                                            <i class="bi bi-geo-alt me-1"></i>
-                                            {{ item.location|default('Sin ubicación', true) }}
-                                        </span>
-                                    </td>
-                                    <td class="fw-bold">{{ stock_sistema }}</td>
-                                    <td class="fw-bold {% if item.estado == 'OK' %}text-success{% elif item.estado == 'Diferencia' %}text-danger{% else %}text-muted{% endif %}">
-                                        {{ conteo_fisico if conteo_fisico > 0 else '-' }}
-                                    </td>
-                                    <td class="fw-bold {% if diferencia > 0 %}text-success{% elif diferencia < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                        {% if item.estado == 'OK' %}
-                                            <span class="text-muted">0</span>
-                                        {% elif item.estado == 'Diferencia' %}
-                                            {% if diferencia > 0 %}
-                                                <i class="bi bi-arrow-up-circle text-success me-1"></i>+{{ diferencia_abs }}
-                                            {% elif diferencia < 0 %}
-                                                <i class="bi bi-arrow-down-circle text-danger me-1"></i>-{{ diferencia_abs }}
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-muted">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if item.estado == 'OK' %}
-                                            <span class="status-badge badge-success">
-                                                <i class="bi bi-check-circle me-1"></i>OK
-                                            </span>
-                                        {% elif item.estado == 'Diferencia' %}
-                                            <span class="status-badge badge-warning">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Diferencia
-                                            </span>
-                                        {% else %}
-                                            <span class="status-badge badge-secondary">
-                                                <i class="bi bi-clock me-1"></i>Pendiente
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {{ item.usuario|default('N/A', true) }}
-                                    </td>
-                                    <td>
-                                        {% if item.timestamp %}
-                                        <span class="small">{{ item.timestamp.strftime('%H:%M') }}</span>
-                                        <br>
-                                        <span class="text-muted extra-small">{{ item.timestamp.strftime('%d/%m/%Y') }}</span>
-                                        {% else %}
-                                        <span class="text-muted small">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="editItem('{{ item.id|default('', true) }}')" 
-                                                    title="Editar">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-info" onclick="showItemHistory('{{ item.material_code|default('', true) }}')" 
-                                                    title="Historial">
-                                                <i class="bi bi-clock-history"></i>
-                                            </button>
-                                            <button class="btn btn-outline-warning" onclick="recountItem('{{ item.id|default('', true) }}')" 
-                                                    title="Recontar">
-                                                <i class="bi bi-arrow-repeat"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteItem('{{ item.id|default('', true) }}')" 
-                                                    title="Eliminar">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr>
-                                    <td colspan="10" class="text-center py-5">
-                                        <div class="text-muted">
-                                            <i class="bi bi-inbox display-6 mb-3"></i>
-                                            <h5 class="mb-2">No hay datos disponibles</h5>
-                                            <p class="mb-3">Realice un conteo para ver los resultados aquí</p>
-                                            {% if url_for('inventory.count_inventory') %}
-                                            <a href="{{ url_for('inventory.count_inventory') }}" class="btn btn-primary">
-                                                <i class="bi bi-clipboard-check me-2"></i>Iniciar Conteo
-                                            </a>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="table-footer p-3 border-top">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="text-muted" id="tableInfo">
-                                Mostrando <span id="visibleCount">{{ items|length if items else 0 }}</span> de {{ items|length if items else 0 }} items
-                            </span>
-                            <div class="form-check form-switch d-inline-block ms-3">
-                                <input class="form-check-input" type="checkbox" id="criticalOnly" 
-                                       onchange="toggleCriticalOnly()">
-                                <label class="form-check-label" for="criticalOnly">Solo críticos</label>
-                            </div>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary" onclick="previousPage()">
-                                <i class="bi bi-chevron-left"></i> Anterior
-                            </button>
-                            <span class="btn btn-light">
-                                Página <span id="currentPage">1</span> de <span id="totalPages">1</span>
-                            </span>
-                            <button class="btn btn-outline-secondary" onclick="nextPage()">
-                                Siguiente <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SIDEBAR -->
-        <div class="sidebar">
-            <!-- RESUMEN WIDGET -->
-            <div class="widget">
-                <div class="widget-header">
-                    <h3 class="widget-title">
-                        <i class="bi bi-clipboard-data"></i>
-                        Resumen de Conteo
-                    </h3>
-                    <div class="widget-actions">
-                        <button class="widget-btn" onclick="refreshSummary()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button class="widget-btn" onclick="toggleWidget('summaryWidget')">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="widget-body" id="summaryWidget">
-                    <div class="status-list">
-                        <div class="status-item ok">
-                            <div class="status-content">
-                                <div class="status-icon" style="background: var(--success-gradient);">
-                                    <i class="bi bi-check-circle"></i>
-                                </div>
-                                <div class="status-text">
-                                    <div class="status-label">Coinciden (OK)</div>
-                                    <div class="status-desc">Stock exacto</div>
-                                </div>
-                            </div>
-                            <span class="status-count" style="background: var(--success-gradient);" 
-                                  id="widgetOk">{{ ok_count }}</span>
-                        </div>
-                        <div class="status-item diff">
-                            <div class="status-content">
-                                <div class="status-icon" style="background: var(--warning-gradient);">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                </div>
-                                <div class="status-text">
-                                    <div class="status-label">Diferencias</div>
-                                    <div class="status-desc">Faltantes/Sobrantes</div>
-                                </div>
-                            </div>
-                            <span class="status-count" style="background: var(--warning-gradient);" 
-                                  id="widgetDiff">{{ diff_count }}</span>
-                        </div>
-                        <div class="status-item pend">
-                            <div class="status-content">
-                                <div class="status-icon" style="background: var(--dark-gradient);">
-                                    <i class="bi bi-hourglass-split"></i>
-                                </div>
-                                <div class="status-text">
-                                    <div class="status-label">Pendientes</div>
-                                    <div class="status-desc">Sin contar</div>
-                                </div>
-                            </div>
-                            <span class="status-count" style="background: var(--dark-gradient);" 
-                                  id="widgetPend">{{ pend_count }}</span>
-                        </div>
-                    </div>
-                    <div class="mt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div class="status-label">Progreso total</div>
-                            <div class="fw-bold" id="widgetProgressText">
-                                {% if items and items|length > 0 %}
-                                    {{ ((ok_count + diff_count) / items|length * 100)|round|int }}%
-                                {% else %}0%{% endif %}
-                            </div>
-                        </div>
-                        <div class="progress" style="height: 8px;">
-                            <div class="progress-bar bg-success" id="widgetProgressBar" 
-                                 style="width: {% if items and items|length > 0 %}{{ ((ok_count + diff_count) / items|length * 100)|round|int }}{% else %}0{% endif %}%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ACCIONES RÁPIDAS WIDGET -->
-            <div class="widget">
-                <div class="widget-header">
-                    <h3 class="widget-title">
-                        <i class="bi bi-lightning-charge-fill"></i>
-                        Acciones Rápidas
-                    </h3>
-                    <div class="widget-actions">
-                        <button class="widget-btn" onclick="toggleWidget('actionsWidget')">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="widget-body" id="actionsWidget">
-                    <div class="quick-actions-grid">
-                        {% if url_for('inventory.count_inventory') %}
-                        <a href="{{ url_for('inventory.count_inventory') }}" class="action-card">
-                            <div class="action-icon">
-                                <i class="bi bi-clipboard-check"></i>
-                            </div>
-                            <h4 class="action-title">Continuar Conteo</h4>
-                            <p class="action-desc">Agregar más items</p>
-                        </a>
-                        {% endif %}
-                        
-                        <div class="action-card" onclick="exportDifferences()">
-                            <div class="action-icon" style="background: var(--success-gradient);">
-                                <i class="bi bi-file-earmark-excel"></i>
-                            </div>
-                            <h4 class="action-title">Exportar Diferencias</h4>
-                            <p class="action-desc">Reporte Excel</p>
-                        </div>
-                        
-                        <div class="action-card" onclick="showReconciliation()">
-                            <div class="action-icon" style="background: var(--info-gradient);">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </div>
-                            <h4 class="action-title">Conciliar Stock</h4>
-                            <p class="action-desc">Ajustar sistema</p>
-                        </div>
-                        
-                        <div class="action-card" onclick="generateReport()">
-                            <div class="action-icon" style="background: var(--danger-gradient);">
-                                <i class="bi bi-file-earmark-pdf"></i>
-                            </div>
-                            <h4 class="action-title">Generar Reporte</h4>
-                            <p class="action-desc">PDF detallado</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- GRÁFICOS WIDGET -->
-            <div class="widget">
-                <div class="widget-header">
-                    <h3 class="widget-title">
-                        <i class="bi bi-pie-chart-fill"></i>
-                        Distribución por Estado
-                    </h3>
-                    <div class="widget-actions">
-                        <button class="widget-btn" onclick="toggleWidget('chartWidget')">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="widget-body" id="chartWidget" style="height: 250px;">
-                    <canvas id="estadoChart"></canvas>
-                </div>
-            </div>
-
-            <!-- DIFERENCIAS WIDGET -->
-            <div class="widget">
-                <div class="widget-header">
-                    <h3 class="widget-title">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        Mayores Diferencias
-                    </h3>
-                    <div class="widget-actions">
-                        <button class="widget-btn" onclick="refreshDifferences()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button class="widget-btn" onclick="toggleWidget('differencesWidget')">
-                            <i class="bi bi-dash-lg"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="widget-body" id="differencesWidget">
-                    <div id="topDifferences">
-                        {% if items %}
-                            {% set differences = [] %}
-                            {% for item in items if item.estado == 'Diferencia' %}
-                                {% set stock = item.stock if item.stock is defined else 0 %}
-                                {% set count = item.real_count if item.real_count is defined else 0 %}
-                                {% set diff = count - stock %}
-                                {% set _ = differences.append({
-                                    'code': item.material_code,
-                                    'location': item.location,
-                                    'stock': stock,
-                                    'count': count,
-                                    'diff': diff,
-                                    'percent': (abs(diff) / stock * 100) if stock > 0 else 100
-                                }) %}
-                            {% endfor %}
-                            
-                            {% if differences %}
-                                {% set top_differences = differences|sort(attribute='diff', reverse=true)|slice(0, 5) %}
-                                {% for diff in top_differences %}
-                                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                                        <div class="d-flex align-items-center">
-                                            <div class="me-3">
-                                                <span class="badge {% if diff.percent > 50 %}bg-danger{% else %}bg-warning{% endif %}">{{ diff.percent|round|int }}%</span>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold small">{{ diff.code }}</div>
-                                                <div class="text-muted extra-small">{{ diff.location }}</div>
-                                            </div>
-                                        </div>
-                                        <div class="text-end">
-                                            <div class="fw-bold {% if diff.diff > 0 %}text-success{% else %}text-danger{% endif %}">
-                                                {% if diff.diff > 0 %}+{% endif %}{{ diff.diff }}
-                                            </div>
-                                            <div class="text-muted extra-small">{{ diff.stock }} → {{ diff.count }}</div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="text-center py-3">
-                                    <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
-                                    <p class="text-muted mb-0">No hay diferencias</p>
-                                </div>
-                            {% endif %}
-                        {% else %}
-                            <div class="text-center py-3">
-                                <div class="spinner-border spinner-border-sm text-primary"></div>
-                                <span class="ms-2">Cargando diferencias...</span>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ================= MODALES ================= -->
-
-<!-- Modal de Edición -->
-<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<!-- Agregar estos scripts adicionales en la sección de SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<!-- Agregar modal de reporte PDF -->
+<div class="modal fade" id="pdfReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header" style="background: var(--primary-gradient); color: white;">
                 <h5 class="modal-title">
-                    <i class="bi bi-pencil me-2"></i>
-                    Editar Conteo
+                    <i class="bi bi-file-earmark-pdf me-2"></i>
+                    Generar Reporte PDF
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="editForm">
-                    <input type="hidden" id="editItemId">
-                    <div class="mb-3">
-                        <label class="form-label">Código Material</label>
-                        <input type="text" class="form-control" id="editMaterialCode" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Descripción</label>
-                        <textarea class="form-control" id="editDescription" rows="2" readonly></textarea>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Ubicación</label>
-                            <input type="text" class="form-control" id="editLocation" readonly>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Reporte</label>
+                            <select class="form-select" id="reportType">
+                                <option value="summary">Resumen Ejecutivo</option>
+                                <option value="detailed">Detallado Completo</option>
+                                <option value="differences">Solo Diferencias</option>
+                                <option value="by_location">Por Ubicación</option>
+                                <option value="by_user">Por Usuario</option>
+                            </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Stock Sistema</label>
-                            <input type="number" class="form-control" id="editStock" readonly>
+                        <div class="mb-3">
+                            <label class="form-label">Rango de Fechas</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="date" class="form-control" id="reportStartDate" 
+                                           value="{{ 'now'|date('Y-m-01') }}">
+                                </div>
+                                <div class="col">
+                                    <input type="date" class="form-control" id="reportEndDate" 
+                                           value="{{ 'now'|date('Y-m-d') }}">
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Conteo Físico</label>
-                        <input type="number" class="form-control" id="editCount" min="0" required>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Opciones</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="includeCharts" checked>
+                                <label class="form-check-label" for="includeCharts">
+                                    Incluir gráficos
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="includeSummary" checked>
+                                <label class="form-check-label" for="includeSummary">
+                                    Incluir resumen ejecutivo
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="includeAllData" checked>
+                                <label class="form-check-label" for="includeAllData">
+                                    Incluir todos los datos
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="includeSignatures">
+                                <label class="form-check-label" for="includeSignatures">
+                                    Espacio para firmas
+                                </label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Observaciones</label>
-                        <textarea class="form-control" id="editNotes" rows="3"></textarea>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label class="form-label">Observaciones/Comentarios</label>
+                            <textarea class="form-control" id="reportComments" rows="3" 
+                                      placeholder="Agregar comentarios adicionales para el reporte..."></textarea>
+                        </div>
                     </div>
-                </form>
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    El reporte se generará con los datos actuales del dashboard.
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveEdit()">Guardar Cambios</button>
+                <button type="button" class="btn btn-primary" onclick="generatePDFReport()">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Generar PDF
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ================= SCRIPTS ================= -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <script>
-// ================= CONFIGURACIÓN GLOBAL =================
-const CONFIG = {
-    API: {
-        base: '{{ url_for("inventory.index") }}',
-        update_count: '{{ url_for("inventory.update_count") if "update_count" in url_for.__globals__ else "#" }}',
-        delete_item: '{{ url_for("inventory.delete_item") if "delete_item" in url_for.__globals__ else "#" }}'
-    },
-    STATE: {
-        selectedItems: new Set(),
-        currentSort: { column: null, direction: 'asc' },
-        data: [],
-        filteredData: [],
-        currentPage: 1,
-        totalPages: 1,
-        itemsPerPage: 25
-    }
-};
+// ================= FUNCIONES PARA REPORTES PDF =================
 
-// ================= INICIALIZACIÓN =================
-document.addEventListener('DOMContentLoaded', function() {
-    initDashboard();
-    setupEventListeners();
-    startSessionTimer();
-});
-
-function initDashboard() {
-    processInitialData();
-    calculateMetrics();
-    initCharts();
-    updateFilters();
-    updateKPIs();
+function generateReport() {
+    new bootstrap.Modal(document.getElementById('pdfReportModal')).show();
 }
 
-function processInitialData() {
-    const rows = document.querySelectorAll('#tableBody tr[data-id]');
-    CONFIG.STATE.data = [];
-    CONFIG.STATE.filteredData = [];
+async function generatePDFReport() {
+    const reportType = document.getElementById('reportType').value;
+    const startDate = document.getElementById('reportStartDate').value;
+    const endDate = document.getElementById('reportEndDate').value;
+    const includeCharts = document.getElementById('includeCharts').checked;
+    const includeSummary = document.getElementById('includeSummary').checked;
+    const includeAllData = document.getElementById('includeAllData').checked;
+    const includeSignatures = document.getElementById('includeSignatures').checked;
+    const comments = document.getElementById('reportComments').value;
     
-    rows.forEach((row, index) => {
-        const data = {
-            id: row.dataset.id || (index + 1),
-            code: row.dataset.code || '',
-            desc: row.dataset.desc || '',
-            location: row.dataset.location || 'Sin ubicación',
-            stock: parseInt(row.dataset.stock) || 0,
-            count: parseInt(row.dataset.count) || 0,
-            diferencia: parseInt(row.dataset.diferencia) || 0,
-            estado: row.dataset.estado || 'Pendiente',
-            user: row.dataset.user || '',
-            timestamp: row.dataset.timestamp,
-            unidad: row.dataset.unidad || '',
-            element: row,
-            isCritical: Math.abs(parseInt(row.dataset.diferencia) || 0) > (parseInt(row.dataset.stock) || 0) * 0.5 && 
-                       Math.abs(parseInt(row.dataset.diferencia) || 0) > 10
-        };
+    showLoading('Generando reporte PDF...');
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
         
-        CONFIG.STATE.data.push(data);
+        // Configuración del documento
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        let yPos = margin;
+        
+        // 1. PORTADA
+        addCoverPage(doc, reportType, startDate, endDate);
+        doc.addPage();
+        
+        // 2. RESUMEN EJECUTIVO
+        yPos = margin;
+        if (includeSummary) {
+            yPos = addExecutiveSummary(doc, yPos, reportType);
+            doc.addPage();
+        }
+        
+        // 3. GRÁFICOS
+        if (includeCharts) {
+            yPos = margin;
+            yPos = await addChartsToPDF(doc, yPos);
+            doc.addPage();
+        }
+        
+        // 4. TABLA DE DATOS
+        yPos = margin;
+        yPos = addDataTable(doc, yPos, reportType, includeAllData);
+        
+        // 5. COMENTARIOS Y FIRMAS
+        if (comments || includeSignatures) {
+            if (yPos > pageHeight - 60) {
+                doc.addPage();
+                yPos = margin;
+            }
+            yPos = addCommentsAndSignatures(doc, yPos, comments, includeSignatures);
+        }
+        
+        // 6. PIE DE PÁGINA EN CADA PÁGINA
+        addPageNumbers(doc);
+        
+        // Guardar PDF
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `reporte_conteo_${reportType}_${date}.pdf`;
+        doc.save(filename);
+        
+        hideLoading();
+        bootstrap.Modal.getInstance(document.getElementById('pdfReportModal')).hide();
+        showNotification('Reporte generado', `Se ha generado el reporte PDF: ${filename}`, 'success');
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        hideLoading();
+        showNotification('Error', 'No se pudo generar el reporte PDF.', 'error');
+    }
+}
+
+function addCoverPage(doc, reportType, startDate, endDate) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Logo (puedes reemplazar con tu logo)
+    doc.setFontSize(24);
+    doc.setTextColor(26, 95, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE CONTEO FÍSICO', pageWidth / 2, 50, { align: 'center' });
+    
+    // Subtítulo
+    doc.setFontSize(16);
+    doc.setTextColor(108, 117, 125);
+    const reportTypeText = getReportTypeText(reportType);
+    doc.text(reportTypeText, pageWidth / 2, 70, { align: 'center' });
+    
+    // Línea decorativa
+    doc.setDrawColor(26, 95, 122);
+    doc.setLineWidth(0.5);
+    doc.line(50, 80, pageWidth - 50, 80);
+    
+    // Información del reporte
+    doc.setFontSize(12);
+    doc.setTextColor(33, 37, 41);
+    doc.setFont('helvetica', 'normal');
+    
+    const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
     });
     
-    CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
-    updatePagination();
+    const data = [
+        ['Fecha de generación:', fechaGeneracion],
+        ['Período:', `${startDate} al ${endDate}`],
+        ['Usuario:', '{{ session.get("username", "Usuario") }}'],
+        ['Total items:', CONFIG.STATE.data.length],
+        ['Estado:', 'Finalizado']
+    ];
+    
+    let yPos = 100;
+    data.forEach(([label, value]) => {
+        doc.text(label, 50, yPos);
+        doc.text(value, pageWidth - 50, yPos, { align: 'right' });
+        yPos += 10;
+    });
+    
+    // Línea final
+    doc.line(50, yPos + 10, pageWidth - 50, yPos + 10);
+    
+    // Pie de página
+    doc.setFontSize(10);
+    doc.setTextColor(108, 117, 125);
+    doc.text('Sistema de Gestión de Inventario - Dashboard de Conteo Físico', 
+             pageWidth / 2, pageHeight - 20, { align: 'center' });
 }
 
-function calculateMetrics() {
-    const data = CONFIG.STATE.data;
-    
-    if (data.length === 0) {
-        updateEmptyState();
-        return;
-    }
-    
-    // Ubicaciones únicas
-    const locations = [...new Set(data.map(item => item.location).filter(Boolean))];
-    document.getElementById('totalLocations').textContent = locations.length;
-    
-    // Stock total del sistema
-    const totalStock = data.reduce((sum, item) => sum + item.stock, 0);
-    document.getElementById('totalStock').textContent = totalStock.toLocaleString();
-    
-    // Items contados
-    const countedItems = data.filter(item => item.count > 0).length;
-    document.getElementById('totalCounted').textContent = countedItems;
-    
-    // Progreso porcentual
-    const progressPercent = data.length > 0 ? Math.round((countedItems / data.length) * 100) : 0;
-    document.getElementById('progressPercent').textContent = `${progressPercent}%`;
-    document.getElementById('progressBar').style.width = `${progressPercent}%`;
-    document.getElementById('widgetProgressBar').style.width = `${progressPercent}%`;
-    document.getElementById('widgetProgressText').textContent = `${progressPercent}%`;
-    
-    // Actualizar progress bars
-    document.getElementById('locationProgress').style.width = `${Math.min(100, locations.length * 5)}%`;
-    document.getElementById('stockProgress').style.width = `${Math.min(100, totalStock / 1000 * 100)}%`;
-    document.getElementById('countedProgress').style.width = `${progressPercent}%`;
-}
-
-function updateKPIs() {
-    const data = CONFIG.STATE.data;
-    
-    // Actualizar tendencias (simuladas)
-    const trends = {
-        locations: Math.floor(Math.random() * 8),
-        stock: Math.floor(Math.random() * 6) - 3,
-        counted: Math.floor(Math.random() * 12),
-        progress: Math.floor(Math.random() * 8)
+function getReportTypeText(type) {
+    const types = {
+        'summary': 'Resumen Ejecutivo',
+        'detailed': 'Reporte Detallado Completo',
+        'differences': 'Reporte de Diferencias',
+        'by_location': 'Reporte por Ubicación',
+        'by_user': 'Reporte por Usuario'
     };
-    
-    updateTrendElement('locationTrend', trends.locations);
-    updateTrendElement('stockTrend', trends.stock);
-    updateTrendElement('countedTrend', trends.counted);
-    updateTrendElement('progressTrend', trends.progress);
+    return types[type] || 'Reporte de Conteo';
 }
 
-function updateTrendElement(elementId, value) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+function addExecutiveSummary(doc, yPos, reportType) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
     
-    element.textContent = value > 0 ? `+${value}%` : `${value}%`;
-    element.className = `stat-trend ${value > 0 ? 'trend-up' : value < 0 ? 'trend-down' : 'trend-neutral'}`;
-}
-
-// ================= GRÁFICOS =================
-function initCharts() {
+    // Título de sección
+    doc.setFontSize(16);
+    doc.setTextColor(26, 95, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RESUMEN EJECUTIVO', margin, yPos);
+    yPos += 15;
+    
+    // Línea
+    doc.setDrawColor(26, 95, 122);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+    
+    // Métricas clave
     const data = CONFIG.STATE.data;
     const okItems = data.filter(item => item.estado === 'OK').length;
     const diffItems = data.filter(item => item.estado === 'Diferencia').length;
     const pendItems = data.length - okItems - diffItems;
+    const totalStock = data.reduce((sum, item) => sum + item.stock, 0);
+    const totalCounted = data.filter(item => item.count > 0).length;
+    const progressPercent = data.length > 0 ? Math.round((totalCounted / data.length) * 100) : 0;
     
-    const ctx = document.getElementById('estadoChart');
-    if (!ctx) return;
+    const locations = [...new Set(data.map(item => item.location).filter(Boolean))];
+    const users = [...new Set(data.map(item => item.user).filter(Boolean))];
     
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Coinciden', 'Diferencias', 'Pendientes'],
-            datasets: [{
-                data: [okItems, diffItems, pendItems],
-                backgroundColor: [
-                    'rgba(40, 167, 69, 0.9)',
-                    'rgba(255, 193, 7, 0.9)',
-                    'rgba(108, 117, 125, 0.9)'
-                ],
-                borderColor: [
-                    'rgba(40, 167, 69, 1)',
-                    'rgba(255, 193, 7, 1)',
-                    'rgba(108, 117, 125, 1)'
-                ],
-                borderWidth: 2
-            }]
+    // Calcular valor total de diferencias (asumiendo un valor promedio)
+    const avgValue = 100; // Valor promedio por item - puedes ajustar esto
+    const totalDiffValue = data
+        .filter(item => item.estado === 'Diferencia')
+        .reduce((sum, item) => sum + Math.abs(item.diferencia) * avgValue, 0);
+    
+    // Resumen en tabla
+    doc.setFontSize(11);
+    doc.setTextColor(33, 37, 41);
+    doc.setFont('helvetica', 'normal');
+    
+    const summaryData = [
+        ['MÉTRICA', 'VALOR', 'PORCENTAJE'],
+        ['Total de Items', data.length, '100%'],
+        ['Coincidencias (OK)', okItems, `${Math.round((okItems / data.length) * 100)}%`],
+        ['Diferencias', diffItems, `${Math.round((diffItems / data.length) * 100)}%`],
+        ['Pendientes', pendItems, `${Math.round((pendItems / data.length) * 100)}%`],
+        ['Progreso de Conteo', `${totalCounted}/${data.length}`, `${progressPercent}%`],
+        ['Stock Total Sistema', totalStock.toLocaleString(), '-'],
+        ['Ubicaciones Contadas', locations.length, '-'],
+        ['Usuarios Participantes', users.length, '-'],
+        ['Valor Estimado Diferencias', `$${totalDiffValue.toLocaleString()}`, '-']
+    ];
+    
+    // Configurar tabla
+    doc.autoTable({
+        startY: yPos,
+        head: [summaryData[0]],
+        body: summaryData.slice(1),
+        theme: 'grid',
+        headStyles: { 
+            fillColor: [26, 95, 122],
+            textColor: 255,
+            fontStyle: 'bold'
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 20,
-                        usePointStyle: true
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: margin, right: margin }
+    });
+    
+    yPos = doc.lastAutoTable.finalY + 15;
+    
+    // Análisis de resultados
+    if (yPos > 250) {
+        doc.addPage();
+        yPos = margin;
+    }
+    
+    doc.setFontSize(12);
+    doc.setTextColor(26, 95, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ANÁLISIS DE RESULTADOS', margin, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setTextColor(33, 37, 41);
+    doc.setFont('helvetica', 'normal');
+    
+    const analysis = [
+        `• Exactitud del inventario: ${Math.round((okItems / data.length) * 100)}%`,
+        `• Tasa de diferencias: ${Math.round((diffItems / data.length) * 100)}%`,
+        `• Completitud del conteo: ${progressPercent}%`,
+        `• Stock total contado: ${totalStock.toLocaleString()} unidades`,
+        `• Cobertura geográfica: ${locations.length} ubicaciones`
+    ];
+    
+    analysis.forEach(text => {
+        if (yPos > 280) {
+            doc.addPage();
+            yPos = margin;
+        }
+        doc.text(text, margin + 5, yPos);
+        yPos += 7;
+    });
+    
+    return yPos;
+}
+
+async function addChartsToPDF(doc, yPos) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    const chartWidth = pageWidth - (margin * 2);
+    const chartHeight = 80;
+    
+    // Título de sección
+    doc.setFontSize(16);
+    doc.setTextColor(26, 95, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ANÁLISIS GRÁFICO', margin, yPos);
+    yPos += 15;
+    
+    // Línea
+    doc.setDrawColor(26, 95, 122);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+    
+    try {
+        // 1. Gráfico de distribución por estado
+        if (yPos + chartHeight > 280) {
+            doc.addPage();
+            yPos = margin;
+        }
+        
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Distribución por Estado', margin, yPos);
+        yPos += 5;
+        
+        // Crear canvas temporal para el gráfico
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+        
+        // Datos para el gráfico
+        const data = CONFIG.STATE.data;
+        const okItems = data.filter(item => item.estado === 'OK').length;
+        const diffItems = data.filter(item => item.estado === 'Diferencia').length;
+        const pendItems = data.length - okItems - diffItems;
+        
+        // Dibujar gráfico simple
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 150;
+        
+        // Colores
+        const colors = ['#28a745', '#ffc107', '#6c757d'];
+        const values = [okItems, diffItems, pendItems];
+        const labels = ['Coinciden', 'Diferencias', 'Pendientes'];
+        const total = values.reduce((a, b) => a + b, 0);
+        
+        let startAngle = 0;
+        
+        // Dibujar sectores
+        values.forEach((value, i) => {
+            const sliceAngle = (2 * Math.PI * value) / total;
+            
+            ctx.beginPath();
+            ctx.fillStyle = colors[i];
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Borde
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            startAngle += sliceAngle;
+        });
+        
+        // Leyenda
+        ctx.font = '16px Arial';
+        ctx.fillStyle = '#333333';
+        ctx.textAlign = 'left';
+        
+        let legendY = 50;
+        values.forEach((value, i) => {
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+            
+            ctx.fillStyle = colors[i];
+            ctx.fillRect(50, legendY - 10, 20, 20);
+            
+            ctx.fillStyle = '#333333';
+            ctx.fillText(`${labels[i]}: ${value} (${percentage}%)`, 80, legendY);
+            
+            legendY += 30;
+        });
+        
+        // Convertir canvas a imagen y agregar al PDF
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', margin, yPos, chartWidth, chartHeight);
+        yPos += chartHeight + 15;
+        
+        // 2. Gráfico de diferencias por ubicación
+        if (yPos + chartHeight > 280) {
+            doc.addPage();
+            yPos = margin;
+        }
+        
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Diferencias por Ubicación (Top 10)', margin, yPos);
+        yPos += 5;
+        
+        // Agrupar diferencias por ubicación
+        const locationDiff = {};
+        CONFIG.STATE.data.forEach(item => {
+            if (item.estado === 'Diferencia') {
+                if (!locationDiff[item.location]) {
+                    locationDiff[item.location] = 0;
+                }
+                locationDiff[item.location] += Math.abs(item.diferencia);
+            }
+        });
+        
+        // Ordenar y tomar top 10
+        const topLocations = Object.entries(locationDiff)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+        
+        if (topLocations.length > 0) {
+            // Crear otro canvas para el gráfico de barras
+            const canvas2 = document.createElement('canvas');
+            canvas2.width = 800;
+            canvas2.height = 400;
+            const ctx2 = canvas2.getContext('2d');
+            
+            ctx2.fillStyle = '#f8f9fa';
+            ctx2.fillRect(0, 0, canvas2.width, canvas2.height);
+            
+            const barWidth = 30;
+            const maxValue = Math.max(...topLocations.map(([_, value]) => value));
+            const scale = 200 / maxValue;
+            
+            let barX = 100;
+            topLocations.forEach(([location, value], i) => {
+                const barHeight = value * scale;
+                
+                ctx2.fillStyle = i % 2 === 0 ? '#1a5f7a' : '#28a745';
+                ctx2.fillRect(barX, 300 - barHeight, barWidth, barHeight);
+                
+                // Valor
+                ctx2.fillStyle = '#333333';
+                ctx2.font = '12px Arial';
+                ctx2.textAlign = 'center';
+                ctx2.fillText(value, barX + barWidth / 2, 290 - barHeight);
+                
+                // Etiqueta
+                ctx2.save();
+                ctx2.translate(barX + barWidth / 2, 320);
+                ctx2.rotate(-Math.PI / 4);
+                ctx2.font = '10px Arial';
+                ctx2.fillText(location.length > 10 ? location.substring(0, 10) + '...' : location, 0, 0);
+                ctx2.restore();
+                
+                barX += barWidth + 20;
+            });
+            
+            const imgData2 = canvas2.toDataURL('image/png');
+            doc.addImage(imgData2, 'PNG', margin, yPos, chartWidth, chartHeight);
+            yPos += chartHeight + 15;
+        }
+        
+    } catch (error) {
+        console.error('Error generando gráficos para PDF:', error);
+        doc.setFontSize(10);
+        doc.setTextColor(220, 53, 69);
+        doc.text('Error al generar gráficos', margin, yPos);
+        yPos += 10;
+    }
+    
+    return yPos;
+}
+
+function addDataTable(doc, yPos, reportType, includeAllData) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    
+    // Título de sección
+    doc.setFontSize(16);
+    doc.setTextColor(26, 95, 122);
+    doc.setFont('helvetica', 'bold');
+    doc.text('DETALLE DE CONTEO', margin, yPos);
+    yPos += 15;
+    
+    // Línea
+    doc.setDrawColor(26, 95, 122);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+    
+    // Filtrar datos según tipo de reporte
+    let tableData = CONFIG.STATE.data;
+    
+    switch(reportType) {
+        case 'differences':
+            tableData = tableData.filter(item => item.estado === 'Diferencia');
+            break;
+        case 'by_location':
+            // Agrupar por ubicación
+            tableData.sort((a, b) => a.location.localeCompare(b.location));
+            break;
+        case 'by_user':
+            // Agrupar por usuario
+            tableData.sort((a, b) => a.user.localeCompare(b.user));
+            break;
+    }
+    
+    // Limitar datos si no se incluyen todos
+    if (!includeAllData && tableData.length > 100) {
+        tableData = tableData.slice(0, 100);
+    }
+    
+    // Preparar datos para la tabla
+    const tableRows = tableData.map(item => [
+        item.code,
+        item.desc.length > 30 ? item.desc.substring(0, 30) + '...' : item.desc,
+        item.location,
+        item.stock.toString(),
+        item.count > 0 ? item.count.toString() : '-',
+        item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia.toString(),
+        item.estado,
+        item.user || '-',
+        item.timestamp ? new Date(item.timestamp).toLocaleDateString('es-ES') : '-'
+    ]);
+    
+    // Encabezados
+    const headers = [
+        'Código',
+        'Descripción',
+        'Ubicación',
+        'Stock Sis.',
+        'Conteo Fís.',
+        'Diferencia',
+        'Estado',
+        'Usuario',
+        'Fecha'
+    ];
+    
+    // Configurar tabla
+    doc.autoTable({
+        startY: yPos,
+        head: [headers],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: { 
+            fillColor: [26, 95, 122],
+            textColor: 255,
+            fontStyle: 'bold',
+            fontSize: 8
+        },
+        bodyStyles: { fontSize: 8 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: margin, right: margin },
+        styles: { overflow: 'linebreak', cellWidth: 'wrap' },
+        columnStyles: {
+            0: { cellWidth: 25 }, // Código
+            1: { cellWidth: 40 }, // Descripción
+            2: { cellWidth: 25 }, // Ubicación
+            3: { cellWidth: 20 }, // Stock
+            4: { cellWidth: 20 }, // Conteo
+            5: { cellWidth: 25 }, // Diferencia
+            6: { cellWidth: 25 }, // Estado
+            7: { cellWidth: 25 }, // Usuario
+            8: { cellWidth: 20 }  // Fecha
+        },
+        didDrawPage: function(data) {
+            // Agregar fondo a celdas según estado
+            data.table.body.forEach(row => {
+                const estado = row.cells[6]?.text[0];
+                if (estado === 'OK') {
+                    row.cells[6].styles.fillColor = [40, 167, 69];
+                    row.cells[6].styles.textColor = 255;
+                } else if (estado === 'Diferencia') {
+                    row.cells[6].styles.fillColor = [255, 193, 7];
+                    row.cells[6].styles.textColor = 0;
+                } else {
+                    row.cells[6].styles.fillColor = [108, 117, 125];
+                    row.cells[6].styles.textColor = 255;
+                }
+                
+                // Colorear diferencias
+                const diferencia = row.cells[5]?.text[0];
+                if (diferencia && diferencia !== '-') {
+                    const numDiff = parseInt(diferencia);
+                    if (numDiff > 0) {
+                        row.cells[5].styles.fillColor = [40, 167, 69];
+                        row.cells[5].styles.textColor = 255;
+                    } else if (numDiff < 0) {
+                        row.cells[5].styles.fillColor = [220, 53, 69];
+                        row.cells[5].styles.textColor = 255;
                     }
                 }
-            },
-            cutout: '60%'
+            });
         }
     });
+    
+    yPos = doc.lastAutoTable.finalY + 10;
+    
+    // Resumen de la tabla
+    doc.setFontSize(10);
+    doc.setTextColor(108, 117, 125);
+    doc.setFont('helvetica', 'italic');
+    doc.text(`Total de registros mostrados: ${tableData.length}`, margin, yPos);
+    
+    if (!includeAllData && CONFIG.STATE.data.length > 100) {
+        yPos += 5;
+        doc.text(`* Nota: Se muestran solo los primeros 100 registros. Total completo: ${CONFIG.STATE.data.length}`, margin, yPos);
+    }
+    
+    return yPos + 10;
 }
 
-// ================= TABLA Y FILTROS =================
-function updateFilters() {
-    const locations = [...new Set(CONFIG.STATE.data.map(item => item.location).filter(Boolean))];
-    const users = [...new Set(CONFIG.STATE.data.map(item => item.user).filter(Boolean))];
+function addCommentsAndSignatures(doc, yPos, comments, includeSignatures) {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
     
-    // Actualizar filtro de ubicaciones
-    const locationFilter = document.getElementById('locationFilter');
-    const currentLocation = locationFilter.value;
-    locationFilter.innerHTML = '<option value="all">Todas las ubicaciones</option>';
-    locations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        if (location === currentLocation) option.selected = true;
-        locationFilter.appendChild(option);
-    });
-    
-    // Actualizar filtro de usuarios
-    const userFilterTable = document.getElementById('userFilterTable');
-    const currentUser = userFilterTable.value;
-    userFilterTable.innerHTML = '<option value="all">Todos los usuarios</option>';
-    users.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user;
-        option.textContent = user;
-        if (user === currentUser) option.selected = true;
-        userFilterTable.appendChild(option);
-    });
-}
-
-function applyFilters() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const status = document.getElementById('statusFilter').value;
-    const location = document.getElementById('locationFilter').value;
-    const user = document.getElementById('userFilterTable').value;
-    
-    CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => {
-        // Búsqueda
-        const matchesSearch = !searchTerm || 
-            item.code.toLowerCase().includes(searchTerm) ||
-            item.desc.toLowerCase().includes(searchTerm) ||
-            item.location.toLowerCase().includes(searchTerm);
+    // Comentarios
+    if (comments) {
+        doc.setFontSize(12);
+        doc.setTextColor(26, 95, 122);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COMENTARIOS ADICIONALES', margin, yPos);
+        yPos += 10;
         
-        // Filtro de estado
-        const matchesStatus = status === 'all' || item.estado === status;
+        doc.setFontSize(10);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'normal');
         
-        // Filtro de ubicación
-        const matchesLocation = location === 'all' || item.location === location;
+        // Dividir comentarios en líneas
+        const maxWidth = pageWidth - (margin * 2);
+        const words = comments.split(' ');
+        let line = '';
+        let lines = [];
         
-        // Filtro de usuario
-        const matchesUser = user === 'all' || item.user === user;
-        
-        return matchesSearch && matchesStatus && matchesLocation && matchesUser;
-    });
-    
-    CONFIG.STATE.currentPage = 1;
-    updateTable();
-    updatePagination();
-}
-
-function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('statusFilter').value = 'all';
-    document.getElementById('locationFilter').value = 'all';
-    document.getElementById('userFilterTable').value = 'all';
-    
-    applyFilters();
-    showNotification('Filtros limpiados', 'Se han eliminado todos los filtros.', 'info');
-}
-
-function sortTable(th, columnIndex) {
-    // Limpiar clases de ordenación anteriores
-    document.querySelectorAll('.sort-asc, .sort-desc').forEach(el => {
-        el.classList.remove('sort-asc', 'sort-desc');
-    });
-    
-    // Determinar dirección de ordenación
-    let direction = 'asc';
-    if (CONFIG.STATE.currentSort.column === columnIndex) {
-        direction = CONFIG.STATE.currentSort.direction === 'asc' ? 'desc' : 'asc';
-    }
-    
-    // Aplicar clase visual
-    th.classList.add(`sort-${direction}`);
-    
-    // Ordenar datos
-    CONFIG.STATE.filteredData.sort((a, b) => {
-        let aValue, bValue;
-        
-        switch(columnIndex) {
-            case 0: // Código
-                aValue = a.code;
-                bValue = b.code;
-                break;
-            case 3: // Stock Sistema
-                aValue = a.stock;
-                bValue = b.stock;
-                break;
-            case 4: // Conteo Físico
-                aValue = a.count;
-                bValue = b.count;
-                break;
-            case 5: // Diferencia
-                aValue = a.diferencia;
-                bValue = b.diferencia;
-                break;
-            default:
-                return 0;
-        }
-        
-        const comparison = typeof aValue === 'string' 
-            ? aValue.localeCompare(bValue)
-            : aValue - bValue;
-        
-        return direction === 'asc' ? comparison : -comparison;
-    });
-    
-    // Actualizar estado
-    CONFIG.STATE.currentSort = { column: columnIndex, direction };
-    
-    // Actualizar tabla
-    updateTable();
-}
-
-function updateTable() {
-    const startIndex = (CONFIG.STATE.currentPage - 1) * CONFIG.STATE.itemsPerPage;
-    const endIndex = Math.min(startIndex + CONFIG.STATE.itemsPerPage, CONFIG.STATE.filteredData.length);
-    
-    // Mostrar/ocultar filas
-    CONFIG.STATE.data.forEach(item => {
-        const isVisible = CONFIG.STATE.filteredData.some(d => d.id == item.id);
-        item.element.style.display = isVisible ? '' : 'none';
-    });
-    
-    // Actualizar contadores
-    document.getElementById('filteredCount').textContent = CONFIG.STATE.filteredData.length;
-    document.getElementById('visibleCount').textContent = CONFIG.STATE.filteredData.length;
-    document.getElementById('tableInfo').innerHTML = 
-        `Mostrando <strong>${CONFIG.STATE.filteredData.length}</strong> de ${CONFIG.STATE.data.length} items`;
-}
-
-function updatePagination() {
-    const totalItems = CONFIG.STATE.filteredData.length;
-    CONFIG.STATE.totalPages = Math.ceil(totalItems / CONFIG.STATE.itemsPerPage) || 1;
-    
-    if (CONFIG.STATE.currentPage > CONFIG.STATE.totalPages) {
-        CONFIG.STATE.currentPage = CONFIG.STATE.totalPages;
-    }
-    
-    document.getElementById('currentPage').textContent = CONFIG.STATE.currentPage;
-    document.getElementById('totalPages').textContent = CONFIG.STATE.totalPages;
-    
-    // Habilitar/deshabilitar botones
-    document.querySelector('[onclick="previousPage()"]').disabled = CONFIG.STATE.currentPage === 1;
-    document.querySelector('[onclick="nextPage()"]').disabled = CONFIG.STATE.currentPage === CONFIG.STATE.totalPages;
-}
-
-function previousPage() {
-    if (CONFIG.STATE.currentPage > 1) {
-        CONFIG.STATE.currentPage--;
-        updateTable();
-        updatePagination();
-    }
-}
-
-function nextPage() {
-    if (CONFIG.STATE.currentPage < CONFIG.STATE.totalPages) {
-        CONFIG.STATE.currentPage++;
-        updateTable();
-        updatePagination();
-    }
-}
-
-// ================= GESTIÓN DE ITEMS =================
-function editItem(itemId) {
-    const item = CONFIG.STATE.data.find(item => item.id == itemId);
-    if (!item) return;
-    
-    document.getElementById('editItemId').value = item.id;
-    document.getElementById('editMaterialCode').value = item.code;
-    document.getElementById('editDescription').value = item.desc;
-    document.getElementById('editLocation').value = item.location;
-    document.getElementById('editStock').value = item.stock;
-    document.getElementById('editCount').value = item.count || '';
-    document.getElementById('editNotes').value = '';
-    
-    new bootstrap.Modal(document.getElementById('editModal')).show();
-}
-
-async function saveEdit() {
-    const itemId = document.getElementById('editItemId').value;
-    const count = parseInt(document.getElementById('editCount').value);
-    const notes = document.getElementById('editNotes').value;
-    
-    if (isNaN(count) || count < 0) {
-        showNotification('Error', 'El conteo debe ser un número positivo.', 'error');
-        return;
-    }
-    
-    showLoading('Guardando cambios...');
-    
-    try {
-        const response = await fetch(CONFIG.API.update_count, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                id: itemId,
-                real_count: count,
-                notes: notes
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Actualizar datos locales
-            const item = CONFIG.STATE.data.find(item => item.id == itemId);
-            if (item) {
-                item.count = count;
-                item.diferencia = count - item.stock;
-                item.estado = count === item.stock ? 'OK' : 'Diferencia';
-                item.isCritical = Math.abs(item.diferencia) > (item.stock * 0.5) && Math.abs(item.diferencia) > 10;
-                
-                // Actualizar fila en tabla
-                updateTableRow(item);
-                calculateMetrics();
-                
-                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-                showNotification('Actualizado', 'El conteo ha sido actualizado exitosamente.', 'success');
-            }
-        } else {
-            showNotification('Error', result.message || 'Error al actualizar el conteo.', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error', 'Error de conexión al servidor.', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function updateTableRow(item) {
-    const row = item.element;
-    const diferencia_abs = Math.abs(item.diferencia);
-    
-    // Actualizar conteo físico
-    row.cells[4].innerHTML = `<span class="fw-bold ${item.estado === 'OK' ? 'text-success' : item.estado === 'Diferencia' ? 'text-danger' : 'text-muted'}">
-        ${item.count > 0 ? item.count : '-'}
-    </span>`;
-    
-    // Actualizar diferencia
-    row.cells[5].innerHTML = item.estado === 'OK' 
-        ? '<span class="text-muted">0</span>'
-        : `<span class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
-              ${item.diferencia > 0 ? '<i class="bi bi-arrow-up-circle me-1"></i>+' : '<i class="bi bi-arrow-down-circle me-1"></i>'}${diferencia_abs}
-           </span>`;
-    
-    // Actualizar estado
-    row.cells[6].innerHTML = item.estado === 'OK'
-        ? '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>'
-        : item.estado === 'Diferencia'
-        ? '<span class="status-badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>Diferencia</span>'
-        : '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
-    
-    // Actualizar clase de crítico
-    row.classList.toggle('critical', item.isCritical);
-    
-    // Actualizar dataset
-    row.dataset.count = item.count;
-    row.dataset.diferencia = item.diferencia;
-    row.dataset.estado = item.estado;
-}
-
-async function deleteItem(itemId) {
-    const result = await Swal.fire({
-        title: '¿Eliminar item?',
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#dc3545'
-    });
-    
-    if (!result.isConfirmed) return;
-    
-    showLoading('Eliminando item...');
-    
-    try {
-        const response = await fetch(CONFIG.API.delete_item, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ id: itemId })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Eliminar de los arrays
-            const index = CONFIG.STATE.data.findIndex(item => item.id == itemId);
-            if (index !== -1) {
-                CONFIG.STATE.data.splice(index, 1);
-                CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(item => item.id != itemId);
-                
-                // Eliminar del DOM
-                const item = CONFIG.STATE.data.find(item => item.id == itemId);
-                if (item && item.element) {
-                    item.element.remove();
-                }
-                
-                calculateMetrics();
-                updateTable();
-                updatePagination();
-                showNotification('Eliminado', 'El item ha sido eliminado exitosamente.', 'success');
-            }
-        } else {
-            showNotification('Error', data.message || 'Error al eliminar el item.', 'error');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error', 'Error de conexión al servidor.', 'error');
-    } finally {
-        hideLoading();
-    }
-}
-
-function recountItem(itemId) {
-    const item = CONFIG.STATE.data.find(item => item.id == itemId);
-    if (!item) return;
-    
-    // Resetear conteo
-    editItem(itemId);
-}
-
-// ================= EXPORTACIÓN =================
-function exportToExcel() {
-    const data = CONFIG.STATE.filteredData;
-    if (data.length === 0) {
-        showNotification('Sin datos', 'No hay datos para exportar.', 'warning');
-        return;
-    }
-    
-    showLoading('Generando archivo Excel...');
-    
-    // Crear datos para Excel
-    const excelData = [
-        ['REPORTE DE CONTEO FÍSICO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Usuario:', '{{ session.get("username", "Usuario") }}'],
-        ['Total items:', data.length],
-        [''],
-        ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha']
-    ];
-    
-    data.forEach(item => {
-        excelData.push([
-            item.code,
-            item.desc,
-            item.location,
-            item.stock,
-            item.count || '-',
-            item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
-            item.estado,
-            item.user || '-',
-            item.timestamp || '-'
-        ]);
-    });
-    
-    // Crear libro de trabajo
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Conteo Físico');
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `conteo_fisico_${date}.xlsx`;
-    
-    // Descargar archivo
-    XLSX.writeFile(wb, fileName);
-    
-    hideLoading();
-    showNotification('Exportación completada', `Se ha generado el archivo ${fileName}`, 'success');
-}
-
-function exportDifferences() {
-    const differences = CONFIG.STATE.data.filter(item => item.estado === 'Diferencia');
-    if (differences.length === 0) {
-        showNotification('No hay diferencias', 'No se encontraron items con diferencias.', 'info');
-        return;
-    }
-    
-    // Crear datos para Excel
-    const excelData = [
-        ['REPORTE DE DIFERENCIAS'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Total diferencias:', differences.length],
-        [''],
-        ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Usuario', 'Fecha']
-    ];
-    
-    differences.forEach(item => {
-        excelData.push([
-            item.code,
-            item.desc,
-            item.location,
-            item.stock,
-            item.count,
-            item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
-            item.user || '-',
-            item.timestamp || '-'
-        ]);
-    });
-    
-    // Crear libro de trabajo
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `diferencias_conteo_${date}.xlsx`;
-    
-    // Descargar archivo
-    XLSX.writeFile(wb, fileName);
-    
-    showNotification('Diferencias exportadas', `Se ha generado el archivo ${fileName}`, 'success');
-}
-
-// ================= FUNCIONALIDADES AUXILIARES =================
-function loadLatestData() {
-    window.location.reload();
-}
-
-function toggleAutoRefresh() {
-    const btn = document.getElementById('autoRefreshBtn');
-    const isActive = btn.classList.contains('btn-info');
-    
-    if (isActive) {
-        btn.classList.remove('btn-info');
-        btn.classList.add('btn-outline-action');
-        showNotification('Auto-refresh desactivado', 'La actualización automática ha sido desactivada.', 'info');
-    } else {
-        btn.classList.remove('btn-outline-action');
-        btn.classList.add('btn-info');
-        showNotification('Auto-refresh activado', 'Los datos se actualizarán cada 5 minutos.', 'info');
-    }
-}
-
-function showSettings() {
-    showNotification('Configuración', 'Funcionalidad en desarrollo.', 'info');
-}
-
-function showHelp() {
-    showNotification('Ayuda', 'Funcionalidad en desarrollo.', 'info');
-}
-
-function showAdvancedFilters() {
-    showNotification('Filtros avanzados', 'Funcionalidad en desarrollo.', 'info');
-}
-
-function showBulkActions() {
-    showNotification('Acciones masivas', 'Funcionalidad en desarrollo.', 'info');
-}
-
-function toggleCriticalOnly() {
-    const showCritical = document.getElementById('criticalOnly').checked;
-    
-    if (showCritical) {
-        CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => item.isCritical);
-    } else {
-        CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
-    }
-    
-    CONFIG.STATE.currentPage = 1;
-    updateTable();
-    updatePagination();
-}
-
-function showReconciliation() {
-    const differences = CONFIG.STATE.data.filter(item => item.estado === 'Diferencia');
-    
-    if (differences.length === 0) {
-        showNotification('No hay diferencias', 'No se encontraron items para conciliar.', 'info');
-        return;
-    }
-    
-    Swal.fire({
-        title: 'Conciliar Inventario',
-        html: `
-            <div class="text-start">
-                <p>Se encontraron <strong>${differences.length}</strong> diferencias.</p>
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    Esta acción actualizará el stock del sistema SAP.
-                </div>
-                <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="confirmReconciliation">
-                    <label class="form-check-label" for="confirmReconciliation">
-                        Confirmo la conciliación del inventario
-                    </label>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Conciliar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading(`Conciliando ${differences.length} diferencias...`);
+        words.forEach(word => {
+            const testLine = line + word + ' ';
+            const testWidth = doc.getStringUnitWidth(testLine) * doc.internal.getFontSize() / doc.internal.scaleFactor;
             
-            setTimeout(() => {
-                differences.forEach(item => {
-                    item.estado = 'OK';
-                    updateTableRow(item);
-                });
-                
-                calculateMetrics();
-                hideLoading();
-                
-                showNotification('Inventario conciliado', `Se han conciliado ${differences.length} diferencias.`, 'success');
-            }, 2000);
+            if (testWidth > maxWidth && line !== '') {
+                lines.push(line);
+                line = word + ' ';
+            } else {
+                line = testLine;
+            }
+        });
+        
+        if (line) lines.push(line);
+        
+        // Agregar líneas al PDF
+        lines.forEach(lineText => {
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = margin;
+            }
+            doc.text(lineText, margin, yPos);
+            yPos += 7;
+        });
+        
+        yPos += 10;
+    }
+    
+    // Firmas
+    if (includeSignatures) {
+        if (yPos > 200) {
+            doc.addPage();
+            yPos = margin;
         }
-    });
+        
+        doc.setFontSize(12);
+        doc.setTextColor(26, 95, 122);
+        doc.setFont('helvetica', 'bold');
+        doc.text('APROBACIONES', margin, yPos);
+        yPos += 15;
+        
+        // Líneas para firmas
+        const signatureWidth = (pageWidth - (margin * 3)) / 2;
+        
+        // Firma 1: Responsable de Conteo
+        doc.setFontSize(10);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Responsable de Conteo', margin, yPos);
+        doc.line(margin, yPos + 5, margin + signatureWidth, yPos + 5);
+        doc.text('Nombre y Firma', margin, yPos + 15);
+        doc.text('Fecha: ____/____/______', margin, yPos + 25);
+        
+        // Firma 2: Supervisor
+        doc.text('Supervisor', margin + signatureWidth + margin, yPos);
+        doc.line(margin + signatureWidth + margin, yPos + 5, margin + signatureWidth + margin + signatureWidth, yPos + 5);
+        doc.text('Nombre y Firma', margin + signatureWidth + margin, yPos + 15);
+        doc.text('Fecha: ____/____/______', margin + signatureWidth + margin, yPos + 25);
+        
+        yPos += 40;
+        
+        // Firma 3: Gerente
+        doc.text('Gerente de Almacén', margin, yPos);
+        doc.line(margin, yPos + 5, margin + signatureWidth, yPos + 5);
+        doc.text('Nombre y Firma', margin, yPos + 15);
+        doc.text('Fecha: ____/____/______', margin, yPos + 25);
+        
+        // Firma 4: Contabilidad
+        doc.text('Departamento Contable', margin + signatureWidth + margin, yPos);
+        doc.line(margin + signatureWidth + margin, yPos + 5, margin + signatureWidth + margin + signatureWidth, yPos + 5);
+        doc.text('Nombre y Firma', margin + signatureWidth + margin, yPos + 15);
+        doc.text('Fecha: ____/____/______', margin + signatureWidth + margin, yPos + 25);
+    }
+    
+    return yPos + 40;
 }
 
-function generateReport() {
-    showNotification('Generar Reporte', 'Funcionalidad en desarrollo.', 'info');
-}
-
-function refreshSummary() {
-    calculateMetrics();
-    showNotification('Resumen actualizado', 'Las métricas se han actualizado.', 'info');
-}
-
-function refreshDifferences() {
-    showNotification('Diferencias actualizadas', 'Las mayores diferencias se han actualizado.', 'info');
-}
-
-function toggleWidget(widgetId) {
-    const widget = document.getElementById(widgetId);
-    if (widget.style.display === 'none') {
-        widget.style.display = 'block';
-    } else {
-        widget.style.display = 'none';
+function addPageNumbers(doc) {
+    const totalPages = doc.internal.getNumberOfPages();
+    
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(108, 117, 125);
+        doc.text(
+            `Página ${i} de ${totalPages}`, 
+            doc.internal.pageSize.getWidth() - 20, 
+            doc.internal.pageSize.getHeight() - 10
+        );
+        
+        // Pie de página
+        doc.text(
+            'Reporte generado por Sistema de Gestión de Inventario',
+            20,
+            doc.internal.pageSize.getHeight() - 10
+        );
     }
 }
 
-// ================= UTILIDADES =================
-function showLoading(message = 'Cargando...') {
-    document.getElementById('loadingMessage').textContent = message;
-    document.getElementById('loadingOverlay').classList.remove('d-none');
-}
-
-function hideLoading() {
-    document.getElementById('loadingOverlay').classList.add('d-none');
-}
-
-function showNotification(title, message, type = 'info') {
-    const panel = document.getElementById('notificationPanel');
-    const notificationId = 'notification-' + Date.now();
+// Función para generar reporte rápido (sin modal)
+function generateQuickReport(type = 'summary') {
+    showLoading('Generando reporte rápido...');
     
-    const notification = document.createElement('div');
-    notification.id = notificationId;
-    notification.className = `notification-toast notification-${type}`;
-    
-    notification.innerHTML = `
-        <div class="notification-content">
-            <div class="notification-title">${title}</div>
-            <div class="notification-message">${message}</div>
-        </div>
-        <button class="notification-close" onclick="document.getElementById('${notificationId}').remove()">
-            <i class="bi bi-x"></i>
-        </button>
-    `;
-    
-    panel.appendChild(notification);
-    
-    // Auto-remover después de 5 segundos
     setTimeout(() => {
-        const notif = document.getElementById(notificationId);
-        if (notif) {
-            notif.remove();
-        }
-    }, 5000);
-}
-
-function startSessionTimer() {
-    const sessionStart = new Date();
-    
-    setInterval(() => {
-        const now = new Date();
-        const diff = Math.floor((now - sessionStart) / 1000);
-        const hours = Math.floor(diff / 3600);
-        const minutes = Math.floor((diff % 3600) / 60);
-        const seconds = diff % 60;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const margin = 15;
+        let yPos = margin;
         
-        document.getElementById('sessionTimer').textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        // Título
+        doc.setFontSize(18);
+        doc.setTextColor(26, 95, 122);
+        doc.setFont('helvetica', 'bold');
+        doc.text('REPORTE RÁPIDO DE CONTEO', margin, yPos);
+        yPos += 10;
+        
+        // Fecha
+        doc.setFontSize(10);
+        doc.setTextColor(108, 117, 125);
+        doc.text(`Fecha: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, margin, yPos);
+        yPos += 15;
+        
+        // Métricas principales
+        const data = CONFIG.STATE.data;
+        const okItems = data.filter(item => item.estado === 'OK').length;
+        const diffItems = data.filter(item => item.estado === 'Diferencia').length;
+        const pendItems = data.length - okItems - diffItems;
+        const totalStock = data.reduce((sum, item) => sum + item.stock, 0);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RESUMEN', margin, yPos);
+        yPos += 10;
+        
+        const metrics = [
+            `• Total de Items: ${data.length}`,
+            `• Coincidencias (OK): ${okItems} (${Math.round((okItems / data.length) * 100)}%)`,
+            `• Diferencias: ${diffItems} (${Math.round((diffItems / data.length) * 100)}%)`,
+            `• Pendientes: ${pendItems} (${Math.round((pendItems / data.length) * 100)}%)`,
+            `• Stock Total: ${totalStock.toLocaleString()} unidades`
+        ];
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        metrics.forEach(metric => {
+            doc.text(metric, margin + 5, yPos);
+            yPos += 7;
+        });
+        
+        yPos += 10;
+        
+        // Top 5 diferencias
+        const differences = data
+            .filter(item => item.estado === 'Diferencia')
+            .map(item => ({
+                code: item.code,
+                desc: item.desc,
+                diff: item.diferencia,
+                location: item.location
+            }))
+            .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+            .slice(0, 5);
+        
+        if (differences.length > 0) {
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('MAYORES DIFERENCIAS', margin, yPos);
+            yPos += 10;
+            
+            differences.forEach(item => {
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                const sign = item.diff > 0 ? '+' : '';
+                doc.text(`• ${item.code}: ${sign}${item.diff} unidades (${item.location})`, margin + 5, yPos);
+                yPos += 7;
+            });
+        }
+        
+        // Pie de página
+        doc.setFontSize(8);
+        doc.setTextColor(108, 117, 125);
+        doc.text(
+            'Reporte generado automáticamente - Sistema de Gestión de Inventario',
+            margin,
+            doc.internal.pageSize.getHeight() - 10
+        );
+        
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `reporte_rapido_${type}_${date}.pdf`;
+        doc.save(filename);
+        
+        hideLoading();
+        showNotification('Reporte rápido generado', `Se ha generado: ${filename}`, 'success');
     }, 1000);
 }
 
-function updateEmptyState() {
-    ['totalLocations', 'totalStock', 'totalCounted'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element) element.textContent = '0';
-    });
+// Función para exportar dashboard completo como imagen
+async function exportDashboardImage() {
+    showLoading('Capturando dashboard...');
     
-    document.getElementById('progressPercent').textContent = '0%';
-    document.getElementById('progressBar').style.width = '0%';
-}
-
-function setupEventListeners() {
-    // Búsqueda en tiempo real
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                applyFilters();
-            }, 300);
+    try {
+        const dashboard = document.querySelector('.dashboard-container');
+        
+        // Ocultar elementos que no queremos en la captura
+        const elementsToHide = [
+            '#notificationPanel',
+            '#loadingOverlay',
+            '.btn-action',
+            '.table-btn',
+            '.btn-group'
+        ];
+        
+        const originalStyles = [];
+        elementsToHide.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                originalStyles.push({
+                    element: element,
+                    display: element.style.display
+                });
+                element.style.display = 'none';
+            }
         });
+        
+        // Capturar con html2canvas
+        const canvas = await html2canvas(dashboard, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#f8fafc'
+        });
+        
+        // Restaurar estilos
+        originalStyles.forEach(item => {
+            item.element.style.display = item.display;
+        });
+        
+        // Convertir a PDF
+        const { jsPDF } = window.jspdf;
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = 210; // A4 width in mm
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        const doc = new jsPDF('p', 'mm', 'a4');
+        doc.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `dashboard_completo_${date}.pdf`;
+        doc.save(filename);
+        
+        hideLoading();
+        showNotification('Dashboard exportado', `Se ha generado: ${filename}`, 'success');
+        
+    } catch (error) {
+        console.error('Error capturando dashboard:', error);
+        hideLoading();
+        showNotification('Error', 'No se pudo exportar el dashboard.', 'error');
     }
-    
-    // Teclas rápidas
-    document.addEventListener('keydown', function(e) {
-        // Ctrl + F para buscar
-        if (e.ctrlKey && e.key === 'f') {
-            e.preventDefault();
-            searchInput?.focus();
-            searchInput?.select();
-        }
-        
-        // Ctrl + R para actualizar
-        if (e.ctrlKey && e.key === 'r') {
-            e.preventDefault();
-            loadLatestData();
-        }
-        
-        // Ctrl + E para exportar
-        if (e.ctrlKey && e.key === 'e') {
-            e.preventDefault();
-            exportToExcel();
-        }
-        
-        // Escape para limpiar filtros
-        if (e.key === 'Escape') {
-            clearFilters();
-        }
-    });
 }
 
-// Exportar funciones necesarias
-window.loadLatestData = loadLatestData;
-window.toggleAutoRefresh = toggleAutoRefresh;
-window.showSettings = showSettings;
-window.showHelp = showHelp;
-window.clearFilters = clearFilters;
-window.applyFilters = applyFilters;
-window.sortTable = sortTable;
-window.previousPage = previousPage;
-window.nextPage = nextPage;
-window.editItem = editItem;
-window.recountItem = recountItem;
-window.deleteItem = deleteItem;
-window.exportToExcel = exportToExcel;
-window.exportDifferences = exportDifferences;
+// Agregar estas funciones al objeto window
 window.generateReport = generateReport;
-window.showAdvancedFilters = showAdvancedFilters;
-window.showBulkActions = showBulkActions;
-window.toggleCriticalOnly = toggleCriticalOnly;
-window.showReconciliation = showReconciliation;
-window.refreshSummary = refreshSummary;
-window.refreshDifferences = refreshDifferences;
-window.toggleWidget = toggleWidget;
-</script>
+window.generatePDFReport = generatePDFReport;
+window.generateQuickReport = generateQuickReport;
+window.exportDashboardImage = exportDashboardImage;
 
-{% endblock %}
+// Actualizar el action-card para PDF
+document.addEventListener('DOMContentLoaded', function() {
+    const pdfActionCard = document.querySelector('.action-card[onclick="generateReport()"]');
+    if (pdfActionCard) {
+        pdfActionCard.onclick = generateReport;
+    }
+});
+</script>
