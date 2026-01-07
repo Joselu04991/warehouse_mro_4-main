@@ -1441,3 +1441,60 @@ def update_count():
         db.session.rollback()
         print(f"Error actualizando conteo: {str(e)}")
         return jsonify({'success': False, 'message': f'Error al actualizar: {str(e)}'}), 500
+
+# -----------------------------------------------------------------------------
+# DELETE ITEM
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/delete-item", methods=["POST"])
+@login_required
+def delete_item():
+    """Eliminar un item del inventario"""
+    try:
+        data = request.get_json() or {}
+        material_code = data.get("material_code")
+        location = data.get("location")
+        
+        if not material_code or not location:
+            return jsonify({
+                "success": False,
+                "error": "Código y ubicación son requeridos"
+            }), 400
+        
+        # Buscar y eliminar el item
+        item = InventoryItem.query.filter_by(
+            user_id=current_user.id,
+            material_code=material_code,
+            location=location
+        ).first()
+        
+        if not item:
+            return jsonify({
+                "success": False,
+                "error": "Item no encontrado"
+            }), 404
+        
+        # También eliminar conteos relacionados
+        count = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=material_code,
+            location=location
+        ).first()
+        
+        if count:
+            db.session.delete(count)
+        
+        db.session.delete(item)
+        db.session.commit()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Item {material_code} en {location} eliminado"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
