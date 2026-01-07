@@ -69,34 +69,92 @@ def parse_snapshot_from_filename(filename: str):
 # -----------------------------------------------------------------------------
 # DASHBOARD
 # -----------------------------------------------------------------------------
-# routes/inventory_routes.py - Función dashboard_inventory corregida
-
 @inventory_bp.route("/dashboard")
 @login_required
 def dashboard_inventory():
     # Obtener todos los items del usuario actual
     items = InventoryItem.query.filter_by(user_id=current_user.id).all()
     
+    # Obtener los conteos físicos
+    counts = InventoryCount.query.filter_by(user_id=current_user.id).all()
+    
+    # Crear un diccionario para acceso rápido a los conteos
+    counts_dict = {}
+    for count in counts:
+        key = f"{count.material_code}_{count.location}"
+        counts_dict[key] = count.real_count or 0
+    
+    # Procesar items para el dashboard
+    dashboard_items = []
+    total_stock = 0
+    ubicaciones = set()
+    
+    # Estados
+    estados_count = {
+        "OK": 0,
+        "Diferencia": 0,
+        "Pendiente": 0
+    }
+    
+    # Diferencias
+    sobras = 0
+    faltantes = 0
+    coinciden = 0
+    
+    for item in items:
+        key = f"{item.material_code}_{item.location}"
+        stock_sistema = item.libre_utilizacion or 0
+        conteo_fisico = counts_dict.get(key, 0)
+        diferencia = conteo_fisico - stock_sistema
+        
+        # Determinar estado
+        if conteo_fisico == 0:
+            estado = "Pendiente"
+            estados_count["Pendiente"] += 1
+        elif conteo_fisico == stock_sistema:
+            estado = "OK"
+            estados_count["OK"] += 1
+            coinciden += 1
+        else:
+            estado = "Diferencia"
+            estados_count["Diferencia"] += 1
+            if diferencia > 0:
+                sobras += 1
+            else:
+                faltantes += 1
+        
+        # Agregar a lista para el dashboard
+        dashboard_items.append({
+            "material_code": item.material_code or "",
+            "material_text": item.material_text or "",
+            "location": item.location or "",
+            "stock": stock_sistema,
+            "real_count": conteo_fisico,
+            "diferencia": diferencia,
+            "estado": estado
+        })
+        
+        # Calcular estadísticas
+        total_stock += stock_sistema
+        if item.location:
+            ubicaciones.add(item.location)
+    
     # Calcular KPIs
     total_items = len(items)
-    
-    # Ubicaciones únicas
-    ubicaciones = set(item.location for item in items if item.location)
     ubicaciones_unicas = len(ubicaciones)
     
-    # Materiales críticos (stock <= 0)
+    # Items con stock crítico (<= 0)
     criticos = sum(1 for item in items if item.libre_utilizacion <= 0)
     
-    # Materiales con faltante (stock < mínimo, ajusta según tu lógica)
-    faltantes = sum(1 for item in items if item.libre_utilizacion < 5)  # Ejemplo: stock menor a 5
+    # Items con stock bajo (1-9)
+    bajos = sum(1 for item in items if 1 <= item.libre_utilizacion < 10)
     
-    # Calcular estados
-    estados = {
-        "OK": sum(1 for item in items if item.libre_utilizacion >= 10),  # Ejemplo: stock >= 10
-        "FALTA": faltantes,
-        "CRITICO": criticos,
-        "SOBRA": sum(1 for item in items if item.libre_utilizacion > 50)  # Ejemplo: stock > 50
-    }
+    # Items con stock normal (>= 10)
+    normales = sum(1 for item in item.libre_utilizacion >= 10)
+    
+    # Progreso de conteo
+    items_contados = len([i for i in dashboard_items if i["real_count"] > 0])
+    porcentaje_progreso = round((items_contados / total_items * 100) if total_items > 0 else 0, 1)
     
     # Top ubicaciones para gráfico
     from collections import Counter
@@ -107,16 +165,29 @@ def dashboard_inventory():
     ubicaciones_labels = [str(loc) for loc, _ in top_ubicaciones]
     ubicaciones_counts = [count for _, count in top_ubicaciones]
     
+    # Obtener último conteo
+    last_update = None
+    if counts:
+        last_count = max(counts, key=lambda x: x.contado_en or datetime.min)
+        last_update = last_count.contado_en
+    
     return render_template(
         "inventory/dashboard.html",
-        items=items,  # ¡IMPORTANTE! Esto estaba faltando
+        items=dashboard_items,  # Pasar los items procesados
         total_items=total_items,
         ubicaciones_unicas=ubicaciones_unicas,
         criticos=criticos,
+        bajos=bajos,
+        normales=normales,
+        sobras=sobras,
         faltantes=faltantes,
-        estados=estados,
+        coinciden=coinciden,
+        estados_count=estados_count,
+        porcentaje_progreso=porcentaje_progreso,
+        total_stock=total_stock,
         ubicaciones_labels=ubicaciones_labels,
         ubicaciones_counts=ubicaciones_counts,
+        last_update=last_update,
         now=datetime.now(TZ)
     )
 # -----------------------------------------------------------------------------
@@ -1047,3 +1118,252 @@ def generate_final_report():
             "success": False,
             "error": str(e)
         }), 500
+
+@inventory_bp.route("/get-latest-counts")
+@login_required
+def get_latest_counts():
+    """API para obtener los últimos conteos (para actualización automática)"""
+    try:
+        # Obtener items con sus conteos
+        items_data = []
+        
+        items = InventoryItem.query.filter_by(user_id=current_user.id).all()
+        counts = InventoryCount.query.filter_by(user_id=current_user.id).all()
+        
+        counts_dict = {}
+        for count in counts:
+            key = f"{count.material_code}_{count.location}"
+            counts_dict[key] = {
+                "real_count": count.real_count or 0,
+                "contado_en": count.contado_en.isoformat() if count.contado_en else None
+            }
+        
+        for item in items:
+            key = f"{item.material_code}_{item.location}"
+            stock_sistema = item.libre_utilizacion or 0
+            conteo_data = counts_dict.get(key, {})
+            conteo_fisico = conteo_data.get("real_count", 0)
+            diferencia = conteo_fisico - stock_sistema
+            
+            # Determinar estado
+            if conteo_fisico == 0:
+                estado = "Pendiente"
+            elif conteo_fisico == stock_sistema:
+                estado = "OK"
+            else:
+                estado = "Diferencia"
+            
+            items_data.append({
+                "material_code": item.material_code or "",
+                "material_text": item.material_text or "",
+                "location": item.location or "",
+                "stock": stock_sistema,
+                "real_count": conteo_fisico,
+                "diferencia": diferencia,
+                "estado": estado,
+                "contado_en": conteo_data.get("contado_en")
+            })
+        
+        # Calcular estadísticas
+        total_items = len(items)
+        items_contados = len([i for i in items_data if i["real_count"] > 0])
+        ok_items = len([i for i in items_data if i["estado"] == "OK"])
+        diff_items = len([i for i in items_data if i["estado"] == "Diferencia"])
+        pend_items = total_items - items_contados
+        
+        return jsonify({
+            "success": True,
+            "items": items_data,
+            "stats": {
+                "total": total_items,
+                "counted": items_contados,
+                "ok": ok_items,
+                "differences": diff_items,
+                "pending": pend_items,
+                "percentage": round((items_contados / total_items * 100) if total_items > 0 else 0, 1)
+            },
+            "last_update": now_pe().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@inventory_bp.route("/export-inventory")
+@login_required
+def export_inventory():
+    """Exporta todo el inventario actual a Excel"""
+    try:
+        # Obtener datos
+        items = InventoryItem.query.filter_by(user_id=current_user.id).all()
+        counts = InventoryCount.query.filter_by(user_id=current_user.id).all()
+        
+        counts_dict = {}
+        for count in counts:
+            key = f"{count.material_code}_{count.location}"
+            counts_dict[key] = count.real_count or 0
+        
+        # Crear Excel
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Inventario Completo"
+        
+        # Encabezados
+        headers = [
+            "Código Material", "Descripción", "Unidad", "Ubicación",
+            "Stock Sistema", "Conteo Físico", "Diferencia", "Estado"
+        ]
+        ws.append(headers)
+        
+        # Datos
+        for item in items:
+            key = f"{item.material_code}_{item.location}"
+            stock_sistema = item.libre_utilizacion or 0
+            conteo_fisico = counts_dict.get(key, 0)
+            diferencia = conteo_fisico - stock_sistema
+            
+            if conteo_fisico == 0:
+                estado = "PENDIENTE"
+            elif conteo_fisico == stock_sistema:
+                estado = "OK"
+            else:
+                estado = "DIFERENCIA"
+            
+            ws.append([
+                item.material_code or "",
+                item.material_text or "",
+                item.base_unit or "",
+                item.location or "",
+                stock_sistema,
+                conteo_fisico,
+                diferencia,
+                estado
+            ])
+        
+        # Agregar hoja de resumen
+        ws_summary = wb.create_sheet(title="Resumen")
+        ws_summary.append(["RESUMEN DEL INVENTARIO"])
+        ws_summary.append(["Fecha:", now_pe().strftime("%Y-%m-%d %H:%M:%S")])
+        ws_summary.append(["Usuario:", getattr(current_user, 'username', 'Usuario')])
+        ws_summary.append([])
+        
+        # Calcular estadísticas
+        total = len(items)
+        contados = len([1 for key in counts_dict if counts_dict[key] > 0])
+        
+        ws_summary.append(["Total Items:", total])
+        ws_summary.append(["Items Contados:", contados])
+        ws_summary.append(["Items Pendientes:", total - contados])
+        ws_summary.append(["Porcentaje Completado:", f"{round((contados/total*100) if total>0 else 0, 1)}%"])
+        
+        # Guardar en memoria
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f"inventario_completo_{now_pe().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
+    except Exception as e:
+        flash(f"Error al exportar: {str(e)}", "danger")
+        return redirect(url_for("inventory.dashboard_inventory"))
+
+@inventory_bp.route("/reconcile-inventory", methods=["POST"])
+@login_required
+def reconcile_inventory():
+    """Conciliar diferencias - actualizar sistema con conteos físicos"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"success": False, "error": "Sin datos"}), 400
+        
+        differences = data.get("differences", [])
+        
+        updated_count = 0
+        for diff in differences:
+            code = diff.get("code")
+            location = diff.get("location")
+            new_count = diff.get("new_count")
+            
+            if not code or not location:
+                continue
+            
+            # Buscar el item en InventoryItem
+            item = InventoryItem.query.filter_by(
+                user_id=current_user.id,
+                material_code=code,
+                location=location
+            ).first()
+            
+            if item:
+                # Actualizar el stock del sistema con el conteo físico
+                item.libre_utilizacion = new_count or 0
+                item.actualizado_en = now_pe()
+                updated_count += 1
+                
+                # También actualizar el conteo
+                count = InventoryCount.query.filter_by(
+                    user_id=current_user.id,
+                    material_code=code,
+                    location=location
+                ).first()
+                
+                if count:
+                    count.real_count = new_count or 0
+                    count.contado_en = now_pe()
+                else:
+                    count = InventoryCount(
+                        user_id=current_user.id,
+                        material_code=code,
+                        location=location,
+                        real_count=new_count or 0,
+                        contado_en=now_pe()
+                    )
+                    db.session.add(count)
+        
+        if updated_count > 0:
+            db.session.commit()
+            return jsonify({
+                "success": True,
+                "message": f"Se conciliaron {updated_count} items",
+                "updated": updated_count
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "No se encontraron items para conciliar"
+            }), 400
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+# -----------------------------------------------------------------------------
+# RESET DASHBOARD DATA
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route("/reset-dashboard", methods=["POST"])
+@login_required
+def reset_dashboard():
+    """Resetear datos del dashboard (limpiar conteos)"""
+    try:
+        # Solo limpiar conteos, no los items base
+        deleted = InventoryCount.query.filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+        
+        flash(f"Se eliminaron {deleted} conteos. El dashboard ha sido resetado.", "success")
+        return redirect(url_for("inventory.dashboard_inventory"))
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error al resetear: {str(e)}", "danger")
+        return redirect(url_for("inventory.dashboard_inventory"))
