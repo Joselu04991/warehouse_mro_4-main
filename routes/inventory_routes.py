@@ -1373,3 +1373,9 @@ def reset_dashboard():
         db.session.rollback()
         flash(f"Error al resetear: {str(e)}", "danger")
         return redirect(url_for("inventory.dashboard_inventory"))
+
+# Añade esta ruta si no existe
+@inventory_bp.route('/')
+def index():
+    # Redirige al dashboard o muestra página principal
+    return redirect(url_for('inventory.dashboard_inventory'))
