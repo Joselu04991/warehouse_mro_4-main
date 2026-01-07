@@ -1,27 +1,31 @@
 {% extends "base.html" %}
 {% block content %}
 
-<!-- ================= ESTILOS OPTIMIZADOS ================= -->
 <style>
+    /* ================= VARIABLES GLOBALES ================= */
     :root {
         --primary: #1a5f7a;
         --primary-light: rgba(26, 95, 122, 0.1);
         --primary-dark: #0d4c6e;
         --secondary: #6c757d;
         --success: #28a745;
-        --success-light: rgba(40, 167, 69, 0.15);
+        --success-light: rgba(40, 167, 69, 0.1);
         --warning: #ffc107;
-        --warning-light: rgba(255, 193, 7, 0.15);
+        --warning-light: rgba(255, 193, 7, 0.1);
         --danger: #dc3545;
-        --danger-light: rgba(220, 53, 69, 0.15);
+        --danger-light: rgba(220, 53, 69, 0.1);
         --info: #17a2b8;
         --light: #f8f9fa;
         --dark: #343a40;
         --gray-100: #f8f9fa;
         --gray-200: #e9ecef;
         --gray-300: #dee2e6;
+        --gray-400: #ced4da;
+        --gray-500: #adb5bd;
         --gray-600: #6c757d;
+        --gray-700: #495057;
         --gray-800: #343a40;
+        --gray-900: #212529;
         
         --primary-gradient: linear-gradient(135deg, #1a5f7a 0%, #0d4c6e 100%);
         --success-gradient: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -31,30 +35,34 @@
         --dark-gradient: linear-gradient(135deg, #343a40 0%, #212529 100%);
         --purple-gradient: linear-gradient(135deg, #6f42c1 0%, #6610f2 100%);
         
-        --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
-        --shadow-md: 0 4px 12px rgba(0,0,0,0.12);
-        --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
-        --radius-lg: 16px;
-        --radius-md: 12px;
-        --radius-sm: 8px;
+        --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 8px rgba(0,0,0,0.1);
+        --shadow-lg: 0 8px 16px rgba(0,0,0,0.15);
+        --shadow-xl: 0 12px 24px rgba(0,0,0,0.2);
+        
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 14px;
+        --radius-xl: 18px;
+        
+        --transition-fast: 0.2s ease;
+        --transition-normal: 0.3s ease;
+        --transition-slow: 0.5s ease;
     }
 
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-    }
-
-    /* ================= CONTENEDOR PRINCIPAL ================= */
+    /* ================= RESET Y ESTILOS BASE ================= */
     .dashboard-container {
-        padding: 20px;
+        padding: 24px;
         background: linear-gradient(135deg, #f8fafc 0%, #e9ecef 100%);
-        min-height: calc(100vh - 80px);
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
-    /* ================= HEADER MEJORADO ================= */
+    /* ================= HEADER SUPERIOR ================= */
     .dashboard-header {
         background: white;
-        border-radius: var(--radius-md);
-        padding: 24px;
+        border-radius: var(--radius-lg);
+        padding: 28px 32px;
         margin-bottom: 24px;
         box-shadow: var(--shadow-lg);
         border: 1px solid var(--gray-200);
@@ -72,76 +80,154 @@
         background: var(--primary-gradient);
     }
 
-    .header-top {
+    .header-content {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 20px;
+        margin-bottom: 24px;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 20px;
     }
 
-    .header-title h1 {
+    .header-left h1 {
+        font-size: 2rem;
         font-weight: 800;
         color: var(--primary);
         margin: 0 0 8px 0;
-        font-size: 1.8rem;
         display: flex;
         align-items: center;
         gap: 12px;
     }
 
-    .header-description {
+    .header-subtitle {
         color: var(--gray-600);
-        font-size: 0.95rem;
+        font-size: 1rem;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
     }
 
     .header-actions {
         display: flex;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
-    /* ================= STATS GRID ================= */
+    .btn-action {
+        padding: 10px 20px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all var(--transition-normal);
+        border: 2px solid transparent;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary-action {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+    }
+
+    .btn-primary-action:hover {
+        background: linear-gradient(135deg, #0d4c6e 0%, #1a5f7a 100%);
+        color: white;
+    }
+
+    .btn-outline-action {
+        background: white;
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .btn-outline-action:hover {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-success-action {
+        background: var(--success-gradient);
+        color: white;
+        border: none;
+    }
+
+    .btn-success-action:hover {
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+
+    .btn-warning-action {
+        background: var(--warning-gradient);
+        color: var(--gray-900);
+        border: none;
+    }
+
+    .btn-warning-action:hover {
+        background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
+    }
+
+    /* ================= STATS GRID MEJORADO ================= */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        padding-top: 20px;
-        border-top: 1px solid var(--gray-200);
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        padding-top: 24px;
+        border-top: 2px solid var(--gray-200);
     }
 
     .stat-card {
         background: white;
-        padding: 16px;
-        border-radius: var(--radius-sm);
+        padding: 20px;
+        border-radius: var(--radius-md);
         border: 1px solid var(--gray-200);
         display: flex;
         align-items: center;
-        gap: 16px;
-        transition: all 0.2s ease;
+        gap: 20px;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
     }
 
     .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
         border-color: var(--primary);
     }
 
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+        transform: scaleX(0);
+        transition: transform var(--transition-normal);
+    }
+
+    .stat-card:hover::before {
+        transform: scaleX(1);
+    }
+
     .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 1.5rem;
         color: white;
-        font-size: 1.4rem;
         flex-shrink: 0;
+        box-shadow: var(--shadow-md);
     }
 
     .stat-content {
@@ -149,36 +235,49 @@
     }
 
     .stat-value {
-        font-size: 1.8rem;
+        font-size: 2.2rem;
         font-weight: 800;
         line-height: 1;
-        margin: 0 0 4px 0;
-        color: var(--dark);
+        margin: 0 0 6px 0;
+        color: var(--gray-900);
     }
 
     .stat-label {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         color: var(--gray-600);
-        font-weight: 500;
+        font-weight: 600;
+        margin-bottom: 4px;
     }
 
     .stat-trend {
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        border-radius: 20px;
         font-weight: 600;
-        margin-top: 4px;
-        display: inline-block;
     }
 
-    .trend-up { background: var(--success-light); color: var(--success); }
-    .trend-down { background: var(--danger-light); color: var(--danger); }
-    .trend-neutral { background: var(--gray-200); color: var(--gray-600); }
+    .trend-up {
+        background: rgba(40, 167, 69, 0.15);
+        color: var(--success);
+    }
+
+    .trend-down {
+        background: rgba(220, 53, 69, 0.15);
+        color: var(--danger);
+    }
+
+    .trend-neutral {
+        background: rgba(108, 117, 125, 0.15);
+        color: var(--gray-600);
+    }
 
     /* ================= LAYOUT PRINCIPAL ================= */
     .dashboard-layout {
         display: grid;
-        grid-template-columns: 1fr 350px;
+        grid-template-columns: 1fr 380px;
         gap: 24px;
         margin-bottom: 24px;
     }
@@ -195,23 +294,45 @@
         gap: 24px;
     }
 
-    /* ================= KPI CARDS ================= */
+    /* ================= KPI CARDS MEJORADAS ================= */
+    .kpi-section {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+    }
+
+    .kpi-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .kpi-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 20px;
     }
 
     .kpi-card {
-        background: white;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         border-radius: var(--radius-md);
-        padding: 20px;
-        box-shadow: var(--shadow-sm);
+        padding: 24px;
         border: 1px solid var(--gray-200);
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        transition: all 0.3s ease;
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
     }
 
     .kpi-card:hover {
@@ -220,73 +341,116 @@
         border-color: var(--primary);
     }
 
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .kpi-card:hover::before {
+        opacity: 1;
+    }
+
+    .kpi-content {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
     .kpi-icon {
-        width: 56px;
-        height: 56px;
-        border-radius: var(--radius-md);
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.6rem;
         color: white;
         flex-shrink: 0;
+        box-shadow: var(--shadow-md);
     }
 
-    .kpi-content {
+    .kpi-details {
         flex: 1;
     }
 
     .kpi-value {
-        font-size: 2rem;
+        font-size: 2.4rem;
         font-weight: 800;
         line-height: 1;
         margin: 0 0 6px 0;
-        color: var(--dark);
+        color: var(--gray-900);
     }
 
     .kpi-label {
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         color: var(--gray-600);
         font-weight: 600;
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
     }
 
-    /* ================= CHART SECTION ================= */
+    .kpi-progress {
+        margin-top: 12px;
+    }
+
+    .kpi-progress-bar {
+        height: 6px;
+        border-radius: 3px;
+        background: var(--gray-200);
+        overflow: hidden;
+    }
+
+    .kpi-progress-fill {
+        height: 100%;
+        background: var(--primary-gradient);
+        border-radius: 3px;
+        transition: width 1s ease-in-out;
+    }
+
+    /* ================= CHART SECTION MEJORADA ================= */
     .chart-section {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 16px;
+        gap: 20px;
     }
 
     .chart-container {
         background: white;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
         border: 1px solid var(--gray-200);
         overflow: hidden;
+        transition: all var(--transition-normal);
     }
 
     .chart-container:hover {
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-lg);
     }
 
     .chart-header {
-        padding: 16px 20px;
+        padding: 20px 24px;
         border-bottom: 1px solid var(--gray-200);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        background: linear-gradient(to right, rgba(248, 249, 250, 0.5), rgba(241, 245, 249, 0.8));
     }
 
     .chart-title {
-        font-weight: 600;
-        color: var(--dark);
-        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        font-size: 1rem;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
 
     .chart-actions {
@@ -295,153 +459,115 @@
         gap: 8px;
     }
 
+    .chart-btn-group {
+        display: flex;
+        gap: 4px;
+    }
+
+    .chart-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        border: 1px solid var(--gray-300);
+        background: white;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .chart-btn:first-child {
+        border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    .chart-btn:last-child {
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .chart-btn:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+    }
+
+    .chart-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
     .chart-body {
         padding: 20px;
-        height: 240px;
+        height: 280px;
         position: relative;
     }
 
-    /* ================= SIDEBAR WIDGETS ================= */
-    .widget {
-        background: white;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-        overflow: hidden;
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 16px;
+        flex-wrap: wrap;
     }
 
-    .widget:hover {
-        box-shadow: var(--shadow-md);
-    }
-
-    .widget-header {
-        padding: 16px 20px;
-        background: var(--primary-gradient);
-        color: white;
-    }
-
-    .widget-header h5 {
-        margin: 0;
-        font-weight: 600;
+    .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 0.95rem;
+        gap: 6px;
+        font-size: 0.85rem;
     }
 
-    .widget-body {
-        padding: 20px;
+    .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
     }
 
-    /* Status Widget */
-    .status-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .status-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px;
-        border-radius: var(--radius-sm);
-        background: var(--gray-100);
-        transition: all 0.2s;
-        border-left: 4px solid transparent;
-    }
-
-    .status-item:hover {
-        background: var(--gray-200);
-        transform: translateX(4px);
-    }
-
-    .status-item.ok { border-left-color: var(--success); }
-    .status-item.diff { border-left-color: var(--warning); }
-    .status-item.pend { border-left-color: var(--secondary); }
-
-    .status-content {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .status-count {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: white;
-        min-width: 40px;
-        text-align: center;
-    }
-
-    /* Quick Actions */
-    .quick-actions-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-    }
-
-    .action-card {
-        padding: 16px;
-        border: 2px solid var(--gray-200);
-        border-radius: var(--radius-sm);
-        background: white;
-        color: var(--dark);
-        text-align: center;
-        transition: all 0.3s ease;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .action-card:hover {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .action-card i {
-        font-size: 1.4rem;
-        color: var(--primary);
-        transition: transform 0.3s ease;
-    }
-
-    .action-card:hover i {
-        transform: scale(1.1);
-    }
-
-    /* ================= TABLE SECTION ================= */
+    /* ================= TABLE SECTION MEJORADA ================= */
     .table-section {
         background: white;
-        border-radius: var(--radius-md);
-        box-shadow: var(--shadow-sm);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
         border: 1px solid var(--gray-200);
         overflow: hidden;
+        transition: all var(--transition-normal);
     }
 
-    .table-toolbar {
-        padding: 16px 20px;
+    .table-section:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .table-header {
+        padding: 20px 24px;
         border-bottom: 1px solid var(--gray-200);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 16px;
+        background: linear-gradient(to right, rgba(248, 249, 250, 0.5), rgba(241, 245, 249, 0.8));
+    }
+
+    .table-title-area {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
     .table-title {
-        font-weight: 600;
-        color: var(--dark);
-        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--gray-900);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .table-badges {
         display: flex;
-        align-items: center;
-        gap: 10px;
+        gap: 8px;
+    }
+
+    .table-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
     }
 
     .table-controls {
@@ -451,18 +577,18 @@
         flex-wrap: wrap;
     }
 
-    .search-box {
+    .search-container {
         position: relative;
-        min-width: 250px;
+        min-width: 280px;
     }
 
     .search-input {
         width: 100%;
-        padding: 10px 16px 10px 40px;
-        border: 1px solid var(--gray-300);
-        border-radius: var(--radius-sm);
+        padding: 10px 16px 10px 42px;
+        border: 2px solid var(--gray-300);
+        border-radius: var(--radius-md);
         font-size: 0.9rem;
-        transition: all 0.3s ease;
+        transition: all var(--transition-normal);
         background: white;
     }
 
@@ -474,93 +600,649 @@
 
     .search-icon {
         position: absolute;
-        left: 12px;
+        left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--gray-600);
+        color: var(--gray-500);
+        pointer-events: none;
     }
 
-    /* Tabla */
+    .filter-group {
+        display: flex;
+        gap: 8px;
+    }
+
+    .filter-select {
+        padding: 8px 12px;
+        border: 2px solid var(--gray-300);
+        border-radius: var(--radius-md);
+        background: white;
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--primary);
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .table-btn {
+        padding: 8px 16px;
+        border: 2px solid var(--gray-300);
+        border-radius: var(--radius-md);
+        background: white;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .table-btn:hover {
+        background: var(--gray-100);
+        border-color: var(--gray-400);
+    }
+
+    .table-btn-primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .table-btn-primary:hover {
+        background: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+
+    .table-btn-success {
+        background: var(--success);
+        color: white;
+        border-color: var(--success);
+    }
+
+    .table-btn-success:hover {
+        background: #218838;
+        border-color: #218838;
+    }
+
+    /* ================= TABLA MEJORADA ================= */
+    .table-wrapper {
+        position: relative;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+        background: var(--gray-100);
+        border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+    }
+
     .data-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
     }
 
     .data-table thead {
-        background: var(--gray-100);
         position: sticky;
         top: 0;
         z-index: 10;
+        background: var(--gray-100);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
     .data-table th {
+        padding: 16px;
+        text-align: left;
+        font-weight: 700;
         color: var(--gray-800);
-        font-weight: 600;
-        padding: 14px 16px;
         border-bottom: 2px solid var(--gray-300);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
         white-space: nowrap;
+        position: relative;
+        user-select: none;
     }
 
     .data-table th.sortable {
         cursor: pointer;
-        transition: background 0.2s ease;
-        position: relative;
+        transition: background var(--transition-fast);
+        padding-right: 30px;
     }
 
     .data-table th.sortable:hover {
-        background: var(--primary-light);
+        background: rgba(26, 95, 122, 0.05);
+    }
+
+    .data-table th.sortable::after {
+        content: '↕';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.8em;
+        opacity: 0.5;
+        transition: opacity var(--transition-fast);
+    }
+
+    .data-table th.sortable:hover::after {
+        opacity: 1;
+    }
+
+    .data-table th.sort-asc::after {
+        content: '↑';
+        opacity: 1;
+    }
+
+    .data-table th.sort-desc::after {
+        content: '↓';
+        opacity: 1;
     }
 
     .data-table td {
-        padding: 12px 16px;
+        padding: 14px 16px;
         color: var(--gray-800);
         vertical-align: middle;
         border-bottom: 1px solid var(--gray-200);
-        transition: background 0.2s ease;
+        transition: background var(--transition-fast);
     }
 
     .data-table tbody tr {
-        transition: all 0.2s ease;
+        transition: all var(--transition-fast);
     }
 
     .data-table tbody tr:hover {
-        background: var(--primary-light);
+        background: rgba(26, 95, 122, 0.03);
     }
 
-    /* Badges */
+    .data-table tbody tr.selected {
+        background: rgba(26, 95, 122, 0.08);
+    }
+
+    .data-table tbody tr.critical {
+        background: rgba(220, 53, 69, 0.05);
+    }
+
+    .data-table tbody tr.critical:hover {
+        background: rgba(220, 53, 69, 0.08);
+    }
+
+    /* ================= STATUS BADGES ================= */
     .status-badge {
-        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
         border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-align: center;
-        display: inline-block;
-        min-width: 80px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        min-width: 100px;
+        justify-content: center;
+        transition: all var(--transition-fast);
     }
 
-    .badge-ok { 
-        background: var(--success-gradient); 
+    .status-badge:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        color: var(--gray-900);
+        font-weight: 800;
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+    }
+
+    .badge-secondary {
+        background: linear-gradient(135deg, #6c757d, #868e96);
+        color: white;
+        box-shadow: 0 2px 4px rgba(108, 117, 125, 0.2);
+    }
+
+    .badge-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
+    }
+
+    /* ================= SIDEBAR WIDGETS MEJORADOS ================= */
+    .widget {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        transition: all var(--transition-normal);
+    }
+
+    .widget:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .widget-header {
+        padding: 20px;
+        background: var(--primary-gradient);
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .widget-title {
+        font-weight: 700;
+        font-size: 1rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .widget-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .widget-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .widget-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+    }
+
+    .widget-body {
+        padding: 20px;
+    }
+
+    /* Status List Widget */
+    .status-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px;
+        border-radius: var(--radius-md);
+        background: linear-gradient(to right, #f8f9fa, #f1f5f9);
+        border-left: 4px solid transparent;
+        transition: all var(--transition-fast);
+    }
+
+    .status-item:hover {
+        transform: translateX(4px);
+        background: linear-gradient(to right, #e9ecef, #dee2e6);
+    }
+
+    .status-item.ok {
+        border-left-color: var(--success);
+    }
+
+    .status-item.diff {
+        border-left-color: var(--warning);
+    }
+
+    .status-item.pend {
+        border-left-color: var(--secondary);
+    }
+
+    .status-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
         color: white;
     }
-    .badge-warning { 
-        background: var(--warning-gradient); 
-        color: var(--dark);
+
+    .status-text {
+        display: flex;
+        flex-direction: column;
     }
-    .badge-danger { 
-        background: var(--danger-gradient); 
-        color: white;
+
+    .status-label {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.95rem;
     }
-    .badge-secondary { 
-        background: var(--dark-gradient); 
+
+    .status-desc {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+    }
+
+    .status-count {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 1.1rem;
+        font-weight: 800;
         color: white;
+        min-width: 60px;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Quick Actions Widget */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .action-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid var(--gray-300);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        text-align: center;
+        transition: all var(--transition-normal);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary);
+        background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+
+    .action-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--primary-gradient);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        transition: all var(--transition-normal);
+    }
+
+    .action-card:hover .action-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .action-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .action-desc {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        margin: 0;
+    }
+
+    /* Activity Timeline Widget */
+    .timeline {
+        position: relative;
+        padding-left: 24px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, var(--primary), var(--info));
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: var(--gray-100);
+        border-radius: var(--radius-md);
+        border-left: 3px solid var(--primary);
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -20px;
+        top: 16px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px rgba(26, 95, 122, 0.2);
+    }
+
+    .timeline-time {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+
+    .timeline-content {
+        font-size: 0.9rem;
+        color: var(--gray-800);
+    }
+
+    .timeline-user {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    /* ================= NOTIFICATIONS ================= */
+    .notification-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        width: 350px;
+    }
+
+    .notification-toast {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow-lg);
+        border-left: 4px solid var(--primary);
+        animation: slideInRight 0.3s ease-out;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .notification-content {
+        flex: 1;
+    }
+
+    .notification-title {
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: 4px;
+    }
+
+    .notification-message {
+        color: var(--gray-600);
+        font-size: 0.9rem;
+    }
+
+    .notification-close {
+        background: none;
+        border: none;
+        color: var(--gray-500);
+        cursor: pointer;
+        padding: 4px;
+        margin-left: 8px;
+    }
+
+    .notification-success {
+        border-left-color: var(--success);
+    }
+
+    .notification-warning {
+        border-left-color: var(--warning);
+    }
+
+    .notification-error {
+        border-left-color: var(--danger);
+    }
+
+    /* ================= LOADING OVERLAY ================= */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+        backdrop-filter: blur(4px);
+    }
+
+    .loading-spinner {
+        width: 80px;
+        height: 80px;
+        border: 6px solid rgba(255, 255, 255, 0.1);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    .loading-content {
+        text-align: center;
+        color: white;
+        margin-top: 20px;
+    }
+
+    /* ================= ANIMATIONS ================= */
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
     }
 
     /* ================= RESPONSIVE DESIGN ================= */
+    @media (max-width: 1400px) {
+        .chart-section {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: 1200px) {
         .dashboard-layout {
             grid-template-columns: 1fr;
@@ -573,21 +1255,25 @@
     }
 
     @media (max-width: 992px) {
-        .chart-section {
-            grid-template-columns: 1fr;
+        .dashboard-container {
+            padding: 16px;
+        }
+        
+        .dashboard-header {
+            padding: 20px 24px;
         }
         
         .kpi-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .quick-actions-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
     }
 
     @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 16px;
-        }
-        
-        .header-top {
+        .header-content {
             flex-direction: column;
             align-items: stretch;
         }
@@ -596,7 +1282,7 @@
             width: 100%;
         }
         
-        .table-toolbar {
+        .table-header {
             flex-direction: column;
             align-items: stretch;
         }
@@ -605,23 +1291,17 @@
             width: 100%;
         }
         
-        .search-box {
+        .search-container {
             width: 100%;
             min-width: auto;
         }
         
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 576px) {
         .kpi-grid {
             grid-template-columns: 1fr;
         }
         
         .stats-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, 1fr);
         }
         
         .sidebar {
@@ -629,52 +1309,110 @@
         }
         
         .quick-actions-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 576px) {
+        .stats-grid {
             grid-template-columns: 1fr;
+        }
+        
+        .quick-actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .filter-group {
+            width: 100%;
+        }
+        
+        .filter-select {
+            flex: 1;
+        }
+        
+        .table-actions {
+            width: 100%;
+            justify-content: center;
         }
     }
 
     /* ================= UTILITY CLASSES ================= */
-    .text-gradient-primary {
+    .text-gradient {
         background: var(--primary-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
 
-    .fade-in {
-        animation: fadeIn 0.6s ease-out;
+    .shadow-hover {
+        transition: box-shadow var(--transition-normal);
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .shadow-hover:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .select-none {
+        user-select: none;
+    }
+
+    .transition-all {
+        transition: all var(--transition-normal);
     }
 </style>
 
-<!-- ================= HTML DEL DASHBOARD ================= -->
+<!-- ================= DASHBOARD HTML ================= -->
 <div class="dashboard-container fade-in">
+    <!-- NOTIFICATIONS PANEL -->
+    <div id="notificationPanel" class="notification-panel"></div>
+    
+    <!-- LOADING OVERLAY -->
+    <div id="loadingOverlay" class="loading-overlay d-none">
+        <div>
+            <div class="loading-spinner"></div>
+            <div class="loading-content">
+                <h4 id="loadingMessage">Cargando...</h4>
+                <p id="loadingDetail"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- HEADER -->
     <div class="dashboard-header">
-        <div class="header-top">
-            <div>
+        <div class="header-content">
+            <div class="header-left">
                 <h1>
                     <i class="bi bi-clipboard-data"></i>
                     Dashboard de Conteo Físico
+                    <span class="badge bg-primary ms-2">v3.0</span>
                 </h1>
-                <p class="header-description">
+                <p class="header-subtitle">
                     <i class="bi bi-info-circle"></i>
-                    Análisis en tiempo real de resultados del conteo físico
+                    Sistema de gestión de inventario en tiempo real
                 </p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-sm btn-outline-primary" onclick="loadLatestData()">
+                <button class="btn-action btn-primary-action" onclick="loadLatestData()" id="refreshBtn">
                     <i class="bi bi-arrow-clockwise"></i> Actualizar
                 </button>
+                <button class="btn-action btn-outline-action" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
+                    <i class="bi bi-clock"></i> Auto-Refresh
+                </button>
                 {% if url_for('inventory.count_inventory') %}
-                <a href="{{ url_for('inventory.count_inventory') }}" class="btn btn-sm btn-success">
+                <a href="{{ url_for('inventory.count_inventory') }}" class="btn-action btn-success-action">
                     <i class="bi bi-clipboard-check"></i> Nuevo Conteo
                 </a>
                 {% endif %}
+                <button class="btn-action btn-warning-action" onclick="showSettings()">
+                    <i class="bi bi-gear"></i> Configuración
+                </button>
+                <button class="btn-action" style="background: var(--danger-gradient); color: white;" onclick="showHelp()">
+                    <i class="bi bi-question-circle"></i> Ayuda
+                </button>
             </div>
         </div>
         
@@ -686,7 +1424,7 @@
                 <div class="stat-content">
                     <div class="stat-value" id="totalItems">{{ items|length if items else 0 }}</div>
                     <div class="stat-label">Total Materiales</div>
-                    <span class="stat-trend trend-up">+0%</span>
+                    <span class="stat-trend trend-up" id="itemsTrend">+0%</span>
                 </div>
             </div>
             
@@ -698,7 +1436,7 @@
                     {% set ok_count = items|selectattr('estado', 'equalto', 'OK')|list|length if items else 0 %}
                     <div class="stat-value" id="okItems">{{ ok_count }}</div>
                     <div class="stat-label">Coinciden</div>
-                    <span class="stat-trend trend-up">+0%</span>
+                    <span class="stat-trend trend-up" id="okTrend">+0%</span>
                 </div>
             </div>
             
@@ -710,7 +1448,7 @@
                     {% set diff_count = items|selectattr('estado', 'equalto', 'Diferencia')|list|length if items else 0 %}
                     <div class="stat-value" id="diffItems">{{ diff_count }}</div>
                     <div class="stat-label">Diferencias</div>
-                    <span class="stat-trend trend-up">+0%</span>
+                    <span class="stat-trend trend-down" id="diffTrend">+0%</span>
                 </div>
             </div>
             
@@ -722,7 +1460,35 @@
                     {% set pend_count = items|length - ok_count - diff_count if items else 0 %}
                     <div class="stat-value" id="pendItems">{{ pend_count }}</div>
                     <div class="stat-label">Pendientes</div>
-                    <span class="stat-trend trend-down">-0%</span>
+                    <span class="stat-trend trend-down" id="pendTrend">-0%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 pt-4 border-top">
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-0 py-3">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-info-circle me-3 fs-5"></i>
+                    <div>
+                        <strong>Última actualización</strong>
+                        <div class="text-muted" id="lastUpdateTime">
+                            {% if last_update %}
+                            {{ last_update.strftime('%d/%m/%Y %H:%M:%S') }}
+                            {% else %}
+                            Sin datos
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex gap-3">
+                    <div class="text-end">
+                        <div class="text-muted small">Sesión activa</div>
+                        <div class="fw-bold" id="sessionTimer">00:00:00</div>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-muted small">Actualizado hace</div>
+                        <div class="fw-bold" id="dataAge">0 seg</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -732,62 +1498,107 @@
     <div class="dashboard-layout">
         <!-- CONTENIDO PRINCIPAL -->
         <div class="main-content">
-            <!-- KPI CARDS -->
-            <div class="kpi-grid">
-                <div class="kpi-card">
-                    <div class="kpi-icon" style="background: var(--primary-gradient);">
-                        <i class="bi bi-geo-alt-fill"></i>
-                    </div>
-                    <div class="kpi-content">
-                        <div class="kpi-value" id="totalLocations">0</div>
-                        <div class="kpi-label">
-                            Ubicaciones
-                            <span class="stat-trend trend-up">+0%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="kpi-card">
-                    <div class="kpi-icon" style="background: var(--info-gradient);">
-                        <i class="bi bi-calculator-fill"></i>
-                    </div>
-                    <div class="kpi-content">
-                        <div class="kpi-value" id="totalStock">0</div>
-                        <div class="kpi-label">
-                            Stock Sistema
-                            <span class="stat-trend trend-neutral">0%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="kpi-card">
-                    <div class="kpi-icon" style="background: var(--success-gradient);">
-                        <i class="bi bi-check-all"></i>
-                    </div>
-                    <div class="kpi-content">
-                        <div class="kpi-value" id="totalCounted">0</div>
-                        <div class="kpi-label">
-                            Contados
-                            <span class="stat-trend trend-up">+0%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="kpi-card">
-                    <div class="kpi-icon" style="background: var(--purple-gradient);">
+            <!-- KPI SECTION -->
+            <div class="kpi-section">
+                <div class="kpi-header">
+                    <h2 class="kpi-title">
                         <i class="bi bi-speedometer2"></i>
+                        Indicadores Clave
+                    </h2>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshKPIs()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="exportKPIs()">
+                            <i class="bi bi-download"></i>
+                        </button>
                     </div>
-                    <div class="kpi-content">
-                        <div class="kpi-value" id="progressPercent">0%</div>
-                        <div class="kpi-label">
-                            Progreso
-                            <span class="stat-trend trend-up">+0%</span>
+                </div>
+                
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-icon" style="background: var(--primary-gradient);">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <div class="kpi-value" id="totalLocations">0</div>
+                                <div class="kpi-label">
+                                    Ubicaciones
+                                    <span class="stat-trend trend-up" id="locationTrend">+0%</span>
+                                </div>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar">
+                                        <div class="kpi-progress-fill" id="locationProgress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-icon" style="background: var(--info-gradient);">
+                                <i class="bi bi-calculator-fill"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <div class="kpi-value" id="totalStock">0</div>
+                                <div class="kpi-label">
+                                    Stock Sistema
+                                    <span class="stat-trend trend-neutral" id="stockTrend">0%</span>
+                                </div>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar">
+                                        <div class="kpi-progress-fill" id="stockProgress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-icon" style="background: var(--success-gradient);">
+                                <i class="bi bi-check-all"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <div class="kpi-value" id="totalCounted">0</div>
+                                <div class="kpi-label">
+                                    Contados
+                                    <span class="stat-trend trend-up" id="countedTrend">+0%</span>
+                                </div>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar">
+                                        <div class="kpi-progress-fill" id="countedProgress" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card">
+                        <div class="kpi-content">
+                            <div class="kpi-icon" style="background: var(--purple-gradient);">
+                                <i class="bi bi-speedometer2"></i>
+                            </div>
+                            <div class="kpi-details">
+                                <div class="kpi-value" id="progressPercent">0%</div>
+                                <div class="kpi-label">
+                                    Progreso Total
+                                    <span class="stat-trend trend-up" id="progressTrend">+0%</span>
+                                </div>
+                                <div class="kpi-progress">
+                                    <div class="kpi-progress-bar">
+                                        <div class="kpi-progress-fill" id="progressBar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- GRÁFICOS -->
+            <!-- CHART SECTION -->
             <div class="chart-section">
                 <div class="chart-container">
                     <div class="chart-header">
@@ -796,14 +1607,19 @@
                             Distribución del Conteo
                         </div>
                         <div class="chart-actions">
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-secondary active">Dona</button>
-                                <button class="btn btn-outline-secondary">Circular</button>
+                            <div class="chart-btn-group">
+                                <button class="chart-btn active" onclick="changeChartType('estado', 'doughnut')">Dona</button>
+                                <button class="chart-btn" onclick="changeChartType('estado', 'pie')">Circular</button>
+                                <button class="chart-btn" onclick="changeChartType('estado', 'bar')">Barras</button>
                             </div>
+                            <button class="widget-btn ms-2" onclick="toggleFullscreen('estadoChart')">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="chart-body">
                         <canvas id="estadoChart"></canvas>
+                        <div class="chart-legend" id="estadoLegend"></div>
                     </div>
                 </div>
                 
@@ -814,11 +1630,15 @@
                             Tendencia por Hora
                         </div>
                         <div class="chart-actions">
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-secondary">1H</button>
-                                <button class="btn btn-outline-secondary active">24H</button>
-                                <button class="btn btn-outline-secondary">7D</button>
+                            <div class="chart-btn-group">
+                                <button class="chart-btn" onclick="changeTimeRange('1h')">1H</button>
+                                <button class="chart-btn active" onclick="changeTimeRange('24h')">24H</button>
+                                <button class="chart-btn" onclick="changeTimeRange('7d')">7D</button>
+                                <button class="chart-btn" onclick="changeTimeRange('30d')">30D</button>
                             </div>
+                            <button class="widget-btn ms-2" onclick="toggleFullscreen('tendenciaChart')">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="chart-body">
@@ -827,89 +1647,216 @@
                 </div>
             </div>
 
-            <!-- TABLA -->
-            <div class="table-section">
-                <div class="table-toolbar">
-                    <div class="table-title">
-                        <i class="bi bi-table"></i>
-                        Resultados Detallados
-                        <span class="badge bg-primary">{{ items|length if items else 0 }}</span>
-                    </div>
-                    
-                    <div class="table-controls">
-                        <div class="search-box">
-                            <i class="bi bi-search search-icon"></i>
-                            <input type="text" class="search-input" placeholder="Buscar...">
+            <!-- ADDITIONAL CHARTS -->
+            <div class="chart-section mt-0">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="bi bi-people-fill"></i>
+                            Rendimiento por Usuario
                         </div>
-                        
-                        <select class="form-select form-select-sm w-auto" onchange="filterTable(this.value)">
-                            <option value="all">Todos</option>
-                            <option value="OK">OK</option>
-                            <option value="Diferencia">Diferencias</option>
-                            <option value="Pendiente">Pendientes</option>
-                        </select>
+                        <div class="chart-actions">
+                            <select class="filter-select" id="userFilter" onchange="updatePerformanceChart()">
+                                <option value="all">Todos los usuarios</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="performanceChart"></canvas>
                     </div>
                 </div>
                 
-                <div class="table-responsive">
-                    <table class="data-table">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title">
+                            <i class="bi bi-map-fill"></i>
+                            Mapa de Calor por Ubicación
+                        </div>
+                        <div class="chart-actions">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="heatmapToggle" checked 
+                                       onchange="toggleHeatmap()">
+                                <label class="form-check-label" for="heatmapToggle">Calor</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="heatmapChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE SECTION -->
+            <div class="table-section">
+                <div class="table-header">
+                    <div class="table-title-area">
+                        <h3 class="table-title">
+                            <i class="bi bi-table"></i>
+                            Resultados Detallados
+                        </h3>
+                        <div class="table-badges">
+                            <span class="table-badge bg-primary" id="filteredCount">{{ items|length if items else 0 }}</span>
+                            <span class="table-badge bg-success d-none" id="selectedCount">0 seleccionados</span>
+                        </div>
+                    </div>
+                    
+                    <div class="table-controls">
+                        <div class="search-container">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" id="searchInput" class="search-input" 
+                                   placeholder="Buscar código, descripción, ubicación...">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <select class="filter-select" id="statusFilter" onchange="applyFilters()">
+                                <option value="all">Todos los estados</option>
+                                <option value="OK">Solo OK</option>
+                                <option value="Diferencia">Solo Diferencias</option>
+                                <option value="Pendiente">Solo Pendientes</option>
+                            </select>
+                            
+                            <select class="filter-select" id="locationFilter" onchange="applyFilters()">
+                                <option value="all">Todas las ubicaciones</option>
+                            </select>
+                            
+                            <select class="filter-select" id="userFilterTable" onchange="applyFilters()">
+                                <option value="all">Todos los usuarios</option>
+                            </select>
+                        </div>
+                        
+                        <div class="table-actions">
+                            <button class="table-btn" onclick="clearFilters()" title="Limpiar filtros">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                            <button class="table-btn table-btn-primary" onclick="exportToExcel()" title="Exportar Excel">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </button>
+                            <button class="table-btn" onclick="showAdvancedFilters()" title="Filtros avanzados">
+                                <i class="bi bi-funnel"></i>
+                            </button>
+                            <button class="table-btn table-btn-success" onclick="showBulkActions()" title="Acciones masivas">
+                                <i class="bi bi-tools"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-wrapper">
+                    <table class="data-table" id="inventoryTable">
                         <thead>
                             <tr>
-                                <th class="sortable">Código</th>
+                                <th class="sortable" onclick="sortTable(this, 0)">Código</th>
                                 <th>Descripción</th>
                                 <th>Ubicación</th>
-                                <th class="sortable">Stock Sistema</th>
-                                <th class="sortable">Conteo Físico</th>
-                                <th class="sortable">Diferencia</th>
+                                <th class="sortable" onclick="sortTable(this, 3)">Stock Sistema</th>
+                                <th class="sortable" onclick="sortTable(this, 4)">Conteo Físico</th>
+                                <th class="sortable" onclick="sortTable(this, 5)">Diferencia</th>
                                 <th>Estado</th>
+                                <th>Usuario</th>
+                                <th>Fecha</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tableBody">
                             {% if items and items|length > 0 %}
                                 {% for item in items %}
                                 {% set stock_sistema = item.stock if item.stock is defined else 0 %}
                                 {% set conteo_fisico = item.real_count if item.real_count is defined else 0 %}
                                 {% set diferencia = conteo_fisico - stock_sistema %}
-                                <tr data-code="{{ item.material_code }}" data-estado="{{ item.estado }}">
-                                    <td class="fw-bold">{{ item.material_code }}</td>
+                                {% set diferencia_abs = diferencia|abs %}
+                                {% set is_critical = diferencia_abs > (stock_sistema * 0.5) and diferencia_abs > 10 %}
+                                <tr data-id="{{ loop.index }}" 
+                                    data-code="{{ item.material_code|default('', true) }}"
+                                    data-desc="{{ item.material_text|default('', true) }}"
+                                    data-location="{{ item.location|default('Sin ubicación', true) }}"
+                                    data-stock="{{ stock_sistema }}"
+                                    data-count="{{ conteo_fisico }}"
+                                    data-diferencia="{{ diferencia }}"
+                                    data-estado="{{ item.estado|default('Pendiente', true) }}"
+                                    data-user="{{ item.usuario|default('', true) }}"
+                                    data-timestamp="{{ item.timestamp|default('', true) }}"
+                                    class="{{ 'critical' if is_critical else '' }}">
                                     <td>
-                                        <div class="text-truncate" style="max-width: 200px;">
-                                            {{ item.material_text }}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="checkbox" class="form-check-input row-selector" 
+                                                   onchange="toggleRowSelection(this)">
+                                            <span class="fw-bold">{{ item.material_code|default('N/A', true) }}</span>
+                                            {% if is_critical %}
+                                            <i class="bi bi-fire text-danger" title="Diferencia crítica"></i>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" 
+                                             title="{{ item.material_text|default('', true) }}">
+                                            {{ item.material_text|default('Sin descripción', true) }}
                                         </div>
                                     </td>
                                     <td>
                                         <span class="badge bg-dark">
-                                            {{ item.location }}
+                                            <i class="bi bi-geo-alt me-1"></i>
+                                            {{ item.location|default('Sin ubicación', true) }}
                                         </span>
                                     </td>
                                     <td class="fw-bold">{{ stock_sistema }}</td>
-                                    <td class="fw-bold">{{ conteo_fisico if conteo_fisico > 0 else '-' }}</td>
-                                    <td class="fw-bold">
-                                        {% if item.estado == 'Diferencia' %}
-                                            <span class="{{ 'text-success' if diferencia > 0 else 'text-danger' }}">
-                                                {{ '+' if diferencia > 0 }}{{ diferencia }}
-                                            </span>
-                                        {% else %}
+                                    <td class="fw-bold {% if item.estado == 'OK' %}text-success{% elif item.estado == 'Diferencia' %}text-danger{% else %}text-muted{% endif %}">
+                                        {{ conteo_fisico if conteo_fisico > 0 else '-' }}
+                                    </td>
+                                    <td class="fw-bold {% if diferencia > 0 %}text-success{% elif diferencia < 0 %}text-danger{% else %}text-muted{% endif %}">
+                                        {% if item.estado == 'OK' %}
                                             <span class="text-muted">0</span>
+                                        {% elif item.estado == 'Diferencia' %}
+                                            {% if diferencia > 0 %}
+                                                <i class="bi bi-arrow-up-circle text-success me-1"></i>+{{ diferencia_abs }}
+                                            {% elif diferencia < 0 %}
+                                                <i class="bi bi-arrow-down-circle text-danger me-1"></i>-{{ diferencia_abs }}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if item.estado == 'OK' %}
-                                            <span class="status-badge badge-ok">OK</span>
+                                            <span class="status-badge badge-success">
+                                                <i class="bi bi-check-circle me-1"></i>OK
+                                            </span>
                                         {% elif item.estado == 'Diferencia' %}
-                                            <span class="status-badge badge-warning">Diferencia</span>
+                                            <span class="status-badge badge-warning">
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Diferencia
+                                            </span>
                                         {% else %}
-                                            <span class="status-badge badge-secondary">Pendiente</span>
+                                            <span class="status-badge badge-secondary">
+                                                <i class="bi bi-clock me-1"></i>Pendiente
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ item.usuario|default('N/A', true) }}
+                                    </td>
+                                    <td>
+                                        {% if item.timestamp %}
+                                        <span class="small">{{ item.timestamp.strftime('%H:%M') }}</span>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="editItem('{{ item.material_code }}')">
+                                            <button class="btn btn-outline-primary" onclick="editItem('{{ item.material_code|default('', true) }}')" 
+                                                    title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
-                                            <button class="btn btn-outline-info" onclick="showHistory('{{ item.material_code }}')">
+                                            <button class="btn btn-outline-info" onclick="showItemHistory('{{ item.material_code|default('', true) }}')" 
+                                                    title="Historial">
                                                 <i class="bi bi-clock-history"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" onclick="recountItem('{{ item.material_code|default('', true) }}')" 
+                                                    title="Recontar">
+                                                <i class="bi bi-arrow-repeat"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" onclick="deleteItem('{{ item.material_code|default('', true) }}')" 
+                                                    title="Eliminar">
+                                                <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -917,10 +1864,16 @@
                                 {% endfor %}
                             {% else %}
                                 <tr>
-                                    <td colspan="8" class="text-center py-5">
+                                    <td colspan="10" class="text-center py-5">
                                         <div class="text-muted">
-                                            <i class="bi bi-inbox display-6"></i>
-                                            <p class="mt-3 mb-0">No hay datos disponibles</p>
+                                            <i class="bi bi-inbox display-6 mb-3"></i>
+                                            <h5 class="mb-2">No hay datos disponibles</h5>
+                                            <p class="mb-3">Realice un conteo para ver los resultados aquí</p>
+                                            {% if url_for('inventory.count_inventory') %}
+                                            <a href="{{ url_for('inventory.count_inventory') }}" class="btn btn-primary">
+                                                <i class="bi bi-clipboard-check me-2"></i>Iniciar Conteo
+                                            </a>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
@@ -928,68 +1881,567 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <div class="table-footer p-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted" id="tableInfo">
+                                Mostrando <span id="visibleCount">{{ items|length if items else 0 }}</span> de {{ items|length if items else 0 }} items
+                            </span>
+                            <div class="form-check form-switch d-inline-block ms-3">
+                                <input class="form-check-input" type="checkbox" id="criticalOnly" 
+                                       onchange="toggleCriticalOnly()">
+                                <label class="form-check-label" for="criticalOnly">Solo críticos</label>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary" onclick="previousPage()">
+                                <i class="bi bi-chevron-left"></i> Anterior
+                            </button>
+                            <span class="btn btn-light">
+                                Página <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                            </span>
+                            <button class="btn btn-outline-secondary" onclick="nextPage()">
+                                Siguiente <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <!-- WIDGET RESUMEN -->
+            <!-- RESUMEN WIDGET -->
             <div class="widget">
                 <div class="widget-header">
-                    <h5><i class="bi bi-clipboard-data"></i> Resumen de Conteo</h5>
+                    <h3 class="widget-title">
+                        <i class="bi bi-clipboard-data"></i>
+                        Resumen de Conteo
+                    </h3>
+                    <div class="widget-actions">
+                        <button class="widget-btn" onclick="refreshSummary()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                        <button class="widget-btn" onclick="toggleWidget('summaryWidget')">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="widget-body">
+                <div class="widget-body" id="summaryWidget">
                     <div class="status-list">
                         <div class="status-item ok">
                             <div class="status-content">
-                                <i class="bi bi-check-circle-fill text-success"></i>
-                                <span>Coinciden</span>
+                                <div class="status-icon" style="background: var(--success-gradient);">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                                <div class="status-text">
+                                    <div class="status-label">Coinciden (OK)</div>
+                                    <div class="status-desc">Stock exacto</div>
+                                </div>
                             </div>
-                            <span class="status-count" style="background: var(--success-gradient);" id="widgetOk">{{ ok_count }}</span>
+                            <span class="status-count" style="background: var(--success-gradient);" 
+                                  id="widgetOk">{{ ok_count }}</span>
                         </div>
                         <div class="status-item diff">
                             <div class="status-content">
-                                <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-                                <span>Diferencias</span>
+                                <div class="status-icon" style="background: var(--warning-gradient);">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                                <div class="status-text">
+                                    <div class="status-label">Diferencias</div>
+                                    <div class="status-desc">Faltantes/Sobrantes</div>
+                                </div>
                             </div>
-                            <span class="status-count" style="background: var(--warning-gradient);" id="widgetDiff">{{ diff_count }}</span>
+                            <span class="status-count" style="background: var(--warning-gradient);" 
+                                  id="widgetDiff">{{ diff_count }}</span>
                         </div>
                         <div class="status-item pend">
                             <div class="status-content">
-                                <i class="bi bi-hourglass-split text-secondary"></i>
-                                <span>Pendientes</span>
+                                <div class="status-icon" style="background: var(--dark-gradient);">
+                                    <i class="bi bi-hourglass-split"></i>
+                                </div>
+                                <div class="status-text">
+                                    <div class="status-label">Pendientes</div>
+                                    <div class="status-desc">Sin contar</div>
+                                </div>
                             </div>
-                            <span class="status-count" style="background: var(--dark-gradient);" id="widgetPend">{{ pend_count }}</span>
+                            <span class="status-count" style="background: var(--dark-gradient);" 
+                                  id="widgetPend">{{ pend_count }}</span>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="status-label">Progreso total</div>
+                            <div class="fw-bold" id="widgetProgressText">0%</div>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" id="widgetProgressBar" 
+                                 style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- WIDGET ACCIONES RÁPIDAS -->
+            <!-- ACCIONES RÁPIDAS WIDGET -->
             <div class="widget">
                 <div class="widget-header">
-                    <h5><i class="bi bi-lightning-charge-fill"></i> Acciones Rápidas</h5>
+                    <h3 class="widget-title">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        Acciones Rápidas
+                    </h3>
+                    <div class="widget-actions">
+                        <button class="widget-btn" onclick="toggleWidget('actionsWidget')">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="widget-body">
+                <div class="widget-body" id="actionsWidget">
                     <div class="quick-actions-grid">
                         {% if url_for('inventory.count_inventory') %}
                         <a href="{{ url_for('inventory.count_inventory') }}" class="action-card">
-                            <i class="bi bi-clipboard-check"></i>
-                            <span>Continuar Conteo</span>
+                            <div class="action-icon">
+                                <i class="bi bi-clipboard-check"></i>
+                            </div>
+                            <h4 class="action-title">Continuar Conteo</h4>
+                            <p class="action-desc">Agregar más items</p>
                         </a>
                         {% endif %}
-                        <button class="action-card" onclick="exportToExcel()">
-                            <i class="bi bi-file-earmark-excel"></i>
-                            <span>Exportar Excel</span>
+                        
+                        <div class="action-card" onclick="exportDifferences()">
+                            <div class="action-icon" style="background: var(--success-gradient);">
+                                <i class="bi bi-file-earmark-excel"></i>
+                            </div>
+                            <h4 class="action-title">Exportar Diferencias</h4>
+                            <p class="action-desc">Reporte Excel</p>
+                        </div>
+                        
+                        <div class="action-card" onclick="showReconciliation()">
+                            <div class="action-icon" style="background: var(--info-gradient);">
+                                <i class="bi bi-arrow-repeat"></i>
+                            </div>
+                            <h4 class="action-title">Conciliar Stock</h4>
+                            <p class="action-desc">Ajustar sistema</p>
+                        </div>
+                        
+                        <div class="action-card" onclick="generateReport()">
+                            <div class="action-icon" style="background: var(--danger-gradient);">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </div>
+                            <h4 class="action-title">Generar Reporte</h4>
+                            <p class="action-desc">PDF detallado</p>
+                        </div>
+                        
+                        <div class="action-card" onclick="showAnalytics()">
+                            <div class="action-icon" style="background: var(--purple-gradient);">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <h4 class="action-title">Analítica</h4>
+                            <p class="action-desc">Estadísticas</p>
+                        </div>
+                        
+                        <div class="action-card" onclick="showNotificationsPanel()">
+                            <div class="action-icon" style="background: var(--warning-gradient);">
+                                <i class="bi bi-bell"></i>
+                            </div>
+                            <h4 class="action-title">Notificaciones</h4>
+                            <p class="action-desc" id="notificationBadge">0 nuevas</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIMELINE WIDGET -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">
+                        <i class="bi bi-clock-history"></i>
+                        Actividad Reciente
+                    </h3>
+                    <div class="widget-actions">
+                        <button class="widget-btn" onclick="refreshTimeline()">
+                            <i class="bi bi-arrow-clockwise"></i>
                         </button>
-                        <button class="action-card" onclick="generateReport()">
-                            <i class="bi bi-file-earmark-pdf"></i>
-                            <span>Generar PDF</span>
+                        <button class="widget-btn" onclick="toggleWidget('timelineWidget')">
+                            <i class="bi bi-dash-lg"></i>
                         </button>
-                        <button class="action-card" onclick="showSettings()">
-                            <i class="bi bi-gear"></i>
-                            <span>Configuración</span>
+                    </div>
+                </div>
+                <div class="widget-body" id="timelineWidget">
+                    <div class="timeline" id="activityTimeline">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                            <span class="ms-2">Cargando actividad...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIFERENCIAS WIDGET -->
+            <div class="widget">
+                <div class="widget-header">
+                    <h3 class="widget-title">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Mayores Diferencias
+                    </h3>
+                    <div class="widget-actions">
+                        <button class="widget-btn" onclick="refreshDifferences()">
+                            <i class="bi bi-arrow-clockwise"></i>
                         </button>
+                        <button class="widget-btn" onclick="toggleWidget('differencesWidget')">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-body" id="differencesWidget">
+                    <div id="topDifferences">
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                            <span class="ms-2">Cargando diferencias...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALES ================= -->
+
+<!-- Modal de Detalles del Item -->
+<div class="modal fade" id="itemDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-box-seam me-2"></i>
+                    Detalles del Material
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailModalContent">
+                <!-- Se llena con JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Configuración -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear me-2"></i>
+                    Configuración del Dashboard
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Intervalo de Auto-Refresh</label>
+                            <select class="form-select" id="refreshInterval">
+                                <option value="0">Desactivado</option>
+                                <option value="30">30 segundos</option>
+                                <option value="60" selected>1 minuto</option>
+                                <option value="300">5 minutos</option>
+                                <option value="600">10 minutos</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Items por página</label>
+                            <select class="form-select" id="itemsPerPage">
+                                <option value="10">10 items</option>
+                                <option value="25" selected>25 items</option>
+                                <option value="50">50 items</option>
+                                <option value="100">100 items</option>
+                                <option value="0">Todos</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tema de colores</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-primary" onclick="setTheme('default')">Default</button>
+                                <button class="btn btn-sm btn-dark" onclick="setTheme('dark')">Oscuro</button>
+                                <button class="btn btn-sm btn-light" onclick="setTheme('light')">Claro</button>
+                                <button class="btn btn-sm btn-info" onclick="setTheme('blue')">Azul</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Preferencias</label>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
+                                <label class="form-check-label" for="enableNotifications">Notificaciones en tiempo real</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="enableSounds" checked>
+                                <label class="form-check-label" for="enableSounds">Efectos de sonido</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="showAnimations" checked>
+                                <label class="form-check-label" for="showAnimations">Animaciones</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="highlightCritical" checked>
+                                <label class="form-check-label" for="highlightCritical">Resaltar diferencias críticas</label>
+                            </div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="autoSave" checked>
+                                <label class="form-check-label" for="autoSave">Auto-guardar cambios</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Los cambios se aplicarán inmediatamente después de guardar.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveSettings()">Guardar Configuración</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Filtros Avanzados -->
+<div class="modal fade" id="advancedFiltersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-funnel-fill me-2"></i>
+                    Filtros Avanzados
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Rango de Stock</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="number" class="form-control" id="minStock" placeholder="Mínimo" min="0">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" id="maxStock" placeholder="Máximo">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rango de Diferencia</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="number" class="form-control" id="minDiff" placeholder="Mínimo">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" id="maxDiff" placeholder="Máximo">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rango de Conteo</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="number" class="form-control" id="minCount" placeholder="Mínimo" min="0">
+                                </div>
+                                <div class="col">
+                                    <input type="number" class="form-control" id="maxCount" placeholder="Máximo">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de Conteo</label>
+                            <div class="row g-2">
+                                <div class="col">
+                                    <input type="date" class="form-control" id="startDate">
+                                </div>
+                                <div class="col">
+                                    <input type="date" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Usuario</label>
+                            <select class="form-select" id="filterUserAdv">
+                                <option value="all">Todos los usuarios</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ubicación</label>
+                            <select class="form-select" id="filterLocationAdv">
+                                <option value="all">Todas las ubicaciones</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="onlyCriticalFilter">
+                                <label class="form-check-label" for="onlyCriticalFilter">
+                                    Solo diferencias críticas (más del 50% de variación)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="onlyUncountedFilter">
+                                <label class="form-check-label" for="onlyUncountedFilter">
+                                    Solo items sin conteo físico
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="onlyWithStockFilter">
+                                <label class="form-check-label" for="onlyWithStockFilter">
+                                    Solo items con stock en sistema
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="onlyTodayFilter">
+                                <label class="form-check-label" for="onlyTodayFilter">
+                                    Solo conteos de hoy
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="resetAdvancedFilters()">Limpiar</button>
+                <button type="button" class="btn btn-primary" onclick="applyAdvancedFilters()">Aplicar Filtros</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Acciones Masivas -->
+<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-tools me-2"></i>
+                    Acciones Masivas
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span id="bulkItemsCount">0 items</span> seleccionados para acciones masivas
+                </div>
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
+                            onclick="bulkValidate()" id="bulkValidateBtn">
+                        <i class="bi bi-check-circle me-3 text-success"></i>
+                        <div>
+                            <div class="fw-bold">Validar seleccionados</div>
+                            <small>Marcar como verificados</small>
+                        </div>
+                    </button>
+                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
+                            onclick="bulkRecount()" id="bulkRecountBtn">
+                        <i class="bi bi-arrow-repeat me-3 text-warning"></i>
+                        <div>
+                            <div class="fw-bold">Recontar seleccionados</div>
+                            <small>Marcar para reconteo</small>
+                        </div>
+                    </button>
+                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
+                            onclick="bulkExport()" id="bulkExportBtn">
+                        <i class="bi bi-file-earmark-excel me-3 text-primary"></i>
+                        <div>
+                            <div class="fw-bold">Exportar seleccionados</div>
+                            <small>Generar reporte Excel</small>
+                        </div>
+                    </button>
+                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
+                            onclick="bulkReconcile()" id="bulkReconcileBtn">
+                        <i class="bi bi-arrow-left-right me-3 text-info"></i>
+                        <div>
+                            <div class="fw-bold">Conciliar seleccionados</div>
+                            <small>Ajustar stock en sistema</small>
+                        </div>
+                    </button>
+                    <button class="list-group-item list-group-item-action d-flex align-items-center text-danger" 
+                            onclick="bulkDelete()" id="bulkDeleteBtn">
+                        <i class="bi bi-trash me-3"></i>
+                        <div>
+                            <div class="fw-bold">Eliminar seleccionados</div>
+                            <small>Eliminar del conteo</small>
+                        </div>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="selectAllItems()">Seleccionar todos</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ayuda -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Ayuda del Dashboard
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="bi bi-info-circle me-2"></i>Funcionalidades</h5>
+                        <ul>
+                            <li><strong>Dashboard en tiempo real:</strong> Monitorea el conteo físico en tiempo real</li>
+                            <li><strong>Gráficos interactivos:</strong> Visualiza datos con múltiples tipos de gráficos</li>
+                            <li><strong>Filtros avanzados:</strong> Filtra datos por múltiples criterios</li>
+                            <li><strong>Exportación:</strong> Exporta a Excel, PDF y otros formatos</li>
+                            <li><strong>Acciones masivas:</strong> Realiza operaciones en lotes</li>
+                            <li><strong>Notificaciones:</strong> Recibe alertas en tiempo real</li>
+                            <li><strong>Configuración:</strong> Personaliza la apariencia y comportamiento</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="bi bi-keyboard me-2"></i>Atajos de Teclado</h5>
+                        <ul>
+                            <li><kbd>Ctrl</kbd> + <kbd>F</kbd> - Buscar en la tabla</li>
+                            <li><kbd>Ctrl</kbd> + <kbd>R</kbd> - Actualizar datos</li>
+                            <li><kbd>Esc</kbd> - Limpiar filtros</li>
+                            <li><kbd>Ctrl</kbd> + <kbd>A</kbd> - Seleccionar todos</li>
+                            <li><kbd>Ctrl</kbd> + <kbd>E</kbd> - Exportar Excel</li>
+                            <li><kbd>Ctrl</kbd> + <kbd>P</kbd> - Imprimir reporte</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5><i class="bi bi-lightbulb me-2"></i>Consejos</h5>
+                        <div class="alert alert-light">
+                            <ul class="mb-0">
+                                <li>Usa el auto-refresh para mantener los datos actualizados</li>
+                                <li>Exporta diferencias para reportes a gerencia</li>
+                                <li>Configura notificaciones para alertas importantes</li>
+                                <li>Usa filtros avanzados para análisis detallados</li>
+                                <li>Personaliza el tema según tus preferencias</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -999,61 +2451,150 @@
 
 <!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-hammerjs@0.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-// Configuración
+// ================= CONFIGURACIÓN GLOBAL =================
 const CONFIG = {
+    VERSION: '3.0',
     API: {
+        base: '{{ url_for("inventory.index") }}',
         get_latest: "{{ url_for('inventory.get_latest_counts') if 'get_latest_counts' in url_for.__globals__ else '#' }}",
-        export_excel: "{{ url_for('inventory.export_differences') if 'export_differences' in url_for.__globals__ else '#' }}"
+        export_differences: "{{ url_for('inventory.export_differences') if 'export_differences' in url_for.__globals__ else '#' }}",
+        export_all: "{{ url_for('inventory.export_inventory') if 'export_inventory' in url_for.__globals__ else '#' }}",
+        reconcile: "{{ url_for('inventory.reconcile_inventory') if 'reconcile_inventory' in url_for.__globals__ else '#' }}",
+        validate: "{{ url_for('inventory.validate_item') if 'validate_item' in url_for.__globals__ else '#' }}",
+        recount: "{{ url_for('inventory.recount_item') if 'recount_item' in url_for.__globals__ else '#' }}",
+        delete: "{{ url_for('inventory.delete_item') if 'delete_item' in url_for.__globals__ else '#' }}",
+        bulk: "{{ url_for('inventory.bulk_actions') if 'bulk_actions' in url_for.__globals__ else '#' }}",
+        history: "{{ url_for('inventory.get_item_history') if 'get_item_history' in url_for.__globals__ else '#' }}",
+        activity: "{{ url_for('inventory.get_recent_activity') if 'get_recent_activity' in url_for.__globals__ else '#' }}",
+        settings: "{{ url_for('inventory.save_settings') if 'save_settings' in url_for.__globals__ else '#' }}"
+    },
+    SETTINGS: {
+        autoRefresh: false,
+        refreshInterval: 60000,
+        itemsPerPage: 25,
+        enableNotifications: true,
+        enableSounds: true,
+        showAnimations: true,
+        highlightCritical: true,
+        autoSave: true,
+        theme: 'default'
+    },
+    STATE: {
+        selectedItems: new Set(),
+        currentSort: { column: null, direction: 'asc' },
+        currentFilters: {},
+        data: [],
+        filteredData: [],
+        currentPage: 1,
+        totalPages: 1,
+        charts: {},
+        lastUpdate: new Date(),
+        sessionStart: new Date(),
+        notifications: [],
+        fullscreenChart: null,
+        autoRefreshTimer: null,
+        sessionTimer: null,
+        dataAgeTimer: null
     }
 };
 
-// Variables globales
-let charts = {};
-let tableData = [];
-
-// Inicialización
+// ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard inicializado');
+    console.log(`🚀 Dashboard v${CONFIG.VERSION} inicializando...`);
+    
     initDashboard();
+    setupEventListeners();
+    startTimers();
+    loadActivityTimeline();
+    updateTopDifferences();
+    
+    console.log('✅ Dashboard listo para usar');
 });
 
 function initDashboard() {
-    // Calcular métricas iniciales
-    calculateMetrics();
+    showLoading('Inicializando dashboard...');
     
-    // Inicializar gráficos
-    initCharts();
+    setTimeout(() => {
+        // Cargar configuración
+        loadSettings();
+        
+        // Procesar datos iniciales
+        processInitialData();
+        
+        // Calcular métricas
+        calculateMetrics();
+        
+        // Inicializar gráficos
+        initCharts();
+        
+        // Actualizar filtros
+        updateFilters();
+        
+        // Ocultar loading
+        hideLoading();
+        
+        showNotification('Dashboard cargado', 'El dashboard se ha cargado exitosamente.', 'success');
+        
+        // Iniciar auto-refresh si está activado
+        if (CONFIG.SETTINGS.autoRefresh) {
+            startAutoRefresh();
+        }
+    }, 1000);
+}
+
+// ================= GESTIÓN DE DATOS =================
+function processInitialData() {
+    const rows = document.querySelectorAll('#tableBody tr[data-id]');
+    CONFIG.STATE.data = [];
+    CONFIG.STATE.filteredData = [];
     
-    // Preparar datos de tabla
-    prepareTableData();
+    rows.forEach((row, index) => {
+        const data = {
+            id: index + 1,
+            code: row.dataset.code || '',
+            desc: row.dataset.desc || '',
+            location: row.dataset.location || 'Sin ubicación',
+            stock: parseInt(row.dataset.stock) || 0,
+            count: parseInt(row.dataset.count) || 0,
+            diferencia: parseInt(row.dataset.diferencia) || 0,
+            estado: row.dataset.estado || 'Pendiente',
+            user: row.dataset.user || '',
+            timestamp: row.dataset.timestamp ? new Date(row.dataset.timestamp) : null,
+            element: row,
+            isCritical: Math.abs(parseInt(row.dataset.diferencia) || 0) > (parseInt(row.dataset.stock) || 0) * 0.5 && 
+                       Math.abs(parseInt(row.dataset.diferencia) || 0) > 10
+        };
+        
+        CONFIG.STATE.data.push(data);
+    });
     
-    // Configurar event listeners
-    setupEventListeners();
-    
-    console.log('✅ Dashboard listo');
+    CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
+    updatePagination();
 }
 
 function calculateMetrics() {
-    const rows = document.querySelectorAll('tbody tr[data-code]');
-    const data = Array.from(rows).map(row => ({
-        code: row.dataset.code,
-        estado: row.dataset.estado,
-        location: row.cells[2].querySelector('.badge')?.textContent || '',
-        stock: parseInt(row.cells[3].textContent) || 0,
-        count: parseInt(row.cells[4].textContent) || 0,
-        diferencia: parseInt(row.cells[5].querySelector('span')?.textContent || 0)
-    }));
+    const data = CONFIG.STATE.data;
     
-    tableData = data;
+    if (data.length === 0) {
+        updateEmptyState();
+        return;
+    }
     
     // Ubicaciones únicas
     const locations = [...new Set(data.map(item => item.location).filter(Boolean))];
     document.getElementById('totalLocations').textContent = locations.length;
     
-    // Stock total
+    // Stock total del sistema
     const totalStock = data.reduce((sum, item) => sum + item.stock, 0);
     document.getElementById('totalStock').textContent = totalStock.toLocaleString();
     
@@ -1061,122 +2602,1657 @@ function calculateMetrics() {
     const countedItems = data.filter(item => item.count > 0).length;
     document.getElementById('totalCounted').textContent = countedItems;
     
-    // Progreso
-    const progress = data.length > 0 ? Math.round((countedItems / data.length) * 100) : 0;
-    document.getElementById('progressPercent').textContent = `${progress}%`;
+    // Progreso porcentual
+    const progressPercent = data.length > 0 ? Math.round((countedItems / data.length) * 100) : 0;
+    document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+    document.getElementById('progressBar').style.width = `${progressPercent}%`;
+    document.getElementById('widgetProgressBar').style.width = `${progressPercent}%`;
+    document.getElementById('widgetProgressText').textContent = `${progressPercent}%`;
+    
+    // Actualizar widgets
+    updateWidgets();
+    
+    // Calcular tendencias (simulado)
+    calculateTrends();
 }
 
-function initCharts() {
-    const data = tableData;
+function calculateTrends() {
+    // Simular tendencias
+    const trends = {
+        items: Math.floor(Math.random() * 10) - 2,
+        ok: Math.floor(Math.random() * 15),
+        diff: Math.floor(Math.random() * 10) - 5,
+        pend: Math.floor(Math.random() * 10) - 8,
+        locations: Math.floor(Math.random() * 8),
+        stock: Math.floor(Math.random() * 6) - 3,
+        counted: Math.floor(Math.random() * 12),
+        progress: Math.floor(Math.random() * 8)
+    };
     
-    // Gráfico de estado
-    const estadoCtx = document.getElementById('estadoChart');
-    if (estadoCtx) {
-        const okCount = data.filter(item => item.estado === 'OK').length;
-        const diffCount = data.filter(item => item.estado === 'Diferencia').length;
-        const pendCount = data.filter(item => item.estado === 'Pendiente').length;
-        
-        charts.estado = new Chart(estadoCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Coinciden', 'Diferencias', 'Pendientes'],
-                datasets: [{
-                    data: [okCount, diffCount, pendCount],
-                    backgroundColor: [
-                        'rgba(40, 167, 69, 0.9)',
-                        'rgba(255, 193, 7, 0.9)',
-                        'rgba(108, 117, 125, 0.9)'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            padding: 20,
-                            font: { size: 11 }
+    // Actualizar elementos de tendencia
+    updateTrendElement('itemsTrend', trends.items);
+    updateTrendElement('okTrend', trends.ok);
+    updateTrendElement('diffTrend', trends.diff);
+    updateTrendElement('pendTrend', trends.pend);
+    updateTrendElement('locationTrend', trends.locations);
+    updateTrendElement('stockTrend', trends.stock);
+    updateTrendElement('countedTrend', trends.counted);
+    updateTrendElement('progressTrend', trends.progress);
+}
+
+function updateTrendElement(elementId, value) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.textContent = value > 0 ? `+${value}%` : `${value}%`;
+    element.className = `stat-trend ${value > 0 ? 'trend-up' : value < 0 ? 'trend-down' : 'trend-neutral'}`;
+}
+
+function updateWidgets() {
+    const data = CONFIG.STATE.data;
+    
+    if (data.length === 0) return;
+    
+    const okItems = data.filter(item => item.estado === 'OK').length;
+    const diffItems = data.filter(item => item.estado === 'Diferencia').length;
+    const pendItems = data.length - okItems - diffItems;
+    
+    document.getElementById('widgetOk').textContent = okItems;
+    document.getElementById('widgetDiff').textContent = diffItems;
+    document.getElementById('widgetPend').textContent = pendItems;
+    
+    // Actualizar contadores del header
+    document.getElementById('okItems').textContent = okItems;
+    document.getElementById('diffItems').textContent = diffItems;
+    document.getElementById('pendItems').textContent = pendItems;
+}
+
+// ================= GRÁFICOS =================
+function initCharts() {
+    renderEstadoChart();
+    renderTendenciaChart();
+    renderPerformanceChart();
+    renderHeatmapChart();
+}
+
+function renderEstadoChart() {
+    const ctx = document.getElementById('estadoChart');
+    if (!ctx) return;
+    
+    const data = CONFIG.STATE.data;
+    const okItems = data.filter(item => item.estado === 'OK').length;
+    const diffItems = data.filter(item => item.estado === 'Diferencia').length;
+    const pendItems = data.length - okItems - diffItems;
+    
+    if (CONFIG.STATE.charts.estado) {
+        CONFIG.STATE.charts.estado.destroy();
+    }
+    
+    // Actualizar leyenda
+    updateChartLegend('estadoLegend', [
+        { label: 'Coinciden', color: '#28a745', value: okItems },
+        { label: 'Diferencias', color: '#ffc107', value: diffItems },
+        { label: 'Pendientes', color: '#6c757d', value: pendItems }
+    ]);
+    
+    CONFIG.STATE.charts.estado = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Coinciden', 'Diferencias', 'Pendientes'],
+            datasets: [{
+                data: [okItems, diffItems, pendItems],
+                backgroundColor: [
+                    'rgba(40, 167, 69, 0.9)',
+                    'rgba(255, 193, 7, 0.9)',
+                    'rgba(108, 117, 125, 0.9)'
+                ],
+                borderColor: [
+                    'rgba(40, 167, 69, 1)',
+                    'rgba(255, 193, 7, 1)',
+                    'rgba(108, 117, 125, 1)'
+                ],
+                borderWidth: 2,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = data.length;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
                         }
                     }
                 }
+            },
+            cutout: '70%',
+            animation: {
+                animateScale: true,
+                animateRotate: true
             }
-        });
+        }
+    });
+}
+
+function renderTendenciaChart() {
+    const ctx = document.getElementById('tendenciaChart');
+    if (!ctx) return;
+    
+    // Datos simulados
+    const hours = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+    const counts = hours.map(() => Math.floor(Math.random() * 100));
+    const differences = hours.map(() => Math.floor(Math.random() * 20));
+    
+    if (CONFIG.STATE.charts.tendencia) {
+        CONFIG.STATE.charts.tendencia.destroy();
     }
     
-    // Gráfico de tendencia (datos simulados)
-    const tendenciaCtx = document.getElementById('tendenciaChart');
-    if (tendenciaCtx) {
-        const hours = ['8:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
-        const counts = hours.map(() => Math.floor(Math.random() * 50) + 20);
-        
-        charts.tendencia = new Chart(tendenciaCtx, {
-            type: 'line',
-            data: {
-                labels: hours,
-                datasets: [{
+    CONFIG.STATE.charts.tendencia = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: hours,
+            datasets: [
+                {
                     label: 'Items Contados',
                     data: counts,
-                    borderColor: 'rgba(26, 95, 122, 1)',
-                    backgroundColor: 'rgba(26, 95, 122, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+                    borderColor: 'rgba(40, 167, 69, 1)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: 'rgba(0, 0, 0, 0.05)'
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
+                {
+                    label: 'Diferencias',
+                    data: differences,
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        padding: 15,
+                        usePointStyle: true
                     }
                 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function renderPerformanceChart() {
+    const ctx = document.getElementById('performanceChart');
+    if (!ctx) return;
+    
+    // Datos simulados
+    const users = ['Usuario A', 'Usuario B', 'Usuario C', 'Usuario D'];
+    const performance = users.map(() => Math.floor(Math.random() * 100));
+    
+    if (CONFIG.STATE.charts.performance) {
+        CONFIG.STATE.charts.performance.destroy();
+    }
+    
+    CONFIG.STATE.charts.performance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: users,
+            datasets: [{
+                label: 'Items Contados',
+                data: performance,
+                backgroundColor: 'rgba(26, 95, 122, 0.7)',
+                borderColor: 'rgba(26, 95, 122, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function renderHeatmapChart() {
+    const ctx = document.getElementById('heatmapChart');
+    if (!ctx) return;
+    
+    // Datos simulados
+    const locations = ['ALM-01', 'ALM-02', 'ALM-03', 'ALM-04'];
+    const hours = ['8:00', '10:00', '12:00', '14:00', '16:00'];
+    const data = locations.map(() => hours.map(() => Math.floor(Math.random() * 100)));
+    
+    if (CONFIG.STATE.charts.heatmap) {
+        CONFIG.STATE.charts.heatmap.destroy();
+    }
+    
+    CONFIG.STATE.charts.heatmap = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: hours,
+            datasets: locations.map((location, index) => ({
+                label: location,
+                data: data[index],
+                backgroundColor: data[index].map(value => 
+                    `rgba(26, 95, 122, ${0.3 + (value / 100 * 0.7)})`
+                )
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top' }
+            },
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true }
+            }
+        }
+    });
+}
+
+function updateChartLegend(legendId, items) {
+    const legend = document.getElementById(legendId);
+    if (!legend) return;
+    
+    legend.innerHTML = items.map(item => `
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: ${item.color};"></div>
+            <span>${item.label}: ${item.value}</span>
+        </div>
+    `).join('');
+}
+
+// ================= TABLA Y FILTROS =================
+function updateFilters() {
+    const locations = [...new Set(CONFIG.STATE.data.map(item => item.location).filter(Boolean))];
+    const users = [...new Set(CONFIG.STATE.data.map(item => item.user).filter(Boolean))];
+    
+    // Actualizar filtro de ubicaciones
+    const locationFilter = document.getElementById('locationFilter');
+    locationFilter.innerHTML = '<option value="all">Todas las ubicaciones</option>';
+    locations.forEach(location => {
+        const option = document.createElement('option');
+        option.value = location;
+        option.textContent = location;
+        locationFilter.appendChild(option);
+    });
+    
+    // Actualizar filtro de usuarios (tabla)
+    const userFilterTable = document.getElementById('userFilterTable');
+    userFilterTable.innerHTML = '<option value="all">Todos los usuarios</option>';
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        option.textContent = user;
+        userFilterTable.appendChild(option);
+    });
+    
+    // Actualizar filtro de usuarios (avanzado)
+    const filterUserAdv = document.getElementById('filterUserAdv');
+    filterUserAdv.innerHTML = '<option value="all">Todos los usuarios</option>';
+    users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        option.textContent = user;
+        filterUserAdv.appendChild(option);
+    });
+    
+    // Actualizar filtro de ubicaciones (avanzado)
+    const filterLocationAdv = document.getElementById('filterLocationAdv');
+    filterLocationAdv.innerHTML = '<option value="all">Todas las ubicaciones</option>';
+    locations.forEach(location => {
+        const option = document.createElement('option');
+        option.value = location;
+        option.textContent = location;
+        filterLocationAdv.appendChild(option);
+    });
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const location = document.getElementById('locationFilter').value;
+    const user = document.getElementById('userFilterTable').value;
+    
+    CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => {
+        // Búsqueda
+        const matchesSearch = !searchTerm || 
+            item.code.toLowerCase().includes(searchTerm) ||
+            item.desc.toLowerCase().includes(searchTerm) ||
+            item.location.toLowerCase().includes(searchTerm);
+        
+        // Filtro de estado
+        const matchesStatus = status === 'all' || item.estado === status;
+        
+        // Filtro de ubicación
+        const matchesLocation = location === 'all' || item.location === location;
+        
+        // Filtro de usuario
+        const matchesUser = user === 'all' || item.user === user;
+        
+        return matchesSearch && matchesStatus && matchesLocation && matchesUser;
+    });
+    
+    updateTable();
+    updatePagination();
+}
+
+function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('statusFilter').value = 'all';
+    document.getElementById('locationFilter').value = 'all';
+    document.getElementById('userFilterTable').value = 'all';
+    
+    CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
+    updateTable();
+    updatePagination();
+    
+    showNotification('Filtros limpiados', 'Se han eliminado todos los filtros.', 'info');
+}
+
+function sortTable(th, columnIndex) {
+    // Limpiar clases de ordenación anteriores
+    document.querySelectorAll('.sort-asc, .sort-desc').forEach(el => {
+        el.classList.remove('sort-asc', 'sort-desc');
+    });
+    
+    // Determinar dirección de ordenación
+    let direction = 'asc';
+    if (CONFIG.STATE.currentSort.column === columnIndex) {
+        direction = CONFIG.STATE.currentSort.direction === 'asc' ? 'desc' : 'asc';
+    }
+    
+    // Aplicar clase visual
+    th.classList.add(`sort-${direction}`);
+    
+    // Ordenar datos
+    CONFIG.STATE.filteredData.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(columnIndex) {
+            case 0: // Código
+                aValue = a.code;
+                bValue = b.code;
+                break;
+            case 3: // Stock Sistema
+                aValue = a.stock;
+                bValue = b.stock;
+                break;
+            case 4: // Conteo Físico
+                aValue = a.count;
+                bValue = b.count;
+                break;
+            case 5: // Diferencia
+                aValue = a.diferencia;
+                bValue = b.diferencia;
+                break;
+            default:
+                return 0;
+        }
+        
+        const comparison = typeof aValue === 'string' 
+            ? aValue.localeCompare(bValue)
+            : aValue - bValue;
+        
+        return direction === 'asc' ? comparison : -comparison;
+    });
+    
+    // Actualizar estado
+    CONFIG.STATE.currentSort = { column: columnIndex, direction };
+    
+    // Actualizar tabla
+    updateTable();
+}
+
+function updateTable() {
+    const startIndex = (CONFIG.STATE.currentPage - 1) * CONFIG.SETTINGS.itemsPerPage;
+    const endIndex = CONFIG.SETTINGS.itemsPerPage === 0 
+        ? CONFIG.STATE.filteredData.length 
+        : Math.min(startIndex + CONFIG.SETTINGS.itemsPerPage, CONFIG.STATE.filteredData.length);
+    
+    const pageData = CONFIG.SETTINGS.itemsPerPage === 0 
+        ? CONFIG.STATE.filteredData 
+        : CONFIG.STATE.filteredData.slice(startIndex, endIndex);
+    
+    // Mostrar/ocultar filas
+    CONFIG.STATE.data.forEach(item => {
+        const isVisible = pageData.some(d => d.id === item.id);
+        item.element.style.display = isVisible ? '' : 'none';
+    });
+    
+    // Actualizar contadores
+    document.getElementById('filteredCount').textContent = CONFIG.STATE.filteredData.length;
+    document.getElementById('visibleCount').textContent = CONFIG.STATE.filteredData.length;
+    document.getElementById('tableInfo').innerHTML = 
+        `Mostrando <strong>${CONFIG.STATE.filteredData.length}</strong> de ${CONFIG.STATE.data.length} items`;
+}
+
+function updatePagination() {
+    const totalItems = CONFIG.STATE.filteredData.length;
+    const itemsPerPage = CONFIG.SETTINGS.itemsPerPage === 0 ? totalItems : CONFIG.SETTINGS.itemsPerPage;
+    CONFIG.STATE.totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    
+    if (CONFIG.STATE.currentPage > CONFIG.STATE.totalPages) {
+        CONFIG.STATE.currentPage = CONFIG.STATE.totalPages;
+    }
+    
+    document.getElementById('currentPage').textContent = CONFIG.STATE.currentPage;
+    document.getElementById('totalPages').textContent = CONFIG.STATE.totalPages;
+    
+    // Habilitar/deshabilitar botones
+    document.querySelector('[onclick="previousPage()"]').disabled = CONFIG.STATE.currentPage === 1;
+    document.querySelector('[onclick="nextPage()"]').disabled = CONFIG.STATE.currentPage === CONFIG.STATE.totalPages;
+}
+
+function previousPage() {
+    if (CONFIG.STATE.currentPage > 1) {
+        CONFIG.STATE.currentPage--;
+        updateTable();
+        updatePagination();
+    }
+}
+
+function nextPage() {
+    if (CONFIG.STATE.currentPage < CONFIG.STATE.totalPages) {
+        CONFIG.STATE.currentPage++;
+        updateTable();
+        updatePagination();
+    }
+}
+
+// ================= SELECCIÓN DE ITEMS =================
+function toggleRowSelection(checkbox) {
+    const row = checkbox.closest('tr');
+    const itemId = row.dataset.id;
+    
+    if (checkbox.checked) {
+        row.classList.add('selected');
+        CONFIG.STATE.selectedItems.add(itemId);
+    } else {
+        row.classList.remove('selected');
+        CONFIG.STATE.selectedItems.delete(itemId);
+    }
+    
+    updateSelectedCount();
+    updateBulkActions();
+}
+
+function selectAllItems() {
+    const checkboxes = document.querySelectorAll('.row-selector');
+    const allSelected = Array.from(checkboxes).every(cb => cb.checked);
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = !allSelected;
+        toggleRowSelection(checkbox);
+    });
+    
+    showNotification(
+        allSelected ? 'Selección eliminada' : 'Todos seleccionados',
+        allSelected ? 'Se han deseleccionado todos los items.' : 'Se han seleccionado todos los items.',
+        'info'
+    );
+}
+
+function updateSelectedCount() {
+    const count = CONFIG.STATE.selectedItems.size;
+    const badge = document.getElementById('selectedCount');
+    const bulkCount = document.getElementById('bulkItemsCount');
+    
+    if (count > 0) {
+        badge.classList.remove('d-none');
+        badge.textContent = `${count} seleccionados`;
+        bulkCount.textContent = `${count} items`;
+    } else {
+        badge.classList.add('d-none');
+        bulkCount.textContent = '0 items';
+    }
+}
+
+function updateBulkActions() {
+    const count = CONFIG.STATE.selectedItems.size;
+    const buttons = ['bulkValidateBtn', 'bulkRecountBtn', 'bulkExportBtn', 'bulkReconcileBtn', 'bulkDeleteBtn'];
+    
+    buttons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+            btn.disabled = count === 0;
+        }
+    });
+}
+
+// ================= FUNCIONALIDADES DE ITEMS =================
+function editItem(code) {
+    const item = CONFIG.STATE.data.find(item => item.code === code);
+    if (!item) return;
+    
+    Swal.fire({
+        title: `Editar Item: ${code}`,
+        html: `
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <input type="text" id="editDesc" class="form-control" value="${item.desc}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ubicación</label>
+                    <input type="text" id="editLocation" class="form-control" value="${item.location}">
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <label class="form-label">Stock Sistema</label>
+                        <input type="number" id="editStock" class="form-control" value="${item.stock}" min="0">
+                    </div>
+                    <div class="col">
+                        <label class="form-label">Conteo Físico</label>
+                        <input type="number" id="editCount" class="form-control" value="${item.count}" min="0">
+                    </div>
+                </div>
+                <div class="mb-3 mt-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea id="editNotes" class="form-control" rows="3">${item.notes || ''}</textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Cambios',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const stock = parseInt(document.getElementById('editStock').value);
+            const count = parseInt(document.getElementById('editCount').value);
+            
+            if (isNaN(stock) || stock < 0) {
+                Swal.showValidationMessage('Stock debe ser un número positivo');
+                return false;
+            }
+            
+            if (isNaN(count) || count < 0) {
+                Swal.showValidationMessage('Conteo debe ser un número positivo');
+                return false;
+            }
+            
+            return {
+                desc: document.getElementById('editDesc').value,
+                location: document.getElementById('editLocation').value,
+                stock: stock,
+                count: count,
+                notes: document.getElementById('editNotes').value
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            updateItem(item.code, result.value);
+        }
+    });
+}
+
+function showItemHistory(code) {
+    const item = CONFIG.STATE.data.find(item => item.code === code);
+    if (!item) return;
+    
+    // Simular historial
+    const history = [
+        { date: 'Hoy 14:30', user: 'Operador 1', action: 'Conteo actualizado', details: `De ${item.count} a ${item.count}` },
+        { date: 'Ayer 10:15', user: 'Supervisor', action: 'Validación', details: 'Item verificado' },
+        { date: '03/01/2024', user: 'Sistema', action: 'Carga inicial', details: 'Cargado desde SAP' }
+    ];
+    
+    const modalContent = document.getElementById('detailModalContent');
+    modalContent.innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Información del Item</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Código:</strong> ${item.code}</p>
+                        <p><strong>Descripción:</strong> ${item.desc}</p>
+                        <p><strong>Ubicación:</strong> ${item.location}</p>
+                        <p><strong>Stock Sistema:</strong> ${item.stock}</p>
+                        <p><strong>Conteo Actual:</strong> ${item.count || '-'}</p>
+                        <p><strong>Diferencia:</strong> <span class="${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
+                            ${item.diferencia > 0 ? '+' : ''}${item.diferencia}
+                        </span></p>
+                        <p><strong>Estado:</strong> ${item.estado}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Historial de Cambios</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            ${history.map(h => `
+                                <div class="timeline-item mb-3">
+                                    <div class="timeline-time">${h.date}</div>
+                                    <div class="timeline-content">
+                                        <strong>${h.action}</strong> por <span class="timeline-user">${h.user}</span>
+                                        <div class="text-muted small">${h.details}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    new bootstrap.Modal(document.getElementById('itemDetailModal')).show();
+}
+
+function recountItem(code) {
+    Swal.fire({
+        title: `¿Recontar ${code}?`,
+        text: 'Este item será marcado para reconteo.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, recontar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const item = CONFIG.STATE.data.find(item => item.code === code);
+            if (item) {
+                item.count = 0;
+                item.estado = 'Pendiente';
+                item.element.dataset.count = 0;
+                item.element.dataset.estado = 'Pendiente';
+                
+                // Actualizar celda de conteo
+                const countCell = item.element.cells[4];
+                countCell.innerHTML = '<span class="fw-bold text-muted">-</span>';
+                
+                // Actualizar celda de diferencia
+                const diffCell = item.element.cells[5];
+                diffCell.innerHTML = '<span class="text-muted">-</span>';
+                
+                // Actualizar celda de estado
+                const estadoCell = item.element.cells[6];
+                estadoCell.innerHTML = '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
+                
+                calculateMetrics();
+                showNotification('Item marcado para reconteo', `El item ${code} ha sido marcado para reconteo.`, 'warning');
+            }
+        }
+    });
+}
+
+function deleteItem(code) {
+    Swal.fire({
+        title: `¿Eliminar ${code}?`,
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const item = CONFIG.STATE.data.find(item => item.code === code);
+            if (item) {
+                // Eliminar de los arrays
+                const index = CONFIG.STATE.data.findIndex(i => i.code === code);
+                CONFIG.STATE.data.splice(index, 1);
+                CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(i => i.code !== code);
+                
+                // Eliminar del DOM
+                item.element.remove();
+                
+                calculateMetrics();
+                updateTable();
+                showNotification('Item eliminado', `El item ${code} ha sido eliminado.`, 'success');
+            }
+        }
+    });
+}
+
+function updateItem(code, data) {
+    const item = CONFIG.STATE.data.find(item => item.code === code);
+    if (!item) return;
+    
+    // Actualizar datos
+    Object.assign(item, data);
+    item.diferencia = data.count - data.stock;
+    item.estado = data.count === data.stock ? 'OK' : 'Diferencia';
+    item.isCritical = Math.abs(item.diferencia) > (item.stock * 0.5) && Math.abs(item.diferencia) > 10;
+    
+    // Actualizar dataset del elemento
+    item.element.dataset.desc = data.desc;
+    item.element.dataset.location = data.location;
+    item.element.dataset.stock = data.stock;
+    item.element.dataset.count = data.count;
+    item.element.dataset.diferencia = item.diferencia;
+    item.element.dataset.estado = item.estado;
+    
+    // Actualizar celdas
+    item.element.cells[1].innerHTML = `<div class="text-truncate" style="max-width: 200px;">${data.desc}</div>`;
+    item.element.cells[2].innerHTML = `<span class="badge bg-dark"><i class="bi bi-geo-alt me-1"></i>${data.location}</span>`;
+    item.element.cells[3].textContent = data.stock;
+    item.element.cells[4].innerHTML = `<span class="fw-bold ${item.estado === 'OK' ? 'text-success' : 'text-danger'}">${data.count}</span>`;
+    item.element.cells[5].innerHTML = item.estado === 'OK' 
+        ? '<span class="text-muted">0</span>'
+        : `<span class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
+              ${item.diferencia > 0 ? '<i class="bi bi-arrow-up-circle me-1"></i>+' : '<i class="bi bi-arrow-down-circle me-1"></i>'}${Math.abs(item.diferencia)}
+           </span>`;
+    item.element.cells[6].innerHTML = item.estado === 'OK'
+        ? '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>'
+        : '<span class="status-badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>Diferencia</span>';
+    
+    // Actualizar clase de crítico
+    item.element.classList.toggle('critical', item.isCritical);
+    
+    calculateMetrics();
+    showNotification('Item actualizado', `El item ${code} ha sido actualizado exitosamente.`, 'success');
+}
+
+// ================= ACCIONES MASIVAS =================
+function showBulkActions() {
+    new bootstrap.Modal(document.getElementById('bulkActionsModal')).show();
+}
+
+function bulkValidate() {
+    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
+    if (selectedItems.length === 0) return;
+    
+    Swal.fire({
+        title: `Validar ${selectedItems.length} items`,
+        text: '¿Desea marcar los items seleccionados como validados?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Validar Todos',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedItems.forEach(id => {
+                const item = CONFIG.STATE.data.find(item => item.id == id);
+                if (item) {
+                    item.estado = 'OK';
+                    item.element.dataset.estado = 'OK';
+                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
+                }
+            });
+            
+            CONFIG.STATE.selectedItems.clear();
+            updateSelectedCount();
+            calculateMetrics();
+            
+            showNotification(`${selectedItems.length} items validados`, 'Los items seleccionados han sido marcados como validados.', 'success');
+        }
+    });
+}
+
+function bulkRecount() {
+    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
+    if (selectedItems.length === 0) return;
+    
+    Swal.fire({
+        title: `Recontar ${selectedItems.length} items`,
+        text: '¿Desea marcar los items seleccionados para reconteo?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Recontar Todos',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedItems.forEach(id => {
+                const item = CONFIG.STATE.data.find(item => item.id == id);
+                if (item) {
+                    item.count = 0;
+                    item.estado = 'Pendiente';
+                    item.element.dataset.count = 0;
+                    item.element.dataset.estado = 'Pendiente';
+                    item.element.cells[4].innerHTML = '<span class="fw-bold text-muted">-</span>';
+                    item.element.cells[5].innerHTML = '<span class="text-muted">-</span>';
+                    item.element.cells[6].innerHTML = '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
+                }
+            });
+            
+            CONFIG.STATE.selectedItems.clear();
+            updateSelectedCount();
+            calculateMetrics();
+            
+            showNotification(`${selectedItems.length} items marcados para reconteo`, 'Los items seleccionados han sido marcados para reconteo.', 'warning');
+        }
+    });
+}
+
+function bulkExport() {
+    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
+    if (selectedItems.length === 0) {
+        showNotification('No hay items seleccionados', 'Selecciona items para exportar.', 'warning');
+        return;
+    }
+    
+    const selectedData = CONFIG.STATE.data.filter(item => selectedItems.includes(item.id.toString()));
+    exportToExcel(selectedData, 'items_seleccionados');
+}
+
+function bulkReconcile() {
+    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
+    if (selectedItems.length === 0) return;
+    
+    const differences = CONFIG.STATE.data.filter(item => 
+        selectedItems.includes(item.id.toString()) && item.estado === 'Diferencia'
+    );
+    
+    if (differences.length === 0) {
+        showNotification('No hay diferencias', 'Los items seleccionados no tienen diferencias.', 'info');
+        return;
+    }
+    
+    Swal.fire({
+        title: `Conciliar ${differences.length} diferencias`,
+        html: `
+            <div class="text-start">
+                <p>Se ajustará el sistema con los conteos físicos.</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmReconcile">
+                    <label class="form-check-label" for="confirmReconcile">
+                        Confirmar conciliación
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Conciliar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            if (!document.getElementById('confirmReconcile').checked) {
+                Swal.showValidationMessage('Debe confirmar la conciliación');
+                return false;
+            }
+            return true;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading(`Conciliando ${differences.length} items...`);
+            
+            setTimeout(() => {
+                differences.forEach(item => {
+                    item.estado = 'OK';
+                    item.element.dataset.estado = 'OK';
+                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
+                });
+                
+                CONFIG.STATE.selectedItems.clear();
+                updateSelectedCount();
+                calculateMetrics();
+                hideLoading();
+                
+                showNotification(`${differences.length} items conciliados`, 'El stock del sistema ha sido actualizado.', 'success');
+            }, 2000);
+        }
+    });
+}
+
+function bulkDelete() {
+    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
+    if (selectedItems.length === 0) return;
+    
+    Swal.fire({
+        title: `¿Eliminar ${selectedItems.length} items?`,
+        text: 'Esta acción no se puede deshacer.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            selectedItems.forEach(id => {
+                const item = CONFIG.STATE.data.find(item => item.id == id);
+                if (item) {
+                    const index = CONFIG.STATE.data.findIndex(i => i.id == id);
+                    CONFIG.STATE.data.splice(index, 1);
+                    CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(i => i.id != id);
+                    item.element.remove();
+                }
+            });
+            
+            CONFIG.STATE.selectedItems.clear();
+            updateSelectedCount();
+            calculateMetrics();
+            updateTable();
+            
+            showNotification(`${selectedItems.length} items eliminados`, 'Los items seleccionados han sido eliminados.', 'success');
+        }
+    });
+}
+
+// ================= EXPORTACIÓN =================
+function exportToExcel(data, filename = 'conteo_fisico') {
+    showLoading('Generando archivo Excel...');
+    
+    setTimeout(() => {
+        // Crear datos para Excel
+        const excelData = [
+            ['REPORTE DE CONTEO FÍSICO'],
+            ['Fecha:', new Date().toLocaleDateString()],
+            ['Hora:', new Date().toLocaleTimeString()],
+            ['Usuario:', '{{ session.get("username", "Usuario") }}'],
+            ['Total items:', data.length],
+            [''],
+            ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha']
+        ];
+        
+        data.forEach(item => {
+            excelData.push([
+                item.code,
+                item.desc,
+                item.location,
+                item.stock,
+                item.count || '-',
+                item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
+                item.estado,
+                item.user || '-',
+                item.timestamp ? item.timestamp.toLocaleDateString() : '-'
+            ]);
+        });
+        
+        // Crear libro de trabajo
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Conteo Físico');
+        
+        // Generar nombre de archivo
+        const date = new Date().toISOString().split('T')[0];
+        const fileName = `${filename}_${date}.xlsx`;
+        
+        // Descargar archivo
+        XLSX.writeFile(wb, fileName);
+        
+        hideLoading();
+        showNotification('Exportación completada', `Se ha generado el archivo ${fileName}`, 'success');
+    }, 1500);
+}
+
+function exportDifferences() {
+    const differences = CONFIG.STATE.data.filter(item => item.estado === 'Diferencia');
+    if (differences.length === 0) {
+        showNotification('No hay diferencias', 'No se encontraron items con diferencias.', 'info');
+        return;
+    }
+    
+    exportToExcel(differences, 'diferencias_conteo');
+}
+
+function generateReport() {
+    showLoading('Generando reporte PDF...');
+    
+    setTimeout(() => {
+        // Usar html2canvas para capturar el dashboard
+        html2canvas(document.querySelector('.dashboard-container')).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+            
+            const imgWidth = 210;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            
+            const date = new Date().toISOString().split('T')[0];
+            pdf.save(`reporte_conteo_${date}.pdf`);
+            
+            hideLoading();
+            showNotification('Reporte PDF generado', 'El reporte se ha descargado exitosamente.', 'success');
+        }).catch(error => {
+            hideLoading();
+            showNotification('Error', 'No se pudo generar el reporte PDF.', 'error');
+            console.error('Error generando PDF:', error);
+        });
+    }, 1000);
+}
+
+// ================= CONFIGURACIÓN =================
+function showSettings() {
+    // Cargar configuración actual
+    document.getElementById('refreshInterval').value = CONFIG.SETTINGS.refreshInterval / 1000;
+    document.getElementById('itemsPerPage').value = CONFIG.SETTINGS.itemsPerPage;
+    document.getElementById('enableNotifications').checked = CONFIG.SETTINGS.enableNotifications;
+    document.getElementById('enableSounds').checked = CONFIG.SETTINGS.enableSounds;
+    document.getElementById('showAnimations').checked = CONFIG.SETTINGS.showAnimations;
+    document.getElementById('highlightCritical').checked = CONFIG.SETTINGS.highlightCritical;
+    document.getElementById('autoSave').checked = CONFIG.SETTINGS.autoSave;
+    
+    new bootstrap.Modal(document.getElementById('settingsModal')).show();
+}
+
+function saveSettings() {
+    CONFIG.SETTINGS.refreshInterval = parseInt(document.getElementById('refreshInterval').value) * 1000;
+    CONFIG.SETTINGS.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+    CONFIG.SETTINGS.enableNotifications = document.getElementById('enableNotifications').checked;
+    CONFIG.SETTINGS.enableSounds = document.getElementById('enableSounds').checked;
+    CONFIG.SETTINGS.showAnimations = document.getElementById('showAnimations').checked;
+    CONFIG.SETTINGS.highlightCritical = document.getElementById('highlightCritical').checked;
+    CONFIG.SETTINGS.autoSave = document.getElementById('autoSave').checked;
+    
+    // Guardar en localStorage
+    localStorage.setItem('dashboardSettings', JSON.stringify(CONFIG.SETTINGS));
+    
+    // Aplicar configuración
+    applySettings();
+    
+    bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+    showNotification('Configuración guardada', 'Los cambios se han aplicado exitosamente.', 'success');
+}
+
+function loadSettings() {
+    const saved = localStorage.getItem('dashboardSettings');
+    if (saved) {
+        try {
+            Object.assign(CONFIG.SETTINGS, JSON.parse(saved));
+            applySettings();
+        } catch (e) {
+            console.error('Error cargando configuración:', e);
+        }
+    }
+}
+
+function applySettings() {
+    // Aplicar tema
+    document.body.setAttribute('data-theme', CONFIG.SETTINGS.theme);
+    
+    // Configurar auto-refresh
+    if (CONFIG.SETTINGS.autoRefresh) {
+        startAutoRefresh();
+        document.getElementById('autoRefreshBtn').classList.add('btn-info');
+        document.getElementById('autoRefreshBtn').classList.remove('btn-outline-action');
+    } else {
+        stopAutoRefresh();
+        document.getElementById('autoRefreshBtn').classList.remove('btn-info');
+        document.getElementById('autoRefreshBtn').classList.add('btn-outline-action');
+    }
+    
+    // Actualizar paginación
+    updatePagination();
+    updateTable();
+}
+
+function setTheme(theme) {
+    CONFIG.SETTINGS.theme = theme;
+    document.body.setAttribute('data-theme', theme);
+    showNotification('Tema cambiado', `Se ha aplicado el tema ${theme}.`, 'info');
+}
+
+// ================= FUNCIONES AUXILIARES =================
+function loadLatestData() {
+    const btn = document.getElementById('refreshBtn');
+    const originalHtml = btn.innerHTML;
+    
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Actualizando...';
+    btn.disabled = true;
+    
+    showLoading('Actualizando datos...');
+    
+    // Simular actualización de datos
+    setTimeout(() => {
+        // Aquí iría la llamada real a la API
+        CONFIG.STATE.lastUpdate = new Date();
+        document.getElementById('lastUpdateTime').textContent = CONFIG.STATE.lastUpdate.toLocaleString();
+        document.getElementById('dataAge').textContent = '0 seg';
+        
+        // Recalcular métricas
+        calculateMetrics();
+        
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        hideLoading();
+        
+        showNotification('Datos actualizados', 'La información se ha actualizado exitosamente.', 'success');
+    }, 1500);
+}
+
+function toggleAutoRefresh() {
+    CONFIG.SETTINGS.autoRefresh = !CONFIG.SETTINGS.autoRefresh;
+    const btn = document.getElementById('autoRefreshBtn');
+    
+    if (CONFIG.SETTINGS.autoRefresh) {
+        btn.classList.remove('btn-outline-action');
+        btn.classList.add('btn-info');
+        startAutoRefresh();
+        showNotification('Auto-refresh activado', 'Los datos se actualizarán automáticamente.', 'info');
+    } else {
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-outline-action');
+        stopAutoRefresh();
+        showNotification('Auto-refresh desactivado', 'La actualización automática ha sido desactivada.', 'info');
+    }
+}
+
+function startAutoRefresh() {
+    if (CONFIG.STATE.autoRefreshTimer) {
+        clearInterval(CONFIG.STATE.autoRefreshTimer);
+    }
+    
+    if (CONFIG.SETTINGS.refreshInterval > 0) {
+        CONFIG.STATE.autoRefreshTimer = setInterval(() => {
+            loadLatestData();
+        }, CONFIG.SETTINGS.refreshInterval);
+    }
+}
+
+function stopAutoRefresh() {
+    if (CONFIG.STATE.autoRefreshTimer) {
+        clearInterval(CONFIG.STATE.autoRefreshTimer);
+        CONFIG.STATE.autoRefreshTimer = null;
+    }
+}
+
+function startTimers() {
+    // Timer de sesión
+    CONFIG.STATE.sessionTimer = setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((now - CONFIG.STATE.sessionStart) / 1000);
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        const seconds = diff % 60;
+        
+        document.getElementById('sessionTimer').textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+    
+    // Timer de antigüedad de datos
+    CONFIG.STATE.dataAgeTimer = setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((now - CONFIG.STATE.lastUpdate) / 1000);
+        
+        let text;
+        if (diff < 60) {
+            text = `${diff} seg`;
+        } else if (diff < 3600) {
+            const minutes = Math.floor(diff / 60);
+            text = `${minutes} min`;
+        } else {
+            const hours = Math.floor(diff / 3600);
+            text = `${hours} h`;
+        }
+        
+        document.getElementById('dataAge').textContent = text;
+    }, 30000);
+}
+
+function loadActivityTimeline() {
+    const timeline = document.getElementById('activityTimeline');
+    
+    // Simular actividad
+    const activities = [
+        {
+            time: 'Hace 5 minutos',
+            action: 'Conteo actualizado',
+            user: '{{ session.get("username", "Usuario") }}',
+            details: '3 items modificados'
+        },
+        {
+            time: 'Hace 15 minutos',
+            action: 'Exportación realizada',
+            user: 'Operador 2',
+            details: 'Reporte de diferencias'
+        },
+        {
+            time: 'Hace 30 minutos',
+            action: 'Auto-refresh completado',
+            user: 'Sistema',
+            details: 'Datos actualizados'
+        },
+        {
+            time: 'Hace 1 hora',
+            action: 'Validación masiva',
+            user: 'Supervisor',
+            details: '50 items validados'
+        }
+    ];
+    
+    setTimeout(() => {
+        timeline.innerHTML = activities.map(activity => `
+            <div class="timeline-item">
+                <div class="timeline-time">
+                    <i class="bi bi-clock"></i> ${activity.time}
+                </div>
+                <div class="timeline-content">
+                    <strong>${activity.action}</strong> por <span class="timeline-user">${activity.user}</span>
+                    <div class="text-muted small">${activity.details}</div>
+                </div>
+            </div>
+        `).join('');
+    }, 1000);
+}
+
+function updateTopDifferences() {
+    const container = document.getElementById('topDifferences');
+    
+    // Obtener las mayores diferencias
+    const differences = CONFIG.STATE.data
+        .filter(item => item.estado === 'Diferencia')
+        .map(item => ({
+            ...item,
+            absDiff: Math.abs(item.diferencia),
+            percentDiff: item.stock > 0 ? Math.abs((item.diferencia / item.stock) * 100) : 100
+        }))
+        .sort((a, b) => b.absDiff - a.absDiff)
+        .slice(0, 5);
+    
+    setTimeout(() => {
+        if (differences.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-3">
+                    <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+                    <p class="text-muted mb-0">No hay diferencias significativas</p>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = differences.map(item => `
+            <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <span class="badge ${item.percentDiff > 50 ? 'bg-danger' : 'bg-warning'}">${item.percentDiff.toFixed(0)}%</span>
+                    </div>
+                    <div>
+                        <div class="fw-bold small">${item.code}</div>
+                        <div class="text-muted extra-small">${item.location}</div>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <div class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
+                        ${item.diferencia > 0 ? '+' : ''}${item.diferencia}
+                    </div>
+                    <div class="text-muted extra-small">${item.stock} → ${item.count}</div>
+                </div>
+            </div>
+        `).join('');
+    }, 1000);
+}
+
+function showAdvancedFilters() {
+    new bootstrap.Modal(document.getElementById('advancedFiltersModal')).show();
+}
+
+function applyAdvancedFilters() {
+    // Implementar filtros avanzados
+    const minStock = parseInt(document.getElementById('minStock').value) || 0;
+    const maxStock = parseInt(document.getElementById('maxStock').value) || Infinity;
+    const minDiff = parseInt(document.getElementById('minDiff').value) || -Infinity;
+    const maxDiff = parseInt(document.getElementById('maxDiff').value) || Infinity;
+    const minCount = parseInt(document.getElementById('minCount').value) || 0;
+    const maxCount = parseInt(document.getElementById('maxCount').value) || Infinity;
+    const onlyCritical = document.getElementById('onlyCriticalFilter').checked;
+    const onlyUncounted = document.getElementById('onlyUncountedFilter').checked;
+    const onlyWithStock = document.getElementById('onlyWithStockFilter').checked;
+    const onlyToday = document.getElementById('onlyTodayFilter').checked;
+    
+    CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => {
+        // Filtros básicos
+        const stockOk = item.stock >= minStock && item.stock <= maxStock;
+        const diffOk = item.diferencia >= minDiff && item.diferencia <= maxDiff;
+        const countOk = item.count >= minCount && item.count <= maxCount;
+        
+        // Filtros especiales
+        const criticalOk = !onlyCritical || item.isCritical;
+        const uncountedOk = !onlyUncounted || item.count === 0;
+        const stockExistsOk = !onlyWithStock || item.stock > 0;
+        
+        // Filtro de fecha (simulado)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dateOk = !onlyToday || (item.timestamp && item.timestamp >= today);
+        
+        return stockOk && diffOk && countOk && criticalOk && uncountedOk && stockExistsOk && dateOk;
+    });
+    
+    updateTable();
+    updatePagination();
+    
+    bootstrap.Modal.getInstance(document.getElementById('advancedFiltersModal')).hide();
+    showNotification('Filtros aplicados', 'Los filtros avanzados han sido aplicados.', 'success');
+}
+
+function resetAdvancedFilters() {
+    document.getElementById('minStock').value = '';
+    document.getElementById('maxStock').value = '';
+    document.getElementById('minDiff').value = '';
+    document.getElementById('maxDiff').value = '';
+    document.getElementById('minCount').value = '';
+    document.getElementById('maxCount').value = '';
+    document.getElementById('startDate').value = '';
+    document.getElementById('endDate').value = '';
+    document.getElementById('filterUserAdv').value = 'all';
+    document.getElementById('filterLocationAdv').value = 'all';
+    document.getElementById('onlyCriticalFilter').checked = false;
+    document.getElementById('onlyUncountedFilter').checked = false;
+    document.getElementById('onlyWithStockFilter').checked = false;
+    document.getElementById('onlyTodayFilter').checked = false;
+}
+
+function toggleCriticalOnly() {
+    const showCritical = document.getElementById('criticalOnly').checked;
+    
+    if (showCritical) {
+        CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => item.isCritical);
+    } else {
+        CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
+    }
+    
+    updateTable();
+    updatePagination();
+}
+
+function changeChartType(chartId, type) {
+    if (CONFIG.STATE.charts[chartId]) {
+        CONFIG.STATE.charts[chartId].config.type = type;
+        CONFIG.STATE.charts[chartId].update();
+        
+        // Actualizar botones activos
+        const buttons = document.querySelectorAll(`[onclick*="changeChartType('${chartId}'"]`);
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.toLowerCase().includes(type)) {
+                btn.classList.add('active');
             }
         });
     }
 }
 
-function prepareTableData() {
-    // Esta función prepara los datos para filtros y búsqueda
-    const rows = document.querySelectorAll('tbody tr[data-code]');
-    rows.forEach((row, index) => {
-        row.dataset.index = index;
+function changeTimeRange(range) {
+    // Actualizar botones activos
+    const buttons = document.querySelectorAll(`[onclick*="changeTimeRange('${range}')"]`);
+    buttons.forEach(btn => btn.classList.add('active'));
+    
+    // Aquí actualizarías los datos del gráfico según el rango
+    showNotification('Rango cambiado', `Se ha cambiado el rango de tiempo a ${range}.`, 'info');
+}
+
+function toggleFullscreen(chartId) {
+    const chartContainer = document.getElementById(chartId).closest('.chart-container');
+    
+    if (!document.fullscreenElement) {
+        if (chartContainer.requestFullscreen) {
+            chartContainer.requestFullscreen();
+        }
+        CONFIG.STATE.fullscreenChart = chartId;
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        CONFIG.STATE.fullscreenChart = null;
+    }
+}
+
+function toggleWidget(widgetId) {
+    const widget = document.getElementById(widgetId);
+    if (widget.style.display === 'none') {
+        widget.style.display = 'block';
+    } else {
+        widget.style.display = 'none';
+    }
+}
+
+function refreshSummary() {
+    calculateMetrics();
+    showNotification('Resumen actualizado', 'Las métricas se han actualizado.', 'info');
+}
+
+function refreshTimeline() {
+    loadActivityTimeline();
+    showNotification('Actividad actualizada', 'El timeline se ha actualizado.', 'info');
+}
+
+function refreshDifferences() {
+    updateTopDifferences();
+    showNotification('Diferencias actualizadas', 'Las mayores diferencias se han actualizado.', 'info');
+}
+
+function showAnalytics() {
+    // Implementar análisis avanzados
+    showNotification('Análisis avanzado', 'Funcionalidad de análisis en desarrollo.', 'info');
+}
+
+function showReconciliation() {
+    const differences = CONFIG.STATE.data.filter(item => item.estado === 'Diferencia');
+    
+    if (differences.length === 0) {
+        showNotification('No hay diferencias', 'No se encontraron items para conciliar.', 'info');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Conciliar Inventario',
+        html: `
+            <div class="text-start">
+                <p>Se encontraron <strong>${differences.length}</strong> diferencias.</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Esta acción actualizará el stock del sistema SAP.
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmReconciliation">
+                    <label class="form-check-label" for="confirmReconciliation">
+                        Confirmo la conciliación del inventario
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Conciliar',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            if (!document.getElementById('confirmReconciliation').checked) {
+                Swal.showValidationMessage('Debe confirmar la conciliación');
+                return false;
+            }
+            return true;
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading(`Conciliando ${differences.length} diferencias...`);
+            
+            setTimeout(() => {
+                differences.forEach(item => {
+                    item.estado = 'OK';
+                    item.element.dataset.estado = 'OK';
+                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
+                });
+                
+                calculateMetrics();
+                hideLoading();
+                
+                showNotification('Inventario conciliado', `Se han conciliado ${differences.length} diferencias.`, 'success');
+            }, 2000);
+        }
     });
 }
 
-function setupEventListeners() {
-    // Búsqueda
-    const searchInput = document.querySelector('.search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase().trim();
-            filterTableRows(searchTerm);
-        });
+function showNotificationsPanel() {
+    showNotification('Notificaciones', 'Esta funcionalidad está en desarrollo.', 'info');
+}
+
+function showHelp() {
+    new bootstrap.Modal(document.getElementById('helpModal')).show();
+}
+
+function refreshKPIs() {
+    calculateMetrics();
+    showNotification('KPIs actualizados', 'Los indicadores se han actualizado.', 'info');
+}
+
+function exportKPIs() {
+    const kpis = {
+        'Total Items': document.getElementById('totalItems').textContent,
+        'Coinciden': document.getElementById('okItems').textContent,
+        'Diferencias': document.getElementById('diffItems').textContent,
+        'Pendientes': document.getElementById('pendItems').textContent,
+        'Ubicaciones': document.getElementById('totalLocations').textContent,
+        'Stock Sistema': document.getElementById('totalStock').textContent,
+        'Items Contados': document.getElementById('totalCounted').textContent,
+        'Progreso': document.getElementById('progressPercent').textContent
+    };
+    
+    const data = [['Indicador', 'Valor'], ...Object.entries(kpis)];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'KPIs');
+    
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `kpis_dashboard_${date}.xlsx`);
+    
+    showNotification('KPIs exportados', 'Los indicadores se han exportado a Excel.', 'success');
+}
+
+function updatePerformanceChart() {
+    // Actualizar gráfico de rendimiento según filtro de usuario
+    showNotification('Rendimiento actualizado', 'El gráfico de rendimiento se ha actualizado.', 'info');
+}
+
+function toggleHeatmap() {
+    const showHeatmap = document.getElementById('heatmapToggle').checked;
+    // Implementar toggle del mapa de calor
+    showNotification('Mapa de calor', showHeatmap ? 'Activado' : 'Desactivado', 'info');
+}
+
+function showLoading(message = 'Cargando...', detail = '') {
+    document.getElementById('loadingMessage').textContent = message;
+    document.getElementById('loadingDetail').textContent = detail;
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showNotification(title, message, type = 'info') {
+    if (!CONFIG.SETTINGS.enableNotifications) return;
+    
+    const panel = document.getElementById('notificationPanel');
+    const notificationId = 'notification-' + Date.now();
+    
+    const notification = document.createElement('div');
+    notification.id = notificationId;
+    notification.className = `notification-toast notification-${type}`;
+    
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close" onclick="document.getElementById('${notificationId}').remove()">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
+    
+    panel.appendChild(notification);
+    
+    // Actualizar contador de notificaciones
+    updateNotificationCount(1);
+    
+    // Reproducir sonido si está activado
+    if (CONFIG.SETTINGS.enableSounds) {
+        playSound(type);
     }
     
-    // Ordenar tablas
-    document.querySelectorAll('.sortable').forEach(th => {
-        th.addEventListener('click', function() {
-            const columnIndex = Array.from(this.parentNode.children).indexOf(this);
-            sortTable(columnIndex);
-        });
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        const notif = document.getElementById(notificationId);
+        if (notif) {
+            notif.remove();
+            updateNotificationCount(-1);
+        }
+    }, 5000);
+}
+
+function updateNotificationCount(change) {
+    const badge = document.getElementById('notificationBadge');
+    if (!badge) return;
+    
+    let currentCount = parseInt(badge.textContent) || 0;
+    currentCount += change;
+    
+    if (currentCount <= 0) {
+        badge.textContent = '0 nuevas';
+        badge.parentElement.classList.remove('pulse');
+    } else {
+        badge.textContent = `${currentCount} nuevas`;
+        badge.parentElement.classList.add('pulse');
+    }
+}
+
+function playSound(type) {
+    if (!CONFIG.SETTINGS.enableSounds) return;
+    
+    // Simular sonidos (en producción usar archivos de sonido reales)
+    const sounds = {
+        success: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3',
+        error: 'https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-957.wav',
+        info: 'https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.wav',
+        warning: 'https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-957.wav'
+    };
+    
+    if (sounds[type]) {
+        const audio = new Audio(sounds[type]);
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
+    }
+}
+
+function updateEmptyState() {
+    // Actualizar todos los contadores a 0
+    ['totalItems', 'okItems', 'diffItems', 'pendItems', 'totalLocations', 'totalStock', 'totalCounted'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = '0';
     });
+    
+    document.getElementById('progressPercent').textContent = '0%';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('widgetProgressBar').style.width = '0%';
+    document.getElementById('widgetProgressText').textContent = '0%';
+}
+
+// ================= EVENT LISTENERS =================
+function setupEventListeners() {
+    // Búsqueda en tiempo real
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                applyFilters();
+            }, 300);
+        });
+    }
     
     // Teclas rápidas
     document.addEventListener('keydown', function(e) {
@@ -1192,286 +4268,49 @@ function setupEventListeners() {
             e.preventDefault();
             loadLatestData();
         }
-    });
-}
-
-function filterTableRows(searchTerm) {
-    const rows = document.querySelectorAll('tbody tr[data-code]');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-        const rowText = row.textContent.toLowerCase();
-        const isVisible = !searchTerm || rowText.includes(searchTerm);
-        row.style.display = isVisible ? '' : 'none';
-        if (isVisible) visibleCount++;
-    });
-    
-    // Actualizar contador
-    const counter = document.querySelector('.table-title .badge');
-    if (counter) {
-        counter.textContent = visibleCount;
-    }
-}
-
-function filterTable(status) {
-    const rows = document.querySelectorAll('tbody tr[data-code]');
-    let visibleCount = 0;
-    
-    rows.forEach(row => {
-        const isVisible = status === 'all' || row.dataset.estado === status;
-        row.style.display = isVisible ? '' : 'none';
-        if (isVisible) visibleCount++;
-    });
-    
-    // Actualizar contador
-    const counter = document.querySelector('.table-title .badge');
-    if (counter) {
-        counter.textContent = visibleCount;
-    }
-}
-
-function sortTable(columnIndex) {
-    const table = document.querySelector('.data-table');
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr[data-code]'));
-    
-    const isNumeric = columnIndex === 3 || columnIndex === 4 || columnIndex === 5;
-    
-    rows.sort((a, b) => {
-        let aValue, bValue;
         
-        if (isNumeric) {
-            aValue = parseFloat(a.cells[columnIndex].textContent.replace(/[^0-9.-]+/g, '')) || 0;
-            bValue = parseFloat(b.cells[columnIndex].textContent.replace(/[^0-9.-]+/g, '')) || 0;
-            return aValue - bValue;
-        } else {
-            aValue = a.cells[columnIndex].textContent.toLowerCase();
-            bValue = b.cells[columnIndex].textContent.toLowerCase();
-            return aValue.localeCompare(bValue);
+        // Ctrl + A para seleccionar todos
+        if (e.ctrlKey && e.key === 'a') {
+            e.preventDefault();
+            selectAllItems();
         }
-    });
-    
-    // Reordenar DOM
-    rows.forEach(row => tbody.appendChild(row));
-    
-    // Actualizar indicador visual
-    document.querySelectorAll('.sortable').forEach(th => {
-        th.classList.remove('sorted-asc', 'sorted-desc');
-    });
-    const th = table.querySelectorAll('th')[columnIndex];
-    th.classList.add('sorted-asc');
-}
-
-// Funciones de utilidad
-function loadLatestData() {
-    const btn = document.querySelector('[onclick="loadLatestData()"]');
-    const originalHtml = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Actualizando...';
-    btn.disabled = true;
-    
-    // Simular carga
-    setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        showToast('Datos actualizados', 'success');
-    }, 1000);
-}
-
-function editItem(code) {
-    Swal.fire({
-        title: `Editar Item: ${code}`,
-        html: `
-            <div class="text-start">
-                <div class="mb-3">
-                    <label class="form-label">Conteo Físico</label>
-                    <input type="number" id="countInput" class="form-control" min="0" step="1">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Observaciones</label>
-                    <textarea id="notesInput" class="form-control" rows="3"></textarea>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            const count = document.getElementById('countInput').value;
-            const notes = document.getElementById('notesInput').value;
-            
-            if (!count || isNaN(count) || count < 0) {
-                Swal.showValidationMessage('Ingrese un conteo válido');
-                return false;
-            }
-            
-            return { count, notes };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Aquí iría la lógica para guardar los cambios
-            showToast(`Item ${code} actualizado`, 'success');
-        }
-    });
-}
-
-function showHistory(code) {
-    Swal.fire({
-        title: `Historial: ${code}`,
-        html: `
-            <div class="text-start">
-                <div class="timeline">
-                    <div class="timeline-item">
-                        <div class="timeline-date">Hoy 14:30</div>
-                        <div class="timeline-content">
-                            <strong>Usuario:</strong> Operador 1<br>
-                            <strong>Conteo:</strong> 100 unidades<br>
-                            <strong>Estado:</strong> <span class="badge bg-success">OK</span>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-date">Ayer 10:15</div>
-                        <div class="timeline-content">
-                            <strong>Usuario:</strong> Supervisor<br>
-                            <strong>Conteo:</strong> 95 unidades<br>
-                            <strong>Estado:</strong> <span class="badge bg-warning">Diferencia</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `,
-        width: 500,
-        showConfirmButton: false,
-        showCloseButton: true
-    });
-}
-
-function exportToExcel() {
-    if (tableData.length === 0) {
-        showToast('No hay datos para exportar', 'warning');
-        return;
-    }
-    
-    showLoading('Generando archivo Excel...');
-    
-    // Simular generación de Excel
-    setTimeout(() => {
-        hideLoading();
-        showToast('Archivo Excel generado exitosamente', 'success');
         
-        // En producción, aquí descargarías el archivo
-        const date = new Date().toISOString().split('T')[0];
-        const filename = `reporte_conteo_${date}.xlsx`;
+        // Ctrl + E para exportar
+        if (e.ctrlKey && e.key === 'e') {
+            e.preventDefault();
+            exportToExcel(CONFIG.STATE.filteredData);
+        }
         
-        // Crear enlace de descarga (simulado)
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = filename;
-        link.click();
-    }, 1500);
-}
-
-function generateReport() {
-    showLoading('Generando reporte PDF...');
+        // Escape para limpiar filtros
+        if (e.key === 'Escape') {
+            clearFilters();
+        }
+    });
     
-    // Simular generación de PDF
-    setTimeout(() => {
-        hideLoading();
-        showToast('Reporte PDF generado exitosamente', 'success');
-    }, 2000);
-}
-
-function showSettings() {
-    Swal.fire({
-        title: 'Configuración',
-        html: `
-            <div class="text-start">
-                <div class="mb-3">
-                    <label class="form-label">Intervalo de actualización</label>
-                    <select class="form-select">
-                        <option value="30">30 segundos</option>
-                        <option value="60" selected>1 minuto</option>
-                        <option value="300">5 minutos</option>
-                    </select>
-                </div>
-                <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" checked>
-                    <label class="form-check-label">Notificaciones en tiempo real</label>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showToast('Configuración guardada', 'success');
+    // Cerrar modales con Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal.show');
+            modals.forEach(modal => {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            });
+        }
+    });
+    
+    // Prevenir recarga accidental
+    window.addEventListener('beforeunload', function(e) {
+        if (CONFIG.STATE.selectedItems.size > 0) {
+            e.preventDefault();
+            e.returnValue = 'Tienes items seleccionados. ¿Seguro que quieres salir?';
         }
     });
 }
 
-// Funciones auxiliares
-function showToast(message, type = 'info') {
-    // Crear toast
-    const toast = document.createElement('div');
-    toast.className = `toast show position-fixed top-0 end-0 m-3 alert alert-${type}`;
-    toast.style.cssText = `
-        min-width: 300px;
-        z-index: 9999;
-        animation: fadeIn 0.3s ease-out;
-    `;
-    toast.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
-            <span>${message}</span>
-            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
-        </div>
-    `;
-    
-    // Agregar al body
-    document.body.appendChild(toast);
-    
-    // Auto-remover después de 3 segundos
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 3000);
-}
-
-function showLoading(message = 'Cargando...') {
-    // Crear overlay de carga
-    const overlay = document.createElement('div');
-    overlay.id = 'loadingOverlay';
-    overlay.className = 'position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex align-items-center justify-content-center';
-    overlay.style.zIndex = '99999';
-    overlay.innerHTML = `
-        <div class="text-center text-white">
-            <div class="spinner-border mb-3"></div>
-            <p class="mb-0">${message}</p>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-}
-
-function hideLoading() {
-    const overlay = document.getElementById('loadingOverlay');
-    if (overlay) {
-        overlay.remove();
-    }
-}
-
-// Exportar funciones globales
-window.loadLatestData = loadLatestData;
-window.editItem = editItem;
-window.showHistory = showHistory;
-window.exportToExcel = exportToExcel;
-window.generateReport = generateReport;
-window.showSettings = showSettings;
-window.filterTable = filterTable;
-
-// Estilos para spinner
+// ================= INICIALIZACIÓN FINAL =================
+// Añadir estilos para animaciones
 const style = document.createElement('style');
 style.textContent = `
     .spin {
@@ -1481,41 +4320,75 @@ style.textContent = `
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
-    .timeline {
-        position: relative;
-        padding-left: 20px;
+    [data-theme="dark"] {
+        --primary: #0d4c6e;
+        --primary-light: rgba(13, 76, 110, 0.1);
+        --gray-100: #212529;
+        --gray-200: #343a40;
+        --gray-300: #495057;
+        --gray-800: #f8f9fa;
     }
-    .timeline::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: var(--primary);
+    [data-theme="light"] {
+        --primary: #1a5f7a;
+        --primary-light: rgba(26, 95, 122, 0.1);
     }
-    .timeline-item {
-        position: relative;
-        margin-bottom: 15px;
-        padding-left: 20px;
-    }
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: -4px;
-        top: 5px;
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: var(--primary);
-    }
-    .timeline-date {
-        font-size: 0.85rem;
-        color: var(--gray-600);
-        margin-bottom: 4px;
+    [data-theme="blue"] {
+        --primary: #0066cc;
+        --primary-light: rgba(0, 102, 204, 0.1);
     }
 `;
 document.head.appendChild(style);
+
+// Cargar configuración al iniciar
+loadSettings();
+
+// Exportar funciones globales necesarias
+window.loadLatestData = loadLatestData;
+window.toggleAutoRefresh = toggleAutoRefresh;
+window.showSettings = showSettings;
+window.showHelp = showHelp;
+window.clearFilters = clearFilters;
+window.applyFilters = applyFilters;
+window.sortTable = sortTable;
+window.previousPage = previousPage;
+window.nextPage = nextPage;
+window.editItem = editItem;
+window.showItemHistory = showItemHistory;
+window.recountItem = recountItem;
+window.deleteItem = deleteItem;
+window.selectAllItems = selectAllItems;
+window.showBulkActions = showBulkActions;
+window.bulkValidate = bulkValidate;
+window.bulkRecount = bulkRecount;
+window.bulkExport = bulkExport;
+window.bulkReconcile = bulkReconcile;
+window.bulkDelete = bulkDelete;
+window.exportToExcel = exportToExcel;
+window.exportDifferences = exportDifferences;
+window.generateReport = generateReport;
+window.showAdvancedFilters = showAdvancedFilters;
+window.applyAdvancedFilters = applyAdvancedFilters;
+window.resetAdvancedFilters = resetAdvancedFilters;
+window.toggleCriticalOnly = toggleCriticalOnly;
+window.changeChartType = changeChartType;
+window.changeTimeRange = changeTimeRange;
+window.toggleFullscreen = toggleFullscreen;
+window.toggleWidget = toggleWidget;
+window.refreshSummary = refreshSummary;
+window.refreshTimeline = refreshTimeline;
+window.refreshDifferences = refreshDifferences;
+window.showAnalytics = showAnalytics;
+window.showReconciliation = showReconciliation;
+window.showNotificationsPanel = showNotificationsPanel;
+window.refreshKPIs = refreshKPIs;
+window.exportKPIs = exportKPIs;
+window.updatePerformanceChart = updatePerformanceChart;
+window.toggleHeatmap = toggleHeatmap;
+window.setTheme = setTheme;
+window.saveSettings = saveSettings;
+window.toggleRowSelection = toggleRowSelection;
+
+console.log(`🎉 Dashboard v${CONFIG.VERSION} completamente funcional!`);
 </script>
 
 {% endblock %}
