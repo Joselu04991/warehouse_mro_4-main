@@ -2202,63 +2202,9 @@
     </div>
 </div>
 
-<!-- MODALES -->
-<div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="itemModalTitle">
-                    <i class="bi bi-pencil me-2"></i>
-                    Editar Conteo Físico
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="itemModalBody">
-                <!-- Cargado dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="analyticsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-graph-up me-2"></i>
-                    Analítica Avanzada
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="analyticsModalBody">
-                <!-- Cargado dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Detalles del Item
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detailsModalBody">
-                <!-- Cargado dinámicamente -->
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2270,18 +2216,11 @@
 const CONFIG = {
     autoRefresh: true,
     refreshInterval: 30000, // 30 segundos
-    websocket: null,
-    realTime: {
-        enabled: true,
-        interval: 5000 // 5 segundos para actualización en tiempo real
-    },
     api: {
         base: '{{ url_for("inventory.get_latest_counts") if url_for else "#" }}',
         update: '{{ url_for("inventory.update_count") if url_for else "#" }}',
         export: '{{ url_for("inventory.export_differences") if url_for else "#" }}',
-        summary: '{{ url_for("inventory.get_summary") if url_for else "#" }}',
-        realtime: '{{ url_for("inventory.get_realtime_data") if url_for else "#" }}',
-        activities: '{{ url_for("inventory.get_recent_activities") if url_for else "#" }}'
+        summary: '{{ url_for("inventory.get_summary") if url_for else "#" }}'
     },
     charts: {
         statusChart: null,
@@ -2315,13 +2254,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initDashboard();
     initCharts();
     initEventListeners();
-    initWebSocket();
     setupAutoRefresh();
-    startRealTimeUpdates();
     updateTime();
-    
-    // Verificar conexión API
-    checkAPIStatus();
     
     console.log('✅ Dashboard listo');
 });
@@ -2473,21 +2407,6 @@ function initCharts() {
                             size: 14,
                             weight: '600'
                         }
-                    },
-                    zoom: {
-                        zoom: {
-                            wheel: {
-                                enabled: true,
-                            },
-                            pinch: {
-                                enabled: true
-                            },
-                            mode: 'xy',
-                        },
-                        pan: {
-                            enabled: true,
-                            mode: 'xy',
-                        }
                     }
                 },
                 scales: {
@@ -2523,8 +2442,7 @@ function initCharts() {
                     duration: 2000,
                     easing: 'easeOutQuart'
                 }
-            },
-            plugins: [ChartZoom]
+            }
         });
     }
     
@@ -2613,171 +2531,6 @@ function initCharts() {
     }
 }
 
-// ================= FUNCIONES DE DATOS EN TIEMPO REAL =================
-function startRealTimeUpdates() {
-    if (!CONFIG.realTime.enabled) return;
-    
-    console.log('🔄 Iniciando actualizaciones en tiempo real...');
-    
-    // Actualizar datos cada X segundos
-    setInterval(() => {
-        fetchRealTimeData();
-    }, CONFIG.realTime.interval);
-    
-    // Actualizar tiempos de actividad
-    setInterval(updateActivityTimes, 60000); // Cada minuto
-}
-
-async function fetchRealTimeData() {
-    try {
-        if (!CONFIG.api.realtime || CONFIG.api.realtime === '#') {
-            console.log('API de tiempo real no configurada');
-            return;
-        }
-        
-        const response = await fetch(CONFIG.api.realtime);
-        if (!response.ok) throw new Error('Error en la respuesta');
-        
-        const data = await response.json();
-        
-        // Actualizar datos locales
-        if (data.stats) {
-            CONFIG.data.stats = data.stats;
-            updateDashboardStats(data.stats);
-        }
-        
-        if (data.activities) {
-            CONFIG.data.activities = data.activities;
-            updateActivityFeed(data.activities);
-        }
-        
-        if (data.items) {
-            CONFIG.data.items = data.items;
-            updateTable(data.items);
-        }
-        
-        // Mostrar notificación si hay nuevas actividades
-        if (data.new_activities && data.new_activities.length > 0) {
-            data.new_activities.forEach(activity => {
-                showNotification(
-                    'Nueva actividad',
-                    `${activity.user || 'Usuario'} contó ${activity.item_code || 'item'}: ${activity.count}`,
-                    'info'
-                );
-            });
-        }
-        
-    } catch (error) {
-        console.error('Error obteniendo datos en tiempo real:', error);
-    }
-}
-
-function updateDashboardStats(stats) {
-    // Actualizar valores principales
-    document.getElementById('totalItemsValue').textContent = stats.total || 0;
-    document.getElementById('correctItemsValue').textContent = stats.ok || 0;
-    document.getElementById('diffItemsValue').textContent = stats.differences || 0;
-    document.getElementById('progressPercentValue').textContent = `${stats.percentage || 0}%`;
-    
-    // Actualizar progreso circular
-    const progressCircle = document.getElementById('progressCircle');
-    const circleValue = document.getElementById('progressCircleValue');
-    if (progressCircle && circleValue) {
-        const progress = stats.percentage || 0;
-        const circumference = 314; // 2 * π * r (r=50)
-        const offset = circumference - (progress / 100) * circumference;
-        progressCircle.style.strokeDashoffset = offset;
-        circleValue.textContent = `${progress}%`;
-    }
-    
-    // Actualizar contadores
-    document.getElementById('countedItems').textContent = (stats.ok || 0) + (stats.differences || 0);
-    document.getElementById('okCount').textContent = stats.ok || 0;
-    document.getElementById('diffCount').textContent = stats.differences || 0;
-    document.getElementById('pendingCount').textContent = (stats.total || 0) - (stats.ok || 0) - (stats.differences || 0);
-    document.getElementById('progressPercentage').textContent = `${stats.percentage || 0}%`;
-    
-    // Actualizar gráficos
-    if (CONFIG.charts.statusChart) {
-        const okCount = stats.ok || 0;
-        const diffCount = stats.differences || 0;
-        const pendCount = (stats.total || 0) - okCount - diffCount;
-        
-        CONFIG.charts.statusChart.data.datasets[0].data = [okCount, diffCount, pendCount];
-        CONFIG.charts.statusChart.update('none');
-    }
-}
-
-function updateActivityFeed(activities) {
-    const activityList = document.getElementById('activityList');
-    if (!activityList) return;
-    
-    // Limitar a 10 actividades
-    const recentActivities = activities.slice(-10).reverse();
-    
-    activityList.innerHTML = '';
-    recentActivities.forEach(activity => {
-        const activityItem = document.createElement('div');
-        activityItem.className = `activity-item ${activity.status || 'info'} hover-lift`;
-        
-        const statusColor = activity.status === 'success' ? 'var(--success)' : 
-                          activity.status === 'warning' ? 'var(--warning)' : 'var(--danger)';
-        
-        activityItem.innerHTML = `
-            <div class="activity-content">
-                <div class="activity-icon" style="background: ${statusColor};">
-                    <i class="bi ${activity.icon || 'bi-clock'}"></i>
-                </div>
-                <div class="activity-text">
-                    <div class="activity-title">${activity.item_code || 'N/A'}</div>
-                    <div class="activity-time">
-                        <i class="bi bi-clock"></i>
-                        <span class="time-ago" data-time="${activity.timestamp || ''}">
-                            ${formatTime(activity.timestamp) || 'Reciente'}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <span class="activity-badge" style="background: ${statusColor};">
-                ${activity.count || 0}
-            </span>
-        `;
-        
-        activityList.appendChild(activityItem);
-    });
-    
-    // Actualizar contador
-    document.getElementById('activityCount').textContent = activities.length;
-    
-    // Actualizar tiempos
-    updateActivityTimes();
-}
-
-function updateActivityTimes() {
-    document.querySelectorAll('.time-ago').forEach(element => {
-        const timeStr = element.getAttribute('data-time');
-        if (timeStr) {
-            const time = new Date(timeStr);
-            element.textContent = timeAgo(time);
-        }
-    });
-}
-
-function timeAgo(date) {
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-    
-    if (diffSec < 60) return 'Hace unos segundos';
-    if (diffMin < 60) return `Hace ${diffMin} min`;
-    if (diffHour < 24) return `Hace ${diffHour} h`;
-    if (diffDay < 7) return `Hace ${diffDay} d`;
-    return formatDate(date);
-}
-
 // ================= FUNCIONES DEL DASHBOARD =================
 async function refreshDashboard() {
     console.log('🔄 Actualizando dashboard completo...');
@@ -2792,10 +2545,9 @@ async function refreshDashboard() {
     
     try {
         // Obtener datos actualizados
-        const [statsResponse, itemsResponse, activitiesResponse] = await Promise.all([
+        const [statsResponse, itemsResponse] = await Promise.all([
             fetch(CONFIG.api.summary || '#'),
-            fetch(CONFIG.api.base || '#'),
-            fetch(CONFIG.api.activities || '#')
+            fetch(CONFIG.api.base || '#')
         ]);
         
         if (statsResponse.ok) {
@@ -2806,11 +2558,6 @@ async function refreshDashboard() {
         if (itemsResponse.ok) {
             const items = await itemsResponse.json();
             updateTable(items);
-        }
-        
-        if (activitiesResponse.ok) {
-            const activities = await activitiesResponse.json();
-            updateActivityFeed(activities);
         }
         
         // Actualizar KPIs
@@ -2830,6 +2577,71 @@ async function refreshDashboard() {
             refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
         }
         hideLoading();
+    }
+}
+
+function updateDashboardStats(stats) {
+    if (!stats) return;
+    
+    // Actualizar valores principales
+    if (stats.total !== undefined) {
+        document.getElementById('totalItemsValue').textContent = stats.total;
+        CONFIG.data.stats.total = stats.total;
+    }
+    
+    if (stats.ok !== undefined) {
+        document.getElementById('correctItemsValue').textContent = stats.ok;
+        CONFIG.data.stats.ok = stats.ok;
+    }
+    
+    if (stats.differences !== undefined) {
+        document.getElementById('diffItemsValue').textContent = stats.differences;
+        CONFIG.data.stats.differences = stats.differences;
+    }
+    
+    if (stats.percentage !== undefined) {
+        document.getElementById('progressPercentValue').textContent = `${stats.percentage}%`;
+        CONFIG.data.stats.percentage = stats.percentage;
+        
+        // Actualizar progreso circular
+        const progressCircle = document.getElementById('progressCircle');
+        const circleValue = document.getElementById('progressCircleValue');
+        if (progressCircle && circleValue) {
+            const progress = stats.percentage;
+            const circumference = 314; // 2 * π * r (r=50)
+            const offset = circumference - (progress / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+            circleValue.textContent = `${progress}%`;
+        }
+    }
+    
+    if (stats.total_stock !== undefined) {
+        CONFIG.data.stats.total_stock = stats.total_stock;
+    }
+    
+    if (stats.locations !== undefined) {
+        CONFIG.data.stats.locations = stats.locations;
+    }
+    
+    // Actualizar contadores
+    const ok = stats.ok || 0;
+    const diff = stats.differences || 0;
+    const total = stats.total || 0;
+    
+    document.getElementById('countedItems').textContent = ok + diff;
+    document.getElementById('okCount').textContent = ok;
+    document.getElementById('diffCount').textContent = diff;
+    document.getElementById('pendingCount').textContent = total - ok - diff;
+    document.getElementById('progressPercentage').textContent = `${stats.percentage || 0}%`;
+    
+    // Actualizar gráficos
+    if (CONFIG.charts.statusChart) {
+        const okCount = ok;
+        const diffCount = diff;
+        const pendCount = total - ok - diff;
+        
+        CONFIG.charts.statusChart.data.datasets[0].data = [okCount, diffCount, pendCount];
+        CONFIG.charts.statusChart.update('none');
     }
 }
 
@@ -2977,628 +2789,6 @@ function updateTopDifferences(items) {
     });
 }
 
-// ================= FUNCIONES DE PDF Y EXPORTACIÓN =================
-async function exportTableToPDF() {
-    console.log('📄 Exportando a PDF...');
-    
-    showLoading('Generando PDF...', 'Creando reporte profesional con gráficos');
-    
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 15;
-        let yPos = margin;
-        
-        // Logo y encabezado
-        doc.setFontSize(20);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 10;
-        
-        // Información
-        doc.setFontSize(10);
-        doc.setTextColor(108, 117, 125);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
-        doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
-        yPos += 15;
-        
-        // Estadísticas
-        doc.setFontSize(12);
-        doc.setTextColor(33, 37, 41);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ESTADÍSTICAS', margin, yPos);
-        yPos += 8;
-        
-        const stats = CONFIG.data.stats;
-        const statsText = [
-            `• Total items: ${stats.total || 0}`,
-            `• Coincidencias: ${stats.ok || 0} (${Math.round(((stats.ok || 0) / (stats.total || 1)) * 100)}%)`,
-            `• Diferencias: ${stats.differences || 0} (${Math.round(((stats.differences || 0) / (stats.total || 1)) * 100)}%)`,
-            `• Stock total: ${stats.total_stock || 0}`,
-            `• Progreso: ${stats.percentage || 0}%`,
-            `• Ubicaciones activas: ${stats.locations || 0}`
-        ];
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        statsText.forEach(stat => {
-            doc.text(stat, margin + 5, yPos);
-            yPos += 6;
-        });
-        
-        yPos += 10;
-        
-        // Capturar y agregar gráficos al PDF
-        try {
-            // Gráfico de estado
-            const statusChartCanvas = document.getElementById('statusChart');
-            if (statusChartCanvas) {
-                const statusChartImage = await captureChartAsImage(statusChartCanvas);
-                doc.addImage(statusChartImage, 'PNG', margin, yPos, 85, 85);
-                
-                // Gráfico de tendencia al lado
-                const trendChartCanvas = document.getElementById('trendChart');
-                if (trendChartCanvas) {
-                    const trendChartImage = await captureChartAsImage(trendChartCanvas);
-                    doc.addImage(trendChartImage, 'PNG', margin + 90, yPos, 85, 85);
-                }
-                
-                yPos += 95;
-            }
-            
-            // Gráfico de ubicación
-            const locationChartCanvas = document.getElementById('locationChart');
-            if (locationChartCanvas && yPos < 200) {
-                const locationChartImage = await captureChartAsImage(locationChartCanvas);
-                doc.addImage(locationChartImage, 'PNG', margin, yPos, pageWidth - (margin * 2), 80);
-                yPos += 90;
-            }
-            
-        } catch (chartError) {
-            console.warn('No se pudieron incluir los gráficos:', chartError);
-        }
-        
-        // Si hay espacio, agregar tabla de diferencias
-        if (yPos < 250) {
-            doc.addPage();
-            yPos = margin;
-            
-            // Tabla de diferencias
-            const rows = document.querySelectorAll('#tableBody tr[data-item]');
-            const differences = [];
-            
-            rows.forEach(row => {
-                try {
-                    const item = JSON.parse(row.getAttribute('data-item'));
-                    if (item.estado === 'Diferencia' && row.style.display !== 'none') {
-                        const diff = item.diferencia || (item.real_count - item.stock) || 0;
-                        differences.push([
-                            item.material_code || '',
-                            (item.material_text || '').substring(0, 25) + '...',
-                            item.location || '',
-                            (item.stock || 0).toString(),
-                            (item.real_count || 0).toString(),
-                            diff > 0 ? `+${diff}` : diff.toString(),
-                            item.estado || ''
-                        ]);
-                    }
-                } catch (error) {
-                    console.error('Error procesando fila para PDF:', error);
-                }
-            });
-            
-            if (differences.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont('helvetica', 'bold');
-                doc.text('DIFERENCIAS ENCONTRADAS', pageWidth / 2, yPos, { align: 'center' });
-                yPos += 15;
-                
-                doc.autoTable({
-                    startY: yPos,
-                    head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
-                    body: differences,
-                    margin: { left: margin, right: margin },
-                    styles: { 
-                        fontSize: 8,
-                        cellPadding: 2
-                    },
-                    headStyles: { 
-                        fillColor: [44, 62, 80],
-                        textColor: 255,
-                        fontStyle: 'bold'
-                    },
-                    alternateRowStyles: {
-                        fillColor: [248, 249, 250]
-                    },
-                    didDrawPage: function(data) {
-                        // Footer
-                        doc.setFontSize(10);
-                        doc.setTextColor(150);
-                        doc.text(
-                            `Página ${doc.internal.getNumberOfPages()}`,
-                            pageWidth / 2,
-                            doc.internal.pageSize.getHeight() - 10,
-                            { align: 'center' }
-                        );
-                    }
-                });
-            }
-        }
-        
-        // Generar nombre de archivo y guardar
-        const date = new Date().toISOString().split('T')[0];
-        const filename = `reporte_inventario_${date}_${new Date().getHours()}${new Date().getMinutes()}.pdf`;
-        
-        doc.save(filename);
-        
-        hideLoading();
-        showNotification('PDF generado', `Archivo ${filename} descargado con gráficos`, 'success');
-        
-    } catch (error) {
-        console.error('Error generando PDF:', error);
-        hideLoading();
-        showNotification('Error', 'No se pudo generar el PDF', 'error');
-    }
-}
-
-function exportTableToExcel() {
-    console.log('📊 Exportando tabla completa a Excel...');
-    
-    showLoading('Exportando tabla...', 'Preparando archivo Excel profesional');
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    
-    if (rows.length === 0) {
-        hideLoading();
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos visibles para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear libro de trabajo
-    const wb = XLSX.utils.book_new();
-    
-    // Hoja 1: Datos completos
-    const excelData = [
-        ['REPORTE COMPLETO DE INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Generado por:', 'Sistema de Inventario'],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones', 'Crítico']
-    ];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            const isCritical = Math.abs(diff) > (item.stock * 0.2) && Math.abs(diff) > 5;
-            
-            excelData.push([
-                item.material_code || '',
-                item.material_text || '',
-                item.location || '',
-                item.stock || 0,
-                item.real_count || item.count || 0,
-                diff,
-                item.estado || '',
-                item.usuario || 'N/A',
-                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
-                item.notes || '',
-                isCritical ? 'SI' : 'NO'
-            ]);
-        } catch (error) {
-            console.error('Error exportando fila:', error);
-        }
-    });
-    
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventario Completo');
-    
-    // Hoja 2: Solo diferencias
-    const diffData = [
-        ['DIFERENCIAS DE INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Total diferencias:', rows.length],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Crítico']
-    ];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            if (item.estado === 'Diferencia') {
-                const diff = item.diferencia || (item.real_count - item.stock) || 0;
-                const isCritical = Math.abs(diff) > (item.stock * 0.2) && Math.abs(diff) > 5;
-                
-                diffData.push([
-                    item.material_code || '',
-                    item.material_text || '',
-                    item.location || '',
-                    item.stock || 0,
-                    item.real_count || item.count || 0,
-                    diff,
-                    item.estado || '',
-                    isCritical ? 'CRÍTICO' : 'NORMAL'
-                ]);
-            }
-        } catch (error) {
-            console.error('Error exportando diferencia:', error);
-        }
-    });
-    
-    if (diffData.length > 5) {
-        const ws2 = XLSX.utils.aoa_to_sheet(diffData);
-        XLSX.utils.book_append_sheet(wb, ws2, 'Diferencias');
-    }
-    
-    // Hoja 3: Resumen estadístico
-    const summaryData = [
-        ['RESUMEN ESTADÍSTICO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        [''],
-        ['Métrica', 'Valor', 'Porcentaje'],
-        ['Total Items', CONFIG.data.stats.total || 0, '100%'],
-        ['Coincidencias', CONFIG.data.stats.ok || 0, `${Math.round(((CONFIG.data.stats.ok || 0) / (CONFIG.data.stats.total || 1)) * 100)}%`],
-        ['Diferencias', CONFIG.data.stats.differences || 0, `${Math.round(((CONFIG.data.stats.differences || 0) / (CONFIG.data.stats.total || 1)) * 100)}%`],
-        ['Stock Total', CONFIG.data.stats.total_stock || 0, '-'],
-        ['Progreso', `${CONFIG.data.stats.percentage || 0}%`, '-'],
-        ['Ubicaciones', CONFIG.data.stats.locations || 0, '-']
-    ];
-    
-    const ws3 = XLSX.utils.aoa_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, ws3, 'Resumen');
-    
-    // Aplicar estilos y anchos de columna
-    const wscols = [
-        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
-        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
-        {wch: 15}, {wch: 30}, {wch: 10}
-    ];
-    ws['!cols'] = wscols;
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `inventario_completo_${date}.xlsx`;
-    
-    XLSX.writeFile(wb, fileName);
-    hideLoading();
-    showNotification('Exportación completada', `Archivo ${fileName} generado con 3 hojas`, 'success');
-}
-
-function exportTableToCSV() {
-    console.log('📄 Exportando a CSV...');
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    
-    if (rows.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos visibles para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear contenido CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Código,Descripción,Ubicación,Stock Sistema,Conteo Físico,Diferencia,Estado,Usuario,Fecha Conteo,Observaciones\n";
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            
-            const rowData = [
-                `"${item.material_code || ''}"`,
-                `"${(item.material_text || '').replace(/"/g, '""')}"`,
-                `"${item.location || ''}"`,
-                item.stock || 0,
-                item.real_count || item.count || 0,
-                diff,
-                `"${item.estado || ''}"`,
-                `"${item.usuario || 'N/A'}"`,
-                `"${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'}"`,
-                `"${(item.notes || '').replace(/"/g, '""')}"`
-            ];
-            
-            csvContent += rowData.join(",") + "\n";
-        } catch (error) {
-            console.error('Error exportando fila a CSV:', error);
-        }
-    });
-    
-    // Descargar archivo
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `inventario_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('CSV exportado', 'Archivo CSV descargado correctamente', 'success');
-}
-
-// ================= FUNCIONES AVANZADAS =================
-function showAnalytics() {
-    console.log('📊 Mostrando analítica avanzada...');
-    
-    Swal.fire({
-        title: `<div class="text-info"><i class="bi bi-graph-up me-2"></i>Analítica Avanzada</div>`,
-        html: `
-            <div class="text-start">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Análisis Predictivo</h6>
-                                <p class="small text-muted">Basado en datos históricos, se predice:</p>
-                                <ul class="small">
-                                    <li>Stock óptimo para próximos 30 días</li>
-                                    <li>Tendencias de consumo</li>
-                                    <li>Puntos de reorden sugeridos</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-lightning me-2"></i>Optimización</h6>
-                                <p class="small text-muted">Recomendaciones inteligentes:</p>
-                                <ul class="small">
-                                    <li>Redistribución de stock</li>
-                                    <li>Minimización de diferencias</li>
-                                    <li>Mejora en procesos de conteo</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-3">
-                    <h6 class="fw-bold">Reportes Disponibles:</h6>
-                    <div class="list-group">
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('trends')">
-                            <i class="bi bi-graph-up me-2"></i>Reporte de Tendencias
-                        </button>
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('optimization')">
-                            <i class="bi bi-gear me-2"></i>Reporte de Optimización
-                        </button>
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('predictive')">
-                            <i class="bi bi-cpu me-2"></i>Análisis Predictivo
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-play-circle me-1"></i>Ejecutar Análisis',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cerrar',
-        confirmButtonColor: '#2980b9',
-        width: '700px',
-        preConfirm: () => {
-            return new Promise((resolve) => {
-                showLoading('Ejecutando análisis avanzado...', 'Procesando datos con algoritmos de IA');
-                setTimeout(() => {
-                    hideLoading();
-                    resolve();
-                }, 3000);
-            });
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showNotification('Análisis completado', 'Los resultados están listos para revisión', 'success');
-        }
-    });
-}
-
-function showItemDetails(button) {
-    const row = button.closest('tr');
-    const item = JSON.parse(row.getAttribute('data-item'));
-    
-    const diff = item.diferencia || (item.real_count - item.stock) || 0;
-    const diffAbs = Math.abs(diff);
-    const isCritical = diffAbs > (item.stock * 0.2) && diffAbs > 5;
-    
-    Swal.fire({
-        title: `<div class="text-success"><i class="bi bi-info-circle me-2"></i>Detalles del Item</div>`,
-        html: `
-            <div class="text-start">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bi bi-upc me-2"></i>Información Básica</h6>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Código:</strong> ${item.material_code || 'N/A'}</p>
-                                <p><strong>Descripción:</strong> ${item.material_text || 'Sin descripción'}</p>
-                                <p><strong>Ubicación:</strong> ${item.location || 'N/A'}</p>
-                                <p><strong>Categoría:</strong> ${item.category || 'No especificada'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bi bi-box me-2"></i>Stock y Conteo</h6>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Stock Sistema:</strong> ${item.stock || 0}</p>
-                                <p><strong>Conteo Físico:</strong> ${item.real_count || item.count || 0}</p>
-                                <p><strong>Diferencia:</strong> <span class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                                    ${diff > 0 ? '+' : ''}${diff}
-                                </span></p>
-                                <p><strong>Estado:</strong> <span class="badge ${item.estado === 'OK' ? 'bg-success' : isCritical ? 'bg-danger' : item.estado === 'Diferencia' ? 'bg-warning' : 'bg-info'}">
-                                    ${item.estado || 'Pendiente'}
-                                </span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial</h6>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Última Actualización:</strong> ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'No registrado'}</p>
-                        <p><strong>Usuario:</strong> ${item.usuario || 'N/A'}</p>
-                        <p><strong>Observaciones:</strong> ${item.notes || 'Sin observaciones'}</p>
-                        ${item.history ? `<p><strong>Historial de cambios:</strong> ${JSON.stringify(item.history)}</p>` : ''}
-                    </div>
-                </div>
-                
-                ${isCritical ? `
-                <div class="alert alert-danger mt-3">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>¡ATENCIÓN!</strong> Esta diferencia es crítica. Se recomienda acción inmediata.
-                </div>
-                ` : ''}
-            </div>
-        `,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
-        confirmButtonColor: '#27ae60',
-        width: '800px'
-    });
-}
-
-function generateReport() {
-    console.log('📈 Generando reporte avanzado...');
-    
-    Swal.fire({
-        title: `<div class="text-primary"><i class="bi bi-file-earmark-pdf me-2"></i>Generar Reporte Avanzado</div>`,
-        html: `
-            <div class="text-start">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Tipo de Reporte</label>
-                            <select class="form-select" id="reportType">
-                                <option value="executive">Resumen Ejecutivo</option>
-                                <option value="detailed">Detallado Completo</option>
-                                <option value="differences">Solo Diferencias</option>
-                                <option value="trends">Tendencias y Análisis</option>
-                                <option value="compliance">Cumplimiento y Auditoría</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Formato</label>
-                            <select class="form-select" id="reportFormat">
-                                <option value="pdf">PDF (Recomendado)</option>
-                                <option value="excel">Excel con Datos</option>
-                                <option value="powerpoint">Presentación PowerPoint</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Período</label>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <input type="date" class="form-control" id="reportStartDate" 
-                                   value="${new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]}">
-                        </div>
-                        <div class="col-md-6">
-                            <input type="date" class="form-control" id="reportEndDate" 
-                                   value="${new Date().toISOString().split('T')[0]}">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Incluir</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="includeCharts" checked>
-                        <label class="form-check-label" for="includeCharts">
-                            Gráficos y visualizaciones
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="includeRecommendations" checked>
-                        <label class="form-check-label" for="includeRecommendations">
-                            Recomendaciones de mejora
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="includeActionPlan">
-                        <label class="form-check-label" for="includeActionPlan">
-                            Plan de acción detallado
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    El reporte se generará con datos en tiempo real y podrá incluir análisis predictivo.
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-play-circle me-1"></i>Generar Reporte',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
-        confirmButtonColor: '#2980b9',
-        cancelButtonColor: '#e74c3c',
-        width: '700px',
-        preConfirm: () => {
-            const reportType = document.getElementById('reportType').value;
-            const reportFormat = document.getElementById('reportFormat').value;
-            const startDate = document.getElementById('reportStartDate').value;
-            const endDate = document.getElementById('reportEndDate').value;
-            
-            if (!startDate || !endDate) {
-                Swal.showValidationMessage('Seleccione un período válido');
-                return false;
-            }
-            
-            return {
-                type: reportType,
-                format: reportFormat,
-                startDate: startDate,
-                endDate: endDate,
-                includeCharts: document.getElementById('includeCharts').checked,
-                includeRecommendations: document.getElementById('includeRecommendations').checked,
-                includeActionPlan: document.getElementById('includeActionPlan').checked
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading('Generando reporte avanzado...', 'Procesando datos y creando documento');
-            
-            // Simular generación de reporte
-            setTimeout(() => {
-                hideLoading();
-                
-                if (result.value.format === 'pdf') {
-                    exportTableToPDF();
-                } else if (result.value.format === 'excel') {
-                    exportTableToExcel();
-                } else {
-                    showNotification('Reporte en proceso', 'La presentación se está preparando', 'info');
-                }
-                
-            }, 2000);
-        }
-    });
-}
-
 // ================= FUNCIONES DE UTILIDAD =================
 function generateLast24Hours() {
     const hours = [];
@@ -3716,15 +2906,681 @@ function updateKPIs() {
     };
     
     // Actualizar UI
-    document.getElementById('accuracyBadge').textContent = mockData.accuracy.value;
-    document.getElementById('accuracyValue').innerHTML = `${Math.round({{ coinciden|default(0) }}/{{ total_items|default(1) }}*100)}%`;
+    const ok = {{ coinciden|default(0) }};
+    const total = {{ total_items|default(1) }};
+    const accuracy = Math.round((ok / total) * 100);
+    
+    document.getElementById('accuracyBadge').textContent = `${accuracy}%`;
+    document.getElementById('accuracyValue').innerHTML = `${accuracy}%`;
     document.getElementById('accuracyChange').innerHTML = `
         <i class="bi bi-arrow-up-right text-success"></i>
         <span class="text-success fw-bold">${mockData.accuracy.change}</span>
         <span class="text-muted">vs ${period === 'today' ? 'ayer' : 'período anterior'}</span>
     `;
+}
+
+// ================= FUNCIONES DE TABLA =================
+function filterTable() {
+    const searchTerm = document.getElementById('tableSearch').value.toLowerCase().trim();
+    const statusFilter = document.getElementById('tableStatusFilter').value;
+    const locationFilter = document.getElementById('tableLocationFilter').value;
     
-    // Similar para los otros KPIs...
+    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            
+            // Filtro de búsqueda
+            const matchesSearch = !searchTerm || 
+                (item.material_code && item.material_code.toLowerCase().includes(searchTerm)) ||
+                (item.material_text && item.material_text.toLowerCase().includes(searchTerm)) ||
+                (item.location && item.location.toLowerCase().includes(searchTerm));
+            
+            // Filtro de estado
+            let matchesStatus = statusFilter === 'all';
+            if (!matchesStatus) {
+                if (statusFilter === 'Critico') {
+                    const diff = Math.abs(item.diferencia || (item.real_count - item.stock) || 0);
+                    matchesStatus = diff > (item.stock * 0.2) && diff > 5;
+                } else {
+                    matchesStatus = item.estado === statusFilter;
+                }
+            }
+            
+            // Filtro de ubicación
+            const matchesLocation = locationFilter === 'all' || item.location === locationFilter;
+            
+            const isVisible = matchesSearch && matchesStatus && matchesLocation;
+            row.style.display = isVisible ? '' : 'none';
+            
+            if (isVisible) visibleCount++;
+            
+        } catch (error) {
+            console.error('Error procesando fila:', error);
+            row.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('visibleCount').textContent = visibleCount;
+}
+
+function sortTable() {
+    const sortBy = document.getElementById('tableSortBy').value;
+    const sortOrder = document.getElementById('tableSortOrder').value;
+    
+    const tbody = document.getElementById('tableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr[data-item]:not([style*="display: none"])'));
+    
+    rows.sort((a, b) => {
+        try {
+            const itemA = JSON.parse(a.getAttribute('data-item'));
+            const itemB = JSON.parse(b.getAttribute('data-item'));
+            
+            let valueA, valueB;
+            
+            switch(sortBy) {
+                case 'code':
+                    valueA = itemA.material_code || '';
+                    valueB = itemB.material_code || '';
+                    break;
+                    
+                case 'diff':
+                    valueA = Math.abs(itemA.diferencia || itemA.real_count - itemA.stock || 0);
+                    valueB = Math.abs(itemB.diferencia || itemB.real_count - itemB.stock || 0);
+                    break;
+                    
+                case 'status':
+                    valueA = itemA.estado || 'Pendiente';
+                    valueB = itemB.estado || 'Pendiente';
+                    break;
+                    
+                case 'location':
+                    valueA = itemA.location || '';
+                    valueB = itemB.location || '';
+                    break;
+                    
+                case 'stock':
+                    valueA = itemA.stock || 0;
+                    valueB = itemB.stock || 0;
+                    break;
+                    
+                case 'time':
+                    valueA = itemA.timestamp ? new Date(itemA.timestamp).getTime() : 0;
+                    valueB = itemB.timestamp ? new Date(itemB.timestamp).getTime() : 0;
+                    break;
+                    
+                default:
+                    return 0;
+            }
+            
+            let comparison = 0;
+            if (typeof valueA === 'string' && typeof valueB === 'string') {
+                comparison = valueA.localeCompare(valueB);
+            } else {
+                comparison = valueA - valueB;
+            }
+            
+            return sortOrder === 'desc' ? -comparison : comparison;
+            
+        } catch (error) {
+            console.error('Error ordenando fila:', error);
+            return 0;
+        }
+    });
+    
+    // Reordenar filas en el DOM
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function updateTableInfo() {
+    const visibleRows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])').length;
+    const totalRows = document.querySelectorAll('#tableBody tr').length;
+    
+    document.getElementById('visibleCount').textContent = visibleRows;
+    document.getElementById('totalCount').textContent = totalRows;
+}
+
+function setupTableFilters() {
+    const searchInput = document.getElementById('tableSearch');
+    let searchTimeout;
+    
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterTable, 350);
+    });
+}
+
+function debounceSearch() {
+    clearTimeout(this.debounceTimeout);
+    this.debounceTimeout = setTimeout(() => {
+        filterTable();
+    }, 350);
+}
+
+// ================= FUNCIONES DE EXPORTACIÓN =================
+async function exportTableToPDF() {
+    console.log('📄 Exportando a PDF...');
+    
+    showLoading('Generando PDF...', 'Creando reporte profesional con gráficos');
+    
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 15;
+        let yPos = margin;
+        
+        // Logo y encabezado
+        doc.setFontSize(20);
+        doc.setTextColor(44, 62, 80);
+        doc.setFont('helvetica', 'bold');
+        doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
+        yPos += 10;
+        
+        // Información
+        doc.setFontSize(10);
+        doc.setTextColor(108, 117, 125);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
+        doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 15;
+        
+        // Estadísticas
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ESTADÍSTICAS', margin, yPos);
+        yPos += 8;
+        
+        const stats = CONFIG.data.stats;
+        const statsText = [
+            `• Total items: ${stats.total || 0}`,
+            `• Coincidencias: ${stats.ok || 0} (${Math.round(((stats.ok || 0) / (stats.total || 1)) * 100)}%)`,
+            `• Diferencias: ${stats.differences || 0} (${Math.round(((stats.differences || 0) / (stats.total || 1)) * 100)}%)`,
+            `• Stock total: ${stats.total_stock || 0}`,
+            `• Progreso: ${stats.percentage || 0}%`,
+            `• Ubicaciones activas: ${stats.locations || 0}`
+        ];
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        statsText.forEach(stat => {
+            doc.text(stat, margin + 5, yPos);
+            yPos += 6;
+        });
+        
+        yPos += 10;
+        
+        // Capturar y agregar gráficos al PDF
+        try {
+            // Gráfico de estado
+            const statusChartCanvas = document.getElementById('statusChart');
+            if (statusChartCanvas) {
+                const statusChartImage = await captureChartAsImage(statusChartCanvas);
+                doc.addImage(statusChartImage, 'PNG', margin, yPos, 85, 85);
+                
+                // Gráfico de tendencia al lado
+                const trendChartCanvas = document.getElementById('trendChart');
+                if (trendChartCanvas) {
+                    const trendChartImage = await captureChartAsImage(trendChartCanvas);
+                    doc.addImage(trendChartImage, 'PNG', margin + 90, yPos, 85, 85);
+                }
+                
+                yPos += 95;
+            }
+        } catch (chartError) {
+            console.warn('No se pudieron incluir los gráficos:', chartError);
+        }
+        
+        // Si hay espacio, agregar tabla de diferencias
+        if (yPos < 250) {
+            doc.addPage();
+            yPos = margin;
+            
+            // Tabla de diferencias
+            const rows = document.querySelectorAll('#tableBody tr[data-item]');
+            const differences = [];
+            
+            rows.forEach(row => {
+                try {
+                    const item = JSON.parse(row.getAttribute('data-item'));
+                    if (item.estado === 'Diferencia' && row.style.display !== 'none') {
+                        const diff = item.diferencia || (item.real_count - item.stock) || 0;
+                        differences.push([
+                            item.material_code || '',
+                            (item.material_text || '').substring(0, 25) + '...',
+                            item.location || '',
+                            (item.stock || 0).toString(),
+                            (item.real_count || 0).toString(),
+                            diff > 0 ? `+${diff}` : diff.toString(),
+                            item.estado || ''
+                        ]);
+                    }
+                } catch (error) {
+                    console.error('Error procesando fila para PDF:', error);
+                }
+            });
+            
+            if (differences.length > 0) {
+                doc.setFontSize(14);
+                doc.setTextColor(44, 62, 80);
+                doc.setFont('helvetica', 'bold');
+                doc.text('DIFERENCIAS ENCONTRADAS', pageWidth / 2, yPos, { align: 'center' });
+                yPos += 15;
+                
+                doc.autoTable({
+                    startY: yPos,
+                    head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
+                    body: differences,
+                    margin: { left: margin, right: margin },
+                    styles: { 
+                        fontSize: 8,
+                        cellPadding: 2
+                    },
+                    headStyles: { 
+                        fillColor: [44, 62, 80],
+                        textColor: 255,
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 249, 250]
+                    }
+                });
+            }
+        }
+        
+        // Generar nombre de archivo y guardar
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `reporte_inventario_${date}.pdf`;
+        
+        doc.save(filename);
+        
+        hideLoading();
+        showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        hideLoading();
+        showNotification('Error', 'No se pudo generar el PDF', 'error');
+    }
+}
+
+async function captureChartAsImage(canvas) {
+    return new Promise((resolve, reject) => {
+        try {
+            // Crear un canvas temporal
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Configurar tamaño
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            
+            // Fondo blanco
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Dibujar el gráfico
+            tempCtx.drawImage(canvas, 0, 0);
+            
+            // Convertir a imagen
+            const imageData = tempCanvas.toDataURL('image/png');
+            resolve(imageData);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+function exportDifferences() {
+    console.log('📤 Exportando diferencias...');
+    
+    showLoading('Preparando exportación...', 'Generando archivo Excel de diferencias');
+    
+    // Obtener solo items con diferencias
+    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    const differences = [];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            if (item.estado === 'Diferencia' && row.style.display !== 'none') {
+                differences.push(item);
+            }
+        } catch (error) {
+            console.error('Error procesando fila para exportación:', error);
+        }
+    });
+    
+    if (differences.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin diferencias',
+            text: 'No hay diferencias para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Crear datos para Excel
+    const excelData = [
+        ['REPORTE DE DIFERENCIAS - INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Total diferencias:', differences.length],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo']
+    ];
+    
+    differences.forEach(item => {
+        const diff = item.diferencia || (item.real_count - item.stock) || 0;
+        excelData.push([
+            item.material_code || '',
+            item.material_text || '',
+            item.location || '',
+            item.stock || 0,
+            item.real_count || item.count || 0,
+            diff,
+            item.estado || '',
+            item.usuario || 'N/A',
+            item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'
+        ]);
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
+    
+    // Aplicar estilos (ancho de columnas)
+    const wscols = [
+        {wch: 15}, // Código
+        {wch: 40}, // Descripción
+        {wch: 12}, // Ubicación
+        {wch: 12}, // Stock
+        {wch: 12}, // Conteo
+        {wch: 12}, // Diferencia
+        {wch: 12}, // Estado
+        {wch: 15}, // Usuario
+        {wch: 15}  // Fecha
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `diferencias_inventario_${date}.xlsx`;
+    
+    // Descargar archivo
+    XLSX.writeFile(wb, fileName);
+    hideLoading();
+    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+}
+
+function exportTableToExcel() {
+    console.log('📊 Exportando tabla completa a Excel...');
+    
+    showLoading('Exportando tabla...', 'Preparando archivo Excel profesional');
+    
+    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+    
+    if (rows.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos visibles para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Crear libro de trabajo
+    const wb = XLSX.utils.book_new();
+    
+    // Hoja 1: Datos completos
+    const excelData = [
+        ['REPORTE COMPLETO DE INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Generado por:', 'Sistema de Inventario'],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones', 'Crítico']
+    ];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            const diff = item.diferencia || (item.real_count - item.stock) || 0;
+            const isCritical = Math.abs(diff) > (item.stock * 0.2) && Math.abs(diff) > 5;
+            
+            excelData.push([
+                item.material_code || '',
+                item.material_text || '',
+                item.location || '',
+                item.stock || 0,
+                item.real_count || item.count || 0,
+                diff,
+                item.estado || '',
+                item.usuario || 'N/A',
+                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
+                item.notes || '',
+                isCritical ? 'SI' : 'NO'
+            ]);
+        } catch (error) {
+            console.error('Error exportando fila:', error);
+        }
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario Completo');
+    
+    // Aplicar estilos y anchos de columna
+    const wscols = [
+        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
+        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
+        {wch: 15}, {wch: 30}, {wch: 10}
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `inventario_completo_${date}.xlsx`;
+    
+    XLSX.writeFile(wb, fileName);
+    hideLoading();
+    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+}
+
+function exportTableToCSV() {
+    console.log('📄 Exportando a CSV...');
+    
+    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+    
+    if (rows.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos visibles para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Crear contenido CSV
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Código,Descripción,Ubicación,Stock Sistema,Conteo Físico,Diferencia,Estado,Usuario,Fecha Conteo,Observaciones\n";
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            const diff = item.diferencia || (item.real_count - item.stock) || 0;
+            
+            const rowData = [
+                `"${item.material_code || ''}"`,
+                `"${(item.material_text || '').replace(/"/g, '""')}"`,
+                `"${item.location || ''}"`,
+                item.stock || 0,
+                item.real_count || item.count || 0,
+                diff,
+                `"${item.estado || ''}"`,
+                `"${item.usuario || 'N/A'}"`,
+                `"${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'}"`,
+                `"${(item.notes || '').replace(/"/g, '""')}"`
+            ];
+            
+            csvContent += rowData.join(",") + "\n";
+        } catch (error) {
+            console.error('Error exportando fila a CSV:', error);
+        }
+    });
+    
+    // Descargar archivo
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `inventario_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('CSV exportado', 'Archivo CSV descargado correctamente', 'success');
+}
+
+// ================= FUNCIONES AVANZADAS =================
+function showAnalytics() {
+    console.log('📊 Mostrando analítica avanzada...');
+    
+    Swal.fire({
+        title: `<div class="text-info"><i class="bi bi-graph-up me-2"></i>Analítica Avanzada</div>`,
+        html: `
+            <div class="text-start">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Análisis Predictivo</h6>
+                                <p class="small text-muted">Basado en datos históricos, se predice:</p>
+                                <ul class="small">
+                                    <li>Stock óptimo para próximos 30 días</li>
+                                    <li>Tendencias de consumo</li>
+                                    <li>Puntos de reorden sugeridos</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="bi bi-lightning me-2"></i>Optimización</h6>
+                                <p class="small text-muted">Recomendaciones inteligentes:</p>
+                                <ul class="small">
+                                    <li>Redistribución de stock</li>
+                                    <li>Minimización de diferencias</li>
+                                    <li>Mejora en procesos de conteo</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6 class="fw-bold">Reportes Disponibles:</h6>
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('trends')">
+                            <i class="bi bi-graph-up me-2"></i>Reporte de Tendencias
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('optimization')">
+                            <i class="bi bi-gear me-2"></i>Reporte de Optimización
+                        </button>
+                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('predictive')">
+                            <i class="bi bi-cpu me-2"></i>Análisis Predictivo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-play-circle me-1"></i>Ejecutar Análisis',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cerrar',
+        confirmButtonColor: '#2980b9',
+        width: '700px'
+    });
+}
+
+function showItemDetails(button) {
+    const row = button.closest('tr');
+    const item = JSON.parse(row.getAttribute('data-item'));
+    
+    const diff = item.diferencia || (item.real_count - item.stock) || 0;
+    const diffAbs = Math.abs(diff);
+    const isCritical = diffAbs > (item.stock * 0.2) && diffAbs > 5;
+    
+    Swal.fire({
+        title: `<div class="text-success"><i class="bi bi-info-circle me-2"></i>Detalles del Item</div>`,
+        html: `
+            <div class="text-start">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-upc me-2"></i>Información Básica</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Código:</strong> ${item.material_code || 'N/A'}</p>
+                                <p><strong>Descripción:</strong> ${item.material_text || 'Sin descripción'}</p>
+                                <p><strong>Ubicación:</strong> ${item.location || 'N/A'}</p>
+                                <p><strong>Categoría:</strong> ${item.category || 'No especificada'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="bi bi-box me-2"></i>Stock y Conteo</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>Stock Sistema:</strong> ${item.stock || 0}</p>
+                                <p><strong>Conteo Físico:</strong> ${item.real_count || item.count || 0}</p>
+                                <p><strong>Diferencia:</strong> <span class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
+                                    ${diff > 0 ? '+' : ''}${diff}
+                                </span></p>
+                                <p><strong>Estado:</strong> <span class="badge ${item.estado === 'OK' ? 'bg-success' : isCritical ? 'bg-danger' : item.estado === 'Diferencia' ? 'bg-warning' : 'bg-info'}">
+                                    ${item.estado || 'Pendiente'}
+                                </span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Última Actualización:</strong> ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'No registrado'}</p>
+                        <p><strong>Usuario:</strong> ${item.usuario || 'N/A'}</p>
+                        <p><strong>Observaciones:</strong> ${item.notes || 'Sin observaciones'}</p>
+                    </div>
+                </div>
+                
+                ${isCritical ? `
+                <div class="alert alert-danger mt-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>¡ATENCIÓN!</strong> Esta diferencia es crítica. Se recomienda acción inmediata.
+                </div>
+                ` : ''}
+            </div>
+        `,
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
+        confirmButtonColor: '#27ae60',
+        width: '800px'
+    });
 }
 
 // ================= UTILIDADES =================
@@ -3810,165 +3666,129 @@ function formatDate(dateString) {
     }
 }
 
-function initWebSocket() {
-    // Implementar WebSocket para actualizaciones en tiempo real
-    if (typeof WebSocket !== 'undefined') {
-        try {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/inventory`;
-            
-            CONFIG.websocket = new WebSocket(wsUrl);
-            
-            CONFIG.websocket.onopen = function() {
-                console.log('WebSocket conectado');
-                showNotification('Conectado', 'Conexión en tiempo real establecida', 'success');
-            };
-            
-            CONFIG.websocket.onmessage = function(event) {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            };
-            
-            CONFIG.websocket.onerror = function(error) {
-                console.error('Error en WebSocket:', error);
-            };
-            
-            CONFIG.websocket.onclose = function() {
-                console.log('WebSocket desconectado');
-                // Intentar reconectar después de 5 segundos
-                setTimeout(initWebSocket, 5000);
-            };
-            
-        } catch (error) {
-            console.error('Error inicializando WebSocket:', error);
-        }
-    }
-}
-
-function handleWebSocketMessage(data) {
-    switch(data.type) {
-        case 'update':
-            // Actualizar item específico
-            updateItemInTable(data.item);
-            break;
-        case 'new_count':
-            // Agregar nuevo conteo a actividades
-            addNewActivity(data.activity);
-            break;
-        case 'stats_update':
-            // Actualizar estadísticas
-            updateDashboardStats(data.stats);
-            break;
-        case 'alert':
-            // Mostrar alerta
-            showNotification(data.title, data.message, data.level || 'warning');
-            break;
-    }
-}
-
-function updateItemInTable(item) {
-    const rows = document.querySelectorAll('#tableBody tr[data-item]');
-    rows.forEach(row => {
-        try {
-            const rowItem = JSON.parse(row.getAttribute('data-item'));
-            if (rowItem.material_code === item.material_code && rowItem.location === item.location) {
-                // Actualizar fila
-                row.setAttribute('data-item', JSON.stringify(item));
-                
-                // Resaltar actualización
-                row.classList.add('table-info');
-                setTimeout(() => row.classList.remove('table-info'), 2000);
-                
-                // Actualizar visualmente la fila
-                updateRowVisuals(row, item);
-            }
-        } catch (error) {
-            console.error('Error actualizando fila:', error);
+function updateActivityTimes() {
+    document.querySelectorAll('.time-ago').forEach(element => {
+        const timeStr = element.getAttribute('data-time');
+        if (timeStr) {
+            const time = new Date(timeStr);
+            element.textContent = timeAgo(time);
         }
     });
 }
 
-function updateRowVisuals(row, item) {
-    const diff = item.diferencia || (item.real_count - item.stock) || 0;
-    const diffAbs = Math.abs(diff);
-    const isCritical = diffAbs > (item.stock * 0.2) && diffAbs > 5;
-    const statusColor = item.estado === 'OK' ? 'success' : 
-                       isCritical ? 'danger' : 
-                       item.estado === 'Diferencia' ? 'warning' : 'info';
+function timeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
     
-    // Actualizar celdas relevantes
-    const cells = row.cells;
-    
-    // Celda 4: Conteo Físico
-    cells[4].innerHTML = `<span class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-        ${item.real_count || item.count || '-'}
-    </span>`;
-    
-    // Celda 5: Diferencia
-    cells[5].innerHTML = `<span class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-        ${diff > 0 ? `<i class="bi bi-plus-circle me-1"></i>+${diffAbs}` : 
-          diff < 0 ? `<i class="bi bi-dash-circle me-1"></i>-${diffAbs}` : 
-          '<span class="text-muted">0</span>'}
-    </span>`;
-    
-    // Celda 6: Estado
-    cells[6].innerHTML = `<span class="status-indicator status-${statusColor}">
-        <i class="bi ${item.estado === 'OK' ? 'bi-check-circle' : 
-                      isCritical ? 'bi-exclamation-triangle-fill' : 
-                      item.estado === 'Diferencia' ? 'bi-exclamation-triangle' : 
-                      'bi-clock'} me-1"></i>
-        ${item.estado || 'Pendiente'}
-    </span>`;
-    
-    // Celda 7: Tiempo
-    cells[7].innerHTML = `
-        <div class="small fw-bold">${formatTime(new Date())}</div>
-        <div class="extra-small text-muted">${formatDate(new Date())}</div>
-    `;
+    if (diffSec < 60) return 'Hace unos segundos';
+    if (diffMin < 60) return `Hace ${diffMin} min`;
+    if (diffHour < 24) return `Hace ${diffHour} h`;
+    if (diffDay < 7) return `Hace ${diffDay} d`;
+    return formatDate(date);
 }
 
-function addNewActivity(activity) {
-    const activityList = document.getElementById('activityList');
-    if (!activityList) return;
+function toggleAutoRefresh() {
+    CONFIG.autoRefresh = !CONFIG.autoRefresh;
+    const btn = document.getElementById('autoRefreshBtn');
     
-    // Crear nuevo elemento de actividad
-    const activityElement = document.createElement('div');
-    activityElement.className = `activity-item ${activity.status || 'info'} hover-lift`;
-    
-    const statusColor = activity.status === 'success' ? 'var(--success)' : 
-                       activity.status === 'warning' ? 'var(--warning)' : 'var(--danger)';
-    
-    activityElement.innerHTML = `
-        <div class="activity-content">
-            <div class="activity-icon" style="background: ${statusColor};">
-                <i class="bi ${activity.icon || 'bi-clock'}"></i>
-            </div>
-            <div class="activity-text">
-                <div class="activity-title">${activity.item_code || 'N/A'}</div>
-                <div class="activity-time">
-                    <i class="bi bi-clock"></i>
-                    <span class="time-ago" data-time="${new Date().toISOString()}">
-                        Ahora mismo
-                    </span>
-                </div>
-            </div>
-        </div>
-        <span class="activity-badge" style="background: ${statusColor};">
-            ${activity.count || 0}
-        </span>
-    `;
-    
-    // Agregar al inicio de la lista
-    activityList.insertBefore(activityElement, activityList.firstChild);
-    
-    // Limitar a 10 actividades
-    while (activityList.children.length > 10) {
-        activityList.removeChild(activityList.lastChild);
+    if (CONFIG.autoRefresh) {
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="bi bi-check-circle"></i>';
+        btn.title = 'Auto-refresh activado';
+        
+        showNotification('Auto-refresh activado', 'Los datos se actualizarán cada 30 segundos', 'success');
+        
+        // Iniciar intervalo
+        CONFIG.refreshIntervalId = setInterval(refreshDashboard, CONFIG.refreshInterval);
+        
+    } else {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-info');
+        btn.innerHTML = '<i class="bi bi-clock"></i>';
+        btn.title = 'Auto-refresh desactivado';
+        
+        showNotification('Auto-refresh desactivado', 'Actualización automática desactivada', 'info');
+        
+        // Detener intervalo
+        if (CONFIG.refreshIntervalId) {
+            clearInterval(CONFIG.refreshIntervalId);
+        }
     }
+}
+
+function setupAutoRefresh() {
+    if (CONFIG.autoRefresh) {
+        console.log('⏰ Auto-refresh configurado cada', CONFIG.refreshInterval / 1000, 'segundos');
+        CONFIG.refreshIntervalId = setInterval(refreshDashboard, CONFIG.refreshInterval);
+    }
+}
+
+function initEventListeners() {
+    console.log('🎮 Configurando event listeners...');
     
-    // Actualizar contador
-    const activityCount = parseInt(document.getElementById('activityCount').textContent) + 1;
-    document.getElementById('activityCount').textContent = activityCount;
+    // Búsqueda con debounce
+    const searchInput = document.getElementById('tableSearch');
+    let searchTimeout;
+    
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterTable, 350);
+    });
+    
+    // Teclas rápidas
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + R - Actualizar
+        if (e.ctrlKey && e.key === 'r') {
+            e.preventDefault();
+            refreshDashboard();
+        }
+        
+        // Ctrl + F - Buscar
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            searchInput?.focus();
+            searchInput?.select();
+        }
+        
+        // Ctrl + E - Exportar Excel
+        if (e.ctrlKey && e.key === 'e') {
+            e.preventDefault();
+            exportDifferences();
+        }
+        
+        // Ctrl + P - Exportar PDF
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            exportTableToPDF();
+        }
+        
+        // Esc - Limpiar filtros
+        if (e.key === 'Escape') {
+            document.getElementById('tableSearch').value = '';
+            document.getElementById('tableStatusFilter').value = 'all';
+            document.getElementById('tableLocationFilter').value = 'all';
+            filterTable();
+        }
+        
+        // F1 - Ayuda
+        if (e.key === 'F1') {
+            e.preventDefault();
+            showHelpModal();
+        }
+    });
+    
+    console.log('✅ Event listeners configurados');
+}
+
+function updateRealTimeStats() {
+    // Función para actualizar estadísticas en tiempo real
+    // Puede ser llamada periódicamente o desde eventos
+    console.log('📊 Actualizando estadísticas en tiempo real');
 }
 
 // ================= FUNCIONES GLOBALES =================
@@ -3985,9 +3805,8 @@ window.sortTable = sortTable;
 window.closeNotification = closeNotification;
 window.showAnalytics = showAnalytics;
 window.showItemDetails = showItemDetails;
-window.generateReport = generateReport;
 
-console.log('🎉 Dashboard de Inventario avanzado cargado exitosamente');
+console.log('🎉 Dashboard de Inventario cargado exitosamente');
 </script>
 
 {% endblock %}
