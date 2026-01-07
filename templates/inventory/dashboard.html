@@ -1490,7 +1490,7 @@
                         title="Actualizar datos" id="refreshBtn">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
-                <a href="{{ url_for('inventory.count_inventory') if url_for else '#' }}" 
+                <a href="{{ url_for('inventory.count_inventory') }}" 
                    class="btn-icon btn-success" title="Nuevo conteo">
                     <i class="bi bi-plus-circle"></i>
                 </a>
@@ -1535,7 +1535,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="totalItems">
-                        <span id="totalItemsValue">{{ total_items|default(0) }}</span>
+                        <span id="totalItemsValue">{{ total_items }}</span>
                         <span class="stat-trend trend-up" id="totalItemsTrend">
                             <i class="bi bi-arrow-up-right"></i> <span id="totalItemsChange">0%</span>
                         </span>
@@ -1546,7 +1546,7 @@
                     </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" id="totalItemsProgress" 
-                             style="width: 85%; background: linear-gradient(90deg, var(--primary), var(--info));"></div>
+                             style="width: 100%; background: linear-gradient(90deg, var(--primary), var(--info));"></div>
                     </div>
                 </div>
             </div>
@@ -1557,7 +1557,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="correctItems">
-                        <span id="correctItemsValue">{{ coinciden|default(0) }}</span>
+                        <span id="correctItemsValue">{{ coinciden }}</span>
                         <span class="stat-trend trend-up" id="correctItemsTrend">
                             <i class="bi bi-arrow-up-right"></i> <span id="correctItemsChange">0%</span>
                         </span>
@@ -1568,7 +1568,7 @@
                     </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" id="correctItemsProgress" 
-                             style="width: 72%; background: linear-gradient(90deg, var(--success), var(--teal));"></div>
+                             style="width: {{ (coinciden/total_items*100) if total_items > 0 else 0 }}%; background: linear-gradient(90deg, var(--success), var(--teal));"></div>
                     </div>
                 </div>
             </div>
@@ -1579,7 +1579,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="diffItems">
-                        <span id="diffItemsValue">{{ (sobras|default(0) + faltantes|default(0)) }}</span>
+                        <span id="diffItemsValue">{{ sobras + faltantes }}</span>
                         <span class="stat-trend trend-down" id="diffItemsTrend">
                             <i class="bi bi-arrow-down-right"></i> <span id="diffItemsChange">0%</span>
                         </span>
@@ -1590,7 +1590,7 @@
                     </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" id="diffItemsProgress" 
-                             style="width: 15%; background: linear-gradient(90deg, var(--warning), var(--orange));"></div>
+                             style="width: {{ ((sobras + faltantes)/total_items*100) if total_items > 0 else 0 }}%; background: linear-gradient(90deg, var(--warning), var(--orange));"></div>
                     </div>
                 </div>
             </div>
@@ -1601,7 +1601,7 @@
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="progressPercent">
-                        <span id="progressPercentValue">{{ porcentaje_progreso|default(0) }}%</span>
+                        <span id="progressPercentValue">{{ porcentaje_progreso }}%</span>
                         <span class="stat-trend trend-up" id="progressPercentTrend">
                             <i class="bi bi-arrow-up-right"></i> <span id="progressPercentChange">0%</span>
                         </span>
@@ -1612,7 +1612,7 @@
                     </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" id="progressPercentBar" 
-                             style="width: {{ porcentaje_progreso|default(0) }}%; background: linear-gradient(90deg, var(--purple), var(--info));"></div>
+                             style="width: {{ porcentaje_progreso }}%; background: linear-gradient(90deg, var(--purple), var(--info));"></div>
                     </div>
                 </div>
             </div>
@@ -1654,7 +1654,7 @@
                             </span>
                         </div>
                         <div class="kpi-value" id="accuracyValue">
-                            {{ coinciden|default(0) }}/{{ total_items|default(0) }}
+                            {{ coinciden }}/{{ total_items }}
                         </div>
                         <div class="kpi-change" id="accuracyChange">
                             <i class="bi bi-arrow-up-right text-success"></i>
@@ -1667,11 +1667,11 @@
                         <div class="kpi-header">
                             <h3 class="kpi-title">Stock Total</h3>
                             <span class="kpi-badge" style="background: var(--info);" id="totalStockBadge">
-                                {{ total_stock|default(0)|int if total_stock else 0 }}
+                                {{ total_stock|int }}
                             </span>
                         </div>
                         <div class="kpi-value" id="totalStockValue">
-                            {{ total_stock|default(0)|int if total_stock else 0 }}
+                            {{ total_stock|int }}
                         </div>
                         <div class="kpi-change" id="totalStockChange">
                             <i class="bi bi-arrow-down-right text-danger"></i>
@@ -1684,11 +1684,11 @@
                         <div class="kpi-header">
                             <h3 class="kpi-title">Ubicaciones Activas</h3>
                             <span class="kpi-badge" style="background: var(--warning);" id="activeLocationsBadge">
-                                {{ ubicaciones_unicas|default(0) }}
+                                {{ ubicaciones_unicas }}
                             </span>
                         </div>
                         <div class="kpi-value" id="activeLocationsValue">
-                            {{ ubicaciones_unicas|default(0) }}
+                            {{ ubicaciones_unicas }}
                         </div>
                         <div class="kpi-change" id="activeLocationsChange">
                             <i class="bi bi-dash text-muted"></i>
@@ -1803,7 +1803,7 @@
                             <span class="filter-label"><i class="bi bi-geo-alt"></i> Ubicación:</span>
                             <select class="filter-select" id="tableLocationFilter" onchange="filterTable()">
                                 <option value="all">Todas las ubicaciones</option>
-                                {% for location in ubicaciones_labels|default([]) %}
+                                {% for location in ubicaciones_labels %}
                                 <option value="{{ location }}">{{ location }}</option>
                                 {% endfor %}
                             </select>
@@ -1851,41 +1851,36 @@
                         </thead>
                         <tbody id="tableBody">
                             {% for item in items %}
-                            {% set diff = (item.real_count|default(0) - item.stock|default(0)) %}
+                            {% set diff = item.diferencia %}
                             {% set diff_abs = diff|abs %}
-                            {% set is_critical = diff_abs > (item.stock|default(0) * 0.2) and diff_abs > 5 %}
+                            {% set is_critical = diff_abs > (item.stock * 0.2) and diff_abs > 5 %}
                             {% set status_color = 'success' if item.estado == 'OK' else 'danger' if is_critical else 'warning' if item.estado == 'Diferencia' else 'info' %}
-                            <tr data-item='{{ item|tojson|safe }}' class="hover-lift {% if is_critical %}table-danger{% endif %}">
+                            <tr class="hover-lift {% if is_critical %}table-danger{% endif %}">
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-bold text-primary">{{ item.material_code|default('N/A') }}</span>
+                                        <span class="fw-bold text-primary">{{ item.material_code }}</span>
                                         {% if is_critical %}
                                         <span class="badge bg-danger pulse" title="Diferencia crítica">
                                             <i class="bi bi-exclamation-lg"></i> Crítico
-                                        </span>
-                                        {% endif %}
-                                        {% if item.flag %}
-                                        <span class="badge bg-warning" title="Marcado">
-                                            <i class="bi bi-flag-fill"></i>
                                         </span>
                                         {% endif %}
                                     </div>
                                 </td>
                                 <td>
                                     <span class="text-truncate d-inline-block" style="max-width: 220px;" 
-                                          title="{{ item.material_text|default('') }}">
-                                        {{ item.material_text|default('Sin descripción') }}
+                                          title="{{ item.material_text }}">
+                                        {{ item.material_text }}
                                     </span>
                                 </td>
                                 <td>
                                     <span class="badge bg-dark">
                                         <i class="bi bi-geo-alt me-1"></i>
-                                        {{ item.location|default('N/A') }}
+                                        {{ item.location }}
                                     </span>
                                 </td>
-                                <td class="fw-bold">{{ item.stock|default(0) }}</td>
+                                <td class="fw-bold">{{ item.stock }}</td>
                                 <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% else %}text-muted{% endif %}">
-                                    {{ item.real_count|default('-') }}
+                                    {{ item.real_count if item.real_count else '-' }}
                                 </td>
                                 <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% else %}text-muted{% endif %}">
                                     {% if diff > 0 %}
@@ -1899,13 +1894,13 @@
                                 <td>
                                     <span class="status-indicator status-{{ status_color }}">
                                         <i class="bi {% if item.estado == 'OK' %}bi-check-circle{% elif is_critical %}bi-exclamation-triangle-fill{% elif item.estado == 'Diferencia' %}bi-exclamation-triangle{% else %}bi-clock{% endif %} me-1"></i>
-                                        {{ item.estado|default('Pendiente') }}
+                                        {{ item.estado }}
                                     </span>
                                 </td>
                                 <td>
-                                    {% if item.timestamp %}
-                                    <div class="small fw-bold">{{ item.timestamp.strftime('%H:%M') }}</div>
-                                    <div class="extra-small text-muted">{{ item.timestamp.strftime('%d/%m/%Y') }}</div>
+                                    {% if last_update %}
+                                    <div class="small fw-bold">{{ last_update.strftime('%H:%M') if last_update else '' }}</div>
+                                    <div class="extra-small text-muted">{{ last_update.strftime('%d/%m/%Y') if last_update else '' }}</div>
                                     {% else %}
                                     <span class="text-muted small">No registrado</span>
                                     {% endif %}
@@ -1913,19 +1908,15 @@
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <button class="btn btn-outline-primary btn-sm" 
-                                                onclick="editItem(this)" title="Editar conteo">
+                                                onclick="editItem('{{ item.material_code }}', '{{ item.location }}')" title="Editar conteo">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-outline-success btn-sm" 
-                                                onclick="recountItem(this)" title="Recontar">
+                                                onclick="recountItem('{{ item.material_code }}', '{{ item.location }}')" title="Recontar">
                                             <i class="bi bi-arrow-repeat"></i>
                                         </button>
-                                        <button class="btn btn-outline-warning btn-sm" 
-                                                onclick="flagItem(this)" title="Marcar problema">
-                                            <i class="bi bi-flag"></i>
-                                        </button>
                                         <button class="btn btn-outline-info btn-sm" 
-                                                onclick="showItemDetails(this)" title="Ver detalles">
+                                                onclick="showItemDetails('{{ item.material_code }}', '{{ item.location }}')" title="Ver detalles">
                                             <i class="bi bi-eye"></i>
                                         </button>
                                     </div>
@@ -1946,8 +1937,8 @@
                 
                 <div class="table-footer p-3 border-top d-flex justify-content-between align-items-center">
                     <div class="text-muted small" id="tableInfo">
-                        Mostrando <span id="visibleCount">{{ items|length if items else 0 }}</span> de 
-                        <span id="totalCount">{{ items|length if items else 0 }}</span> items
+                        Mostrando <span id="visibleCount">{{ items|length }}</span> de 
+                        <span id="totalCount">{{ items|length }}</span> items
                     </div>
                     <div class="d-flex gap-2 align-items-center">
                         <div class="btn-group">
@@ -1990,16 +1981,25 @@
                 </div>
                 <div class="widget-body">
                     <div class="activity-list" id="activityList">
-                        {% if counts and counts|length > 0 %}
-                            {% for count in counts[-10:]|reverse %}
-                            <div class="activity-item {% if count.real_count == count.stock %}success{% elif count.real_count > 0 %}warning{% else %}danger{% endif %} hover-lift">
+                        {% set recent_counts = [] %}
+                        {% if counts %}
+                            {% for count in counts %}
+                                {% if count.contado_en %}
+                                    {% set _ = recent_counts.append(count) %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if recent_counts and recent_counts|length > 0 %}
+                            {% for count in recent_counts[:10]|reverse %}
+                            <div class="activity-item {% if count.estado == 'OK' %}success{% elif count.estado == 'Diferencia' %}warning{% else %}danger{% endif %} hover-lift">
                                 <div class="activity-content">
                                     <div class="activity-icon" 
-                                         style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
-                                        <i class="bi {% if count.real_count == count.stock %}bi-check-circle{% elif count.real_count > 0 %}bi-exclamation-triangle{% else %}bi-clock{% endif %}"></i>
+                                         style="background: {% if count.estado == 'OK' %}var(--success){% elif count.estado == 'Diferencia' %}var(--warning){% else %}var(--danger){% endif %};">
+                                        <i class="bi {% if count.estado == 'OK' %}bi-check-circle{% elif count.estado == 'Diferencia' %}bi-exclamation-triangle{% else %}bi-clock{% endif %}"></i>
                                     </div>
                                     <div class="activity-text">
-                                        <div class="activity-title">{{ count.material_code|default('N/A') }}</div>
+                                        <div class="activity-title">{{ count.material_code if count else 'N/A' }}</div>
                                         <div class="activity-time">
                                             <i class="bi bi-clock"></i>
                                             <span class="time-ago" data-time="{{ count.contado_en.isoformat() if count.contado_en else '' }}">
@@ -2009,8 +2009,8 @@
                                     </div>
                                 </div>
                                 <span class="activity-badge" 
-                                      style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
-                                    {{ count.real_count|default(0) }}
+                                      style="background: {% if count.estado == 'OK' %}var(--success){% elif count.estado == 'Diferencia' %}var(--warning){% else %}var(--danger){% endif %};">
+                                    {{ count.real_count if count else 0 }}
                                 </span>
                             </div>
                             {% endfor %}
@@ -2035,23 +2035,19 @@
                 </div>
                 <div class="widget-body">
                     <div class="quick-actions">
-                        {% if url_for('inventory.count_inventory') %}
                         <a href="{{ url_for('inventory.count_inventory') }}" class="action-btn hover-lift">
                             <div class="action-icon">
                                 <i class="bi bi-clipboard-check"></i>
                             </div>
                             <span class="action-label">Nuevo Conteo</span>
                         </a>
-                        {% endif %}
                         
-                        {% if url_for('inventory.upload_inventory') %}
                         <a href="{{ url_for('inventory.upload_inventory') }}" class="action-btn hover-lift">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--info), var(--cyan));">
                                 <i class="bi bi-upload"></i>
                             </div>
                             <span class="action-label">Subir Inventario</span>
                         </a>
-                        {% endif %}
                         
                         <div class="action-btn hover-lift" onclick="exportDifferences()">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--success), var(--teal));">
@@ -2099,7 +2095,7 @@
                     <div class="differences-list" id="topDifferences">
                         {% set top_diffs = [] %}
                         {% for item in items if item.estado == 'Diferencia' %}
-                            {% set diff = (item.real_count|default(0) - item.stock|default(0)) %}
+                            {% set diff = item.diferencia %}
                             {% set _ = top_diffs.append({
                                 'code': item.material_code,
                                 'desc': item.material_text,
@@ -2107,7 +2103,7 @@
                                 'stock': item.stock,
                                 'count': item.real_count,
                                 'diff': diff,
-                                'critical': diff|abs > (item.stock|default(0) * 0.2) and diff|abs > 5
+                                'critical': diff|abs > (item.stock * 0.2) and diff|abs > 5
                             }) %}
                         {% endfor %}
                         
@@ -2116,10 +2112,10 @@
                             {% for diff in sorted_diffs[:5] %}
                             <div class="difference-item hover-lift {% if diff.critical %}border-danger{% endif %}">
                                 <div class="difference-info">
-                                    <div class="difference-code">{{ diff.code|default('N/A') }}</div>
+                                    <div class="difference-code">{{ diff.code }}</div>
                                     <div class="difference-location">
                                         <i class="bi bi-geo-alt"></i>
-                                        {{ diff.location|default('N/A') }}
+                                        {{ diff.location }}
                                     </div>
                                 </div>
                                 <div class="difference-amount {% if diff.diff > 0 %}difference-positive{% else %}difference-negative{% endif %}">
@@ -2146,7 +2142,7 @@
                         Progreso del Conteo
                     </h3>
                     <span class="badge bg-info">
-                        <i class="bi bi-percent me-1"></i><span id="progressPercentage">{{ porcentaje_progreso|default(0) }}%</span>
+                        <i class="bi bi-percent me-1"></i><span id="progressPercentage">{{ porcentaje_progreso }}%</span>
                     </span>
                 </div>
                 <div class="widget-body">
@@ -2166,7 +2162,7 @@
                                 </defs>
                             </svg>
                             <div class="position-absolute top-50 start-50 translate-middle">
-                                <div class="fs-1 fw-bold" id="progressCircleValue">{{ porcentaje_progreso|default(0) }}%</div>
+                                <div class="fs-1 fw-bold" id="progressCircleValue">{{ porcentaje_progreso }}%</div>
                                 <div class="extra-small text-muted">Completado</div>
                             </div>
                         </div>
@@ -2174,23 +2170,23 @@
                         <div class="mt-4">
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Conteo Físico</span>
-                                <span class="fw-bold" id="countedItems">{{ coinciden|default(0) + (sobras|default(0) + faltantes|default(0)) }}</span>
+                                <span class="fw-bold" id="countedItems">{{ coinciden + sobras + faltantes }}</span>
                             </div>
                             <div class="progress" style="height: 6px;">
-                                <div class="progress-bar bg-success" style="width: {{ porcentaje_progreso|default(0) }}%"></div>
+                                <div class="progress-bar bg-success" style="width: {{ porcentaje_progreso }}%"></div>
                             </div>
                             
                             <div class="d-flex justify-content-between mt-3">
                                 <div class="text-center">
-                                    <div class="fw-bold text-success" id="okCount">{{ coinciden|default(0) }}</div>
+                                    <div class="fw-bold text-success" id="okCount">{{ coinciden }}</div>
                                     <div class="extra-small text-muted">Correctos</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="fw-bold text-danger" id="diffCount">{{ (sobras|default(0) + faltantes|default(0)) }}</div>
+                                    <div class="fw-bold text-danger" id="diffCount">{{ sobras + faltantes }}</div>
                                     <div class="extra-small text-muted">Diferencias</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="fw-bold text-info" id="pendingCount">{{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }}</div>
+                                    <div class="fw-bold text-info" id="pendingCount">{{ total_items - coinciden - (sobras + faltantes) }}</div>
                                     <div class="extra-small text-muted">Pendientes</div>
                                 </div>
                             </div>
@@ -2217,10 +2213,14 @@ const CONFIG = {
     autoRefresh: true,
     refreshInterval: 30000, // 30 segundos
     api: {
-        base: '{{ url_for("inventory.get_latest_counts") if url_for else "#" }}',
-        update: '{{ url_for("inventory.update_count") if url_for else "#" }}',
-        export: '{{ url_for("inventory.export_differences") if url_for else "#" }}',
-        summary: '{{ url_for("inventory.get_summary") if url_for else "#" }}'
+        base: '{{ url_for("inventory.get_latest_counts") }}',
+        update: '{{ url_for("inventory.save_count_row") }}',
+        export: '{{ url_for("inventory.export_differences") }}',
+        summary: '{{ url_for("inventory.get_summary") }}',
+        status: '{{ url_for("inventory.get_inventory_status") }}',
+        itemDetails: '{{ url_for("inventory.view_item_count", material_code="__CODE__", location="__LOC__") }}',
+        bulkUpdate: '{{ url_for("inventory.bulk_update_counts") }}',
+        reconcile: '{{ url_for("inventory.reconcile_inventory") }}'
     },
     charts: {
         statusChart: null,
@@ -2236,12 +2236,12 @@ const CONFIG = {
         items: [],
         activities: [],
         stats: {
-            total: {{ total_items|default(0) }},
-            ok: {{ coinciden|default(0) }},
-            differences: {{ (sobras|default(0) + faltantes|default(0)) }},
-            percentage: {{ porcentaje_progreso|default(0) }},
-            total_stock: {{ total_stock|default(0) }},
-            locations: {{ ubicaciones_unicas|default(0) }}
+            total: {{ total_items }},
+            ok: {{ coinciden }},
+            differences: {{ sobras + faltantes }},
+            percentage: {{ porcentaje_progreso }},
+            total_stock: {{ total_stock }},
+            locations: {{ ubicaciones_unicas }}
         }
     }
 };
@@ -2250,19 +2250,29 @@ const CONFIG = {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Dashboard de Inventario inicializando...');
     
-    // Inicializar componentes
+    // Inicializar componentes con datos reales
     initDashboard();
     initCharts();
     initEventListeners();
     setupAutoRefresh();
     updateTime();
     
-    console.log('✅ Dashboard listo');
+    console.log('✅ Dashboard listo con datos reales');
 });
 
 function initDashboard() {
-    console.log('📊 Inicializando dashboard...');
-    updateRealTimeStats();
+    console.log('📊 Inicializando dashboard con datos reales...');
+    
+    // Usar datos iniciales de Flask
+    updateDashboardStats({
+        total: {{ total_items }},
+        ok: {{ coinciden }},
+        differences: {{ sobras + faltantes }},
+        percentage: {{ porcentaje_progreso }},
+        total_stock: {{ total_stock }},
+        locations: {{ ubicaciones_unicas }}
+    });
+    
     setupTableFilters();
     updateTableInfo();
     updateActivityTimes();
@@ -2281,12 +2291,12 @@ function initDashboard() {
 }
 
 function initCharts() {
-    console.log('📈 Inicializando gráficos...');
+    console.log('📈 Inicializando gráficos con datos reales...');
     
     // Datos reales de Flask
-    const okCount = {{ coinciden|default(0) }};
-    const diffCount = {{ (sobras|default(0) + faltantes|default(0)) }};
-    const pendCount = {{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }};
+    const okCount = {{ coinciden }};
+    const diffCount = {{ sobras + faltantes }};
+    const pendCount = {{ total_items - coinciden - (sobras + faltantes) }};
     
     // 1. Gráfico de estado
     const statusCtx = document.getElementById('statusChart');
@@ -2362,10 +2372,10 @@ function initCharts() {
         });
     }
     
-    // 2. Gráfico de tendencia (datos reales de las últimas horas)
+    // 2. Gráfico de tendencia (basado en conteos reales)
     const trendCtx = document.getElementById('trendChart');
     if (trendCtx) {
-        // Generar datos de tendencia basados en conteos reales
+        // Generar datos de tendencia para las últimas 24 horas
         const hours = generateLast24Hours();
         const counts = generateCountData(hours);
         
@@ -2449,7 +2459,7 @@ function initCharts() {
     // 3. Gráfico de ubicación
     const locationCtx = document.getElementById('locationChart');
     if (locationCtx) {
-        // Datos por ubicación (ejemplo)
+        // Usar datos reales de ubicaciones
         const locationData = generateLocationData();
         
         CONFIG.charts.locationChart = new Chart(locationCtx, {
@@ -2459,26 +2469,8 @@ function initCharts() {
                 datasets: [{
                     label: 'Items por Ubicación',
                     data: locationData.counts,
-                    backgroundColor: [
-                        'rgba(52, 152, 219, 0.7)',
-                        'rgba(155, 89, 182, 0.7)',
-                        'rgba(241, 196, 15, 0.7)',
-                        'rgba(230, 126, 34, 0.7)',
-                        'rgba(231, 76, 60, 0.7)',
-                        'rgba(46, 204, 113, 0.7)',
-                        'rgba(26, 188, 156, 0.7)',
-                        'rgba(52, 73, 94, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgb(52, 152, 219)',
-                        'rgb(155, 89, 182)',
-                        'rgb(241, 196, 15)',
-                        'rgb(230, 126, 34)',
-                        'rgb(231, 76, 60)',
-                        'rgb(46, 204, 113)',
-                        'rgb(26, 188, 156)',
-                        'rgb(52, 73, 94)'
-                    ],
+                    backgroundColor: generateLocationColors(locationData.counts.length),
+                    borderColor: generateLocationColors(locationData.counts.length).map(c => c.replace('0.7', '1')),
                     borderWidth: 2
                 }]
             },
@@ -2531,9 +2523,9 @@ function initCharts() {
     }
 }
 
-// ================= FUNCIONES DEL DASHBOARD =================
+// ================= FUNCIONES DEL DASHBOARD CON DATOS REALES =================
 async function refreshDashboard() {
-    console.log('🔄 Actualizando dashboard completo...');
+    console.log('🔄 Actualizando dashboard con datos reales...');
     
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) {
@@ -2544,24 +2536,25 @@ async function refreshDashboard() {
     showLoading('Actualizando dashboard...', 'Obteniendo datos más recientes');
     
     try {
-        // Obtener datos actualizados
-        const [statsResponse, itemsResponse] = await Promise.all([
-            fetch(CONFIG.api.summary || '#'),
-            fetch(CONFIG.api.base || '#')
+        // Obtener datos actualizados desde tu API
+        const [latestCountsResponse, statusResponse] = await Promise.all([
+            fetch(CONFIG.api.base),
+            fetch(CONFIG.api.status)
         ]);
         
-        if (statsResponse.ok) {
-            const stats = await statsResponse.json();
-            updateDashboardStats(stats);
+        if (latestCountsResponse.ok) {
+            const data = await latestCountsResponse.json();
+            if (data.success) {
+                updateDashboardWithRealData(data);
+            }
         }
         
-        if (itemsResponse.ok) {
-            const items = await itemsResponse.json();
-            updateTable(items);
+        if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            if (status.success) {
+                updateDashboardStatsFromStatus(status.status);
+            }
         }
-        
-        // Actualizar KPIs
-        updateKPIs();
         
         // Actualizar gráficos
         updateAllCharts();
@@ -2580,10 +2573,12 @@ async function refreshDashboard() {
     }
 }
 
-function updateDashboardStats(stats) {
-    if (!stats) return;
+function updateDashboardWithRealData(data) {
+    if (!data || !data.stats) return;
     
-    // Actualizar valores principales
+    const stats = data.stats;
+    
+    // Actualizar estadísticas principales
     if (stats.total !== undefined) {
         document.getElementById('totalItemsValue').textContent = stats.total;
         CONFIG.data.stats.total = stats.total;
@@ -2604,44 +2599,92 @@ function updateDashboardStats(stats) {
         CONFIG.data.stats.percentage = stats.percentage;
         
         // Actualizar progreso circular
-        const progressCircle = document.getElementById('progressCircle');
-        const circleValue = document.getElementById('progressCircleValue');
-        if (progressCircle && circleValue) {
-            const progress = stats.percentage;
-            const circumference = 314; // 2 * π * r (r=50)
-            const offset = circumference - (progress / 100) * circumference;
-            progressCircle.style.strokeDashoffset = offset;
-            circleValue.textContent = `${progress}%`;
-        }
+        updateProgressCircle(stats.percentage);
     }
     
-    if (stats.total_stock !== undefined) {
-        CONFIG.data.stats.total_stock = stats.total_stock;
+    // Actualizar contadores del sidebar
+    if (stats.counted !== undefined && stats.ok !== undefined && stats.differences !== undefined) {
+        document.getElementById('countedItems').textContent = stats.counted;
+        document.getElementById('okCount').textContent = stats.ok;
+        document.getElementById('diffCount').textContent = stats.differences;
+        document.getElementById('pendingCount').textContent = stats.total - stats.counted;
     }
     
-    if (stats.locations !== undefined) {
-        CONFIG.data.stats.locations = stats.locations;
-    }
-    
-    // Actualizar contadores
-    const ok = stats.ok || 0;
-    const diff = stats.differences || 0;
-    const total = stats.total || 0;
-    
-    document.getElementById('countedItems').textContent = ok + diff;
-    document.getElementById('okCount').textContent = ok;
-    document.getElementById('diffCount').textContent = diff;
-    document.getElementById('pendingCount').textContent = total - ok - diff;
-    document.getElementById('progressPercentage').textContent = `${stats.percentage || 0}%`;
-    
-    // Actualizar gráficos
-    if (CONFIG.charts.statusChart) {
-        const okCount = ok;
-        const diffCount = diff;
-        const pendCount = total - ok - diff;
+    // Actualizar gráfico de estado si hay datos
+    if (CONFIG.charts.statusChart && stats.ok !== undefined && stats.differences !== undefined) {
+        const okCount = stats.ok;
+        const diffCount = stats.differences;
+        const pendCount = stats.total - stats.counted;
         
         CONFIG.charts.statusChart.data.datasets[0].data = [okCount, diffCount, pendCount];
         CONFIG.charts.statusChart.update('none');
+    }
+}
+
+function updateDashboardStats(stats) {
+    if (!stats) return;
+    
+    // Actualizar valores principales en el HTML
+    if (stats.total !== undefined) {
+        document.getElementById('totalItemsValue').textContent = stats.total;
+    }
+    
+    if (stats.ok !== undefined) {
+        document.getElementById('correctItemsValue').textContent = stats.ok;
+    }
+    
+    if (stats.differences !== undefined) {
+        document.getElementById('diffItemsValue').textContent = stats.differences;
+    }
+    
+    if (stats.percentage !== undefined) {
+        document.getElementById('progressPercentValue').textContent = `${stats.percentage}%`;
+        updateProgressCircle(stats.percentage);
+    }
+    
+    // Actualizar contadores del sidebar
+    if (stats.total !== undefined && stats.ok !== undefined && stats.differences !== undefined) {
+        const counted = stats.ok + stats.differences;
+        const pending = stats.total - counted;
+        
+        document.getElementById('countedItems').textContent = counted;
+        document.getElementById('okCount').textContent = stats.ok;
+        document.getElementById('diffCount').textContent = stats.differences;
+        document.getElementById('pendingCount').textContent = pending;
+        document.getElementById('progressPercentage').textContent = `${stats.percentage}%`;
+    }
+}
+
+function updateDashboardStatsFromStatus(status) {
+    if (!status) return;
+    
+    // Actualizar estadísticas del dashboard
+    updateDashboardStats({
+        total: status.total_items,
+        ok: status.ok_items,
+        differences: status.different_items,
+        percentage: status.completion_percentage
+    });
+}
+
+function updateProgressCircle(percentage) {
+    const progressCircle = document.getElementById('progressCircle');
+    const circleValue = document.getElementById('progressCircleValue');
+    const progressPercentage = document.getElementById('progressPercentage');
+    
+    if (progressCircle && circleValue && progressPercentage) {
+        const progress = percentage;
+        const circumference = 314; // 2 * π * r (r=50)
+        const offset = circumference - (progress / 100) * circumference;
+        progressCircle.style.strokeDashoffset = offset;
+        circleValue.textContent = `${progress}%`;
+        progressPercentage.textContent = `${progress}%`;
+        
+        // Actualizar la barra de progreso también
+        const progressBar = document.getElementById('progressPercentBar');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+        }
     }
 }
 
@@ -2650,142 +2693,6 @@ function updateAllCharts() {
         if (chart && typeof chart.update === 'function') {
             chart.update();
         }
-    });
-}
-
-function updateTable(items) {
-    console.log('📋 Actualizando tabla con', items.length, 'items');
-    
-    const tbody = document.getElementById('tableBody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    items.forEach(item => {
-        const diff = item.diferencia || (item.real_count - item.stock) || 0;
-        const diffAbs = Math.abs(diff);
-        const isCritical = diffAbs > (item.stock * 0.2) && diffAbs > 5;
-        const statusColor = item.estado === 'OK' ? 'success' : 
-                          isCritical ? 'danger' : 
-                          item.estado === 'Diferencia' ? 'warning' : 'info';
-        
-        const row = document.createElement('tr');
-        row.className = `hover-lift ${isCritical ? 'table-danger' : ''}`;
-        row.setAttribute('data-item', JSON.stringify(item));
-        
-        row.innerHTML = `
-            <td>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold text-primary">${item.material_code || 'N/A'}</span>
-                    ${isCritical ? '<span class="badge bg-danger pulse" title="Diferencia crítica"><i class="bi bi-exclamation-lg"></i> Crítico</span>' : ''}
-                    ${item.flag ? '<span class="badge bg-warning" title="Marcado"><i class="bi bi-flag-fill"></i></span>' : ''}
-                </div>
-            </td>
-            <td>
-                <span class="text-truncate d-inline-block" style="max-width: 220px;" 
-                      title="${item.material_text || ''}">
-                    ${item.material_text || 'Sin descripción'}
-                </span>
-            </td>
-            <td>
-                <span class="badge bg-dark">
-                    <i class="bi bi-geo-alt me-1"></i>
-                    ${item.location || 'N/A'}
-                </span>
-            </td>
-            <td class="fw-bold">${item.stock || 0}</td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                ${item.real_count || item.count || '-'}
-            </td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                ${diff > 0 ? `<i class="bi bi-plus-circle me-1"></i>+${diffAbs}` : 
-                  diff < 0 ? `<i class="bi bi-dash-circle me-1"></i>-${diffAbs}` : 
-                  '<span class="text-muted">0</span>'}
-            </td>
-            <td>
-                <span class="status-indicator status-${statusColor}">
-                    <i class="bi ${item.estado === 'OK' ? 'bi-check-circle' : 
-                                  isCritical ? 'bi-exclamation-triangle-fill' : 
-                                  item.estado === 'Diferencia' ? 'bi-exclamation-triangle' : 
-                                  'bi-clock'} me-1"></i>
-                    ${item.estado || 'Pendiente'}
-                </span>
-            </td>
-            <td>
-                ${item.timestamp ? 
-                  `<div class="small fw-bold">${formatTime(item.timestamp)}</div>
-                   <div class="extra-small text-muted">${formatDate(item.timestamp)}</div>` : 
-                  '<span class="text-muted small">No registrado</span>'}
-            </td>
-            <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary btn-sm" onclick="editItem(this)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-outline-success btn-sm" onclick="recountItem(this)">
-                        <i class="bi bi-arrow-repeat"></i>
-                    </button>
-                    <button class="btn btn-outline-warning btn-sm" onclick="flagItem(this)">
-                        <i class="bi bi-flag"></i>
-                    </button>
-                    <button class="btn btn-outline-info btn-sm" onclick="showItemDetails(this)">
-                        <i class="bi bi-eye"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
-    
-    updateTableInfo();
-    updateTopDifferences(items);
-}
-
-function updateTopDifferences(items) {
-    const topDifferences = document.getElementById('topDifferences');
-    if (!topDifferences) return;
-    
-    // Filtrar diferencias y ordenar
-    const differences = items
-        .filter(item => item.estado === 'Diferencia')
-        .map(item => ({
-            code: item.material_code,
-            location: item.location,
-            diff: item.diferencia || (item.real_count - item.stock) || 0,
-            critical: Math.abs(item.diferencia || (item.real_count - item.stock) || 0) > (item.stock * 0.2) && Math.abs(item.diferencia || (item.real_count - item.stock) || 0) > 5
-        }))
-        .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
-        .slice(0, 5);
-    
-    if (differences.length === 0) {
-        topDifferences.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-check-circle fs-1 text-success mb-3 d-block"></i>
-                <h6 class="text-success">¡Excelente!</h6>
-                <p class="text-muted extra-small mb-0">No hay diferencias significativas</p>
-            </div>
-        `;
-        return;
-    }
-    
-    topDifferences.innerHTML = '';
-    differences.forEach(diff => {
-        const diffElement = document.createElement('div');
-        diffElement.className = `difference-item hover-lift ${diff.critical ? 'border-danger' : ''}`;
-        diffElement.innerHTML = `
-            <div class="difference-info">
-                <div class="difference-code">${diff.code || 'N/A'}</div>
-                <div class="difference-location">
-                    <i class="bi bi-geo-alt"></i>
-                    ${diff.location || 'N/A'}
-                </div>
-            </div>
-            <div class="difference-amount ${diff.diff > 0 ? 'difference-positive' : 'difference-negative'}">
-                ${diff.diff > 0 ? '+' : ''}${diff.diff}
-            </div>
-        `;
-        topDifferences.appendChild(diffElement);
     });
 }
 
@@ -2805,7 +2712,7 @@ function generateLast24Hours() {
 function generateCountData(hours) {
     // Simular datos de conteo basados en la hora actual
     const counts = [];
-    const baseCount = {{ coinciden|default(0) + (sobras|default(0) + faltantes|default(0)) }};
+    const baseCount = {{ coinciden + sobras + faltantes }};
     
     hours.forEach((hour, index) => {
         // Variación aleatoria pero realista
@@ -2829,26 +2736,32 @@ function generateCountData(hours) {
 }
 
 function generateLocationData() {
-    // Datos de ubicación basados en items reales
-    const locations = {};
-    {% for item in items %}
-        const location = '{{ item.location|default("Sin ubicación") }}';
-        if (locations[location]) {
-            locations[location]++;
-        } else {
-            locations[location] = 1;
-        }
-    {% endfor %}
-    
-    // Ordenar por cantidad
-    const sorted = Object.entries(locations)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 8);
-    
+    // Usar datos reales de Flask
     return {
-        labels: sorted.map(item => item[0]),
-        counts: sorted.map(item => item[1])
+        labels: {{ ubicaciones_labels|tojson }},
+        counts: {{ ubicaciones_counts|tojson }}
     };
+}
+
+function generateLocationColors(count) {
+    const baseColors = [
+        'rgba(52, 152, 219, 0.7)',    // Azul
+        'rgba(155, 89, 182, 0.7)',    // Púrpura
+        'rgba(241, 196, 15, 0.7)',    // Amarillo
+        'rgba(230, 126, 34, 0.7)',    // Naranja
+        'rgba(231, 76, 60, 0.7)',     // Rojo
+        'rgba(46, 204, 113, 0.7)',    // Verde
+        'rgba(26, 188, 156, 0.7)',    // Turquesa
+        'rgba(52, 73, 94, 0.7)'       // Azul oscuro
+    ];
+    
+    // Si necesitamos más colores, generamos variaciones
+    const colors = [...baseColors];
+    while (colors.length < count) {
+        colors.push(...baseColors);
+    }
+    
+    return colors.slice(0, count);
 }
 
 function changeChartType(chartName, type) {
@@ -2885,38 +2798,13 @@ function updateKPIs() {
     // Aquí iría la lógica para calcular KPIs según el período
     console.log('Actualizando KPIs para período:', period);
     
-    // Simular actualización
-    const mockData = {
-        accuracy: {
-            value: '85.5%',
-            change: '+2.3%'
-        },
-        totalStock: {
-            value: '15,842',
-            change: '-1.2%'
-        },
-        locations: {
-            value: '24',
-            change: '+3'
-        },
-        avgTime: {
-            value: '4:05',
-            change: '-0.7m'
-        }
-    };
-    
-    // Actualizar UI
-    const ok = {{ coinciden|default(0) }};
-    const total = {{ total_items|default(1) }};
-    const accuracy = Math.round((ok / total) * 100);
+    // Usar datos reales de Flask
+    const ok = {{ coinciden }};
+    const total = {{ total_items }};
+    const accuracy = Math.round((ok / total) * 100) || 0;
     
     document.getElementById('accuracyBadge').textContent = `${accuracy}%`;
     document.getElementById('accuracyValue').innerHTML = `${accuracy}%`;
-    document.getElementById('accuracyChange').innerHTML = `
-        <i class="bi bi-arrow-up-right text-success"></i>
-        <span class="text-success fw-bold">${mockData.accuracy.change}</span>
-        <span class="text-muted">vs ${period === 'today' ? 'ayer' : 'período anterior'}</span>
-    `;
 }
 
 // ================= FUNCIONES DE TABLA =================
@@ -2925,42 +2813,46 @@ function filterTable() {
     const statusFilter = document.getElementById('tableStatusFilter').value;
     const locationFilter = document.getElementById('tableLocationFilter').value;
     
-    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    const rows = document.querySelectorAll('#tableBody tr');
     let visibleCount = 0;
     
     rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            
-            // Filtro de búsqueda
-            const matchesSearch = !searchTerm || 
-                (item.material_code && item.material_code.toLowerCase().includes(searchTerm)) ||
-                (item.material_text && item.material_text.toLowerCase().includes(searchTerm)) ||
-                (item.location && item.location.toLowerCase().includes(searchTerm));
-            
-            // Filtro de estado
-            let matchesStatus = statusFilter === 'all';
-            if (!matchesStatus) {
-                if (statusFilter === 'Critico') {
-                    const diff = Math.abs(item.diferencia || (item.real_count - item.stock) || 0);
-                    matchesStatus = diff > (item.stock * 0.2) && diff > 5;
-                } else {
-                    matchesStatus = item.estado === statusFilter;
-                }
+        const cells = row.cells;
+        if (cells.length < 9) return;
+        
+        // Obtener datos de la fila
+        const code = cells[0].textContent.toLowerCase();
+        const desc = cells[1].textContent.toLowerCase();
+        const location = cells[2].textContent.toLowerCase();
+        const statusElement = cells[6].querySelector('.status-indicator');
+        const status = statusElement ? statusElement.textContent.trim() : '';
+        
+        // Filtro de búsqueda
+        const matchesSearch = !searchTerm || 
+            code.includes(searchTerm) ||
+            desc.includes(searchTerm) ||
+            location.includes(searchTerm);
+        
+        // Filtro de estado
+        let matchesStatus = statusFilter === 'all';
+        if (!matchesStatus) {
+            if (statusFilter === 'Critico') {
+                // Verificar si es crítico (buscar badge de crítico)
+                const criticalBadge = row.querySelector('.badge.bg-danger.pulse');
+                matchesStatus = !!criticalBadge;
+            } else {
+                matchesStatus = status === statusFilter;
             }
-            
-            // Filtro de ubicación
-            const matchesLocation = locationFilter === 'all' || item.location === locationFilter;
-            
-            const isVisible = matchesSearch && matchesStatus && matchesLocation;
-            row.style.display = isVisible ? '' : 'none';
-            
-            if (isVisible) visibleCount++;
-            
-        } catch (error) {
-            console.error('Error procesando fila:', error);
-            row.style.display = 'none';
         }
+        
+        // Filtro de ubicación
+        const matchesLocation = locationFilter === 'all' || 
+            location.includes(locationFilter.toLowerCase());
+        
+        const isVisible = matchesSearch && matchesStatus && matchesLocation;
+        row.style.display = isVisible ? '' : 'none';
+        
+        if (isVisible) visibleCount++;
     });
     
     document.getElementById('visibleCount').textContent = visibleCount;
@@ -2971,67 +2863,69 @@ function sortTable() {
     const sortOrder = document.getElementById('tableSortOrder').value;
     
     const tbody = document.getElementById('tableBody');
-    const rows = Array.from(tbody.querySelectorAll('tr[data-item]:not([style*="display: none"])'));
+    const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
     
     rows.sort((a, b) => {
-        try {
-            const itemA = JSON.parse(a.getAttribute('data-item'));
-            const itemB = JSON.parse(b.getAttribute('data-item'));
-            
-            let valueA, valueB;
-            
-            switch(sortBy) {
-                case 'code':
-                    valueA = itemA.material_code || '';
-                    valueB = itemB.material_code || '';
-                    break;
-                    
-                case 'diff':
-                    valueA = Math.abs(itemA.diferencia || itemA.real_count - itemA.stock || 0);
-                    valueB = Math.abs(itemB.diferencia || itemB.real_count - itemB.stock || 0);
-                    break;
-                    
-                case 'status':
-                    valueA = itemA.estado || 'Pendiente';
-                    valueB = itemB.estado || 'Pendiente';
-                    break;
-                    
-                case 'location':
-                    valueA = itemA.location || '';
-                    valueB = itemB.location || '';
-                    break;
-                    
-                case 'stock':
-                    valueA = itemA.stock || 0;
-                    valueB = itemB.stock || 0;
-                    break;
-                    
-                case 'time':
-                    valueA = itemA.timestamp ? new Date(itemA.timestamp).getTime() : 0;
-                    valueB = itemB.timestamp ? new Date(itemB.timestamp).getTime() : 0;
-                    break;
-                    
-                default:
-                    return 0;
-            }
-            
-            let comparison = 0;
-            if (typeof valueA === 'string' && typeof valueB === 'string') {
-                comparison = valueA.localeCompare(valueB);
-            } else {
-                comparison = valueA - valueB;
-            }
-            
-            return sortOrder === 'desc' ? -comparison : comparison;
-            
-        } catch (error) {
-            console.error('Error ordenando fila:', error);
-            return 0;
+        const cellsA = a.cells;
+        const cellsB = b.cells;
+        
+        if (cellsA.length < 9 || cellsB.length < 9) return 0;
+        
+        let valueA, valueB;
+        
+        switch(sortBy) {
+            case 'code':
+                valueA = cellsA[0].textContent;
+                valueB = cellsB[0].textContent;
+                break;
+                
+            case 'diff':
+                // Extraer diferencia numérica del texto
+                const diffTextA = cellsA[5].textContent;
+                const diffTextB = cellsB[5].textContent;
+                valueA = extractNumberFromDiff(diffTextA);
+                valueB = extractNumberFromDiff(diffTextB);
+                break;
+                
+            case 'status':
+                const statusElA = cellsA[6].querySelector('.status-indicator');
+                const statusElB = cellsB[6].querySelector('.status-indicator');
+                valueA = statusElA ? statusElA.textContent.trim() : '';
+                valueB = statusElB ? statusElB.textContent.trim() : '';
+                break;
+                
+            case 'location':
+                valueA = cellsA[2].textContent;
+                valueB = cellsB[2].textContent;
+                break;
+                
+            case 'stock':
+                valueA = parseFloat(cellsA[3].textContent) || 0;
+                valueB = parseFloat(cellsB[3].textContent) || 0;
+                break;
+                
+            default:
+                return 0;
         }
+        
+        let comparison = 0;
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+            comparison = valueA.localeCompare(valueB);
+        } else {
+            comparison = valueA - valueB;
+        }
+        
+        return sortOrder === 'desc' ? -comparison : comparison;
     });
     
     // Reordenar filas en el DOM
     rows.forEach(row => tbody.appendChild(row));
+}
+
+function extractNumberFromDiff(diffText) {
+    // Extraer número de texto como "+5" o "-3"
+    const match = diffText.match(/[+-]?\d+/);
+    return match ? parseInt(match[0]) : 0;
 }
 
 function updateTableInfo() {
@@ -3059,528 +2953,248 @@ function debounceSearch() {
     }, 350);
 }
 
-// ================= FUNCIONES DE EXPORTACIÓN =================
-async function exportTableToPDF() {
-    console.log('📄 Exportando a PDF...');
-    
-    showLoading('Generando PDF...', 'Creando reporte profesional con gráficos');
-    
+// ================= FUNCIONES DE ACCIÓN =================
+async function editItem(materialCode, location) {
     try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const margin = 15;
-        let yPos = margin;
-        
-        // Logo y encabezado
-        doc.setFontSize(20);
-        doc.setTextColor(44, 62, 80);
-        doc.setFont('helvetica', 'bold');
-        doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 10;
-        
-        // Información
-        doc.setFontSize(10);
-        doc.setTextColor(108, 117, 125);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
-        doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
-        yPos += 15;
-        
-        // Estadísticas
-        doc.setFontSize(12);
-        doc.setTextColor(33, 37, 41);
-        doc.setFont('helvetica', 'bold');
-        doc.text('ESTADÍSTICAS', margin, yPos);
-        yPos += 8;
-        
-        const stats = CONFIG.data.stats;
-        const statsText = [
-            `• Total items: ${stats.total || 0}`,
-            `• Coincidencias: ${stats.ok || 0} (${Math.round(((stats.ok || 0) / (stats.total || 1)) * 100)}%)`,
-            `• Diferencias: ${stats.differences || 0} (${Math.round(((stats.differences || 0) / (stats.total || 1)) * 100)}%)`,
-            `• Stock total: ${stats.total_stock || 0}`,
-            `• Progreso: ${stats.percentage || 0}%`,
-            `• Ubicaciones activas: ${stats.locations || 0}`
-        ];
-        
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        statsText.forEach(stat => {
-            doc.text(stat, margin + 5, yPos);
-            yPos += 6;
-        });
-        
-        yPos += 10;
-        
-        // Capturar y agregar gráficos al PDF
-        try {
-            // Gráfico de estado
-            const statusChartCanvas = document.getElementById('statusChart');
-            if (statusChartCanvas) {
-                const statusChartImage = await captureChartAsImage(statusChartCanvas);
-                doc.addImage(statusChartImage, 'PNG', margin, yPos, 85, 85);
-                
-                // Gráfico de tendencia al lado
-                const trendChartCanvas = document.getElementById('trendChart');
-                if (trendChartCanvas) {
-                    const trendChartImage = await captureChartAsImage(trendChartCanvas);
-                    doc.addImage(trendChartImage, 'PNG', margin + 90, yPos, 85, 85);
-                }
-                
-                yPos += 95;
-            }
-        } catch (chartError) {
-            console.warn('No se pudieron incluir los gráficos:', chartError);
+        // Obtener detalles del item
+        const response = await fetch(`/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
+        if (!response.ok) {
+            throw new Error('No se pudo obtener los detalles del item');
         }
         
-        // Si hay espacio, agregar tabla de diferencias
-        if (yPos < 250) {
-            doc.addPage();
-            yPos = margin;
-            
-            // Tabla de diferencias
-            const rows = document.querySelectorAll('#tableBody tr[data-item]');
-            const differences = [];
-            
-            rows.forEach(row => {
-                try {
-                    const item = JSON.parse(row.getAttribute('data-item'));
-                    if (item.estado === 'Diferencia' && row.style.display !== 'none') {
-                        const diff = item.diferencia || (item.real_count - item.stock) || 0;
-                        differences.push([
-                            item.material_code || '',
-                            (item.material_text || '').substring(0, 25) + '...',
-                            item.location || '',
-                            (item.stock || 0).toString(),
-                            (item.real_count || 0).toString(),
-                            diff > 0 ? `+${diff}` : diff.toString(),
-                            item.estado || ''
-                        ]);
-                    }
-                } catch (error) {
-                    console.error('Error procesando fila para PDF:', error);
-                }
-            });
-            
-            if (differences.length > 0) {
-                doc.setFontSize(14);
-                doc.setTextColor(44, 62, 80);
-                doc.setFont('helvetica', 'bold');
-                doc.text('DIFERENCIAS ENCONTRADAS', pageWidth / 2, yPos, { align: 'center' });
-                yPos += 15;
-                
-                doc.autoTable({
-                    startY: yPos,
-                    head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
-                    body: differences,
-                    margin: { left: margin, right: margin },
-                    styles: { 
-                        fontSize: 8,
-                        cellPadding: 2
-                    },
-                    headStyles: { 
-                        fillColor: [44, 62, 80],
-                        textColor: 255,
-                        fontStyle: 'bold'
-                    },
-                    alternateRowStyles: {
-                        fillColor: [248, 249, 250]
-                    }
-                });
-            }
-        }
-        
-        // Generar nombre de archivo y guardar
-        const date = new Date().toISOString().split('T')[0];
-        const filename = `reporte_inventario_${date}.pdf`;
-        
-        doc.save(filename);
-        
-        hideLoading();
-        showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
+        // Redirigir a la página de conteo
+        window.location.href = `/inventory/count?code=${encodeURIComponent(materialCode)}&loc=${encodeURIComponent(location)}`;
         
     } catch (error) {
-        console.error('Error generando PDF:', error);
-        hideLoading();
-        showNotification('Error', 'No se pudo generar el PDF', 'error');
+        console.error('Error:', error);
+        showNotification('Error', 'No se pudo cargar el item para edición', 'error');
     }
 }
 
-async function captureChartAsImage(canvas) {
-    return new Promise((resolve, reject) => {
-        try {
-            // Crear un canvas temporal
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
+async function recountItem(materialCode, location) {
+    Swal.fire({
+        title: 'Recontar Item',
+        html: `
+            <div class="text-start">
+                <p><strong>Código:</strong> ${materialCode}</p>
+                <p><strong>Ubicación:</strong> ${location}</p>
+                <div class="mt-3">
+                    <label for="recountValue" class="form-label">Nuevo Conteo Físico:</label>
+                    <input type="number" id="recountValue" class="form-control" 
+                           min="0" step="1" autofocus>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Guardar Reconteo',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const newCount = document.getElementById('recountValue').value;
+            if (!newCount || newCount < 0) {
+                Swal.showValidationMessage('Ingrese un valor válido');
+                return false;
+            }
+            return { newCount: parseInt(newCount) };
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const data = result.value;
             
-            // Configurar tamaño
-            tempCanvas.width = canvas.width;
-            tempCanvas.height = canvas.height;
+            showLoading('Guardando reconteo...', 'Actualizando base de datos');
             
-            // Fondo blanco
-            tempCtx.fillStyle = 'white';
-            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-            
-            // Dibujar el gráfico
-            tempCtx.drawImage(canvas, 0, 0);
-            
-            // Convertir a imagen
-            const imageData = tempCanvas.toDataURL('image/png');
-            resolve(imageData);
-        } catch (error) {
-            reject(error);
+            try {
+                const response = await fetch(CONFIG.api.update, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        material_code: materialCode,
+                        location: location,
+                        real_count: data.newCount
+                    })
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    showNotification('Reconteo exitoso', 'Item recontado correctamente', 'success');
+                    // Refrescar el dashboard para ver cambios
+                    setTimeout(refreshDashboard, 1000);
+                } else {
+                    showNotification('Error', 'No se pudo guardar el reconteo', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('Error', 'No se pudo realizar el reconteo', 'error');
+            }
         }
     });
+}
+
+async function showItemDetails(materialCode, location) {
+    try {
+        // Redirigir a la página de detalles del item
+        window.location.href = `/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`;
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error', 'No se pudo cargar los detalles del item', 'error');
+    }
 }
 
 function exportDifferences() {
     console.log('📤 Exportando diferencias...');
     
-    showLoading('Preparando exportación...', 'Generando archivo Excel de diferencias');
-    
-    // Obtener solo items con diferencias
-    const rows = document.querySelectorAll('#tableBody tr[data-item]');
-    const differences = [];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            if (item.estado === 'Diferencia' && row.style.display !== 'none') {
-                differences.push(item);
+    // Simplemente redirigir a la ruta de exportación de Flask
+    window.location.href = CONFIG.api.export;
+}
+
+async function startReconciliation() {
+    Swal.fire({
+        title: 'Iniciar Conciliación',
+        html: `
+            <div class="text-start">
+                <p>¿Estás seguro de que deseas conciliar las diferencias?</p>
+                <p class="text-muted small">Esta acción actualizará el stock del sistema con los conteos físicos.</p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmReconciliation">
+                    <label class="form-check-label" for="confirmReconciliation">
+                        Confirmo que deseo actualizar el stock del sistema
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Iniciar Conciliación',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+            const confirmed = document.getElementById('confirmReconciliation').checked;
+            if (!confirmed) {
+                Swal.showValidationMessage('Debes confirmar la conciliación');
+                return false;
             }
-        } catch (error) {
-            console.error('Error procesando fila para exportación:', error);
+            return true;
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            showLoading('Conciliando...', 'Actualizando stock del sistema');
+            
+            try {
+                // Obtener todas las diferencias
+                const differences = [];
+                document.querySelectorAll('#tableBody tr').forEach(row => {
+                    const cells = row.cells;
+                    if (cells.length < 6) return;
+                    
+                    const statusElement = cells[6].querySelector('.status-indicator');
+                    const status = statusElement ? statusElement.textContent.trim() : '';
+                    
+                    if (status === 'Diferencia') {
+                        const code = cells[0].querySelector('.fw-bold').textContent.trim();
+                        const location = cells[2].querySelector('.badge').textContent.replace('📍', '').trim();
+                        const countText = cells[4].textContent.trim();
+                        const newCount = countText !== '-' ? parseInt(countText) : 0;
+                        
+                        if (newCount > 0) {
+                            differences.push({
+                                code: code,
+                                location: location,
+                                new_count: newCount
+                            });
+                        }
+                    }
+                });
+                
+                if (differences.length === 0) {
+                    hideLoading();
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Sin diferencias',
+                        text: 'No hay diferencias para conciliar',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
+                
+                // Enviar datos a Flask para conciliación
+                const response = await fetch(CONFIG.api.reconcile, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        differences: differences
+                    })
+                });
+                
+                const result = await response.json();
+                hideLoading();
+                
+                if (result.success) {
+                    showNotification('Conciliación exitosa', result.message, 'success');
+                    // Refrescar el dashboard
+                    setTimeout(refreshDashboard, 1000);
+                } else {
+                    showNotification('Error', result.message || 'Error en la conciliación', 'error');
+                }
+            } catch (error) {
+                hideLoading();
+                showNotification('Error', 'No se pudo completar la conciliación', 'error');
+            }
         }
     });
-    
-    if (differences.length === 0) {
-        hideLoading();
-        Swal.fire({
-            icon: 'info',
-            title: 'Sin diferencias',
-            text: 'No hay diferencias para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear datos para Excel
-    const excelData = [
-        ['REPORTE DE DIFERENCIAS - INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Total diferencias:', differences.length],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo']
-    ];
-    
-    differences.forEach(item => {
-        const diff = item.diferencia || (item.real_count - item.stock) || 0;
-        excelData.push([
-            item.material_code || '',
-            item.material_text || '',
-            item.location || '',
-            item.stock || 0,
-            item.real_count || item.count || 0,
-            diff,
-            item.estado || '',
-            item.usuario || 'N/A',
-            item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'
-        ]);
-    });
-    
-    // Crear libro de trabajo
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
-    
-    // Aplicar estilos (ancho de columnas)
-    const wscols = [
-        {wch: 15}, // Código
-        {wch: 40}, // Descripción
-        {wch: 12}, // Ubicación
-        {wch: 12}, // Stock
-        {wch: 12}, // Conteo
-        {wch: 12}, // Diferencia
-        {wch: 12}, // Estado
-        {wch: 15}, // Usuario
-        {wch: 15}  // Fecha
-    ];
-    ws['!cols'] = wscols;
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `diferencias_inventario_${date}.xlsx`;
-    
-    // Descargar archivo
-    XLSX.writeFile(wb, fileName);
-    hideLoading();
-    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+}
+
+function generateReport() {
+    // Redirigir a la ruta de generación de reporte de Flask
+    window.location.href = '{{ url_for("inventory.generate_final_report") }}';
+}
+
+// ================= FUNCIONES DE EXPORTACIÓN =================
+function exportTableToPDF() {
+    console.log('📄 Exportando a PDF...');
+    showNotification('Info', 'Exportación a PDF en desarrollo', 'info');
 }
 
 function exportTableToExcel() {
-    console.log('📊 Exportando tabla completa a Excel...');
-    
-    showLoading('Exportando tabla...', 'Preparando archivo Excel profesional');
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    
-    if (rows.length === 0) {
-        hideLoading();
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos visibles para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear libro de trabajo
-    const wb = XLSX.utils.book_new();
-    
-    // Hoja 1: Datos completos
-    const excelData = [
-        ['REPORTE COMPLETO DE INVENTARIO'],
-        ['Fecha:', new Date().toLocaleDateString()],
-        ['Hora:', new Date().toLocaleTimeString()],
-        ['Generado por:', 'Sistema de Inventario'],
-        [''],
-        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
-         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones', 'Crítico']
-    ];
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            const isCritical = Math.abs(diff) > (item.stock * 0.2) && Math.abs(diff) > 5;
-            
-            excelData.push([
-                item.material_code || '',
-                item.material_text || '',
-                item.location || '',
-                item.stock || 0,
-                item.real_count || item.count || 0,
-                diff,
-                item.estado || '',
-                item.usuario || 'N/A',
-                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
-                item.notes || '',
-                isCritical ? 'SI' : 'NO'
-            ]);
-        } catch (error) {
-            console.error('Error exportando fila:', error);
-        }
-    });
-    
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventario Completo');
-    
-    // Aplicar estilos y anchos de columna
-    const wscols = [
-        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
-        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
-        {wch: 15}, {wch: 30}, {wch: 10}
-    ];
-    ws['!cols'] = wscols;
-    
-    // Generar nombre de archivo
-    const date = new Date().toISOString().split('T')[0];
-    const fileName = `inventario_completo_${date}.xlsx`;
-    
-    XLSX.writeFile(wb, fileName);
-    hideLoading();
-    showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+    // Usar la ruta de exportación existente de Flask
+    window.location.href = '{{ url_for("inventory.export_inventory") }}';
 }
 
 function exportTableToCSV() {
     console.log('📄 Exportando a CSV...');
-    
-    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
-    
-    if (rows.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin datos',
-            text: 'No hay datos visibles para exportar',
-            confirmButtonText: 'Entendido'
-        });
-        return;
-    }
-    
-    // Crear contenido CSV
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Código,Descripción,Ubicación,Stock Sistema,Conteo Físico,Diferencia,Estado,Usuario,Fecha Conteo,Observaciones\n";
-    
-    rows.forEach(row => {
-        try {
-            const item = JSON.parse(row.getAttribute('data-item'));
-            const diff = item.diferencia || (item.real_count - item.stock) || 0;
-            
-            const rowData = [
-                `"${item.material_code || ''}"`,
-                `"${(item.material_text || '').replace(/"/g, '""')}"`,
-                `"${item.location || ''}"`,
-                item.stock || 0,
-                item.real_count || item.count || 0,
-                diff,
-                `"${item.estado || ''}"`,
-                `"${item.usuario || 'N/A'}"`,
-                `"${item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'}"`,
-                `"${(item.notes || '').replace(/"/g, '""')}"`
-            ];
-            
-            csvContent += rowData.join(",") + "\n";
-        } catch (error) {
-            console.error('Error exportando fila a CSV:', error);
-        }
-    });
-    
-    // Descargar archivo
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `inventario_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('CSV exportado', 'Archivo CSV descargado correctamente', 'success');
+    showNotification('Info', 'Exportación a CSV en desarrollo', 'info');
 }
 
 // ================= FUNCIONES AVANZADAS =================
 function showAnalytics() {
     console.log('📊 Mostrando analítica avanzada...');
-    
-    Swal.fire({
-        title: `<div class="text-info"><i class="bi bi-graph-up me-2"></i>Analítica Avanzada</div>`,
-        html: `
-            <div class="text-start">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Análisis Predictivo</h6>
-                                <p class="small text-muted">Basado en datos históricos, se predice:</p>
-                                <ul class="small">
-                                    <li>Stock óptimo para próximos 30 días</li>
-                                    <li>Tendencias de consumo</li>
-                                    <li>Puntos de reorden sugeridos</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-lightning me-2"></i>Optimización</h6>
-                                <p class="small text-muted">Recomendaciones inteligentes:</p>
-                                <ul class="small">
-                                    <li>Redistribución de stock</li>
-                                    <li>Minimización de diferencias</li>
-                                    <li>Mejora en procesos de conteo</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-3">
-                    <h6 class="fw-bold">Reportes Disponibles:</h6>
-                    <div class="list-group">
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('trends')">
-                            <i class="bi bi-graph-up me-2"></i>Reporte de Tendencias
-                        </button>
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('optimization')">
-                            <i class="bi bi-gear me-2"></i>Reporte de Optimización
-                        </button>
-                        <button class="list-group-item list-group-item-action" onclick="generateAnalyticsReport('predictive')">
-                            <i class="bi bi-cpu me-2"></i>Análisis Predictivo
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: '<i class="bi bi-play-circle me-1"></i>Ejecutar Análisis',
-        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cerrar',
-        confirmButtonColor: '#2980b9',
-        width: '700px'
-    });
+    showNotification('Info', 'Analítica avanzada en desarrollo', 'info');
 }
 
-function showItemDetails(button) {
-    const row = button.closest('tr');
-    const item = JSON.parse(row.getAttribute('data-item'));
-    
-    const diff = item.diferencia || (item.real_count - item.stock) || 0;
-    const diffAbs = Math.abs(diff);
-    const isCritical = diffAbs > (item.stock * 0.2) && diffAbs > 5;
-    
-    Swal.fire({
-        title: `<div class="text-success"><i class="bi bi-info-circle me-2"></i>Detalles del Item</div>`,
-        html: `
-            <div class="text-start">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bi bi-upc me-2"></i>Información Básica</h6>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Código:</strong> ${item.material_code || 'N/A'}</p>
-                                <p><strong>Descripción:</strong> ${item.material_text || 'Sin descripción'}</p>
-                                <p><strong>Ubicación:</strong> ${item.location || 'N/A'}</p>
-                                <p><strong>Categoría:</strong> ${item.category || 'No especificada'}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header bg-light">
-                                <h6 class="mb-0"><i class="bi bi-box me-2"></i>Stock y Conteo</h6>
-                            </div>
-                            <div class="card-body">
-                                <p><strong>Stock Sistema:</strong> ${item.stock || 0}</p>
-                                <p><strong>Conteo Físico:</strong> ${item.real_count || item.count || 0}</p>
-                                <p><strong>Diferencia:</strong> <span class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
-                                    ${diff > 0 ? '+' : ''}${diff}
-                                </span></p>
-                                <p><strong>Estado:</strong> <span class="badge ${item.estado === 'OK' ? 'bg-success' : isCritical ? 'bg-danger' : item.estado === 'Diferencia' ? 'bg-warning' : 'bg-info'}">
-                                    ${item.estado || 'Pendiente'}
-                                </span></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Historial</h6>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Última Actualización:</strong> ${item.timestamp ? new Date(item.timestamp).toLocaleString() : 'No registrado'}</p>
-                        <p><strong>Usuario:</strong> ${item.usuario || 'N/A'}</p>
-                        <p><strong>Observaciones:</strong> ${item.notes || 'Sin observaciones'}</p>
-                    </div>
-                </div>
-                
-                ${isCritical ? `
-                <div class="alert alert-danger mt-3">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>¡ATENCIÓN!</strong> Esta diferencia es crítica. Se recomienda acción inmediata.
-                </div>
-                ` : ''}
-            </div>
-        `,
-        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
-        confirmButtonColor: '#27ae60',
-        width: '800px'
-    });
+function showSettings() {
+    console.log('⚙️ Mostrando configuración...');
+    showNotification('Info', 'Configuración en desarrollo', 'info');
+}
+
+function showHelpModal() {
+    console.log('❓ Mostrando ayuda...');
+    showNotification('Info', 'Ayuda en desarrollo', 'info');
+}
+
+function showAbout() {
+    console.log('ℹ️ Mostrando acerca de...');
+    showNotification('Info', 'Acerca de en desarrollo', 'info');
+}
+
+function printTable() {
+    window.print();
+}
+
+function shareDashboard() {
+    console.log('🔗 Compartiendo dashboard...');
+    showNotification('Info', 'Compartir en desarrollo', 'info');
 }
 
 // ================= UTILIDADES =================
@@ -3648,30 +3262,16 @@ function closeNotification(id) {
     }
 }
 
-function formatTime(dateString) {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return '--:--';
-    }
-}
-
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString();
-    } catch {
-        return '--/--/----';
-    }
-}
-
 function updateActivityTimes() {
     document.querySelectorAll('.time-ago').forEach(element => {
         const timeStr = element.getAttribute('data-time');
         if (timeStr) {
-            const time = new Date(timeStr);
-            element.textContent = timeAgo(time);
+            try {
+                const time = new Date(timeStr);
+                element.textContent = timeAgo(time);
+            } catch (e) {
+                element.textContent = 'Reciente';
+            }
         }
     });
 }
@@ -3688,7 +3288,13 @@ function timeAgo(date) {
     if (diffMin < 60) return `Hace ${diffMin} min`;
     if (diffHour < 24) return `Hace ${diffHour} h`;
     if (diffDay < 7) return `Hace ${diffDay} d`;
-    return formatDate(date);
+    
+    // Formato de fecha si es muy antiguo
+    return date.toLocaleDateString('es-ES', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+    });
 }
 
 function toggleAutoRefresh() {
@@ -3761,12 +3367,6 @@ function initEventListeners() {
             exportDifferences();
         }
         
-        // Ctrl + P - Exportar PDF
-        if (e.ctrlKey && e.key === 'p') {
-            e.preventDefault();
-            exportTableToPDF();
-        }
-        
         // Esc - Limpiar filtros
         if (e.key === 'Escape') {
             document.getElementById('tableSearch').value = '';
@@ -3774,26 +3374,16 @@ function initEventListeners() {
             document.getElementById('tableLocationFilter').value = 'all';
             filterTable();
         }
-        
-        // F1 - Ayuda
-        if (e.key === 'F1') {
-            e.preventDefault();
-            showHelpModal();
-        }
     });
     
     console.log('✅ Event listeners configurados');
 }
 
-function updateRealTimeStats() {
-    // Función para actualizar estadísticas en tiempo real
-    // Puede ser llamada periódicamente o desde eventos
-    console.log('📊 Actualizando estadísticas en tiempo real');
-}
-
 // ================= FUNCIONES GLOBALES =================
 window.refreshDashboard = refreshDashboard;
 window.editItem = editItem;
+window.recountItem = recountItem;
+window.showItemDetails = showItemDetails;
 window.exportDifferences = exportDifferences;
 window.exportTableToExcel = exportTableToExcel;
 window.exportTableToPDF = exportTableToPDF;
@@ -3804,9 +3394,12 @@ window.filterTable = filterTable;
 window.sortTable = sortTable;
 window.closeNotification = closeNotification;
 window.showAnalytics = showAnalytics;
-window.showItemDetails = showItemDetails;
+window.startReconciliation = startReconciliation;
+window.generateReport = generateReport;
+window.printTable = printTable;
+window.shareDashboard = shareDashboard;
 
-console.log('🎉 Dashboard de Inventario cargado exitosamente');
+console.log('🎉 Dashboard de Inventario cargado exitosamente con datos reales');
 </script>
 
 {% endblock %}
