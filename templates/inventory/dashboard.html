@@ -1598,94 +1598,6 @@
                 </div>
             </div>
 
-            <!-- CHART SECTION -->
-            <div class="chart-section">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">
-                            <i class="bi bi-pie-chart-fill"></i>
-                            Distribución del Conteo
-                        </div>
-                        <div class="chart-actions">
-                            <div class="chart-btn-group">
-                                <button class="chart-btn active" onclick="changeChartType('estado', 'doughnut')">Dona</button>
-                                <button class="chart-btn" onclick="changeChartType('estado', 'pie')">Circular</button>
-                                <button class="chart-btn" onclick="changeChartType('estado', 'bar')">Barras</button>
-                            </div>
-                            <button class="widget-btn ms-2" onclick="toggleFullscreen('estadoChart')">
-                                <i class="bi bi-arrows-fullscreen"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="estadoChart"></canvas>
-                        <div class="chart-legend" id="estadoLegend"></div>
-                    </div>
-                </div>
-                
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">
-                            <i class="bi bi-bar-chart-fill"></i>
-                            Tendencia por Hora
-                        </div>
-                        <div class="chart-actions">
-                            <div class="chart-btn-group">
-                                <button class="chart-btn" onclick="changeTimeRange('1h')">1H</button>
-                                <button class="chart-btn active" onclick="changeTimeRange('24h')">24H</button>
-                                <button class="chart-btn" onclick="changeTimeRange('7d')">7D</button>
-                                <button class="chart-btn" onclick="changeTimeRange('30d')">30D</button>
-                            </div>
-                            <button class="widget-btn ms-2" onclick="toggleFullscreen('tendenciaChart')">
-                                <i class="bi bi-arrows-fullscreen"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="tendenciaChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ADDITIONAL CHARTS -->
-            <div class="chart-section mt-0">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">
-                            <i class="bi bi-people-fill"></i>
-                            Rendimiento por Usuario
-                        </div>
-                        <div class="chart-actions">
-                            <select class="filter-select" id="userFilter" onchange="updatePerformanceChart()">
-                                <option value="all">Todos los usuarios</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="performanceChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <div class="chart-title">
-                            <i class="bi bi-map-fill"></i>
-                            Mapa de Calor por Ubicación
-                        </div>
-                        <div class="chart-actions">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" id="heatmapToggle" checked 
-                                       onchange="toggleHeatmap()">
-                                <label class="form-check-label" for="heatmapToggle">Calor</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="heatmapChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
             <!-- TABLE SECTION -->
             <div class="table-section">
                 <div class="table-header">
@@ -1717,10 +1629,28 @@
                             
                             <select class="filter-select" id="locationFilter" onchange="applyFilters()">
                                 <option value="all">Todas las ubicaciones</option>
+                                {% if items %}
+                                    {% set locations = [] %}
+                                    {% for item in items %}
+                                        {% if item.location and item.location not in locations %}
+                                            {% set _ = locations.append(item.location) %}
+                                            <option value="{{ item.location }}">{{ item.location }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                             
                             <select class="filter-select" id="userFilterTable" onchange="applyFilters()">
                                 <option value="all">Todos los usuarios</option>
+                                {% if items %}
+                                    {% set users = [] %}
+                                    {% for item in items %}
+                                        {% if item.usuario and item.usuario not in users %}
+                                            {% set _ = users.append(item.usuario) %}
+                                            <option value="{{ item.usuario }}">{{ item.usuario }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                             </select>
                         </div>
                         
@@ -1775,6 +1705,8 @@
                                     data-estado="{{ item.estado|default('Pendiente', true) }}"
                                     data-user="{{ item.usuario|default('', true) }}"
                                     data-timestamp="{{ item.timestamp|default('', true) }}"
+                                    data-ubicacion="{{ item.location|default('', true) }}"
+                                    data-unidad="{{ item.base_unit|default('', true) }}"
                                     class="{{ 'critical' if is_critical else '' }}">
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
@@ -1836,13 +1768,15 @@
                                     <td>
                                         {% if item.timestamp %}
                                         <span class="small">{{ item.timestamp.strftime('%H:%M') }}</span>
+                                        <br>
+                                        <span class="text-muted extra-small">{{ item.timestamp.strftime('%d/%m/%Y') }}</span>
                                         {% else %}
                                         <span class="text-muted small">-</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-outline-primary" onclick="editItem('{{ item.material_code|default('', true) }}')" 
+                                            <button class="btn btn-outline-primary" onclick="editItem('{{ item.id|default('', true) }}')" 
                                                     title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
@@ -1850,11 +1784,11 @@
                                                     title="Historial">
                                                 <i class="bi bi-clock-history"></i>
                                             </button>
-                                            <button class="btn btn-outline-warning" onclick="recountItem('{{ item.material_code|default('', true) }}')" 
+                                            <button class="btn btn-outline-warning" onclick="recountItem('{{ item.id|default('', true) }}')" 
                                                     title="Recontar">
                                                 <i class="bi bi-arrow-repeat"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger" onclick="deleteItem('{{ item.material_code|default('', true) }}')" 
+                                            <button class="btn btn-outline-danger" onclick="deleteItem('{{ item.id|default('', true) }}')" 
                                                     title="Eliminar">
                                                 <i class="bi bi-trash"></i>
                                             </button>
@@ -1973,11 +1907,15 @@
                     <div class="mt-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <div class="status-label">Progreso total</div>
-                            <div class="fw-bold" id="widgetProgressText">0%</div>
+                            <div class="fw-bold" id="widgetProgressText">
+                                {% if items and items|length > 0 %}
+                                    {{ ((ok_count + diff_count) / items|length * 100)|round|int }}%
+                                {% else %}0%{% endif %}
+                            </div>
                         </div>
                         <div class="progress" style="height: 8px;">
                             <div class="progress-bar bg-success" id="widgetProgressBar" 
-                                 style="width: 0%"></div>
+                                 style="width: {% if items and items|length > 0 %}{{ ((ok_count + diff_count) / items|length * 100)|round|int }}{% else %}0{% endif %}%"></div>
                         </div>
                     </div>
                 </div>
@@ -2031,49 +1969,25 @@
                             <h4 class="action-title">Generar Reporte</h4>
                             <p class="action-desc">PDF detallado</p>
                         </div>
-                        
-                        <div class="action-card" onclick="showAnalytics()">
-                            <div class="action-icon" style="background: var(--purple-gradient);">
-                                <i class="bi bi-graph-up"></i>
-                            </div>
-                            <h4 class="action-title">Analítica</h4>
-                            <p class="action-desc">Estadísticas</p>
-                        </div>
-                        
-                        <div class="action-card" onclick="showNotificationsPanel()">
-                            <div class="action-icon" style="background: var(--warning-gradient);">
-                                <i class="bi bi-bell"></i>
-                            </div>
-                            <h4 class="action-title">Notificaciones</h4>
-                            <p class="action-desc" id="notificationBadge">0 nuevas</p>
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TIMELINE WIDGET -->
+            <!-- GRÁFICOS WIDGET -->
             <div class="widget">
                 <div class="widget-header">
                     <h3 class="widget-title">
-                        <i class="bi bi-clock-history"></i>
-                        Actividad Reciente
+                        <i class="bi bi-pie-chart-fill"></i>
+                        Distribución por Estado
                     </h3>
                     <div class="widget-actions">
-                        <button class="widget-btn" onclick="refreshTimeline()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                        <button class="widget-btn" onclick="toggleWidget('timelineWidget')">
+                        <button class="widget-btn" onclick="toggleWidget('chartWidget')">
                             <i class="bi bi-dash-lg"></i>
                         </button>
                     </div>
                 </div>
-                <div class="widget-body" id="timelineWidget">
-                    <div class="timeline" id="activityTimeline">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary"></div>
-                            <span class="ms-2">Cargando actividad...</span>
-                        </div>
-                    </div>
+                <div class="widget-body" id="chartWidget" style="height: 250px;">
+                    <canvas id="estadoChart"></canvas>
                 </div>
             </div>
 
@@ -2095,10 +2009,55 @@
                 </div>
                 <div class="widget-body" id="differencesWidget">
                     <div id="topDifferences">
-                        <div class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary"></div>
-                            <span class="ms-2">Cargando diferencias...</span>
-                        </div>
+                        {% if items %}
+                            {% set differences = [] %}
+                            {% for item in items if item.estado == 'Diferencia' %}
+                                {% set stock = item.stock if item.stock is defined else 0 %}
+                                {% set count = item.real_count if item.real_count is defined else 0 %}
+                                {% set diff = count - stock %}
+                                {% set _ = differences.append({
+                                    'code': item.material_code,
+                                    'location': item.location,
+                                    'stock': stock,
+                                    'count': count,
+                                    'diff': diff,
+                                    'percent': (abs(diff) / stock * 100) if stock > 0 else 100
+                                }) %}
+                            {% endfor %}
+                            
+                            {% if differences %}
+                                {% set top_differences = differences|sort(attribute='diff', reverse=true)|slice(0, 5) %}
+                                {% for diff in top_differences %}
+                                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                <span class="badge {% if diff.percent > 50 %}bg-danger{% else %}bg-warning{% endif %}">{{ diff.percent|round|int }}%</span>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold small">{{ diff.code }}</div>
+                                                <div class="text-muted extra-small">{{ diff.location }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="fw-bold {% if diff.diff > 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if diff.diff > 0 %}+{% endif %}{{ diff.diff }}
+                                            </div>
+                                            <div class="text-muted extra-small">{{ diff.stock }} → {{ diff.count }}</div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-3">
+                                    <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
+                                    <p class="text-muted mb-0">No hay diferencias</p>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary"></div>
+                                <span class="ms-2">Cargando diferencias...</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -2108,342 +2067,51 @@
 
 <!-- ================= MODALES ================= -->
 
-<!-- Modal de Detalles del Item -->
-<div class="modal fade" id="itemDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
-                <h5 class="modal-title">
-                    <i class="bi bi-box-seam me-2"></i>
-                    Detalles del Material
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="detailModalContent">
-                <!-- Se llena con JavaScript -->
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Configuración -->
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
-                <h5 class="modal-title">
-                    <i class="bi bi-gear me-2"></i>
-                    Configuración del Dashboard
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Intervalo de Auto-Refresh</label>
-                            <select class="form-select" id="refreshInterval">
-                                <option value="0">Desactivado</option>
-                                <option value="30">30 segundos</option>
-                                <option value="60" selected>1 minuto</option>
-                                <option value="300">5 minutos</option>
-                                <option value="600">10 minutos</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Items por página</label>
-                            <select class="form-select" id="itemsPerPage">
-                                <option value="10">10 items</option>
-                                <option value="25" selected>25 items</option>
-                                <option value="50">50 items</option>
-                                <option value="100">100 items</option>
-                                <option value="0">Todos</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Tema de colores</label>
-                            <div class="d-flex flex-wrap gap-2">
-                                <button class="btn btn-sm btn-primary" onclick="setTheme('default')">Default</button>
-                                <button class="btn btn-sm btn-dark" onclick="setTheme('dark')">Oscuro</button>
-                                <button class="btn btn-sm btn-light" onclick="setTheme('light')">Claro</button>
-                                <button class="btn btn-sm btn-info" onclick="setTheme('blue')">Azul</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Preferencias</label>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableNotifications" checked>
-                                <label class="form-check-label" for="enableNotifications">Notificaciones en tiempo real</label>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="enableSounds" checked>
-                                <label class="form-check-label" for="enableSounds">Efectos de sonido</label>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="showAnimations" checked>
-                                <label class="form-check-label" for="showAnimations">Animaciones</label>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="highlightCritical" checked>
-                                <label class="form-check-label" for="highlightCritical">Resaltar diferencias críticas</label>
-                            </div>
-                            <div class="form-check form-switch mb-2">
-                                <input class="form-check-input" type="checkbox" id="autoSave" checked>
-                                <label class="form-check-label" for="autoSave">Auto-guardar cambios</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Los cambios se aplicarán inmediatamente después de guardar.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="saveSettings()">Guardar Configuración</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Filtros Avanzados -->
-<div class="modal fade" id="advancedFiltersModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
-                <h5 class="modal-title">
-                    <i class="bi bi-funnel-fill me-2"></i>
-                    Filtros Avanzados
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Rango de Stock</label>
-                            <div class="row g-2">
-                                <div class="col">
-                                    <input type="number" class="form-control" id="minStock" placeholder="Mínimo" min="0">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" id="maxStock" placeholder="Máximo">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Rango de Diferencia</label>
-                            <div class="row g-2">
-                                <div class="col">
-                                    <input type="number" class="form-control" id="minDiff" placeholder="Mínimo">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" id="maxDiff" placeholder="Máximo">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Rango de Conteo</label>
-                            <div class="row g-2">
-                                <div class="col">
-                                    <input type="number" class="form-control" id="minCount" placeholder="Mínimo" min="0">
-                                </div>
-                                <div class="col">
-                                    <input type="number" class="form-control" id="maxCount" placeholder="Máximo">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Fecha de Conteo</label>
-                            <div class="row g-2">
-                                <div class="col">
-                                    <input type="date" class="form-control" id="startDate">
-                                </div>
-                                <div class="col">
-                                    <input type="date" class="form-control" id="endDate">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Usuario</label>
-                            <select class="form-select" id="filterUserAdv">
-                                <option value="all">Todos los usuarios</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Ubicación</label>
-                            <select class="form-select" id="filterLocationAdv">
-                                <option value="all">Todas las ubicaciones</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12">
-                        <div class="mb-3">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="onlyCriticalFilter">
-                                <label class="form-check-label" for="onlyCriticalFilter">
-                                    Solo diferencias críticas (más del 50% de variación)
-                                </label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="onlyUncountedFilter">
-                                <label class="form-check-label" for="onlyUncountedFilter">
-                                    Solo items sin conteo físico
-                                </label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="onlyWithStockFilter">
-                                <label class="form-check-label" for="onlyWithStockFilter">
-                                    Solo items con stock en sistema
-                                </label>
-                            </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="onlyTodayFilter">
-                                <label class="form-check-label" for="onlyTodayFilter">
-                                    Solo conteos de hoy
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="resetAdvancedFilters()">Limpiar</button>
-                <button type="button" class="btn btn-primary" onclick="applyAdvancedFilters()">Aplicar Filtros</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Acciones Masivas -->
-<div class="modal fade" id="bulkActionsModal" tabindex="-1" aria-hidden="true">
+<!-- Modal de Edición -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header" style="background: var(--primary-gradient); color: white;">
                 <h5 class="modal-title">
-                    <i class="bi bi-tools me-2"></i>
-                    Acciones Masivas
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Conteo
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info mb-3">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <span id="bulkItemsCount">0 items</span> seleccionados para acciones masivas
-                </div>
-                <div class="list-group">
-                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
-                            onclick="bulkValidate()" id="bulkValidateBtn">
-                        <i class="bi bi-check-circle me-3 text-success"></i>
-                        <div>
-                            <div class="fw-bold">Validar seleccionados</div>
-                            <small>Marcar como verificados</small>
+                <form id="editForm">
+                    <input type="hidden" id="editItemId">
+                    <div class="mb-3">
+                        <label class="form-label">Código Material</label>
+                        <input type="text" class="form-control" id="editMaterialCode" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editDescription" rows="2" readonly></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="editLocation" readonly>
                         </div>
-                    </button>
-                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
-                            onclick="bulkRecount()" id="bulkRecountBtn">
-                        <i class="bi bi-arrow-repeat me-3 text-warning"></i>
-                        <div>
-                            <div class="fw-bold">Recontar seleccionados</div>
-                            <small>Marcar para reconteo</small>
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Sistema</label>
+                            <input type="number" class="form-control" id="editStock" readonly>
                         </div>
-                    </button>
-                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
-                            onclick="bulkExport()" id="bulkExportBtn">
-                        <i class="bi bi-file-earmark-excel me-3 text-primary"></i>
-                        <div>
-                            <div class="fw-bold">Exportar seleccionados</div>
-                            <small>Generar reporte Excel</small>
-                        </div>
-                    </button>
-                    <button class="list-group-item list-group-item-action d-flex align-items-center" 
-                            onclick="bulkReconcile()" id="bulkReconcileBtn">
-                        <i class="bi bi-arrow-left-right me-3 text-info"></i>
-                        <div>
-                            <div class="fw-bold">Conciliar seleccionados</div>
-                            <small>Ajustar stock en sistema</small>
-                        </div>
-                    </button>
-                    <button class="list-group-item list-group-item-action d-flex align-items-center text-danger" 
-                            onclick="bulkDelete()" id="bulkDeleteBtn">
-                        <i class="bi bi-trash me-3"></i>
-                        <div>
-                            <div class="fw-bold">Eliminar seleccionados</div>
-                            <small>Eliminar del conteo</small>
-                        </div>
-                    </button>
-                </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Conteo Físico</label>
+                        <input type="number" class="form-control" id="editCount" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="editNotes" rows="3"></textarea>
+                    </div>
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" onclick="selectAllItems()">Seleccionar todos</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Ayuda -->
-<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header" style="background: var(--primary-gradient); color: white;">
-                <h5 class="modal-title">
-                    <i class="bi bi-question-circle me-2"></i>
-                    Ayuda del Dashboard
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5><i class="bi bi-info-circle me-2"></i>Funcionalidades</h5>
-                        <ul>
-                            <li><strong>Dashboard en tiempo real:</strong> Monitorea el conteo físico en tiempo real</li>
-                            <li><strong>Gráficos interactivos:</strong> Visualiza datos con múltiples tipos de gráficos</li>
-                            <li><strong>Filtros avanzados:</strong> Filtra datos por múltiples criterios</li>
-                            <li><strong>Exportación:</strong> Exporta a Excel, PDF y otros formatos</li>
-                            <li><strong>Acciones masivas:</strong> Realiza operaciones en lotes</li>
-                            <li><strong>Notificaciones:</strong> Recibe alertas en tiempo real</li>
-                            <li><strong>Configuración:</strong> Personaliza la apariencia y comportamiento</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h5><i class="bi bi-keyboard me-2"></i>Atajos de Teclado</h5>
-                        <ul>
-                            <li><kbd>Ctrl</kbd> + <kbd>F</kbd> - Buscar en la tabla</li>
-                            <li><kbd>Ctrl</kbd> + <kbd>R</kbd> - Actualizar datos</li>
-                            <li><kbd>Esc</kbd> - Limpiar filtros</li>
-                            <li><kbd>Ctrl</kbd> + <kbd>A</kbd> - Seleccionar todos</li>
-                            <li><kbd>Ctrl</kbd> + <kbd>E</kbd> - Exportar Excel</li>
-                            <li><kbd>Ctrl</kbd> + <kbd>P</kbd> - Imprimir reporte</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <h5><i class="bi bi-lightbulb me-2"></i>Consejos</h5>
-                        <div class="alert alert-light">
-                            <ul class="mb-0">
-                                <li>Usa el auto-refresh para mantener los datos actualizados</li>
-                                <li>Exporta diferencias para reportes a gerencia</li>
-                                <li>Configura notificaciones para alertas importantes</li>
-                                <li>Usa filtros avanzados para análisis detallados</li>
-                                <li>Personaliza el tema según tus preferencias</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                <button type="button" class="btn btn-primary" onclick="saveEdit()">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -2451,108 +2119,43 @@
 
 <!-- ================= SCRIPTS ================= -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-hammerjs@0.2.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <script>
 // ================= CONFIGURACIÓN GLOBAL =================
 const CONFIG = {
-    VERSION: '3.0',
     API: {
         base: '{{ url_for("inventory.index") }}',
-        get_latest: "{{ url_for('inventory.get_latest_counts') if 'get_latest_counts' in url_for.__globals__ else '#' }}",
-        export_differences: "{{ url_for('inventory.export_differences') if 'export_differences' in url_for.__globals__ else '#' }}",
-        export_all: "{{ url_for('inventory.export_inventory') if 'export_inventory' in url_for.__globals__ else '#' }}",
-        reconcile: "{{ url_for('inventory.reconcile_inventory') if 'reconcile_inventory' in url_for.__globals__ else '#' }}",
-        validate: "{{ url_for('inventory.validate_item') if 'validate_item' in url_for.__globals__ else '#' }}",
-        recount: "{{ url_for('inventory.recount_item') if 'recount_item' in url_for.__globals__ else '#' }}",
-        delete: "{{ url_for('inventory.delete_item') if 'delete_item' in url_for.__globals__ else '#' }}",
-        bulk: "{{ url_for('inventory.bulk_actions') if 'bulk_actions' in url_for.__globals__ else '#' }}",
-        history: "{{ url_for('inventory.get_item_history') if 'get_item_history' in url_for.__globals__ else '#' }}",
-        activity: "{{ url_for('inventory.get_recent_activity') if 'get_recent_activity' in url_for.__globals__ else '#' }}",
-        settings: "{{ url_for('inventory.save_settings') if 'save_settings' in url_for.__globals__ else '#' }}"
-    },
-    SETTINGS: {
-        autoRefresh: false,
-        refreshInterval: 60000,
-        itemsPerPage: 25,
-        enableNotifications: true,
-        enableSounds: true,
-        showAnimations: true,
-        highlightCritical: true,
-        autoSave: true,
-        theme: 'default'
+        update_count: '{{ url_for("inventory.update_count") if "update_count" in url_for.__globals__ else "#" }}',
+        delete_item: '{{ url_for("inventory.delete_item") if "delete_item" in url_for.__globals__ else "#" }}'
     },
     STATE: {
         selectedItems: new Set(),
         currentSort: { column: null, direction: 'asc' },
-        currentFilters: {},
         data: [],
         filteredData: [],
         currentPage: 1,
         totalPages: 1,
-        charts: {},
-        lastUpdate: new Date(),
-        sessionStart: new Date(),
-        notifications: [],
-        fullscreenChart: null,
-        autoRefreshTimer: null,
-        sessionTimer: null,
-        dataAgeTimer: null
+        itemsPerPage: 25
     }
 };
 
 // ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log(`🚀 Dashboard v${CONFIG.VERSION} inicializando...`);
-    
     initDashboard();
     setupEventListeners();
-    startTimers();
-    loadActivityTimeline();
-    updateTopDifferences();
-    
-    console.log('✅ Dashboard listo para usar');
+    startSessionTimer();
 });
 
 function initDashboard() {
-    showLoading('Inicializando dashboard...');
-    
-    setTimeout(() => {
-        // Cargar configuración
-        loadSettings();
-        
-        // Procesar datos iniciales
-        processInitialData();
-        
-        // Calcular métricas
-        calculateMetrics();
-        
-        // Inicializar gráficos
-        initCharts();
-        
-        // Actualizar filtros
-        updateFilters();
-        
-        // Ocultar loading
-        hideLoading();
-        
-        showNotification('Dashboard cargado', 'El dashboard se ha cargado exitosamente.', 'success');
-        
-        // Iniciar auto-refresh si está activado
-        if (CONFIG.SETTINGS.autoRefresh) {
-            startAutoRefresh();
-        }
-    }, 1000);
+    processInitialData();
+    calculateMetrics();
+    initCharts();
+    updateFilters();
+    updateKPIs();
 }
 
-// ================= GESTIÓN DE DATOS =================
 function processInitialData() {
     const rows = document.querySelectorAll('#tableBody tr[data-id]');
     CONFIG.STATE.data = [];
@@ -2560,7 +2163,7 @@ function processInitialData() {
     
     rows.forEach((row, index) => {
         const data = {
-            id: index + 1,
+            id: row.dataset.id || (index + 1),
             code: row.dataset.code || '',
             desc: row.dataset.desc || '',
             location: row.dataset.location || 'Sin ubicación',
@@ -2569,7 +2172,8 @@ function processInitialData() {
             diferencia: parseInt(row.dataset.diferencia) || 0,
             estado: row.dataset.estado || 'Pendiente',
             user: row.dataset.user || '',
-            timestamp: row.dataset.timestamp ? new Date(row.dataset.timestamp) : null,
+            timestamp: row.dataset.timestamp,
+            unidad: row.dataset.unidad || '',
             element: row,
             isCritical: Math.abs(parseInt(row.dataset.diferencia) || 0) > (parseInt(row.dataset.stock) || 0) * 0.5 && 
                        Math.abs(parseInt(row.dataset.diferencia) || 0) > 10
@@ -2609,31 +2213,23 @@ function calculateMetrics() {
     document.getElementById('widgetProgressBar').style.width = `${progressPercent}%`;
     document.getElementById('widgetProgressText').textContent = `${progressPercent}%`;
     
-    // Actualizar widgets
-    updateWidgets();
-    
-    // Calcular tendencias (simulado)
-    calculateTrends();
+    // Actualizar progress bars
+    document.getElementById('locationProgress').style.width = `${Math.min(100, locations.length * 5)}%`;
+    document.getElementById('stockProgress').style.width = `${Math.min(100, totalStock / 1000 * 100)}%`;
+    document.getElementById('countedProgress').style.width = `${progressPercent}%`;
 }
 
-function calculateTrends() {
-    // Simular tendencias
+function updateKPIs() {
+    const data = CONFIG.STATE.data;
+    
+    // Actualizar tendencias (simuladas)
     const trends = {
-        items: Math.floor(Math.random() * 10) - 2,
-        ok: Math.floor(Math.random() * 15),
-        diff: Math.floor(Math.random() * 10) - 5,
-        pend: Math.floor(Math.random() * 10) - 8,
         locations: Math.floor(Math.random() * 8),
         stock: Math.floor(Math.random() * 6) - 3,
         counted: Math.floor(Math.random() * 12),
         progress: Math.floor(Math.random() * 8)
     };
     
-    // Actualizar elementos de tendencia
-    updateTrendElement('itemsTrend', trends.items);
-    updateTrendElement('okTrend', trends.ok);
-    updateTrendElement('diffTrend', trends.diff);
-    updateTrendElement('pendTrend', trends.pend);
     updateTrendElement('locationTrend', trends.locations);
     updateTrendElement('stockTrend', trends.stock);
     updateTrendElement('countedTrend', trends.counted);
@@ -2648,54 +2244,17 @@ function updateTrendElement(elementId, value) {
     element.className = `stat-trend ${value > 0 ? 'trend-up' : value < 0 ? 'trend-down' : 'trend-neutral'}`;
 }
 
-function updateWidgets() {
+// ================= GRÁFICOS =================
+function initCharts() {
     const data = CONFIG.STATE.data;
-    
-    if (data.length === 0) return;
-    
     const okItems = data.filter(item => item.estado === 'OK').length;
     const diffItems = data.filter(item => item.estado === 'Diferencia').length;
     const pendItems = data.length - okItems - diffItems;
     
-    document.getElementById('widgetOk').textContent = okItems;
-    document.getElementById('widgetDiff').textContent = diffItems;
-    document.getElementById('widgetPend').textContent = pendItems;
-    
-    // Actualizar contadores del header
-    document.getElementById('okItems').textContent = okItems;
-    document.getElementById('diffItems').textContent = diffItems;
-    document.getElementById('pendItems').textContent = pendItems;
-}
-
-// ================= GRÁFICOS =================
-function initCharts() {
-    renderEstadoChart();
-    renderTendenciaChart();
-    renderPerformanceChart();
-    renderHeatmapChart();
-}
-
-function renderEstadoChart() {
     const ctx = document.getElementById('estadoChart');
     if (!ctx) return;
     
-    const data = CONFIG.STATE.data;
-    const okItems = data.filter(item => item.estado === 'OK').length;
-    const diffItems = data.filter(item => item.estado === 'Diferencia').length;
-    const pendItems = data.length - okItems - diffItems;
-    
-    if (CONFIG.STATE.charts.estado) {
-        CONFIG.STATE.charts.estado.destroy();
-    }
-    
-    // Actualizar leyenda
-    updateChartLegend('estadoLegend', [
-        { label: 'Coinciden', color: '#28a745', value: okItems },
-        { label: 'Diferencias', color: '#ffc107', value: diffItems },
-        { label: 'Pendientes', color: '#6c757d', value: pendItems }
-    ]);
-    
-    CONFIG.STATE.charts.estado = new Chart(ctx, {
+    new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Coinciden', 'Diferencias', 'Pendientes'],
@@ -2711,187 +2270,24 @@ function renderEstadoChart() {
                     'rgba(255, 193, 7, 1)',
                     'rgba(108, 117, 125, 1)'
                 ],
-                borderWidth: 2,
-                hoverOffset: 15
+                borderWidth: 2
             }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const label = context.label || '';
-                            const value = context.raw || 0;
-                            const total = data.length;
-                            const percentage = ((value / total) * 100).toFixed(1);
-                            return `${label}: ${value} (${percentage}%)`;
-                        }
-                    }
-                }
-            },
-            cutout: '70%',
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            }
-        }
-    });
-}
-
-function renderTendenciaChart() {
-    const ctx = document.getElementById('tendenciaChart');
-    if (!ctx) return;
-    
-    // Datos simulados
-    const hours = ['6:00', '8:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
-    const counts = hours.map(() => Math.floor(Math.random() * 100));
-    const differences = hours.map(() => Math.floor(Math.random() * 20));
-    
-    if (CONFIG.STATE.charts.tendencia) {
-        CONFIG.STATE.charts.tendencia.destroy();
-    }
-    
-    CONFIG.STATE.charts.tendencia = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: hours,
-            datasets: [
-                {
-                    label: 'Items Contados',
-                    data: counts,
-                    borderColor: 'rgba(40, 167, 69, 1)',
-                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: 'Diferencias',
-                    data: differences,
-                    borderColor: 'rgba(255, 193, 7, 1)',
-                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }
-            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    position: 'top',
+                    position: 'bottom',
                     labels: {
-                        padding: 15,
+                        padding: 20,
                         usePointStyle: true
                     }
                 }
             },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                },
-                x: {
-                    grid: { display: false }
-                }
-            }
+            cutout: '60%'
         }
     });
-}
-
-function renderPerformanceChart() {
-    const ctx = document.getElementById('performanceChart');
-    if (!ctx) return;
-    
-    // Datos simulados
-    const users = ['Usuario A', 'Usuario B', 'Usuario C', 'Usuario D'];
-    const performance = users.map(() => Math.floor(Math.random() * 100));
-    
-    if (CONFIG.STATE.charts.performance) {
-        CONFIG.STATE.charts.performance.destroy();
-    }
-    
-    CONFIG.STATE.charts.performance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: users,
-            datasets: [{
-                label: 'Items Contados',
-                data: performance,
-                backgroundColor: 'rgba(26, 95, 122, 0.7)',
-                borderColor: 'rgba(26, 95, 122, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-function renderHeatmapChart() {
-    const ctx = document.getElementById('heatmapChart');
-    if (!ctx) return;
-    
-    // Datos simulados
-    const locations = ['ALM-01', 'ALM-02', 'ALM-03', 'ALM-04'];
-    const hours = ['8:00', '10:00', '12:00', '14:00', '16:00'];
-    const data = locations.map(() => hours.map(() => Math.floor(Math.random() * 100)));
-    
-    if (CONFIG.STATE.charts.heatmap) {
-        CONFIG.STATE.charts.heatmap.destroy();
-    }
-    
-    CONFIG.STATE.charts.heatmap = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: hours,
-            datasets: locations.map((location, index) => ({
-                label: location,
-                data: data[index],
-                backgroundColor: data[index].map(value => 
-                    `rgba(26, 95, 122, ${0.3 + (value / 100 * 0.7)})`
-                )
-            }))
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' }
-            },
-            scales: {
-                x: { stacked: true },
-                y: { stacked: true, beginAtZero: true }
-            }
-        }
-    });
-}
-
-function updateChartLegend(legendId, items) {
-    const legend = document.getElementById(legendId);
-    if (!legend) return;
-    
-    legend.innerHTML = items.map(item => `
-        <div class="legend-item">
-            <div class="legend-color" style="background-color: ${item.color};"></div>
-            <span>${item.label}: ${item.value}</span>
-        </div>
-    `).join('');
 }
 
 // ================= TABLA Y FILTROS =================
@@ -2901,42 +2297,26 @@ function updateFilters() {
     
     // Actualizar filtro de ubicaciones
     const locationFilter = document.getElementById('locationFilter');
+    const currentLocation = locationFilter.value;
     locationFilter.innerHTML = '<option value="all">Todas las ubicaciones</option>';
     locations.forEach(location => {
         const option = document.createElement('option');
         option.value = location;
         option.textContent = location;
+        if (location === currentLocation) option.selected = true;
         locationFilter.appendChild(option);
     });
     
-    // Actualizar filtro de usuarios (tabla)
+    // Actualizar filtro de usuarios
     const userFilterTable = document.getElementById('userFilterTable');
+    const currentUser = userFilterTable.value;
     userFilterTable.innerHTML = '<option value="all">Todos los usuarios</option>';
     users.forEach(user => {
         const option = document.createElement('option');
         option.value = user;
         option.textContent = user;
+        if (user === currentUser) option.selected = true;
         userFilterTable.appendChild(option);
-    });
-    
-    // Actualizar filtro de usuarios (avanzado)
-    const filterUserAdv = document.getElementById('filterUserAdv');
-    filterUserAdv.innerHTML = '<option value="all">Todos los usuarios</option>';
-    users.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user;
-        option.textContent = user;
-        filterUserAdv.appendChild(option);
-    });
-    
-    // Actualizar filtro de ubicaciones (avanzado)
-    const filterLocationAdv = document.getElementById('filterLocationAdv');
-    filterLocationAdv.innerHTML = '<option value="all">Todas las ubicaciones</option>';
-    locations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location;
-        option.textContent = location;
-        filterLocationAdv.appendChild(option);
     });
 }
 
@@ -2965,6 +2345,7 @@ function applyFilters() {
         return matchesSearch && matchesStatus && matchesLocation && matchesUser;
     });
     
+    CONFIG.STATE.currentPage = 1;
     updateTable();
     updatePagination();
 }
@@ -2975,10 +2356,7 @@ function clearFilters() {
     document.getElementById('locationFilter').value = 'all';
     document.getElementById('userFilterTable').value = 'all';
     
-    CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
-    updateTable();
-    updatePagination();
-    
+    applyFilters();
     showNotification('Filtros limpiados', 'Se han eliminado todos los filtros.', 'info');
 }
 
@@ -3037,18 +2415,12 @@ function sortTable(th, columnIndex) {
 }
 
 function updateTable() {
-    const startIndex = (CONFIG.STATE.currentPage - 1) * CONFIG.SETTINGS.itemsPerPage;
-    const endIndex = CONFIG.SETTINGS.itemsPerPage === 0 
-        ? CONFIG.STATE.filteredData.length 
-        : Math.min(startIndex + CONFIG.SETTINGS.itemsPerPage, CONFIG.STATE.filteredData.length);
-    
-    const pageData = CONFIG.SETTINGS.itemsPerPage === 0 
-        ? CONFIG.STATE.filteredData 
-        : CONFIG.STATE.filteredData.slice(startIndex, endIndex);
+    const startIndex = (CONFIG.STATE.currentPage - 1) * CONFIG.STATE.itemsPerPage;
+    const endIndex = Math.min(startIndex + CONFIG.STATE.itemsPerPage, CONFIG.STATE.filteredData.length);
     
     // Mostrar/ocultar filas
     CONFIG.STATE.data.forEach(item => {
-        const isVisible = pageData.some(d => d.id === item.id);
+        const isVisible = CONFIG.STATE.filteredData.some(d => d.id == item.id);
         item.element.style.display = isVisible ? '' : 'none';
     });
     
@@ -3061,8 +2433,7 @@ function updateTable() {
 
 function updatePagination() {
     const totalItems = CONFIG.STATE.filteredData.length;
-    const itemsPerPage = CONFIG.SETTINGS.itemsPerPage === 0 ? totalItems : CONFIG.SETTINGS.itemsPerPage;
-    CONFIG.STATE.totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    CONFIG.STATE.totalPages = Math.ceil(totalItems / CONFIG.STATE.itemsPerPage) || 1;
     
     if (CONFIG.STATE.currentPage > CONFIG.STATE.totalPages) {
         CONFIG.STATE.currentPage = CONFIG.STATE.totalPages;
@@ -3092,512 +2463,220 @@ function nextPage() {
     }
 }
 
-// ================= SELECCIÓN DE ITEMS =================
-function toggleRowSelection(checkbox) {
-    const row = checkbox.closest('tr');
-    const itemId = row.dataset.id;
-    
-    if (checkbox.checked) {
-        row.classList.add('selected');
-        CONFIG.STATE.selectedItems.add(itemId);
-    } else {
-        row.classList.remove('selected');
-        CONFIG.STATE.selectedItems.delete(itemId);
-    }
-    
-    updateSelectedCount();
-    updateBulkActions();
-}
-
-function selectAllItems() {
-    const checkboxes = document.querySelectorAll('.row-selector');
-    const allSelected = Array.from(checkboxes).every(cb => cb.checked);
-    
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = !allSelected;
-        toggleRowSelection(checkbox);
-    });
-    
-    showNotification(
-        allSelected ? 'Selección eliminada' : 'Todos seleccionados',
-        allSelected ? 'Se han deseleccionado todos los items.' : 'Se han seleccionado todos los items.',
-        'info'
-    );
-}
-
-function updateSelectedCount() {
-    const count = CONFIG.STATE.selectedItems.size;
-    const badge = document.getElementById('selectedCount');
-    const bulkCount = document.getElementById('bulkItemsCount');
-    
-    if (count > 0) {
-        badge.classList.remove('d-none');
-        badge.textContent = `${count} seleccionados`;
-        bulkCount.textContent = `${count} items`;
-    } else {
-        badge.classList.add('d-none');
-        bulkCount.textContent = '0 items';
-    }
-}
-
-function updateBulkActions() {
-    const count = CONFIG.STATE.selectedItems.size;
-    const buttons = ['bulkValidateBtn', 'bulkRecountBtn', 'bulkExportBtn', 'bulkReconcileBtn', 'bulkDeleteBtn'];
-    
-    buttons.forEach(btnId => {
-        const btn = document.getElementById(btnId);
-        if (btn) {
-            btn.disabled = count === 0;
-        }
-    });
-}
-
-// ================= FUNCIONALIDADES DE ITEMS =================
-function editItem(code) {
-    const item = CONFIG.STATE.data.find(item => item.code === code);
+// ================= GESTIÓN DE ITEMS =================
+function editItem(itemId) {
+    const item = CONFIG.STATE.data.find(item => item.id == itemId);
     if (!item) return;
     
-    Swal.fire({
-        title: `Editar Item: ${code}`,
-        html: `
-            <div class="text-start">
-                <div class="mb-3">
-                    <label class="form-label">Descripción</label>
-                    <input type="text" id="editDesc" class="form-control" value="${item.desc}">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Ubicación</label>
-                    <input type="text" id="editLocation" class="form-control" value="${item.location}">
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <label class="form-label">Stock Sistema</label>
-                        <input type="number" id="editStock" class="form-control" value="${item.stock}" min="0">
-                    </div>
-                    <div class="col">
-                        <label class="form-label">Conteo Físico</label>
-                        <input type="number" id="editCount" class="form-control" value="${item.count}" min="0">
-                    </div>
-                </div>
-                <div class="mb-3 mt-3">
-                    <label class="form-label">Observaciones</label>
-                    <textarea id="editNotes" class="form-control" rows="3">${item.notes || ''}</textarea>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Guardar Cambios',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            const stock = parseInt(document.getElementById('editStock').value);
-            const count = parseInt(document.getElementById('editCount').value);
-            
-            if (isNaN(stock) || stock < 0) {
-                Swal.showValidationMessage('Stock debe ser un número positivo');
-                return false;
-            }
-            
-            if (isNaN(count) || count < 0) {
-                Swal.showValidationMessage('Conteo debe ser un número positivo');
-                return false;
-            }
-            
-            return {
-                desc: document.getElementById('editDesc').value,
-                location: document.getElementById('editLocation').value,
-                stock: stock,
-                count: count,
-                notes: document.getElementById('editNotes').value
-            };
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            updateItem(item.code, result.value);
-        }
-    });
+    document.getElementById('editItemId').value = item.id;
+    document.getElementById('editMaterialCode').value = item.code;
+    document.getElementById('editDescription').value = item.desc;
+    document.getElementById('editLocation').value = item.location;
+    document.getElementById('editStock').value = item.stock;
+    document.getElementById('editCount').value = item.count || '';
+    document.getElementById('editNotes').value = '';
+    
+    new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
-function showItemHistory(code) {
-    const item = CONFIG.STATE.data.find(item => item.code === code);
-    if (!item) return;
+async function saveEdit() {
+    const itemId = document.getElementById('editItemId').value;
+    const count = parseInt(document.getElementById('editCount').value);
+    const notes = document.getElementById('editNotes').value;
     
-    // Simular historial
-    const history = [
-        { date: 'Hoy 14:30', user: 'Operador 1', action: 'Conteo actualizado', details: `De ${item.count} a ${item.count}` },
-        { date: 'Ayer 10:15', user: 'Supervisor', action: 'Validación', details: 'Item verificado' },
-        { date: '03/01/2024', user: 'Sistema', action: 'Carga inicial', details: 'Cargado desde SAP' }
-    ];
+    if (isNaN(count) || count < 0) {
+        showNotification('Error', 'El conteo debe ser un número positivo.', 'error');
+        return;
+    }
     
-    const modalContent = document.getElementById('detailModalContent');
-    modalContent.innerHTML = `
-        <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-3">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">Información del Item</h6>
-                    </div>
-                    <div class="card-body">
-                        <p><strong>Código:</strong> ${item.code}</p>
-                        <p><strong>Descripción:</strong> ${item.desc}</p>
-                        <p><strong>Ubicación:</strong> ${item.location}</p>
-                        <p><strong>Stock Sistema:</strong> ${item.stock}</p>
-                        <p><strong>Conteo Actual:</strong> ${item.count || '-'}</p>
-                        <p><strong>Diferencia:</strong> <span class="${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
-                            ${item.diferencia > 0 ? '+' : ''}${item.diferencia}
-                        </span></p>
-                        <p><strong>Estado:</strong> ${item.estado}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">Historial de Cambios</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="timeline">
-                            ${history.map(h => `
-                                <div class="timeline-item mb-3">
-                                    <div class="timeline-time">${h.date}</div>
-                                    <div class="timeline-content">
-                                        <strong>${h.action}</strong> por <span class="timeline-user">${h.user}</span>
-                                        <div class="text-muted small">${h.details}</div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+    showLoading('Guardando cambios...');
     
-    new bootstrap.Modal(document.getElementById('itemDetailModal')).show();
-}
-
-function recountItem(code) {
-    Swal.fire({
-        title: `¿Recontar ${code}?`,
-        text: 'Este item será marcado para reconteo.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, recontar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const item = CONFIG.STATE.data.find(item => item.code === code);
+    try {
+        const response = await fetch(CONFIG.API.update_count, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: itemId,
+                real_count: count,
+                notes: notes
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Actualizar datos locales
+            const item = CONFIG.STATE.data.find(item => item.id == itemId);
             if (item) {
-                item.count = 0;
-                item.estado = 'Pendiente';
-                item.element.dataset.count = 0;
-                item.element.dataset.estado = 'Pendiente';
+                item.count = count;
+                item.diferencia = count - item.stock;
+                item.estado = count === item.stock ? 'OK' : 'Diferencia';
+                item.isCritical = Math.abs(item.diferencia) > (item.stock * 0.5) && Math.abs(item.diferencia) > 10;
                 
-                // Actualizar celda de conteo
-                const countCell = item.element.cells[4];
-                countCell.innerHTML = '<span class="fw-bold text-muted">-</span>';
-                
-                // Actualizar celda de diferencia
-                const diffCell = item.element.cells[5];
-                diffCell.innerHTML = '<span class="text-muted">-</span>';
-                
-                // Actualizar celda de estado
-                const estadoCell = item.element.cells[6];
-                estadoCell.innerHTML = '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
-                
+                // Actualizar fila en tabla
+                updateTableRow(item);
                 calculateMetrics();
-                showNotification('Item marcado para reconteo', `El item ${code} ha sido marcado para reconteo.`, 'warning');
+                
+                bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+                showNotification('Actualizado', 'El conteo ha sido actualizado exitosamente.', 'success');
             }
+        } else {
+            showNotification('Error', result.message || 'Error al actualizar el conteo.', 'error');
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error', 'Error de conexión al servidor.', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
-function deleteItem(code) {
-    Swal.fire({
-        title: `¿Eliminar ${code}?`,
+function updateTableRow(item) {
+    const row = item.element;
+    const diferencia_abs = Math.abs(item.diferencia);
+    
+    // Actualizar conteo físico
+    row.cells[4].innerHTML = `<span class="fw-bold ${item.estado === 'OK' ? 'text-success' : item.estado === 'Diferencia' ? 'text-danger' : 'text-muted'}">
+        ${item.count > 0 ? item.count : '-'}
+    </span>`;
+    
+    // Actualizar diferencia
+    row.cells[5].innerHTML = item.estado === 'OK' 
+        ? '<span class="text-muted">0</span>'
+        : `<span class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
+              ${item.diferencia > 0 ? '<i class="bi bi-arrow-up-circle me-1"></i>+' : '<i class="bi bi-arrow-down-circle me-1"></i>'}${diferencia_abs}
+           </span>`;
+    
+    // Actualizar estado
+    row.cells[6].innerHTML = item.estado === 'OK'
+        ? '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>'
+        : item.estado === 'Diferencia'
+        ? '<span class="status-badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>Diferencia</span>'
+        : '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
+    
+    // Actualizar clase de crítico
+    row.classList.toggle('critical', item.isCritical);
+    
+    // Actualizar dataset
+    row.dataset.count = item.count;
+    row.dataset.diferencia = item.diferencia;
+    row.dataset.estado = item.estado;
+}
+
+async function deleteItem(itemId) {
+    const result = await Swal.fire({
+        title: '¿Eliminar item?',
         text: 'Esta acción no se puede deshacer.',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#dc3545'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            const item = CONFIG.STATE.data.find(item => item.code === code);
-            if (item) {
-                // Eliminar de los arrays
-                const index = CONFIG.STATE.data.findIndex(i => i.code === code);
+    });
+    
+    if (!result.isConfirmed) return;
+    
+    showLoading('Eliminando item...');
+    
+    try {
+        const response = await fetch(CONFIG.API.delete_item, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: itemId })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Eliminar de los arrays
+            const index = CONFIG.STATE.data.findIndex(item => item.id == itemId);
+            if (index !== -1) {
                 CONFIG.STATE.data.splice(index, 1);
-                CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(i => i.code !== code);
+                CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(item => item.id != itemId);
                 
                 // Eliminar del DOM
-                item.element.remove();
+                const item = CONFIG.STATE.data.find(item => item.id == itemId);
+                if (item && item.element) {
+                    item.element.remove();
+                }
                 
                 calculateMetrics();
                 updateTable();
-                showNotification('Item eliminado', `El item ${code} ha sido eliminado.`, 'success');
+                updatePagination();
+                showNotification('Eliminado', 'El item ha sido eliminado exitosamente.', 'success');
             }
+        } else {
+            showNotification('Error', data.message || 'Error al eliminar el item.', 'error');
         }
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        showNotification('Error', 'Error de conexión al servidor.', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
-function updateItem(code, data) {
-    const item = CONFIG.STATE.data.find(item => item.code === code);
+function recountItem(itemId) {
+    const item = CONFIG.STATE.data.find(item => item.id == itemId);
     if (!item) return;
     
-    // Actualizar datos
-    Object.assign(item, data);
-    item.diferencia = data.count - data.stock;
-    item.estado = data.count === data.stock ? 'OK' : 'Diferencia';
-    item.isCritical = Math.abs(item.diferencia) > (item.stock * 0.5) && Math.abs(item.diferencia) > 10;
-    
-    // Actualizar dataset del elemento
-    item.element.dataset.desc = data.desc;
-    item.element.dataset.location = data.location;
-    item.element.dataset.stock = data.stock;
-    item.element.dataset.count = data.count;
-    item.element.dataset.diferencia = item.diferencia;
-    item.element.dataset.estado = item.estado;
-    
-    // Actualizar celdas
-    item.element.cells[1].innerHTML = `<div class="text-truncate" style="max-width: 200px;">${data.desc}</div>`;
-    item.element.cells[2].innerHTML = `<span class="badge bg-dark"><i class="bi bi-geo-alt me-1"></i>${data.location}</span>`;
-    item.element.cells[3].textContent = data.stock;
-    item.element.cells[4].innerHTML = `<span class="fw-bold ${item.estado === 'OK' ? 'text-success' : 'text-danger'}">${data.count}</span>`;
-    item.element.cells[5].innerHTML = item.estado === 'OK' 
-        ? '<span class="text-muted">0</span>'
-        : `<span class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
-              ${item.diferencia > 0 ? '<i class="bi bi-arrow-up-circle me-1"></i>+' : '<i class="bi bi-arrow-down-circle me-1"></i>'}${Math.abs(item.diferencia)}
-           </span>`;
-    item.element.cells[6].innerHTML = item.estado === 'OK'
-        ? '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>'
-        : '<span class="status-badge badge-warning"><i class="bi bi-exclamation-triangle me-1"></i>Diferencia</span>';
-    
-    // Actualizar clase de crítico
-    item.element.classList.toggle('critical', item.isCritical);
-    
-    calculateMetrics();
-    showNotification('Item actualizado', `El item ${code} ha sido actualizado exitosamente.`, 'success');
-}
-
-// ================= ACCIONES MASIVAS =================
-function showBulkActions() {
-    new bootstrap.Modal(document.getElementById('bulkActionsModal')).show();
-}
-
-function bulkValidate() {
-    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
-    if (selectedItems.length === 0) return;
-    
-    Swal.fire({
-        title: `Validar ${selectedItems.length} items`,
-        text: '¿Desea marcar los items seleccionados como validados?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Validar Todos',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            selectedItems.forEach(id => {
-                const item = CONFIG.STATE.data.find(item => item.id == id);
-                if (item) {
-                    item.estado = 'OK';
-                    item.element.dataset.estado = 'OK';
-                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
-                }
-            });
-            
-            CONFIG.STATE.selectedItems.clear();
-            updateSelectedCount();
-            calculateMetrics();
-            
-            showNotification(`${selectedItems.length} items validados`, 'Los items seleccionados han sido marcados como validados.', 'success');
-        }
-    });
-}
-
-function bulkRecount() {
-    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
-    if (selectedItems.length === 0) return;
-    
-    Swal.fire({
-        title: `Recontar ${selectedItems.length} items`,
-        text: '¿Desea marcar los items seleccionados para reconteo?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Recontar Todos',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            selectedItems.forEach(id => {
-                const item = CONFIG.STATE.data.find(item => item.id == id);
-                if (item) {
-                    item.count = 0;
-                    item.estado = 'Pendiente';
-                    item.element.dataset.count = 0;
-                    item.element.dataset.estado = 'Pendiente';
-                    item.element.cells[4].innerHTML = '<span class="fw-bold text-muted">-</span>';
-                    item.element.cells[5].innerHTML = '<span class="text-muted">-</span>';
-                    item.element.cells[6].innerHTML = '<span class="status-badge badge-secondary"><i class="bi bi-clock me-1"></i>Pendiente</span>';
-                }
-            });
-            
-            CONFIG.STATE.selectedItems.clear();
-            updateSelectedCount();
-            calculateMetrics();
-            
-            showNotification(`${selectedItems.length} items marcados para reconteo`, 'Los items seleccionados han sido marcados para reconteo.', 'warning');
-        }
-    });
-}
-
-function bulkExport() {
-    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
-    if (selectedItems.length === 0) {
-        showNotification('No hay items seleccionados', 'Selecciona items para exportar.', 'warning');
-        return;
-    }
-    
-    const selectedData = CONFIG.STATE.data.filter(item => selectedItems.includes(item.id.toString()));
-    exportToExcel(selectedData, 'items_seleccionados');
-}
-
-function bulkReconcile() {
-    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
-    if (selectedItems.length === 0) return;
-    
-    const differences = CONFIG.STATE.data.filter(item => 
-        selectedItems.includes(item.id.toString()) && item.estado === 'Diferencia'
-    );
-    
-    if (differences.length === 0) {
-        showNotification('No hay diferencias', 'Los items seleccionados no tienen diferencias.', 'info');
-        return;
-    }
-    
-    Swal.fire({
-        title: `Conciliar ${differences.length} diferencias`,
-        html: `
-            <div class="text-start">
-                <p>Se ajustará el sistema con los conteos físicos.</p>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" id="confirmReconcile">
-                    <label class="form-check-label" for="confirmReconcile">
-                        Confirmar conciliación
-                    </label>
-                </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Conciliar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            if (!document.getElementById('confirmReconcile').checked) {
-                Swal.showValidationMessage('Debe confirmar la conciliación');
-                return false;
-            }
-            return true;
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading(`Conciliando ${differences.length} items...`);
-            
-            setTimeout(() => {
-                differences.forEach(item => {
-                    item.estado = 'OK';
-                    item.element.dataset.estado = 'OK';
-                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
-                });
-                
-                CONFIG.STATE.selectedItems.clear();
-                updateSelectedCount();
-                calculateMetrics();
-                hideLoading();
-                
-                showNotification(`${differences.length} items conciliados`, 'El stock del sistema ha sido actualizado.', 'success');
-            }, 2000);
-        }
-    });
-}
-
-function bulkDelete() {
-    const selectedItems = Array.from(CONFIG.STATE.selectedItems);
-    if (selectedItems.length === 0) return;
-    
-    Swal.fire({
-        title: `¿Eliminar ${selectedItems.length} items?`,
-        text: 'Esta acción no se puede deshacer.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Eliminar',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#dc3545'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            selectedItems.forEach(id => {
-                const item = CONFIG.STATE.data.find(item => item.id == id);
-                if (item) {
-                    const index = CONFIG.STATE.data.findIndex(i => i.id == id);
-                    CONFIG.STATE.data.splice(index, 1);
-                    CONFIG.STATE.filteredData = CONFIG.STATE.filteredData.filter(i => i.id != id);
-                    item.element.remove();
-                }
-            });
-            
-            CONFIG.STATE.selectedItems.clear();
-            updateSelectedCount();
-            calculateMetrics();
-            updateTable();
-            
-            showNotification(`${selectedItems.length} items eliminados`, 'Los items seleccionados han sido eliminados.', 'success');
-        }
-    });
+    // Resetear conteo
+    editItem(itemId);
 }
 
 // ================= EXPORTACIÓN =================
-function exportToExcel(data, filename = 'conteo_fisico') {
+function exportToExcel() {
+    const data = CONFIG.STATE.filteredData;
+    if (data.length === 0) {
+        showNotification('Sin datos', 'No hay datos para exportar.', 'warning');
+        return;
+    }
+    
     showLoading('Generando archivo Excel...');
     
-    setTimeout(() => {
-        // Crear datos para Excel
-        const excelData = [
-            ['REPORTE DE CONTEO FÍSICO'],
-            ['Fecha:', new Date().toLocaleDateString()],
-            ['Hora:', new Date().toLocaleTimeString()],
-            ['Usuario:', '{{ session.get("username", "Usuario") }}'],
-            ['Total items:', data.length],
-            [''],
-            ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha']
-        ];
-        
-        data.forEach(item => {
-            excelData.push([
-                item.code,
-                item.desc,
-                item.location,
-                item.stock,
-                item.count || '-',
-                item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
-                item.estado,
-                item.user || '-',
-                item.timestamp ? item.timestamp.toLocaleDateString() : '-'
-            ]);
-        });
-        
-        // Crear libro de trabajo
-        const ws = XLSX.utils.aoa_to_sheet(excelData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Conteo Físico');
-        
-        // Generar nombre de archivo
-        const date = new Date().toISOString().split('T')[0];
-        const fileName = `${filename}_${date}.xlsx`;
-        
-        // Descargar archivo
-        XLSX.writeFile(wb, fileName);
-        
-        hideLoading();
-        showNotification('Exportación completada', `Se ha generado el archivo ${fileName}`, 'success');
-    }, 1500);
+    // Crear datos para Excel
+    const excelData = [
+        ['REPORTE DE CONTEO FÍSICO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Usuario:', '{{ session.get("username", "Usuario") }}'],
+        ['Total items:', data.length],
+        [''],
+        ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha']
+    ];
+    
+    data.forEach(item => {
+        excelData.push([
+            item.code,
+            item.desc,
+            item.location,
+            item.stock,
+            item.count || '-',
+            item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
+            item.estado,
+            item.user || '-',
+            item.timestamp || '-'
+        ]);
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Conteo Físico');
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `conteo_fisico_${date}.xlsx`;
+    
+    // Descargar archivo
+    XLSX.writeFile(wb, fileName);
+    
+    hideLoading();
+    showNotification('Exportación completada', `Se ha generado el archivo ${fileName}`, 'success');
 }
 
 function exportDifferences() {
@@ -3607,355 +2686,77 @@ function exportDifferences() {
         return;
     }
     
-    exportToExcel(differences, 'diferencias_conteo');
+    // Crear datos para Excel
+    const excelData = [
+        ['REPORTE DE DIFERENCIAS'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Total diferencias:', differences.length],
+        [''],
+        ['Código', 'Descripción', 'Ubicación', 'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Usuario', 'Fecha']
+    ];
+    
+    differences.forEach(item => {
+        excelData.push([
+            item.code,
+            item.desc,
+            item.location,
+            item.stock,
+            item.count,
+            item.diferencia > 0 ? `+${item.diferencia}` : item.diferencia,
+            item.user || '-',
+            item.timestamp || '-'
+        ]);
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `diferencias_conteo_${date}.xlsx`;
+    
+    // Descargar archivo
+    XLSX.writeFile(wb, fileName);
+    
+    showNotification('Diferencias exportadas', `Se ha generado el archivo ${fileName}`, 'success');
 }
 
-function generateReport() {
-    showLoading('Generando reporte PDF...');
-    
-    setTimeout(() => {
-        // Usar html2canvas para capturar el dashboard
-        html2canvas(document.querySelector('.dashboard-container')).then(canvas => {
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-            
-            const imgWidth = 210;
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            
-            const date = new Date().toISOString().split('T')[0];
-            pdf.save(`reporte_conteo_${date}.pdf`);
-            
-            hideLoading();
-            showNotification('Reporte PDF generado', 'El reporte se ha descargado exitosamente.', 'success');
-        }).catch(error => {
-            hideLoading();
-            showNotification('Error', 'No se pudo generar el reporte PDF.', 'error');
-            console.error('Error generando PDF:', error);
-        });
-    }, 1000);
-}
-
-// ================= CONFIGURACIÓN =================
-function showSettings() {
-    // Cargar configuración actual
-    document.getElementById('refreshInterval').value = CONFIG.SETTINGS.refreshInterval / 1000;
-    document.getElementById('itemsPerPage').value = CONFIG.SETTINGS.itemsPerPage;
-    document.getElementById('enableNotifications').checked = CONFIG.SETTINGS.enableNotifications;
-    document.getElementById('enableSounds').checked = CONFIG.SETTINGS.enableSounds;
-    document.getElementById('showAnimations').checked = CONFIG.SETTINGS.showAnimations;
-    document.getElementById('highlightCritical').checked = CONFIG.SETTINGS.highlightCritical;
-    document.getElementById('autoSave').checked = CONFIG.SETTINGS.autoSave;
-    
-    new bootstrap.Modal(document.getElementById('settingsModal')).show();
-}
-
-function saveSettings() {
-    CONFIG.SETTINGS.refreshInterval = parseInt(document.getElementById('refreshInterval').value) * 1000;
-    CONFIG.SETTINGS.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
-    CONFIG.SETTINGS.enableNotifications = document.getElementById('enableNotifications').checked;
-    CONFIG.SETTINGS.enableSounds = document.getElementById('enableSounds').checked;
-    CONFIG.SETTINGS.showAnimations = document.getElementById('showAnimations').checked;
-    CONFIG.SETTINGS.highlightCritical = document.getElementById('highlightCritical').checked;
-    CONFIG.SETTINGS.autoSave = document.getElementById('autoSave').checked;
-    
-    // Guardar en localStorage
-    localStorage.setItem('dashboardSettings', JSON.stringify(CONFIG.SETTINGS));
-    
-    // Aplicar configuración
-    applySettings();
-    
-    bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
-    showNotification('Configuración guardada', 'Los cambios se han aplicado exitosamente.', 'success');
-}
-
-function loadSettings() {
-    const saved = localStorage.getItem('dashboardSettings');
-    if (saved) {
-        try {
-            Object.assign(CONFIG.SETTINGS, JSON.parse(saved));
-            applySettings();
-        } catch (e) {
-            console.error('Error cargando configuración:', e);
-        }
-    }
-}
-
-function applySettings() {
-    // Aplicar tema
-    document.body.setAttribute('data-theme', CONFIG.SETTINGS.theme);
-    
-    // Configurar auto-refresh
-    if (CONFIG.SETTINGS.autoRefresh) {
-        startAutoRefresh();
-        document.getElementById('autoRefreshBtn').classList.add('btn-info');
-        document.getElementById('autoRefreshBtn').classList.remove('btn-outline-action');
-    } else {
-        stopAutoRefresh();
-        document.getElementById('autoRefreshBtn').classList.remove('btn-info');
-        document.getElementById('autoRefreshBtn').classList.add('btn-outline-action');
-    }
-    
-    // Actualizar paginación
-    updatePagination();
-    updateTable();
-}
-
-function setTheme(theme) {
-    CONFIG.SETTINGS.theme = theme;
-    document.body.setAttribute('data-theme', theme);
-    showNotification('Tema cambiado', `Se ha aplicado el tema ${theme}.`, 'info');
-}
-
-// ================= FUNCIONES AUXILIARES =================
+// ================= FUNCIONALIDADES AUXILIARES =================
 function loadLatestData() {
-    const btn = document.getElementById('refreshBtn');
-    const originalHtml = btn.innerHTML;
-    
-    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Actualizando...';
-    btn.disabled = true;
-    
-    showLoading('Actualizando datos...');
-    
-    // Simular actualización de datos
-    setTimeout(() => {
-        // Aquí iría la llamada real a la API
-        CONFIG.STATE.lastUpdate = new Date();
-        document.getElementById('lastUpdateTime').textContent = CONFIG.STATE.lastUpdate.toLocaleString();
-        document.getElementById('dataAge').textContent = '0 seg';
-        
-        // Recalcular métricas
-        calculateMetrics();
-        
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        hideLoading();
-        
-        showNotification('Datos actualizados', 'La información se ha actualizado exitosamente.', 'success');
-    }, 1500);
+    window.location.reload();
 }
 
 function toggleAutoRefresh() {
-    CONFIG.SETTINGS.autoRefresh = !CONFIG.SETTINGS.autoRefresh;
     const btn = document.getElementById('autoRefreshBtn');
+    const isActive = btn.classList.contains('btn-info');
     
-    if (CONFIG.SETTINGS.autoRefresh) {
-        btn.classList.remove('btn-outline-action');
-        btn.classList.add('btn-info');
-        startAutoRefresh();
-        showNotification('Auto-refresh activado', 'Los datos se actualizarán automáticamente.', 'info');
-    } else {
+    if (isActive) {
         btn.classList.remove('btn-info');
         btn.classList.add('btn-outline-action');
-        stopAutoRefresh();
         showNotification('Auto-refresh desactivado', 'La actualización automática ha sido desactivada.', 'info');
+    } else {
+        btn.classList.remove('btn-outline-action');
+        btn.classList.add('btn-info');
+        showNotification('Auto-refresh activado', 'Los datos se actualizarán cada 5 minutos.', 'info');
     }
 }
 
-function startAutoRefresh() {
-    if (CONFIG.STATE.autoRefreshTimer) {
-        clearInterval(CONFIG.STATE.autoRefreshTimer);
-    }
-    
-    if (CONFIG.SETTINGS.refreshInterval > 0) {
-        CONFIG.STATE.autoRefreshTimer = setInterval(() => {
-            loadLatestData();
-        }, CONFIG.SETTINGS.refreshInterval);
-    }
+function showSettings() {
+    showNotification('Configuración', 'Funcionalidad en desarrollo.', 'info');
 }
 
-function stopAutoRefresh() {
-    if (CONFIG.STATE.autoRefreshTimer) {
-        clearInterval(CONFIG.STATE.autoRefreshTimer);
-        CONFIG.STATE.autoRefreshTimer = null;
-    }
-}
-
-function startTimers() {
-    // Timer de sesión
-    CONFIG.STATE.sessionTimer = setInterval(() => {
-        const now = new Date();
-        const diff = Math.floor((now - CONFIG.STATE.sessionStart) / 1000);
-        const hours = Math.floor(diff / 3600);
-        const minutes = Math.floor((diff % 3600) / 60);
-        const seconds = diff % 60;
-        
-        document.getElementById('sessionTimer').textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }, 1000);
-    
-    // Timer de antigüedad de datos
-    CONFIG.STATE.dataAgeTimer = setInterval(() => {
-        const now = new Date();
-        const diff = Math.floor((now - CONFIG.STATE.lastUpdate) / 1000);
-        
-        let text;
-        if (diff < 60) {
-            text = `${diff} seg`;
-        } else if (diff < 3600) {
-            const minutes = Math.floor(diff / 60);
-            text = `${minutes} min`;
-        } else {
-            const hours = Math.floor(diff / 3600);
-            text = `${hours} h`;
-        }
-        
-        document.getElementById('dataAge').textContent = text;
-    }, 30000);
-}
-
-function loadActivityTimeline() {
-    const timeline = document.getElementById('activityTimeline');
-    
-    // Simular actividad
-    const activities = [
-        {
-            time: 'Hace 5 minutos',
-            action: 'Conteo actualizado',
-            user: '{{ session.get("username", "Usuario") }}',
-            details: '3 items modificados'
-        },
-        {
-            time: 'Hace 15 minutos',
-            action: 'Exportación realizada',
-            user: 'Operador 2',
-            details: 'Reporte de diferencias'
-        },
-        {
-            time: 'Hace 30 minutos',
-            action: 'Auto-refresh completado',
-            user: 'Sistema',
-            details: 'Datos actualizados'
-        },
-        {
-            time: 'Hace 1 hora',
-            action: 'Validación masiva',
-            user: 'Supervisor',
-            details: '50 items validados'
-        }
-    ];
-    
-    setTimeout(() => {
-        timeline.innerHTML = activities.map(activity => `
-            <div class="timeline-item">
-                <div class="timeline-time">
-                    <i class="bi bi-clock"></i> ${activity.time}
-                </div>
-                <div class="timeline-content">
-                    <strong>${activity.action}</strong> por <span class="timeline-user">${activity.user}</span>
-                    <div class="text-muted small">${activity.details}</div>
-                </div>
-            </div>
-        `).join('');
-    }, 1000);
-}
-
-function updateTopDifferences() {
-    const container = document.getElementById('topDifferences');
-    
-    // Obtener las mayores diferencias
-    const differences = CONFIG.STATE.data
-        .filter(item => item.estado === 'Diferencia')
-        .map(item => ({
-            ...item,
-            absDiff: Math.abs(item.diferencia),
-            percentDiff: item.stock > 0 ? Math.abs((item.diferencia / item.stock) * 100) : 100
-        }))
-        .sort((a, b) => b.absDiff - a.absDiff)
-        .slice(0, 5);
-    
-    setTimeout(() => {
-        if (differences.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-3">
-                    <i class="bi bi-check-circle-fill text-success fs-4 mb-2"></i>
-                    <p class="text-muted mb-0">No hay diferencias significativas</p>
-                </div>
-            `;
-            return;
-        }
-        
-        container.innerHTML = differences.map(item => `
-            <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <span class="badge ${item.percentDiff > 50 ? 'bg-danger' : 'bg-warning'}">${item.percentDiff.toFixed(0)}%</span>
-                    </div>
-                    <div>
-                        <div class="fw-bold small">${item.code}</div>
-                        <div class="text-muted extra-small">${item.location}</div>
-                    </div>
-                </div>
-                <div class="text-end">
-                    <div class="fw-bold ${item.diferencia > 0 ? 'text-success' : 'text-danger'}">
-                        ${item.diferencia > 0 ? '+' : ''}${item.diferencia}
-                    </div>
-                    <div class="text-muted extra-small">${item.stock} → ${item.count}</div>
-                </div>
-            </div>
-        `).join('');
-    }, 1000);
+function showHelp() {
+    showNotification('Ayuda', 'Funcionalidad en desarrollo.', 'info');
 }
 
 function showAdvancedFilters() {
-    new bootstrap.Modal(document.getElementById('advancedFiltersModal')).show();
+    showNotification('Filtros avanzados', 'Funcionalidad en desarrollo.', 'info');
 }
 
-function applyAdvancedFilters() {
-    // Implementar filtros avanzados
-    const minStock = parseInt(document.getElementById('minStock').value) || 0;
-    const maxStock = parseInt(document.getElementById('maxStock').value) || Infinity;
-    const minDiff = parseInt(document.getElementById('minDiff').value) || -Infinity;
-    const maxDiff = parseInt(document.getElementById('maxDiff').value) || Infinity;
-    const minCount = parseInt(document.getElementById('minCount').value) || 0;
-    const maxCount = parseInt(document.getElementById('maxCount').value) || Infinity;
-    const onlyCritical = document.getElementById('onlyCriticalFilter').checked;
-    const onlyUncounted = document.getElementById('onlyUncountedFilter').checked;
-    const onlyWithStock = document.getElementById('onlyWithStockFilter').checked;
-    const onlyToday = document.getElementById('onlyTodayFilter').checked;
-    
-    CONFIG.STATE.filteredData = CONFIG.STATE.data.filter(item => {
-        // Filtros básicos
-        const stockOk = item.stock >= minStock && item.stock <= maxStock;
-        const diffOk = item.diferencia >= minDiff && item.diferencia <= maxDiff;
-        const countOk = item.count >= minCount && item.count <= maxCount;
-        
-        // Filtros especiales
-        const criticalOk = !onlyCritical || item.isCritical;
-        const uncountedOk = !onlyUncounted || item.count === 0;
-        const stockExistsOk = !onlyWithStock || item.stock > 0;
-        
-        // Filtro de fecha (simulado)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dateOk = !onlyToday || (item.timestamp && item.timestamp >= today);
-        
-        return stockOk && diffOk && countOk && criticalOk && uncountedOk && stockExistsOk && dateOk;
-    });
-    
-    updateTable();
-    updatePagination();
-    
-    bootstrap.Modal.getInstance(document.getElementById('advancedFiltersModal')).hide();
-    showNotification('Filtros aplicados', 'Los filtros avanzados han sido aplicados.', 'success');
-}
-
-function resetAdvancedFilters() {
-    document.getElementById('minStock').value = '';
-    document.getElementById('maxStock').value = '';
-    document.getElementById('minDiff').value = '';
-    document.getElementById('maxDiff').value = '';
-    document.getElementById('minCount').value = '';
-    document.getElementById('maxCount').value = '';
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    document.getElementById('filterUserAdv').value = 'all';
-    document.getElementById('filterLocationAdv').value = 'all';
-    document.getElementById('onlyCriticalFilter').checked = false;
-    document.getElementById('onlyUncountedFilter').checked = false;
-    document.getElementById('onlyWithStockFilter').checked = false;
-    document.getElementById('onlyTodayFilter').checked = false;
+function showBulkActions() {
+    showNotification('Acciones masivas', 'Funcionalidad en desarrollo.', 'info');
 }
 
 function toggleCriticalOnly() {
@@ -3967,78 +2768,9 @@ function toggleCriticalOnly() {
         CONFIG.STATE.filteredData = [...CONFIG.STATE.data];
     }
     
+    CONFIG.STATE.currentPage = 1;
     updateTable();
     updatePagination();
-}
-
-function changeChartType(chartId, type) {
-    if (CONFIG.STATE.charts[chartId]) {
-        CONFIG.STATE.charts[chartId].config.type = type;
-        CONFIG.STATE.charts[chartId].update();
-        
-        // Actualizar botones activos
-        const buttons = document.querySelectorAll(`[onclick*="changeChartType('${chartId}'"]`);
-        buttons.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.textContent.toLowerCase().includes(type)) {
-                btn.classList.add('active');
-            }
-        });
-    }
-}
-
-function changeTimeRange(range) {
-    // Actualizar botones activos
-    const buttons = document.querySelectorAll(`[onclick*="changeTimeRange('${range}')"]`);
-    buttons.forEach(btn => btn.classList.add('active'));
-    
-    // Aquí actualizarías los datos del gráfico según el rango
-    showNotification('Rango cambiado', `Se ha cambiado el rango de tiempo a ${range}.`, 'info');
-}
-
-function toggleFullscreen(chartId) {
-    const chartContainer = document.getElementById(chartId).closest('.chart-container');
-    
-    if (!document.fullscreenElement) {
-        if (chartContainer.requestFullscreen) {
-            chartContainer.requestFullscreen();
-        }
-        CONFIG.STATE.fullscreenChart = chartId;
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-        CONFIG.STATE.fullscreenChart = null;
-    }
-}
-
-function toggleWidget(widgetId) {
-    const widget = document.getElementById(widgetId);
-    if (widget.style.display === 'none') {
-        widget.style.display = 'block';
-    } else {
-        widget.style.display = 'none';
-    }
-}
-
-function refreshSummary() {
-    calculateMetrics();
-    showNotification('Resumen actualizado', 'Las métricas se han actualizado.', 'info');
-}
-
-function refreshTimeline() {
-    loadActivityTimeline();
-    showNotification('Actividad actualizada', 'El timeline se ha actualizado.', 'info');
-}
-
-function refreshDifferences() {
-    updateTopDifferences();
-    showNotification('Diferencias actualizadas', 'Las mayores diferencias se han actualizado.', 'info');
-}
-
-function showAnalytics() {
-    // Implementar análisis avanzados
-    showNotification('Análisis avanzado', 'Funcionalidad de análisis en desarrollo.', 'info');
 }
 
 function showReconciliation() {
@@ -4068,14 +2800,7 @@ function showReconciliation() {
         `,
         showCancelButton: true,
         confirmButtonText: 'Conciliar',
-        cancelButtonText: 'Cancelar',
-        preConfirm: () => {
-            if (!document.getElementById('confirmReconciliation').checked) {
-                Swal.showValidationMessage('Debe confirmar la conciliación');
-                return false;
-            }
-            return true;
-        }
+        cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
             showLoading(`Conciliando ${differences.length} diferencias...`);
@@ -4083,8 +2808,7 @@ function showReconciliation() {
             setTimeout(() => {
                 differences.forEach(item => {
                     item.estado = 'OK';
-                    item.element.dataset.estado = 'OK';
-                    item.element.cells[6].innerHTML = '<span class="status-badge badge-success"><i class="bi bi-check-circle me-1"></i>OK</span>';
+                    updateTableRow(item);
                 });
                 
                 calculateMetrics();
@@ -4096,56 +2820,31 @@ function showReconciliation() {
     });
 }
 
-function showNotificationsPanel() {
-    showNotification('Notificaciones', 'Esta funcionalidad está en desarrollo.', 'info');
+function generateReport() {
+    showNotification('Generar Reporte', 'Funcionalidad en desarrollo.', 'info');
 }
 
-function showHelp() {
-    new bootstrap.Modal(document.getElementById('helpModal')).show();
-}
-
-function refreshKPIs() {
+function refreshSummary() {
     calculateMetrics();
-    showNotification('KPIs actualizados', 'Los indicadores se han actualizado.', 'info');
+    showNotification('Resumen actualizado', 'Las métricas se han actualizado.', 'info');
 }
 
-function exportKPIs() {
-    const kpis = {
-        'Total Items': document.getElementById('totalItems').textContent,
-        'Coinciden': document.getElementById('okItems').textContent,
-        'Diferencias': document.getElementById('diffItems').textContent,
-        'Pendientes': document.getElementById('pendItems').textContent,
-        'Ubicaciones': document.getElementById('totalLocations').textContent,
-        'Stock Sistema': document.getElementById('totalStock').textContent,
-        'Items Contados': document.getElementById('totalCounted').textContent,
-        'Progreso': document.getElementById('progressPercent').textContent
-    };
-    
-    const data = [['Indicador', 'Valor'], ...Object.entries(kpis)];
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'KPIs');
-    
-    const date = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `kpis_dashboard_${date}.xlsx`);
-    
-    showNotification('KPIs exportados', 'Los indicadores se han exportado a Excel.', 'success');
+function refreshDifferences() {
+    showNotification('Diferencias actualizadas', 'Las mayores diferencias se han actualizado.', 'info');
 }
 
-function updatePerformanceChart() {
-    // Actualizar gráfico de rendimiento según filtro de usuario
-    showNotification('Rendimiento actualizado', 'El gráfico de rendimiento se ha actualizado.', 'info');
+function toggleWidget(widgetId) {
+    const widget = document.getElementById(widgetId);
+    if (widget.style.display === 'none') {
+        widget.style.display = 'block';
+    } else {
+        widget.style.display = 'none';
+    }
 }
 
-function toggleHeatmap() {
-    const showHeatmap = document.getElementById('heatmapToggle').checked;
-    // Implementar toggle del mapa de calor
-    showNotification('Mapa de calor', showHeatmap ? 'Activado' : 'Desactivado', 'info');
-}
-
-function showLoading(message = 'Cargando...', detail = '') {
+// ================= UTILIDADES =================
+function showLoading(message = 'Cargando...') {
     document.getElementById('loadingMessage').textContent = message;
-    document.getElementById('loadingDetail').textContent = detail;
     document.getElementById('loadingOverlay').classList.remove('d-none');
 }
 
@@ -4154,8 +2853,6 @@ function hideLoading() {
 }
 
 function showNotification(title, message, type = 'info') {
-    if (!CONFIG.SETTINGS.enableNotifications) return;
-    
     const panel = document.getElementById('notificationPanel');
     const notificationId = 'notification-' + Date.now();
     
@@ -4175,72 +2872,40 @@ function showNotification(title, message, type = 'info') {
     
     panel.appendChild(notification);
     
-    // Actualizar contador de notificaciones
-    updateNotificationCount(1);
-    
-    // Reproducir sonido si está activado
-    if (CONFIG.SETTINGS.enableSounds) {
-        playSound(type);
-    }
-    
     // Auto-remover después de 5 segundos
     setTimeout(() => {
         const notif = document.getElementById(notificationId);
         if (notif) {
             notif.remove();
-            updateNotificationCount(-1);
         }
     }, 5000);
 }
 
-function updateNotificationCount(change) {
-    const badge = document.getElementById('notificationBadge');
-    if (!badge) return;
+function startSessionTimer() {
+    const sessionStart = new Date();
     
-    let currentCount = parseInt(badge.textContent) || 0;
-    currentCount += change;
-    
-    if (currentCount <= 0) {
-        badge.textContent = '0 nuevas';
-        badge.parentElement.classList.remove('pulse');
-    } else {
-        badge.textContent = `${currentCount} nuevas`;
-        badge.parentElement.classList.add('pulse');
-    }
-}
-
-function playSound(type) {
-    if (!CONFIG.SETTINGS.enableSounds) return;
-    
-    // Simular sonidos (en producción usar archivos de sonido reales)
-    const sounds = {
-        success: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3',
-        error: 'https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-957.wav',
-        info: 'https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.wav',
-        warning: 'https://assets.mixkit.co/sfx/preview/mixkit-warning-alarm-buzzer-957.wav'
-    };
-    
-    if (sounds[type]) {
-        const audio = new Audio(sounds[type]);
-        audio.volume = 0.3;
-        audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
-    }
+    setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((now - sessionStart) / 1000);
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        const seconds = diff % 60;
+        
+        document.getElementById('sessionTimer').textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
 }
 
 function updateEmptyState() {
-    // Actualizar todos los contadores a 0
-    ['totalItems', 'okItems', 'diffItems', 'pendItems', 'totalLocations', 'totalStock', 'totalCounted'].forEach(id => {
+    ['totalLocations', 'totalStock', 'totalCounted'].forEach(id => {
         const element = document.getElementById(id);
         if (element) element.textContent = '0';
     });
     
     document.getElementById('progressPercent').textContent = '0%';
     document.getElementById('progressBar').style.width = '0%';
-    document.getElementById('widgetProgressBar').style.width = '0%';
-    document.getElementById('widgetProgressText').textContent = '0%';
 }
 
-// ================= EVENT LISTENERS =================
 function setupEventListeners() {
     // Búsqueda en tiempo real
     const searchInput = document.getElementById('searchInput');
@@ -4269,16 +2934,10 @@ function setupEventListeners() {
             loadLatestData();
         }
         
-        // Ctrl + A para seleccionar todos
-        if (e.ctrlKey && e.key === 'a') {
-            e.preventDefault();
-            selectAllItems();
-        }
-        
         // Ctrl + E para exportar
         if (e.ctrlKey && e.key === 'e') {
             e.preventDefault();
-            exportToExcel(CONFIG.STATE.filteredData);
+            exportToExcel();
         }
         
         // Escape para limpiar filtros
@@ -4286,63 +2945,9 @@ function setupEventListeners() {
             clearFilters();
         }
     });
-    
-    // Cerrar modales con Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            const modals = document.querySelectorAll('.modal.show');
-            modals.forEach(modal => {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            });
-        }
-    });
-    
-    // Prevenir recarga accidental
-    window.addEventListener('beforeunload', function(e) {
-        if (CONFIG.STATE.selectedItems.size > 0) {
-            e.preventDefault();
-            e.returnValue = 'Tienes items seleccionados. ¿Seguro que quieres salir?';
-        }
-    });
 }
 
-// ================= INICIALIZACIÓN FINAL =================
-// Añadir estilos para animaciones
-const style = document.createElement('style');
-style.textContent = `
-    .spin {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-    [data-theme="dark"] {
-        --primary: #0d4c6e;
-        --primary-light: rgba(13, 76, 110, 0.1);
-        --gray-100: #212529;
-        --gray-200: #343a40;
-        --gray-300: #495057;
-        --gray-800: #f8f9fa;
-    }
-    [data-theme="light"] {
-        --primary: #1a5f7a;
-        --primary-light: rgba(26, 95, 122, 0.1);
-    }
-    [data-theme="blue"] {
-        --primary: #0066cc;
-        --primary-light: rgba(0, 102, 204, 0.1);
-    }
-`;
-document.head.appendChild(style);
-
-// Cargar configuración al iniciar
-loadSettings();
-
-// Exportar funciones globales necesarias
+// Exportar funciones necesarias
 window.loadLatestData = loadLatestData;
 window.toggleAutoRefresh = toggleAutoRefresh;
 window.showSettings = showSettings;
@@ -4353,42 +2958,18 @@ window.sortTable = sortTable;
 window.previousPage = previousPage;
 window.nextPage = nextPage;
 window.editItem = editItem;
-window.showItemHistory = showItemHistory;
 window.recountItem = recountItem;
 window.deleteItem = deleteItem;
-window.selectAllItems = selectAllItems;
-window.showBulkActions = showBulkActions;
-window.bulkValidate = bulkValidate;
-window.bulkRecount = bulkRecount;
-window.bulkExport = bulkExport;
-window.bulkReconcile = bulkReconcile;
-window.bulkDelete = bulkDelete;
 window.exportToExcel = exportToExcel;
 window.exportDifferences = exportDifferences;
 window.generateReport = generateReport;
 window.showAdvancedFilters = showAdvancedFilters;
-window.applyAdvancedFilters = applyAdvancedFilters;
-window.resetAdvancedFilters = resetAdvancedFilters;
+window.showBulkActions = showBulkActions;
 window.toggleCriticalOnly = toggleCriticalOnly;
-window.changeChartType = changeChartType;
-window.changeTimeRange = changeTimeRange;
-window.toggleFullscreen = toggleFullscreen;
-window.toggleWidget = toggleWidget;
-window.refreshSummary = refreshSummary;
-window.refreshTimeline = refreshTimeline;
-window.refreshDifferences = refreshDifferences;
-window.showAnalytics = showAnalytics;
 window.showReconciliation = showReconciliation;
-window.showNotificationsPanel = showNotificationsPanel;
-window.refreshKPIs = refreshKPIs;
-window.exportKPIs = exportKPIs;
-window.updatePerformanceChart = updatePerformanceChart;
-window.toggleHeatmap = toggleHeatmap;
-window.setTheme = setTheme;
-window.saveSettings = saveSettings;
-window.toggleRowSelection = toggleRowSelection;
-
-console.log(`🎉 Dashboard v${CONFIG.VERSION} completamente funcional!`);
+window.refreshSummary = refreshSummary;
+window.refreshDifferences = refreshDifferences;
+window.toggleWidget = toggleWidget;
 </script>
 
 {% endblock %}
