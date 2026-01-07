@@ -1379,6 +1379,7 @@ def reset_dashboard():
 def index():
     # Redirige al dashboard o muestra página principal
     return redirect(url_for('inventory.dashboard_inventory'))
+
 @inventory_bp.route('/update_count', methods=['POST'])
 @login_required
 def update_count():
@@ -1440,3 +1441,125 @@ def update_count():
         db.session.rollback()
         print(f"Error actualizando conteo: {str(e)}")
         return jsonify({'success': False, 'message': f'Error al actualizar: {str(e)}'}), 500
+
+
+@inventory_bp.route('/export_differences', methods=['GET'])
+@login_required
+def export_differences():
+    """Exportar solo los items con diferencias a Excel"""
+    try:
+        # Obtener solo items con diferencias
+        from models.inventory import InventoryCount
+        differences = InventoryCount.query.filter_by(estado='Diferencia').all()
+        
+        # Crear datos para Excel
+        data = []
+        headers = [
+            'Código Material', 'Descripción', 'Ubicación', 
+            'Stock Sistema', 'Conteo Físico', 'Diferencia',
+            'Usuario', 'Fecha Conteo', 'Observaciones'
+        ]
+        data.append(headers)
+        
+        for item in differences:
+            diferencia = item.real_count - item.stock if item.real_count else 0
+            data.append([
+                item.material_code,
+                item.material_text,
+                item.location,
+                item.stock,
+                item.real_count or 0,
+                f"{'+' if diferencia > 0 else ''}{diferencia}",
+                item.usuario or 'N/A',
+                item.timestamp.strftime('%Y-%m-%d %H:%M:%S') if item.timestamp else 'N/A',
+                item.notes or ''
+            ])
+        
+        # Crear DataFrame
+        import pandas as pd
+        import io
+        from flask import send_file
+        
+        df = pd.DataFrame(data[1:], columns=data[0])
+        
+        # Crear archivo Excel en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Diferencias', index=False)
+        
+        output.seek(0)
+        
+        # Enviar archivo
+        filename = f'diferencias_conteo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error exportando diferencias: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error al exportar: {str(e)}'}), 500
+
+
+@inventory_bp.route('/export_inventory', methods=['GET'])
+@login_required
+def export_inventory():
+    """Exportar todo el inventario a Excel"""
+    try:
+        # Obtener todos los items
+        from models.inventory import InventoryCount
+        items = InventoryCount.query.all()
+        
+        # Crear datos para Excel
+        data = []
+        headers = [
+            'Código Material', 'Descripción', 'Ubicación', 
+            'Stock Sistema', 'Conteo Físico', 'Diferencia', 'Estado',
+            'Usuario', 'Fecha Conteo', 'Observaciones'
+        ]
+        data.append(headers)
+        
+        for item in items:
+            real_count = item.real_count or 0
+            diferencia = real_count - item.stock
+            data.append([
+                item.material_code,
+                item.material_text,
+                item.location,
+                item.stock,
+                real_count,
+                f"{'+' if diferencia > 0 else ''}{diferencia}",
+                item.estado,
+                item.usuario or 'N/A',
+                item.timestamp.strftime('%Y-%m-%d %H:%M:%S') if item.timestamp else 'N/A',
+                item.notes or ''
+            ])
+        
+        # Crear DataFrame
+        import pandas as pd
+        import io
+        from flask import send_file
+        
+        df = pd.DataFrame(data[1:], columns=data[0])
+        
+        # Crear archivo Excel en memoria
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Inventario', index=False)
+        
+        output.seek(0)
+        
+        # Enviar archivo
+        filename = f'inventario_completo_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error exportando inventario: {str(e)}")
+        return jsonify({'success': False, 'message': f'Error al exportar: {str(e)}'}), 500
