@@ -18,6 +18,7 @@
         --purple: #8e44ad;
         --teal: #1abc9c;
         --orange: #e67e22;
+        --cyan: #00bcd4;
         
         --bg-light: #f8f9fa;
         --bg-white: #ffffff;
@@ -27,10 +28,13 @@
         --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
         --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
         --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
+        --shadow-xl: 0 20px 40px rgba(0,0,0,0.2);
         --radius-sm: 8px;
         --radius-md: 12px;
         --radius-lg: 16px;
-        --transition: all 0.3s ease;
+        --radius-xl: 24px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .inventory-dashboard {
@@ -38,18 +42,32 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        position: relative;
+    }
+
+    .inventory-dashboard::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 300px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        z-index: -1;
     }
 
     /* ================= HEADER PRINCIPAL ================= */
     .dashboard-header {
         background: var(--bg-white);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-xl);
         padding: 30px;
         margin-bottom: 30px;
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-light);
         position: relative;
         overflow: hidden;
-        border: 1px solid var(--border-light);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .dashboard-header::before {
@@ -59,7 +77,14 @@
         left: 0;
         width: 100%;
         height: 5px;
-        background: linear-gradient(90deg, var(--primary), var(--success), var(--warning));
+        background: linear-gradient(90deg, var(--primary), var(--success), var(--warning), var(--danger));
+        background-size: 300% 100%;
+        animation: gradient-shift 3s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
     }
 
     .header-main {
@@ -72,16 +97,22 @@
     }
 
     .header-left h1 {
-        font-size: 2.2rem;
+        font-size: 2.4rem;
         font-weight: 800;
-        color: var(--primary);
         margin: 0 0 10px 0;
         display: flex;
         align-items: center;
         gap: 15px;
-        background: linear-gradient(90deg, var(--primary), var(--info));
+        background: linear-gradient(90deg, var(--primary), var(--info), var(--purple));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: text-shimmer 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes text-shimmer {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
     }
 
     .header-subtitle {
@@ -103,20 +134,21 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         border: none;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         cursor: pointer;
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-md);
     }
 
     .btn-icon:hover {
-        transform: translateY(-3px);
-        box-shadow: var(--shadow-md);
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: var(--shadow-lg);
     }
 
     .btn-icon::after {
@@ -129,12 +161,22 @@
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.3);
         transform: translate(-50%, -50%);
-        transition: width 0.3s, height 0.3s;
+        transition: width 0.4s, height 0.4s;
     }
 
     .btn-icon:hover::after {
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
+    }
+
+    .btn-icon i {
+        position: relative;
+        z-index: 2;
+        transition: transform 0.3s;
+    }
+
+    .btn-icon:hover i {
+        transform: rotate(15deg);
     }
 
     .btn-primary {
@@ -143,12 +185,12 @@
     }
 
     .btn-success {
-        background: linear-gradient(135deg, var(--success), var(--success-light));
+        background: linear-gradient(135deg, var(--success), var(--teal));
         color: white;
     }
 
     .btn-warning {
-        background: linear-gradient(135deg, var(--warning), var(--warning-light));
+        background: linear-gradient(135deg, var(--warning), var(--orange));
         color: white;
     }
 
@@ -157,31 +199,37 @@
         color: white;
     }
 
+    .btn-info {
+        background: linear-gradient(135deg, var(--info), var(--cyan));
+        color: white;
+    }
+
     /* ================= STATS GRID ================= */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 24px;
         padding-top: 25px;
         border-top: 2px solid var(--border-light);
     }
 
     .stat-card {
         background: white;
-        padding: 25px;
-        border-radius: var(--radius-md);
+        padding: 28px;
+        border-radius: var(--radius-lg);
         border: 2px solid transparent;
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 24px;
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-md);
     }
 
     .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: var(--shadow-xl);
         border-color: var(--primary);
     }
 
@@ -194,7 +242,7 @@
         height: 4px;
         background: linear-gradient(90deg, var(--primary), var(--success));
         opacity: 0;
-        transition: opacity 0.3s;
+        transition: opacity 0.5s;
     }
 
     .stat-card:hover::before {
@@ -202,16 +250,16 @@
     }
 
     .stat-icon-wrapper {
-        width: 70px;
-        height: 70px;
-        border-radius: 16px;
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
+        font-size: 2rem;
         color: white;
         flex-shrink: 0;
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-lg);
         position: relative;
         overflow: hidden;
     }
@@ -219,12 +267,18 @@
     .stat-icon-wrapper::after {
         content: '';
         position: absolute;
-        top: -10px;
-        right: -10px;
-        width: 30px;
-        height: 30px;
-        background: rgba(255, 255, 255, 0.2);
+        top: -15px;
+        right: -15px;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.3);
         border-radius: 50%;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(180deg); }
     }
 
     .stat-content {
@@ -232,63 +286,97 @@
     }
 
     .stat-value {
-        font-size: 2.5rem;
-        font-weight: 800;
+        font-size: 2.8rem;
+        font-weight: 900;
         line-height: 1;
-        margin: 0 0 5px 0;
+        margin: 0 0 8px 0;
         color: var(--text-dark);
         display: flex;
         align-items: baseline;
-        gap: 5px;
+        gap: 8px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .stat-trend {
         font-size: 0.9rem;
-        padding: 4px 10px;
+        padding: 6px 12px;
         border-radius: 20px;
-        font-weight: 600;
+        font-weight: 700;
         display: inline-flex;
         align-items: center;
-        gap: 3px;
+        gap: 4px;
+        animation: pulse-opacity 2s infinite;
+    }
+
+    @keyframes pulse-opacity {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
     }
 
     .trend-up {
-        background: rgba(39, 174, 96, 0.15);
+        background: linear-gradient(135deg, rgba(39, 174, 96, 0.2), rgba(46, 204, 113, 0.3));
         color: var(--success);
+        border: 1px solid rgba(39, 174, 96, 0.3);
     }
 
     .trend-down {
-        background: rgba(231, 76, 60, 0.15);
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.3));
         color: var(--danger);
+        border: 1px solid rgba(231, 76, 60, 0.3);
     }
 
     .stat-label {
-        font-size: 1rem;
+        font-size: 1.1rem;
         color: var(--text-muted);
         font-weight: 600;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .stat-progress {
-        height: 6px;
+        height: 8px;
         background: var(--border-light);
-        border-radius: 3px;
+        border-radius: 4px;
         overflow: hidden;
-        margin-top: 10px;
+        margin-top: 15px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .stat-progress-bar {
         height: 100%;
-        border-radius: 3px;
-        transition: width 1s ease-in-out;
+        border-radius: 4px;
+        transition: width 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(255,255,255,0.4) 50%, 
+            transparent 100%);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
     }
 
     /* ================= LAYOUT PRINCIPAL ================= */
     .dashboard-layout {
         display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 30px;
-        margin-bottom: 30px;
+        grid-template-columns: 1fr 380px;
+        gap: 32px;
+        margin-bottom: 32px;
     }
 
     @media (max-width: 1200px) {
@@ -300,36 +388,49 @@
     .main-content {
         display: flex;
         flex-direction: column;
-        gap: 30px;
+        gap: 32px;
     }
 
     .sidebar {
         display: flex;
         flex-direction: column;
-        gap: 30px;
+        gap: 32px;
     }
 
     /* ================= SECCIÓN KPI ================= */
     .kpi-section {
         background: white;
-        border-radius: var(--radius-lg);
-        padding: 25px;
-        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-xl);
+        padding: 28px;
+        box-shadow: var(--shadow-xl);
         border: 1px solid var(--border-light);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .section-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 25px;
-        padding-bottom: 15px;
+        margin-bottom: 28px;
+        padding-bottom: 20px;
         border-bottom: 2px solid var(--border-light);
+        position: relative;
+    }
+
+    .section-header::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--primary), transparent);
     }
 
     .section-title {
-        font-size: 1.3rem;
-        font-weight: 700;
+        font-size: 1.4rem;
+        font-weight: 800;
         color: var(--text-dark);
         display: flex;
         align-items: center;
@@ -343,72 +444,86 @@
 
     .kpi-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 20px;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
     }
 
     .kpi-card {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        border-radius: var(--radius-md);
-        padding: 25px;
-        border: 2px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        border: 2px solid transparent;
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-md);
     }
 
     .kpi-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-xl);
         border-color: var(--primary);
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
     }
 
     .kpi-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
 
     .kpi-title {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-dark);
-        font-size: 0.95rem;
+        font-size: 1rem;
         margin: 0;
     }
 
     .kpi-badge {
-        padding: 5px 12px;
+        padding: 6px 14px;
         border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: 0.85rem;
+        font-weight: 800;
         color: white;
+        box-shadow: var(--shadow-sm);
+        animation: badge-pulse 2s infinite;
+    }
+
+    @keyframes badge-pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
     }
 
     .kpi-value {
-        font-size: 2.8rem;
-        font-weight: 800;
+        font-size: 3.2rem;
+        font-weight: 900;
         line-height: 1;
-        margin: 15px 0;
+        margin: 20px 0;
         color: var(--text-dark);
         display: flex;
         align-items: baseline;
-        gap: 5px;
+        gap: 8px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .kpi-change {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 0.9rem;
+        gap: 10px;
+        font-size: 0.95rem;
         color: var(--text-muted);
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border-light);
     }
 
     /* ================= CHART SECTION ================= */
     .chart-section {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+        gap: 24px;
     }
 
     @media (max-width: 992px) {
@@ -419,20 +534,23 @@
 
     .chart-card {
         background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
         border: 1px solid var(--border-light);
         overflow: hidden;
         transition: var(--transition);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .chart-card:hover {
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-5px);
     }
 
     .chart-header {
-        padding: 20px;
-        background: linear-gradient(to right, rgba(44, 62, 80, 0.03), rgba(52, 152, 219, 0.05));
+        padding: 24px;
+        background: linear-gradient(to right, rgba(44, 62, 80, 0.05), rgba(52, 152, 219, 0.08));
         border-bottom: 1px solid var(--border-light);
         display: flex;
         justify-content: space-between;
@@ -440,122 +558,138 @@
     }
 
     .chart-title {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-dark);
-        font-size: 1rem;
+        font-size: 1.1rem;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
 
     .chart-body {
-        padding: 20px;
-        height: 300px;
+        padding: 24px;
+        height: 320px;
         position: relative;
     }
 
     /* ================= TABLA MEJORADA ================= */
     .table-section {
         background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
         border: 1px solid var(--border-light);
         overflow: hidden;
         transition: var(--transition);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .table-section:hover {
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-5px);
     }
 
     .table-toolbar {
-        padding: 20px;
-        background: linear-gradient(to right, rgba(44, 62, 80, 0.03), rgba(52, 152, 219, 0.05));
+        padding: 24px;
+        background: linear-gradient(to right, rgba(44, 62, 80, 0.05), rgba(52, 152, 219, 0.08));
         border-bottom: 1px solid var(--border-light);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 15px;
+        gap: 20px;
     }
 
     .table-filters {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 20px;
         flex-wrap: wrap;
     }
 
     .filter-group {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
 
     .filter-label {
         font-weight: 600;
         color: var(--text-muted);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
 
     .filter-select {
-        padding: 10px 15px;
+        padding: 12px 18px;
         border: 2px solid var(--border-light);
-        border-radius: var(--radius-sm);
+        border-radius: var(--radius-md);
         background: white;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         color: var(--text-dark);
         cursor: pointer;
         transition: var(--transition);
-        min-width: 150px;
+        min-width: 160px;
+        box-shadow: var(--shadow-sm);
     }
 
     .filter-select:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        transform: translateY(-2px);
     }
 
     .search-box {
         position: relative;
-        min-width: 300px;
+        min-width: 320px;
     }
 
     .search-input {
         width: 100%;
-        padding: 12px 20px 12px 45px;
+        padding: 14px 20px 14px 50px;
         border: 2px solid var(--border-light);
-        border-radius: var(--radius-sm);
-        font-size: 0.95rem;
+        border-radius: var(--radius-md);
+        font-size: 1rem;
         transition: var(--transition);
         background: white;
+        box-shadow: var(--shadow-sm);
     }
 
     .search-input:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2), var(--shadow-md);
+        transform: translateY(-2px);
     }
 
     .search-icon {
         position: absolute;
-        left: 15px;
+        left: 18px;
         top: 50%;
         transform: translateY(-50%);
         color: var(--text-muted);
         pointer-events: none;
+        transition: var(--transition);
+    }
+
+    .search-input:focus + .search-icon {
+        color: var(--primary);
+        transform: translateY(-50%) scale(1.1);
     }
 
     .table-container {
         position: relative;
         overflow-x: auto;
+        max-height: 600px;
+        border-radius: 0 0 var(--radius-xl) var(--radius-xl);
     }
 
     .smart-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        min-width: 1200px;
     }
 
     .smart-table thead {
@@ -563,33 +697,34 @@
         top: 0;
         z-index: 10;
         background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
     }
 
     .smart-table th {
-        padding: 18px 15px;
+        padding: 20px 16px;
         text-align: left;
-        font-weight: 700;
+        font-weight: 800;
         color: var(--text-dark);
         border-bottom: 3px solid var(--primary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         white-space: nowrap;
         user-select: none;
         position: relative;
         cursor: pointer;
         transition: var(--transition);
+        background: linear-gradient(to bottom, white, #f8f9fa);
     }
 
     .smart-table th:hover {
-        background: rgba(52, 152, 219, 0.05);
+        background: rgba(52, 152, 219, 0.08);
     }
 
     .smart-table th::after {
         content: '↕';
         position: absolute;
-        right: 10px;
+        right: 12px;
         top: 50%;
         transform: translateY(-50%);
         font-size: 0.8em;
@@ -599,6 +734,7 @@
 
     .smart-table th:hover::after {
         opacity: 1;
+        transform: translateY(-50%) scale(1.2);
     }
 
     .smart-table th.sort-asc::after {
@@ -614,7 +750,7 @@
     }
 
     .smart-table td {
-        padding: 16px 15px;
+        padding: 18px 16px;
         color: var(--text-dark);
         vertical-align: middle;
         border-bottom: 1px solid var(--border-light);
@@ -626,27 +762,35 @@
     }
 
     .smart-table tbody tr:hover {
-        background: rgba(52, 152, 219, 0.03);
-        transform: translateX(5px);
+        background: linear-gradient(to right, rgba(52, 152, 219, 0.04), rgba(41, 128, 185, 0.08));
+        transform: translateX(8px);
+        box-shadow: var(--shadow-md);
     }
 
     .smart-table tbody tr.selected {
-        background: rgba(52, 152, 219, 0.08);
+        background: linear-gradient(to right, rgba(52, 152, 219, 0.1), rgba(41, 128, 185, 0.15));
     }
 
     .status-indicator {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        min-width: 110px;
+        gap: 10px;
+        padding: 10px 20px;
+        border-radius: 24px;
+        font-size: 0.9rem;
+        font-weight: 800;
+        min-width: 120px;
         justify-content: center;
         transition: var(--transition);
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 2px solid transparent;
+    }
+
+    .status-indicator:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-md);
     }
 
     .status-indicator::before {
@@ -656,9 +800,9 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
         transform: translateX(-100%);
-        transition: transform 0.6s;
+        transition: transform 0.8s;
     }
 
     .status-indicator:hover::before {
@@ -668,43 +812,50 @@
     .status-success {
         background: linear-gradient(135deg, var(--success), var(--success-light));
         color: white;
-        box-shadow: 0 3px 8px rgba(39, 174, 96, 0.3);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        border-color: rgba(39, 174, 96, 0.3);
     }
 
     .status-warning {
         background: linear-gradient(135deg, var(--warning), var(--warning-light));
         color: white;
-        box-shadow: 0 3px 8px rgba(243, 156, 18, 0.3);
+        box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        border-color: rgba(243, 156, 18, 0.3);
     }
 
     .status-danger {
         background: linear-gradient(135deg, var(--danger), var(--danger-light));
         color: white;
-        box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+        border-color: rgba(231, 76, 60, 0.3);
     }
 
     .status-info {
         background: linear-gradient(135deg, var(--info), var(--primary-light));
         color: white;
-        box-shadow: 0 3px 8px rgba(41, 128, 185, 0.3);
+        box-shadow: 0 4px 12px rgba(41, 128, 185, 0.3);
+        border-color: rgba(41, 128, 185, 0.3);
     }
 
     /* ================= SIDEBAR WIDGETS ================= */
     .widget {
         background: white;
-        border-radius: var(--radius-lg);
-        box-shadow: var(--shadow-md);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-xl);
         border: 1px solid var(--border-light);
         overflow: hidden;
         transition: var(--transition);
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.95);
     }
 
     .widget:hover {
-        box-shadow: var(--shadow-lg);
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-5px);
     }
 
     .widget-header {
-        padding: 20px;
+        padding: 24px;
         background: linear-gradient(90deg, var(--primary), var(--primary-dark));
         color: white;
         display: flex;
@@ -721,52 +872,49 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
         transform: translateX(-100%);
         animation: shimmer 2s infinite;
     }
 
-    @keyframes shimmer {
-        100% {
-            transform: translateX(100%);
-        }
-    }
-
     .widget-title {
-        font-weight: 700;
-        font-size: 1rem;
+        font-weight: 800;
+        font-size: 1.1rem;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         position: relative;
         z-index: 1;
     }
 
     .widget-body {
-        padding: 20px;
+        padding: 24px;
     }
 
     .activity-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 16px;
     }
 
     .activity-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 15px;
-        border-radius: var(--radius-sm);
+        padding: 18px;
+        border-radius: var(--radius-md);
         background: linear-gradient(to right, #f8f9fa, #f1f5f9);
-        border-left: 4px solid transparent;
+        border-left: 5px solid transparent;
         transition: var(--transition);
+        position: relative;
+        overflow: hidden;
     }
 
     .activity-item:hover {
-        transform: translateX(5px);
+        transform: translateX(8px);
         background: linear-gradient(to right, #e9ecef, #dee2e6);
+        box-shadow: var(--shadow-md);
     }
 
     .activity-item.success {
@@ -781,78 +929,94 @@
         border-left-color: var(--danger);
     }
 
+    .activity-item.info {
+        border-left-color: var(--info);
+    }
+
     .activity-content {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 18px;
     }
 
     .activity-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         color: white;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
     }
 
     .activity-text {
         display: flex;
         flex-direction: column;
+        gap: 4px;
     }
 
     .activity-title {
-        font-weight: 600;
+        font-weight: 700;
         color: var(--text-dark);
-        font-size: 0.95rem;
+        font-size: 1rem;
     }
 
     .activity-time {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .activity-badge {
-        padding: 6px 14px;
+        padding: 8px 16px;
         border-radius: 20px;
-        font-size: 0.9rem;
-        font-weight: 700;
+        font-size: 1rem;
+        font-weight: 800;
         color: white;
-        min-width: 65px;
+        min-width: 70px;
         text-align: center;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-md);
+        transition: var(--transition);
+    }
+
+    .activity-badge:hover {
+        transform: scale(1.1);
     }
 
     /* ================= QUICK ACTIONS ================= */
     .quick-actions {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
+        gap: 20px;
     }
 
     .action-btn {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         border: 2px solid var(--border-light);
-        border-radius: var(--radius-md);
-        padding: 20px;
+        border-radius: var(--radius-lg);
+        padding: 24px;
         text-align: center;
         transition: var(--transition);
         cursor: pointer;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 15px;
+        gap: 18px;
         text-decoration: none;
         color: inherit;
         position: relative;
         overflow: hidden;
+        box-shadow: var(--shadow-md);
     }
 
     .action-btn:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: var(--shadow-xl);
         border-color: var(--primary);
         background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
     }
@@ -863,10 +1027,10 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 4px;
+        height: 5px;
         background: linear-gradient(90deg, var(--primary), var(--success));
         transform: translateY(-100%);
-        transition: transform 0.3s;
+        transition: transform 0.4s;
     }
 
     .action-btn:hover::before {
@@ -874,27 +1038,29 @@
     }
 
     .action-icon {
-        width: 55px;
-        height: 55px;
-        border-radius: 14px;
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
         background: linear-gradient(135deg, var(--primary), var(--primary-light));
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.8rem;
         transition: var(--transition);
         position: relative;
         z-index: 1;
+        box-shadow: var(--shadow-md);
     }
 
     .action-btn:hover .action-icon {
-        transform: scale(1.1) rotate(5deg);
+        transform: scale(1.15) rotate(10deg);
+        box-shadow: var(--shadow-lg);
     }
 
     .action-label {
-        font-weight: 700;
-        font-size: 1rem;
+        font-weight: 800;
+        font-size: 1.1rem;
         color: var(--text-dark);
         margin: 0;
         position: relative;
@@ -905,53 +1071,70 @@
     .differences-list {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 18px;
     }
 
     .difference-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 15px;
-        background: linear-gradient(to right, rgba(52, 152, 219, 0.05), rgba(41, 128, 185, 0.08));
-        border-radius: var(--radius-sm);
-        border-left: 4px solid var(--warning);
+        padding: 18px;
+        background: linear-gradient(to right, rgba(52, 152, 219, 0.08), rgba(41, 128, 185, 0.12));
+        border-radius: var(--radius-md);
+        border-left: 5px solid var(--warning);
         transition: var(--transition);
+        position: relative;
+        overflow: hidden;
     }
 
     .difference-item:hover {
-        transform: translateX(5px);
-        background: linear-gradient(to right, rgba(52, 152, 219, 0.1), rgba(41, 128, 185, 0.15));
+        transform: translateX(8px);
+        background: linear-gradient(to right, rgba(52, 152, 219, 0.12), rgba(41, 128, 185, 0.18));
+        box-shadow: var(--shadow-md);
     }
 
     .difference-info {
         flex: 1;
+        min-width: 0;
     }
 
     .difference-code {
-        font-weight: 700;
+        font-weight: 800;
         color: var(--text-dark);
-        font-size: 0.95rem;
+        font-size: 1rem;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .difference-location {
-        font-size: 0.85rem;
+        font-size: 0.9rem;
         color: var(--text-muted);
-        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .difference-amount {
-        font-weight: 800;
-        font-size: 1.2rem;
+        font-weight: 900;
+        font-size: 1.3rem;
         text-align: right;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: var(--shadow-sm);
+        min-width: 80px;
     }
 
     .difference-positive {
         color: var(--success);
+        border: 2px solid rgba(39, 174, 96, 0.3);
     }
 
     .difference-negative {
         color: var(--danger);
+        border: 2px solid rgba(231, 76, 60, 0.3);
     }
 
     /* ================= NOTIFICACIONES Y LOADING ================= */
@@ -960,22 +1143,26 @@
         top: 20px;
         right: 20px;
         z-index: 9999;
-        width: 350px;
+        width: 380px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .notification {
         background: white;
-        border-radius: var(--radius-md);
-        padding: 18px;
-        margin-bottom: 15px;
-        box-shadow: var(--shadow-lg);
-        border-left: 5px solid var(--primary);
-        animation: slideInRight 0.3s ease-out;
+        border-radius: var(--radius-lg);
+        padding: 20px;
+        margin-bottom: 0;
+        box-shadow: var(--shadow-xl);
+        border-left: 6px solid var(--primary);
+        animation: slideInRight 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         position: relative;
         overflow: hidden;
+        transform-origin: top right;
     }
 
     .notification::before {
@@ -985,20 +1172,28 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.15) 50%, transparent 70%);
         transform: translateX(-100%);
     }
 
     .notification.success {
         border-left-color: var(--success);
+        background: linear-gradient(to right, white, rgba(39, 174, 96, 0.05));
     }
 
     .notification.warning {
         border-left-color: var(--warning);
+        background: linear-gradient(to right, white, rgba(243, 156, 18, 0.05));
     }
 
     .notification.error {
         border-left-color: var(--danger);
+        background: linear-gradient(to right, white, rgba(231, 76, 60, 0.05));
+    }
+
+    .notification.info {
+        border-left-color: var(--info);
+        background: linear-gradient(to right, white, rgba(52, 152, 219, 0.05));
     }
 
     .loading-overlay {
@@ -1007,31 +1202,46 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.9);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 99999;
-        backdrop-filter: blur(5px);
+        backdrop-filter: blur(8px);
+        animation: fadeIn 0.3s ease;
     }
 
     .loading-spinner {
-        width: 80px;
-        height: 80px;
-        border: 5px solid rgba(255, 255, 255, 0.1);
+        width: 100px;
+        height: 100px;
+        border: 6px solid rgba(255, 255, 255, 0.1);
         border-top-color: var(--primary-light);
         border-radius: 50%;
         animation: spin 1s linear infinite;
+        position: relative;
+    }
+
+    .loading-spinner::after {
+        content: '';
+        position: absolute;
+        top: -6px;
+        left: -6px;
+        right: -6px;
+        bottom: -6px;
+        border: 6px solid transparent;
+        border-top-color: var(--success);
+        border-radius: 50%;
+        animation: spin 1.5s linear infinite reverse;
     }
 
     /* ================= ANIMACIONES ================= */
     @keyframes slideInRight {
         from {
-            transform: translateX(100%);
+            transform: translateX(100%) scale(0.8);
             opacity: 0;
         }
         to {
-            transform: translateX(0);
+            transform: translateX(0) scale(1);
             opacity: 1;
         }
     }
@@ -1045,9 +1255,20 @@
     @keyframes pulse {
         0%, 100% {
             opacity: 1;
+            transform: scale(1);
         }
         50% {
-            opacity: 0.5;
+            opacity: 0.7;
+            transform: scale(1.05);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
         }
     }
 
@@ -1055,28 +1276,53 @@
         animation: pulse 2s infinite;
     }
 
+    .fade-in {
+        animation: fadeIn 0.6s ease-out;
+    }
+
     /* ================= RESPONSIVE ================= */
     @media (max-width: 768px) {
         .inventory-dashboard {
-            padding: 15px;
+            padding: 16px;
+        }
+        
+        .dashboard-header {
+            padding: 24px;
         }
         
         .header-main {
             flex-direction: column;
+            align-items: stretch;
         }
         
         .header-actions {
-            width: 100%;
             justify-content: center;
         }
         
         .stats-grid {
             grid-template-columns: 1fr;
+            gap: 16px;
         }
         
         .table-toolbar {
             flex-direction: column;
             align-items: stretch;
+            padding: 20px;
+        }
+        
+        .table-filters {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        
+        .filter-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-select {
+            width: 100%;
         }
         
         .search-box {
@@ -1085,12 +1331,89 @@
         
         .quick-actions {
             grid-template-columns: 1fr;
+            gap: 12px;
         }
+        
+        .kpi-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        
+        .notification-panel {
+            width: calc(100% - 40px);
+            right: 20px;
+            left: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header-left h1 {
+            font-size: 1.8rem;
+        }
+        
+        .stat-value {
+            font-size: 2.2rem;
+        }
+        
+        .kpi-value {
+            font-size: 2.4rem;
+        }
+        
+        .btn-icon {
+            width: 48px;
+            height: 48px;
+        }
+    }
+
+    /* ================= UTILITY CLASSES ================= */
+    .extra-small {
+        font-size: 0.75rem;
+    }
+    
+    .text-gradient {
+        background: linear-gradient(90deg, var(--primary), var(--info));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-4px);
+        transition: var(--transition);
+    }
+    
+    .scrollbar-thin {
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-light) var(--border-light);
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-track {
+        background: var(--border-light);
+        border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: var(--primary-light);
+        border-radius: 3px;
+    }
+    
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: var(--primary);
     }
 </style>
 
 <!-- ================= HTML DEL DASHBOARD ================= -->
-<div class="inventory-dashboard">
+<div class="inventory-dashboard fade-in">
     <!-- PANEL DE NOTIFICACIONES -->
     <div id="notificationPanel" class="notification-panel"></div>
     
@@ -1099,49 +1422,63 @@
         <div class="text-center">
             <div class="loading-spinner"></div>
             <div class="mt-4 text-white">
-                <h4 id="loadingMessage">Cargando...</h4>
-                <p id="loadingDetail" class="text-light opacity-75"></p>
+                <h4 id="loadingMessage" class="fw-bold">Cargando...</h4>
+                <p id="loadingDetail" class="text-light opacity-75 mt-2"></p>
+                <div class="progress mt-3" style="width: 200px; margin: 0 auto; height: 6px;">
+                    <div id="loadingProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                         style="width: 0%"></div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- HEADER PRINCIPAL -->
-    <div class="dashboard-header">
+    <div class="dashboard-header glass-effect">
         <div class="header-main">
             <div class="header-left">
                 <h1>
                     <i class="bi bi-speedometer2"></i>
                     Dashboard de Inventario
+                    <span class="badge bg-primary fs-6" id="liveBadge">
+                        <i class="bi bi-circle-fill me-1"></i>LIVE
+                    </span>
                 </h1>
                 <p class="header-subtitle">
-                    <i class="bi bi-graph-up-arrow"></i>
+                    <i class="bi bi-graph-up-arrow text-primary"></i>
                     Monitoreo en tiempo real del conteo físico
+                    <span class="ms-2 text-muted extra-small">
+                        <i class="bi bi-clock"></i> {{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}
+                    </span>
                 </p>
             </div>
             
             <div class="header-actions">
                 <button class="btn-icon btn-primary" onclick="refreshDashboard()" 
-                        title="Actualizar datos">
+                        title="Actualizar datos" id="refreshBtn">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
-                <button class="btn-icon btn-success" onclick="startNewCount()"
-                        title="Nuevo conteo">
+                <a href="{{ url_for('inventory.count_inventory') if url_for else '#' }}" 
+                   class="btn-icon btn-success" title="Nuevo conteo">
                     <i class="bi bi-plus-circle"></i>
-                </button>
-                <button class="btn-icon btn-warning" onclick="exportReport()"
-                        title="Exportar reporte">
+                </a>
+                <button class="btn-icon btn-warning" onclick="exportDifferences()"
+                        title="Exportar diferencias">
                     <i class="bi bi-file-earmark-excel"></i>
                 </button>
-                <button class="btn-icon btn-danger" onclick="showSettings()"
-                        title="Configuración">
-                    <i class="bi bi-gear"></i>
+                <button class="btn-icon btn-info" onclick="toggleAutoRefresh()"
+                        title="Auto-refresh" id="autoRefreshBtn">
+                    <i class="bi bi-clock"></i>
+                </button>
+                <button class="btn-icon btn-danger" onclick="showHelpModal()"
+                        title="Ayuda">
+                    <i class="bi bi-question-circle"></i>
                 </button>
             </div>
         </div>
         
         <!-- STATS EN TIEMPO REAL -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card hover-lift">
                 <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, var(--primary), var(--info));">
                     <i class="bi bi-boxes"></i>
                 </div>
@@ -1152,14 +1489,17 @@
                             <i class="bi bi-arrow-up-right"></i> 12%
                         </span>
                     </div>
-                    <div class="stat-label">Total de Items</div>
+                    <div class="stat-label">
+                        <i class="bi bi-box"></i>
+                        Total de Items
+                    </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" style="width: 85%; background: linear-gradient(90deg, var(--primary), var(--info));"></div>
                     </div>
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card hover-lift">
                 <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, var(--success), var(--teal));">
                     <i class="bi bi-check-circle"></i>
                 </div>
@@ -1170,32 +1510,38 @@
                             <i class="bi bi-arrow-up-right"></i> 8%
                         </span>
                     </div>
-                    <div class="stat-label">Coincidencias</div>
+                    <div class="stat-label">
+                        <i class="bi bi-check-lg"></i>
+                        Coincidencias
+                    </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" style="width: 72%; background: linear-gradient(90deg, var(--success), var(--teal));"></div>
                     </div>
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card hover-lift">
                 <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, var(--warning), var(--orange));">
                     <i class="bi bi-exclamation-triangle"></i>
                 </div>
                 <div class="stat-content">
                     <div class="stat-value" id="diffItems">
-                        {{ sobras|default(0) + faltantes|default(0) }}
+                        {{ (sobras|default(0) + faltantes|default(0)) }}
                         <span class="stat-trend trend-down">
                             <i class="bi bi-arrow-down-right"></i> 3%
                         </span>
                     </div>
-                    <div class="stat-label">Diferencias</div>
+                    <div class="stat-label">
+                        <i class="bi bi-exclamation-lg"></i>
+                        Diferencias
+                    </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" style="width: 15%; background: linear-gradient(90deg, var(--warning), var(--orange));"></div>
                     </div>
                 </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card hover-lift">
                 <div class="stat-icon-wrapper" style="background: linear-gradient(135deg, var(--purple), var(--info));">
                     <i class="bi bi-clock-history"></i>
                 </div>
@@ -1206,7 +1552,10 @@
                             <i class="bi bi-arrow-up-right"></i> 5%
                         </span>
                     </div>
-                    <div class="stat-label">Progreso Total</div>
+                    <div class="stat-label">
+                        <i class="bi bi-speedometer"></i>
+                        Progreso Total
+                    </div>
                     <div class="stat-progress">
                         <div class="stat-progress-bar" style="width: {{ porcentaje_progreso|default(0) }}%; background: linear-gradient(90deg, var(--purple), var(--info));"></div>
                     </div>
@@ -1220,9 +1569,9 @@
         <!-- CONTENIDO PRINCIPAL -->
         <div class="main-content">
             <!-- KPI SECTION -->
-            <div class="kpi-section">
+            <div class="kpi-section glass-effect">
                 <div class="section-header">
-                    <h2 class="section-title">
+                    <h2 class="section-title text-gradient">
                         <i class="bi bi-bar-chart-line"></i>
                         Indicadores de Desempeño
                     </h2>
@@ -1231,16 +1580,21 @@
                             <option value="today">Hoy</option>
                             <option value="week">Esta Semana</option>
                             <option value="month">Este Mes</option>
+                            <option value="quarter">Este Trimestre</option>
                         </select>
                     </div>
                 </div>
                 
                 <div class="kpi-grid">
-                    <div class="kpi-card">
+                    <div class="kpi-card hover-lift">
                         <div class="kpi-header">
                             <h3 class="kpi-title">Precisión del Conteo</h3>
                             <span class="kpi-badge" style="background: var(--success);">
-                                {{ ((coinciden / total_items * 100) if total_items > 0 else 0)|round(1) }}%
+                                {% if total_items and total_items > 0 %}
+                                    {{ ((coinciden / total_items * 100) if coinciden else 0)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
                             </span>
                         </div>
                         <div class="kpi-value">
@@ -1248,27 +1602,29 @@
                         </div>
                         <div class="kpi-change">
                             <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="text-success">+2.5% vs ayer</span>
+                            <span class="text-success fw-bold">+2.5%</span>
+                            <span class="text-muted">vs ayer</span>
                         </div>
                     </div>
                     
-                    <div class="kpi-card">
+                    <div class="kpi-card hover-lift">
                         <div class="kpi-header">
                             <h3 class="kpi-title">Stock Total</h3>
                             <span class="kpi-badge" style="background: var(--info);">
-                                {{ total_stock|default(0) }}
+                                {{ total_stock|default(0)|int if total_stock else 0 }}
                             </span>
                         </div>
                         <div class="kpi-value">
-                            {{ total_stock|default(0)|number_format }}
+                            {{ total_stock|default(0)|int if total_stock else 0 }}
                         </div>
                         <div class="kpi-change">
                             <i class="bi bi-arrow-down-right text-danger"></i>
-                            <span class="text-danger">-1.2% vs inventario</span>
+                            <span class="text-danger fw-bold">-1.2%</span>
+                            <span class="text-muted">vs inventario</span>
                         </div>
                     </div>
                     
-                    <div class="kpi-card">
+                    <div class="kpi-card hover-lift">
                         <div class="kpi-header">
                             <h3 class="kpi-title">Ubicaciones Activas</h3>
                             <span class="kpi-badge" style="background: var(--warning);">
@@ -1284,7 +1640,7 @@
                         </div>
                     </div>
                     
-                    <div class="kpi-card">
+                    <div class="kpi-card hover-lift">
                         <div class="kpi-header">
                             <h3 class="kpi-title">Tiempo Promedio</h3>
                             <span class="kpi-badge" style="background: var(--purple);">
@@ -1296,7 +1652,8 @@
                         </div>
                         <div class="kpi-change">
                             <i class="bi bi-arrow-up-right text-success"></i>
-                            <span class="text-success">-0.8m vs semana pasada</span>
+                            <span class="text-success fw-bold">-0.8m</span>
+                            <span class="text-muted">vs semana pasada</span>
                         </div>
                     </div>
                 </div>
@@ -1304,24 +1661,32 @@
 
             <!-- GRÁFICOS -->
             <div class="chart-section">
-                <div class="chart-card">
+                <div class="chart-card glass-effect">
                     <div class="chart-header">
                         <h3 class="chart-title">
-                            <i class="bi bi-pie-chart-fill"></i>
+                            <i class="bi bi-pie-chart-fill text-primary"></i>
                             Distribución por Estado
                         </h3>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="chart3dToggle">
+                            <label class="form-check-label extra-small" for="chart3dToggle">3D</label>
+                        </div>
                     </div>
                     <div class="chart-body">
                         <canvas id="statusChart"></canvas>
                     </div>
                 </div>
                 
-                <div class="chart-card">
+                <div class="chart-card glass-effect">
                     <div class="chart-header">
                         <h3 class="chart-title">
-                            <i class="bi bi-graph-up-arrow"></i>
+                            <i class="bi bi-graph-up-arrow text-success"></i>
                             Tendencia de Conteos
                         </h3>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary btn-sm" onclick="changeChartType('line')">Línea</button>
+                            <button class="btn btn-outline-primary btn-sm" onclick="changeChartType('bar')">Barras</button>
+                        </div>
                     </div>
                     <div class="chart-body">
                         <canvas id="trendChart"></canvas>
@@ -1330,23 +1695,23 @@
             </div>
 
             <!-- TABLA DE INVENTARIO -->
-            <div class="table-section">
+            <div class="table-section glass-effect">
                 <div class="table-toolbar">
                     <div class="table-filters">
                         <div class="filter-group">
-                            <span class="filter-label">Estado:</span>
+                            <span class="filter-label"><i class="bi bi-funnel"></i> Estado:</span>
                             <select class="filter-select" id="tableStatusFilter">
-                                <option value="all">Todos</option>
-                                <option value="OK">Coinciden</option>
-                                <option value="Diferencia">Diferencias</option>
-                                <option value="Pendiente">Pendientes</option>
+                                <option value="all">Todos los estados</option>
+                                <option value="OK">Solo Coinciden</option>
+                                <option value="Diferencia">Solo Diferencias</option>
+                                <option value="Pendiente">Solo Pendientes</option>
                             </select>
                         </div>
                         
                         <div class="filter-group">
-                            <span class="filter-label">Ubicación:</span>
+                            <span class="filter-label"><i class="bi bi-geo-alt"></i> Ubicación:</span>
                             <select class="filter-select" id="tableLocationFilter">
-                                <option value="all">Todas</option>
+                                <option value="all">Todas las ubicaciones</option>
                                 {% for location in ubicaciones_labels|default([]) %}
                                 <option value="{{ location }}">{{ location }}</option>
                                 {% endfor %}
@@ -1354,12 +1719,13 @@
                         </div>
                         
                         <div class="filter-group">
-                            <span class="filter-label">Ordenar por:</span>
+                            <span class="filter-label"><i class="bi bi-sort-down"></i> Ordenar por:</span>
                             <select class="filter-select" id="tableSortBy">
                                 <option value="code">Código</option>
                                 <option value="diff">Diferencia</option>
                                 <option value="status">Estado</option>
                                 <option value="location">Ubicación</option>
+                                <option value="stock">Stock</option>
                             </select>
                         </div>
                     </div>
@@ -1367,11 +1733,11 @@
                     <div class="search-box">
                         <i class="bi bi-search search-icon"></i>
                         <input type="text" id="tableSearch" class="search-input" 
-                               placeholder="Buscar código, descripción...">
+                               placeholder="Buscar código, descripción, ubicación...">
                     </div>
                 </div>
                 
-                <div class="table-container">
+                <div class="table-container scrollbar-thin">
                     <table class="smart-table" id="inventoryTable">
                         <thead>
                             <tr>
@@ -1391,32 +1757,34 @@
                             {% set diff = (item.real_count|default(0) - item.stock|default(0)) %}
                             {% set diff_abs = diff|abs %}
                             {% set status_color = 'success' if item.estado == 'OK' else 'warning' if item.estado == 'Diferencia' else 'info' %}
-                            <tr data-item='{{ item|tojson|safe }}'>
+                            <tr data-item='{{ item|tojson|safe }}' class="hover-lift">
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="fw-bold">{{ item.material_code }}</span>
-                                        {% if diff_abs > 10 %}
-                                        <span class="badge bg-danger pulse">!</span>
+                                        <span class="fw-bold text-primary">{{ item.material_code|default('N/A') }}</span>
+                                        {% if diff_abs > (item.stock|default(0) * 0.2) and diff_abs > 5 %}
+                                        <span class="badge bg-danger pulse" title="Diferencia significativa">
+                                            <i class="bi bi-exclamation-lg"></i>
+                                        </span>
                                         {% endif %}
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                                          title="{{ item.material_text }}">
-                                        {{ item.material_text }}
+                                    <span class="text-truncate d-inline-block" style="max-width: 220px;" 
+                                          title="{{ item.material_text|default('') }}">
+                                        {{ item.material_text|default('Sin descripción') }}
                                     </span>
                                 </td>
                                 <td>
                                     <span class="badge bg-dark">
                                         <i class="bi bi-geo-alt me-1"></i>
-                                        {{ item.location }}
+                                        {{ item.location|default('N/A') }}
                                     </span>
                                 </td>
                                 <td class="fw-bold">{{ item.stock|default(0) }}</td>
-                                <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% endif %}">
+                                <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% else %}text-muted{% endif %}">
                                     {{ item.real_count|default('-') }}
                                 </td>
-                                <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% endif %}">
+                                <td class="fw-bold {% if diff > 0 %}text-success{% elif diff < 0 %}text-danger{% else %}text-muted{% endif %}">
                                     {% if diff > 0 %}
                                         <i class="bi bi-plus-circle me-1"></i>+{{ diff_abs }}
                                     {% elif diff < 0 %}
@@ -1428,37 +1796,60 @@
                                 <td>
                                     <span class="status-indicator status-{{ status_color }}">
                                         <i class="bi {% if item.estado == 'OK' %}bi-check-circle{% elif item.estado == 'Diferencia' %}bi-exclamation-triangle{% else %}bi-clock{% endif %} me-1"></i>
-                                        {{ item.estado }}
+                                        {{ item.estado|default('Pendiente') }}
                                     </span>
                                 </td>
                                 <td>
                                     {% if item.timestamp %}
-                                    <div class="small">{{ item.timestamp.strftime('%H:%M') }}</div>
+                                    <div class="small fw-bold">{{ item.timestamp.strftime('%H:%M') }}</div>
                                     <div class="extra-small text-muted">{{ item.timestamp.strftime('%d/%m/%Y') }}</div>
                                     {% else %}
                                     <span class="text-muted small">No registrado</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
+                                    <div class="btn-group btn-group-sm" role="group">
                                         <button class="btn btn-outline-primary btn-sm" 
-                                                onclick="editItem(this)" title="Editar">
+                                                onclick="editItem(this)" title="Editar conteo">
                                             <i class="bi bi-pencil"></i>
                                         </button>
                                         <button class="btn btn-outline-success btn-sm" 
                                                 onclick="recountItem(this)" title="Recontar">
                                             <i class="bi bi-arrow-repeat"></i>
                                         </button>
-                                        <button class="btn btn-outline-danger btn-sm" 
+                                        <button class="btn btn-outline-warning btn-sm" 
                                                 onclick="flagItem(this)" title="Marcar problema">
                                             <i class="bi bi-flag"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-5">
+                                    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                                    <h5 class="text-muted">No hay items de inventario</h5>
+                                    <p class="text-muted mb-0">Sube un archivo de inventario para comenzar</p>
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                
+                <div class="table-footer p-3 border-top d-flex justify-content-between align-items-center">
+                    <div class="text-muted small" id="tableInfo">
+                        Mostrando <span id="visibleCount">{{ items|length if items else 0 }}</span> de 
+                        <span id="totalCount">{{ items|length if items else 0 }}</span> items
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="exportTableToExcel()">
+                            <i class="bi bi-file-earmark-excel me-1"></i>Excel
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="exportTableToPDF()">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1466,46 +1857,53 @@
         <!-- SIDEBAR -->
         <div class="sidebar">
             <!-- ACTIVIDAD RECIENTE -->
-            <div class="widget">
+            <div class="widget glass-effect">
                 <div class="widget-header">
                     <h3 class="widget-title">
                         <i class="bi bi-activity"></i>
                         Actividad Reciente
                     </h3>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-clock-history me-1"></i>Últimas 5
+                    </span>
                 </div>
                 <div class="widget-body">
                     <div class="activity-list">
-                        {% for count in counts[-5:] if counts %}
-                        <div class="activity-item {% if count.real_count == count.stock %}success{% elif count.real_count > 0 %}warning{% else %}danger{% endif %}">
-                            <div class="activity-content">
-                                <div class="activity-icon" 
-                                     style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
-                                    <i class="bi {% if count.real_count == count.stock %}bi-check-circle{% elif count.real_count > 0 %}bi-exclamation-triangle{% else %}bi-clock{% endif %}"></i>
-                                </div>
-                                <div class="activity-text">
-                                    <div class="activity-title">{{ count.material_code }}</div>
-                                    <div class="activity-time">
-                                        {{ count.contado_en.strftime('%H:%M') if count.contado_en else 'Reciente' }}
+                        {% if counts and counts|length > 0 %}
+                            {% for count in counts[-5:]|reverse %}
+                            <div class="activity-item {% if count.real_count == count.stock %}success{% elif count.real_count > 0 %}warning{% else %}danger{% endif %} hover-lift">
+                                <div class="activity-content">
+                                    <div class="activity-icon" 
+                                         style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
+                                        <i class="bi {% if count.real_count == count.stock %}bi-check-circle{% elif count.real_count > 0 %}bi-exclamation-triangle{% else %}bi-clock{% endif %}"></i>
+                                    </div>
+                                    <div class="activity-text">
+                                        <div class="activity-title">{{ count.material_code|default('N/A') }}</div>
+                                        <div class="activity-time">
+                                            <i class="bi bi-clock"></i>
+                                            {{ count.contado_en.strftime('%H:%M') if count.contado_en else 'Reciente' }}
+                                        </div>
                                     </div>
                                 </div>
+                                <span class="activity-badge" 
+                                      style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
+                                    {{ count.real_count|default(0) }}
+                                </span>
                             </div>
-                            <span class="activity-badge" 
-                                  style="background: {% if count.real_count == count.stock %}var(--success){% elif count.real_count > 0 %}var(--warning){% else %}var(--danger){% endif %};">
-                                {{ count.real_count|default(0) }}
-                            </span>
-                        </div>
+                            {% endfor %}
                         {% else %}
-                        <div class="text-center py-4">
-                            <i class="bi bi-inbox fs-1 text-muted"></i>
-                            <p class="text-muted mt-2">No hay actividad reciente</p>
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                            <h6 class="text-muted">No hay actividad reciente</h6>
+                            <p class="text-muted extra-small mb-0">Los conteos aparecerán aquí</p>
                         </div>
-                        {% endfor %}
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
             <!-- ACCIONES RÁPIDAS -->
-            <div class="widget">
+            <div class="widget glass-effect">
                 <div class="widget-header">
                     <h3 class="widget-title">
                         <i class="bi bi-lightning-charge"></i>
@@ -1514,64 +1912,104 @@
                 </div>
                 <div class="widget-body">
                     <div class="quick-actions">
-                        <a href="{{ url_for('inventory.count_inventory') }}" class="action-btn">
+                        {% if url_for('inventory.count_inventory') %}
+                        <a href="{{ url_for('inventory.count_inventory') }}" class="action-btn hover-lift">
                             <div class="action-icon">
                                 <i class="bi bi-clipboard-check"></i>
                             </div>
                             <span class="action-label">Nuevo Conteo</span>
                         </a>
+                        {% endif %}
                         
-                        <div class="action-btn" onclick="exportDifferences()">
+                        {% if url_for('inventory.upload_inventory') %}
+                        <a href="{{ url_for('inventory.upload_inventory') }}" class="action-btn hover-lift">
+                            <div class="action-icon" style="background: linear-gradient(135deg, var(--info), var(--cyan));">
+                                <i class="bi bi-upload"></i>
+                            </div>
+                            <span class="action-label">Subir Inventario</span>
+                        </a>
+                        {% endif %}
+                        
+                        <div class="action-btn hover-lift" onclick="exportDifferences()">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--success), var(--teal));">
                                 <i class="bi bi-file-earmark-excel"></i>
                             </div>
                             <span class="action-label">Exportar Diferencias</span>
                         </div>
                         
-                        <div class="action-btn" onclick="startReconciliation()">
+                        <div class="action-btn hover-lift" onclick="startReconciliation()">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--warning), var(--orange));">
                                 <i class="bi bi-arrow-repeat"></i>
                             </div>
                             <span class="action-label">Conciliar Stock</span>
                         </div>
                         
-                        <div class="action-btn" onclick="generateReport()">
+                        <div class="action-btn hover-lift" onclick="generateReport()">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--purple), var(--info));">
                                 <i class="bi bi-file-earmark-pdf"></i>
                             </div>
                             <span class="action-label">Reporte PDF</span>
+                        </div>
+                        
+                        <div class="action-btn hover-lift" onclick="showAnalytics()">
+                            <div class="action-icon" style="background: linear-gradient(135deg, var(--danger), var(--danger-light));">
+                                <i class="bi bi-graph-up"></i>
+                            </div>
+                            <span class="action-label">Analítica Avanzada</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- MAYORES DIFERENCIAS -->
-            <div class="widget">
+            <div class="widget glass-effect">
                 <div class="widget-header">
                     <h3 class="widget-title">
                         <i class="bi bi-exclamation-triangle"></i>
                         Mayores Diferencias
                     </h3>
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-sort-numeric-down me-1"></i>Top 5
+                    </span>
                 </div>
                 <div class="widget-body">
                     <div class="differences-list">
-                        {% set top_diffs = items|selectattr('estado', 'equalto', 'Diferencia')|list|sort(attribute='diferencia', reverse=True)|slice(0, 5) %}
-                        {% for diff in top_diffs %}
-                        <div class="difference-item">
-                            <div class="difference-info">
-                                <div class="difference-code">{{ diff.material_code }}</div>
-                                <div class="difference-location">{{ diff.location }}</div>
-                            </div>
-                            <div class="difference-amount {% if diff.diferencia > 0 %}difference-positive{% else %}difference-negative{% endif %}">
-                                {% if diff.diferencia > 0 %}+{% endif %}{{ diff.diferencia }}
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="text-center py-4">
-                            <i class="bi bi-check-circle fs-1 text-success"></i>
-                            <p class="text-muted mt-2">Sin diferencias</p>
-                        </div>
+                        {% set top_diffs = [] %}
+                        {% for item in items if item.estado == 'Diferencia' %}
+                            {% set diff = (item.real_count|default(0) - item.stock|default(0)) %}
+                            {% set _ = top_diffs.append({
+                                'code': item.material_code,
+                                'desc': item.material_text,
+                                'location': item.location,
+                                'stock': item.stock,
+                                'count': item.real_count,
+                                'diff': diff
+                            }) %}
                         {% endfor %}
+                        
+                        {% if top_diffs|length > 0 %}
+                            {% set sorted_diffs = top_diffs|sort(attribute='diff', reverse=true) %}
+                            {% for diff in sorted_diffs[:5] %}
+                            <div class="difference-item hover-lift">
+                                <div class="difference-info">
+                                    <div class="difference-code">{{ diff.code|default('N/A') }}</div>
+                                    <div class="difference-location">
+                                        <i class="bi bi-geo-alt"></i>
+                                        {{ diff.location|default('N/A') }}
+                                    </div>
+                                </div>
+                                <div class="difference-amount {% if diff.diff > 0 %}difference-positive{% else %}difference-negative{% endif %}">
+                                    {% if diff.diff > 0 %}+{% endif %}{{ diff.diff }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-check-circle fs-1 text-success mb-3 d-block"></i>
+                            <h6 class="text-success">¡Excelente!</h6>
+                            <p class="text-muted extra-small mb-0">No hay diferencias significativas</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -1579,16 +2017,36 @@
     </div>
 </div>
 
-<!-- MODALES Y COMPONENTES -->
-<div class="modal fade" id="itemModal" tabindex="-1">
+<!-- MODALES -->
+<div class="modal fade" id="itemModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Item</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-pencil me-2"></i>
+                    Editar Conteo Físico
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="itemModalBody">
+                <!-- Cargado dinámicamente -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="helpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Ayuda del Dashboard
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <!-- Formulario dinámico se cargará aquí -->
+                <!-- Contenido de ayuda -->
             </div>
         </div>
     </div>
@@ -1596,7 +2054,11 @@
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 // ================= CONFIGURACIÓN =================
@@ -1604,41 +2066,65 @@ const CONFIG = {
     autoRefresh: false,
     refreshInterval: 30000, // 30 segundos
     api: {
-        base: '{{ url_for("inventory.get_latest_counts") }}',
-        update: '{{ url_for("inventory.update_count") }}',
-        export: '{{ url_for("inventory.export_differences") }}'
+        base: '{{ url_for("inventory.get_latest_counts") if url_for else "#" }}',
+        update: '{{ url_for("inventory.update_count") if url_for else "#" }}',
+        export: '{{ url_for("inventory.export_differences") if url_for else "#" }}',
+        summary: '{{ url_for("inventory.get_summary") if url_for else "#" }}'
+    },
+    charts: {
+        statusChart: null,
+        trendChart: null
     }
 };
 
 // ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Dashboard de Inventario inicializando...');
+    
+    // Inicializar componentes
     initDashboard();
     initCharts();
     initEventListeners();
     setupAutoRefresh();
+    
+    // Verificar conexión API
+    checkAPIStatus();
+    
+    console.log('✅ Dashboard listo');
 });
 
 function initDashboard() {
+    console.log('📊 Inicializando dashboard...');
     updateRealTimeStats();
     setupTableFilters();
+    updateTableInfo();
+    
+    // Actualizar badge LIVE
+    const liveBadge = document.getElementById('liveBadge');
+    if (liveBadge) {
+        setInterval(() => {
+            liveBadge.classList.toggle('bg-primary');
+            liveBadge.classList.toggle('bg-success');
+        }, 1000);
+    }
 }
 
 function initCharts() {
+    console.log('📈 Inicializando gráficos...');
+    
     // Gráfico de estado
     const statusCtx = document.getElementById('statusChart');
     if (statusCtx) {
-        const statusData = {
-            OK: {{ coinciden|default(0) }},
-            Diferencia: {{ sobras|default(0) + faltantes|default(0) }},
-            Pendiente: {{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }}
-        };
+        const okCount = {{ coinciden|default(0) }};
+        const diffCount = {{ (sobras|default(0) + faltantes|default(0)) }};
+        const pendCount = {{ total_items|default(0) - coinciden|default(0) - (sobras|default(0) + faltantes|default(0)) }};
         
-        new Chart(statusCtx, {
+        CONFIG.charts.statusChart = new Chart(statusCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Coinciden', 'Diferencias', 'Pendientes'],
                 datasets: [{
-                    data: Object.values(statusData),
+                    data: [okCount, diffCount, pendCount],
                     backgroundColor: [
                         'rgba(39, 174, 96, 0.9)',
                         'rgba(243, 156, 18, 0.9)',
@@ -1649,23 +2135,47 @@ function initCharts() {
                         'rgb(243, 156, 18)',
                         'rgb(52, 152, 219)'
                     ],
-                    borderWidth: 2,
-                    hoverOffset: 15
+                    borderWidth: 3,
+                    hoverOffset: 20,
+                    hoverBorderWidth: 4
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '60%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
-                            padding: 20,
+                            padding: 25,
                             font: {
-                                size: 12
-                            }
+                                size: 12,
+                                family: "'Segoe UI', sans-serif",
+                                weight: '600'
+                            },
+                            color: 'var(--text-dark)'
                         }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleFont: {
+                            size: 13,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 14,
+                            weight: '600'
+                        },
+                        padding: 12,
+                        cornerRadius: 8
                     }
+                },
+                animation: {
+                    animateScale: true,
+                    animateRotate: true,
+                    duration: 1500,
+                    easing: 'easeOutQuart'
                 }
             }
         });
@@ -1674,26 +2184,81 @@ function initCharts() {
     // Gráfico de tendencia
     const trendCtx = document.getElementById('trendChart');
     if (trendCtx) {
-        new Chart(trendCtx, {
+        const hours = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+        const counts = [12, 19, 8, 15, 22, 18];
+        
+        CONFIG.charts.trendChart = new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'],
+                labels: hours,
                 datasets: [{
                     label: 'Conteos por hora',
-                    data: [12, 19, 8, 15, 22, 18],
+                    data: counts,
                     borderColor: 'rgb(52, 152, 219)',
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    backgroundColor: 'rgba(52, 152, 219, 0.15)',
+                    borderWidth: 4,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointBackgroundColor: 'rgb(52, 152, 219)',
+                    pointBorderColor: 'white',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 10
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                        titleFont: {
+                            size: 13,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            size: 14,
+                            weight: '600'
+                        }
+                    }
+                },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11,
+                                weight: '600'
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11,
+                                weight: '600'
+                            }
+                        }
                     }
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'nearest'
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
                 }
             }
         });
@@ -1702,72 +2267,96 @@ function initCharts() {
 
 // ================= FUNCIONES DEL DASHBOARD =================
 function refreshDashboard() {
-    showLoading('Actualizando datos...');
+    console.log('🔄 Actualizando dashboard...');
     
-    fetch(CONFIG.api.base)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateDashboard(data);
-                showNotification('Dashboard actualizado', 'Datos refrescados correctamente', 'success');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error', 'No se pudo actualizar el dashboard', 'error');
-        })
-        .finally(() => {
-            hideLoading();
-        });
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise animate-spin"></i>';
+    }
+    
+    showLoading('Actualizando datos del dashboard...', 'Obteniendo información en tiempo real');
+    
+    // Simular actualización (en producción sería fetch a la API)
+    setTimeout(() => {
+        if (CONFIG.charts.statusChart) {
+            CONFIG.charts.statusChart.update();
+        }
+        if (CONFIG.charts.trendChart) {
+            CONFIG.charts.trendChart.update();
+        }
+        
+        updateTableInfo();
+        showNotification('Dashboard actualizado', 'Datos refrescados correctamente', 'success');
+        
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+        }
+        
+        hideLoading();
+    }, 1500);
 }
 
 function updateDashboard(data) {
-    // Actualizar estadísticas
-    document.getElementById('totalItems').innerHTML = `${data.stats.total} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +5%</span>`;
-    document.getElementById('correctItems').innerHTML = `${data.stats.ok} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +3%</span>`;
-    document.getElementById('diffItems').innerHTML = `${data.stats.differences} <span class="stat-trend trend-down"><i class="bi bi-arrow-down-right"></i> -2%</span>`;
-    document.getElementById('progressPercent').innerHTML = `${data.stats.percentage}% <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +1%</span>`;
+    console.log('📊 Actualizando dashboard con nuevos datos:', data);
     
-    // Actualizar tabla
-    updateTable(data.items);
+    // Actualizar estadísticas
+    if (data.stats) {
+        document.getElementById('totalItems').innerHTML = `${data.stats.total} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +5%</span>`;
+        document.getElementById('correctItems').innerHTML = `${data.stats.ok} <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +3%</span>`;
+        document.getElementById('diffItems').innerHTML = `${data.stats.differences} <span class="stat-trend trend-down"><i class="bi bi-arrow-down-right"></i> -2%</span>`;
+        document.getElementById('progressPercent').innerHTML = `${data.stats.percentage}% <span class="stat-trend trend-up"><i class="bi bi-arrow-up-right"></i> +1%</span>`;
+    }
+    
+    // Actualizar tabla si hay items
+    if (data.items && data.items.length > 0) {
+        updateTable(data.items);
+    }
 }
 
 function updateTable(items) {
+    console.log('📋 Actualizando tabla con', items.length, 'items');
+    
     const tbody = document.getElementById('tableBody');
     if (!tbody) return;
     
     tbody.innerHTML = '';
     
     items.forEach(item => {
-        const diff = item.diferencia;
+        const diff = item.diferencia || 0;
         const diffAbs = Math.abs(diff);
-        const statusColor = item.estado === 'OK' ? 'success' : item.estado === 'Diferencia' ? 'warning' : 'info';
+        const statusColor = item.estado === 'OK' ? 'success' : 
+                          item.estado === 'Diferencia' ? 'warning' : 'info';
         
         const row = document.createElement('tr');
+        row.className = 'hover-lift';
+        row.setAttribute('data-item', JSON.stringify(item));
+        
         row.innerHTML = `
             <td>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="fw-bold">${item.material_code}</span>
-                    ${diffAbs > 10 ? '<span class="badge bg-danger pulse">!</span>' : ''}
+                    <span class="fw-bold text-primary">${item.material_code || 'N/A'}</span>
+                    ${diffAbs > 10 ? '<span class="badge bg-danger pulse" title="Diferencia crítica"><i class="bi bi-exclamation-lg"></i></span>' : ''}
                 </div>
             </td>
             <td>
-                <span class="text-truncate d-inline-block" style="max-width: 200px;" 
-                      title="${item.material_text}">
-                    ${item.material_text}
+                <span class="text-truncate d-inline-block" style="max-width: 220px;" 
+                      title="${item.material_text || ''}">
+                    ${item.material_text || 'Sin descripción'}
                 </span>
             </td>
             <td>
                 <span class="badge bg-dark">
                     <i class="bi bi-geo-alt me-1"></i>
-                    ${item.location}
+                    ${item.location || 'N/A'}
                 </span>
             </td>
-            <td class="fw-bold">${item.stock}</td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : ''}">
-                ${item.real_count || '-'}
+            <td class="fw-bold">${item.stock || 0}</td>
+            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
+                ${item.real_count || item.count || '-'}
             </td>
-            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : ''}">
+            <td class="fw-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-danger' : 'text-muted'}">
                 ${diff > 0 ? `<i class="bi bi-plus-circle me-1"></i>+${diffAbs}` : 
                   diff < 0 ? `<i class="bi bi-dash-circle me-1"></i>-${diffAbs}` : 
                   '<span class="text-muted">0</span>'}
@@ -1775,13 +2364,13 @@ function updateTable(items) {
             <td>
                 <span class="status-indicator status-${statusColor}">
                     <i class="bi ${item.estado === 'OK' ? 'bi-check-circle' : item.estado === 'Diferencia' ? 'bi-exclamation-triangle' : 'bi-clock'} me-1"></i>
-                    ${item.estado}
+                    ${item.estado || 'Pendiente'}
                 </span>
             </td>
             <td>
-                ${item.contado_en ? 
-                  `<div class="small">${new Date(item.contado_en).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-                   <div class="extra-small text-muted">${new Date(item.contado_en).toLocaleDateString()}</div>` : 
+                ${item.timestamp || item.contado_en ? 
+                  `<div class="small fw-bold">${formatTime(item.timestamp || item.contado_en)}</div>
+                   <div class="extra-small text-muted">${formatDate(item.timestamp || item.contado_en)}</div>` : 
                   '<span class="text-muted small">No registrado</span>'}
             </td>
             <td>
@@ -1792,131 +2381,261 @@ function updateTable(items) {
                     <button class="btn btn-outline-success btn-sm" onclick="recountItem(this)">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
-                    <button class="btn btn-outline-danger btn-sm" onclick="flagItem(this)">
+                    <button class="btn btn-outline-warning btn-sm" onclick="flagItem(this)">
                         <i class="bi bi-flag"></i>
                     </button>
                 </div>
             </td>
         `;
         
-        row.setAttribute('data-item', JSON.stringify(item));
         tbody.appendChild(row);
     });
+    
+    updateTableInfo();
+}
+
+function updateTableInfo() {
+    const visibleRows = document.querySelectorAll('#tableBody tr:not([style*="display: none"])').length;
+    const totalRows = document.querySelectorAll('#tableBody tr').length;
+    
+    document.getElementById('visibleCount').textContent = visibleRows;
+    document.getElementById('totalCount').textContent = totalRows;
 }
 
 function setupTableFilters() {
+    console.log('🔍 Configurando filtros de tabla...');
+    
     const searchInput = document.getElementById('tableSearch');
     const statusFilter = document.getElementById('tableStatusFilter');
     const locationFilter = document.getElementById('tableLocationFilter');
     const sortBy = document.getElementById('tableSortBy');
     
-    [searchInput, statusFilter, locationFilter, sortBy].forEach(element => {
+    // Configurar búsqueda con debounce
+    let searchTimeout;
+    searchInput?.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterTable, 350);
+    });
+    
+    // Configurar filtros
+    [statusFilter, locationFilter, sortBy].forEach(element => {
         element?.addEventListener('change', filterTable);
-        element?.addEventListener('input', filterTable);
     });
 }
 
 function filterTable() {
-    const searchTerm = document.getElementById('tableSearch').value.toLowerCase();
+    console.log('⚡ Aplicando filtros...');
+    
+    const searchTerm = document.getElementById('tableSearch').value.toLowerCase().trim();
     const statusFilter = document.getElementById('tableStatusFilter').value;
     const locationFilter = document.getElementById('tableLocationFilter').value;
     const sortBy = document.getElementById('tableSortBy').value;
     
-    const rows = document.querySelectorAll('#tableBody tr');
+    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    let visibleCount = 0;
     
     rows.forEach(row => {
-        const item = JSON.parse(row.getAttribute('data-item') || '{}');
-        const matchesSearch = searchTerm === '' || 
-            item.material_code?.toLowerCase().includes(searchTerm) ||
-            item.material_text?.toLowerCase().includes(searchTerm);
-        
-        const matchesStatus = statusFilter === 'all' || item.estado === statusFilter;
-        const matchesLocation = locationFilter === 'all' || item.location === locationFilter;
-        
-        row.style.display = matchesSearch && matchesStatus && matchesLocation ? '' : 'none';
-    });
-    
-    // Aplicar ordenamiento
-    sortTable(sortBy);
-}
-
-function sortTable(sortBy) {
-    const tbody = document.getElementById('tableBody');
-    const rows = Array.from(tbody.querySelectorAll('tr:not([style*="display: none"])'));
-    
-    rows.sort((a, b) => {
-        const itemA = JSON.parse(a.getAttribute('data-item') || '{}');
-        const itemB = JSON.parse(b.getAttribute('data-item') || '{}');
-        
-        switch(sortBy) {
-            case 'code':
-                return itemA.material_code?.localeCompare(itemB.material_code || '');
-            case 'diff':
-                return Math.abs(itemB.diferencia || 0) - Math.abs(itemA.diferencia || 0);
-            case 'status':
-                return itemA.estado?.localeCompare(itemB.estado || '');
-            case 'location':
-                return itemA.location?.localeCompare(itemB.location || '');
-            default:
-                return 0;
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            
+            // Filtro de búsqueda
+            const matchesSearch = !searchTerm || 
+                (item.material_code && item.material_code.toLowerCase().includes(searchTerm)) ||
+                (item.material_text && item.material_text.toLowerCase().includes(searchTerm)) ||
+                (item.location && item.location.toLowerCase().includes(searchTerm));
+            
+            // Filtro de estado
+            const matchesStatus = statusFilter === 'all' || item.estado === statusFilter;
+            
+            // Filtro de ubicación
+            const matchesLocation = locationFilter === 'all' || item.location === locationFilter;
+            
+            const isVisible = matchesSearch && matchesStatus && matchesLocation;
+            row.style.display = isVisible ? '' : 'none';
+            
+            if (isVisible) visibleCount++;
+            
+        } catch (error) {
+            console.error('Error procesando fila:', error);
+            row.style.display = 'none';
         }
     });
     
-    // Reordenar filas
+    // Ordenar tabla
+    sortTable(sortBy);
+    
+    // Actualizar contador
+    document.getElementById('visibleCount').textContent = visibleCount;
+    
+    console.log(`📊 ${visibleCount} items visibles después de filtrar`);
+}
+
+function sortTable(sortBy) {
+    console.log('🔀 Ordenando por:', sortBy);
+    
+    const tbody = document.getElementById('tableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr[data-item]:not([style*="display: none"])'));
+    
+    rows.sort((a, b) => {
+        try {
+            const itemA = JSON.parse(a.getAttribute('data-item'));
+            const itemB = JSON.parse(b.getAttribute('data-item'));
+            
+            let valueA, valueB;
+            
+            switch(sortBy) {
+                case 'code':
+                    valueA = itemA.material_code || '';
+                    valueB = itemB.material_code || '';
+                    return valueA.localeCompare(valueB);
+                    
+                case 'diff':
+                    valueA = Math.abs(itemA.diferencia || itemA.real_count - itemA.stock || 0);
+                    valueB = Math.abs(itemB.diferencia || itemB.real_count - itemB.stock || 0);
+                    return valueB - valueA; // Descendente (mayores diferencias primero)
+                    
+                case 'status':
+                    valueA = itemA.estado || 'Pendiente';
+                    valueB = itemB.estado || 'Pendiente';
+                    return valueA.localeCompare(valueB);
+                    
+                case 'location':
+                    valueA = itemA.location || '';
+                    valueB = itemB.location || '';
+                    return valueA.localeCompare(valueB);
+                    
+                case 'stock':
+                    valueA = itemA.stock || 0;
+                    valueB = itemB.stock || 0;
+                    return valueB - valueA;
+                    
+                default:
+                    return 0;
+            }
+        } catch (error) {
+            console.error('Error ordenando fila:', error);
+            return 0;
+        }
+    });
+    
+    // Reordenar filas en el DOM
     rows.forEach(row => tbody.appendChild(row));
+    
+    console.log('✅ Tabla ordenada');
 }
 
 // ================= FUNCIONALIDADES =================
 function editItem(button) {
+    console.log('✏️ Editando item...');
+    
     const row = button.closest('tr');
     const item = JSON.parse(row.getAttribute('data-item'));
     
     Swal.fire({
-        title: 'Editar Conteo',
+        title: `<div class="text-primary"><i class="bi bi-pencil me-2"></i>Editar Conteo</div>`,
         html: `
             <div class="text-start">
-                <div class="mb-3">
-                    <label class="form-label">Código: <strong>${item.material_code}</strong></label>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Editando: <strong>${item.material_code}</strong> en <strong>${item.location}</strong>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Stock Sistema: ${item.stock}</label>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Stock Sistema</label>
+                        <input type="number" class="form-control" value="${item.stock || 0}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Conteo Físico *</label>
+                        <input type="number" id="editCount" class="form-control" 
+                               value="${item.real_count || item.count || ''}" 
+                               min="0" step="1" required>
+                    </div>
                 </div>
+                
                 <div class="mb-3">
-                    <label class="form-label">Conteo Físico</label>
-                    <input type="number" id="editCount" class="form-control" value="${item.real_count || ''}" min="0">
+                    <label class="form-label fw-bold">Observaciones</label>
+                    <textarea id="editNotes" class="form-control" rows="3" 
+                              placeholder="Notas adicionales sobre el conteo...">${item.notes || ''}</textarea>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Observaciones</label>
-                    <textarea id="editNotes" class="form-control" rows="3"></textarea>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Los cambios se guardarán inmediatamente
                 </div>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: 'Guardar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Guardar Cambios',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#e74c3c',
+        width: '600px',
         preConfirm: () => {
-            const count = document.getElementById('editCount').value;
-            const notes = document.getElementById('editNotes').value;
+            const countInput = document.getElementById('editCount');
+            const count = countInput.value.trim();
             
             if (!count) {
-                Swal.showValidationMessage('Ingrese el conteo físico');
+                Swal.showValidationMessage('Por favor, ingrese el conteo físico');
+                countInput.focus();
                 return false;
             }
             
-            return { count, notes };
+            if (isNaN(count) || parseInt(count) < 0) {
+                Swal.showValidationMessage('El conteo debe ser un número positivo');
+                countInput.focus();
+                return false;
+            }
+            
+            return {
+                count: parseInt(count),
+                notes: document.getElementById('editNotes').value.trim()
+            };
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            showLoading('Guardando cambios...');
+            showLoading('Guardando cambios...', 'Actualizando base de datos');
             
-            // Simular guardado
+            // Simular guardado (en producción sería fetch a la API)
             setTimeout(() => {
                 hideLoading();
-                showNotification('Actualizado', 'Conteo guardado correctamente', 'success');
                 
-                // Recargar dashboard
-                setTimeout(refreshDashboard, 1000);
-            }, 1500);
+                // Actualizar fila localmente
+                const newCount = result.value.count;
+                const newDiff = newCount - (item.stock || 0);
+                const newStatus = newCount === (item.stock || 0) ? 'OK' : 'Diferencia';
+                
+                // Actualizar celdas
+                row.cells[4].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">${newCount}</span>`;
+                row.cells[5].innerHTML = `<span class="fw-bold ${newDiff > 0 ? 'text-success' : newDiff < 0 ? 'text-danger' : 'text-muted'}">
+                    ${newDiff > 0 ? '<i class="bi bi-plus-circle me-1"></i>+' : newDiff < 0 ? '<i class="bi bi-dash-circle me-1"></i>-' : ''}${Math.abs(newDiff)}
+                </span>`;
+                row.cells[6].innerHTML = `<span class="status-indicator status-${newStatus === 'OK' ? 'success' : 'warning'}">
+                    <i class="bi ${newStatus === 'OK' ? 'bi-check-circle' : 'bi-exclamation-triangle'} me-1"></i>${newStatus}
+                </span>`;
+                
+                // Actualizar timestamp
+                const now = new Date();
+                row.cells[7].innerHTML = `
+                    <div class="small fw-bold">${formatTime(now)}</div>
+                    <div class="extra-small text-muted">${formatDate(now)}</div>
+                `;
+                
+                // Actualizar datos en el atributo data-item
+                item.real_count = newCount;
+                item.count = newCount;
+                item.diferencia = newDiff;
+                item.estado = newStatus;
+                item.notes = result.value.notes;
+                item.timestamp = now.toISOString();
+                row.setAttribute('data-item', JSON.stringify(item));
+                
+                showNotification('¡Cambios guardados!', 'El conteo ha sido actualizado correctamente', 'success');
+                
+                // Actualizar estadísticas
+                setTimeout(refreshDashboard, 500);
+                
+            }, 2000);
         }
     });
 }
@@ -1926,19 +2645,34 @@ function recountItem(button) {
     const item = JSON.parse(row.getAttribute('data-item'));
     
     Swal.fire({
-        title: 'Recontar Item',
-        text: `¿Desea recontar ${item.material_code} en ${item.location}?`,
-        icon: 'question',
+        title: `<div class="text-warning"><i class="bi bi-arrow-repeat me-2"></i>Recontar Item</div>`,
+        html: `
+            <div class="text-center">
+                <i class="bi bi-arrow-repeat fs-1 text-warning mb-3"></i>
+                <h5>¿Recontar ${item.material_code}?</h5>
+                <p class="text-muted">Ubicación: <strong>${item.location}</strong></p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Esta acción marcará el item para reconteo físico
+                </div>
+            </div>
+        `,
         showCancelButton: true,
-        confirmButtonText: 'Sí, recontar',
-        cancelButtonText: 'Cancelar'
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Sí, recontar',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
+        confirmButtonColor: '#f39c12',
+        cancelButtonColor: '#95a5a6',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve();
+                }, 1500);
+            });
+        }
     }).then((result) => {
         if (result.isConfirmed) {
-            showLoading('Iniciando reconteo...');
-            setTimeout(() => {
-                showNotification('Reconteo iniciado', 'Por favor, realice el conteo físico', 'info');
-                hideLoading();
-            }, 1000);
+            showNotification('Reconteo solicitado', `El item ${item.material_code} ha sido marcado para reconteo`, 'info');
         }
     });
 }
@@ -1948,131 +2682,648 @@ function flagItem(button) {
     const item = JSON.parse(row.getAttribute('data-item'));
     
     Swal.fire({
-        title: 'Marcar Problema',
+        title: `<div class="text-danger"><i class="bi bi-flag me-2"></i>Marcar Problema</div>`,
         html: `
             <div class="text-start">
+                <p>Reportar problema con: <strong>${item.material_code}</strong></p>
+                
                 <div class="mb-3">
-                    <label class="form-label">Tipo de problema:</label>
+                    <label class="form-label fw-bold">Tipo de problema</label>
                     <select id="problemType" class="form-select">
-                        <option value="stock">Stock incorrecto</option>
-                        <option value="location">Ubicación equivocada</option>
+                        <option value="">Seleccione un tipo...</option>
+                        <option value="stock">Stock incorrecto en sistema</option>
+                        <option value="location">Ubicación incorrecta</option>
                         <option value="damaged">Material dañado</option>
                         <option value="missing">Material faltante</option>
-                        <option value="other">Otro</option>
+                        <option value="duplicate">Material duplicado</option>
+                        <option value="other">Otro problema</option>
                     </select>
                 </div>
+                
                 <div class="mb-3">
-                    <label class="form-label">Descripción del problema:</label>
-                    <textarea id="problemDesc" class="form-control" rows="3" placeholder="Describa el problema..."></textarea>
+                    <label class="form-label fw-bold">Descripción detallada</label>
+                    <textarea id="problemDesc" class="form-control" rows="4" 
+                              placeholder="Describa el problema encontrado..."></textarea>
                 </div>
-            </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: 'Marcar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            showLoading('Marcando problema...');
-            setTimeout(() => {
-                showNotification('Problema marcado', 'El item ha sido marcado para revisión', 'warning');
-                hideLoading();
-            }, 1000);
-        }
-    });
-}
-
-function exportDifferences() {
-    showLoading('Generando reporte de diferencias...');
-    
-    // Simular exportación
-    setTimeout(() => {
-        hideLoading();
-        showNotification('Reporte generado', 'El archivo se está descargando', 'success');
-        
-        // En producción, esto sería una llamada a la API real
-        window.open(CONFIG.api.export, '_blank');
-    }, 2000);
-}
-
-function startReconciliation() {
-    Swal.fire({
-        title: 'Conciliar Inventario',
-        html: `
-            <div class="text-start">
-                <p>Esta acción ajustará el stock del sistema con los conteos físicos.</p>
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    <strong>Atención:</strong> Esta operación no se puede deshacer.
-                </div>
+                
                 <div class="form-check mb-3">
-                    <input class="form-check-input" type="checkbox" id="confirmReconcile">
-                    <label class="form-check-label" for="confirmReconcile">
-                        Confirmo la conciliación del inventario
+                    <input class="form-check-input" type="checkbox" id="urgentFlag">
+                    <label class="form-check-label text-danger fw-bold" for="urgentFlag">
+                        <i class="bi bi-exclamation-triangle me-1"></i>Marcar como urgente
                     </label>
                 </div>
             </div>
         `,
         showCancelButton: true,
-        confirmButtonText: 'Conciliar',
-        cancelButtonText: 'Cancelar',
+        confirmButtonText: '<i class="bi bi-flag me-1"></i>Marcar Problema',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
+        confirmButtonColor: '#e74c3c',
+        width: '600px',
+        preConfirm: () => {
+            const problemType = document.getElementById('problemType').value;
+            const problemDesc = document.getElementById('problemDesc').value.trim();
+            
+            if (!problemType) {
+                Swal.showValidationMessage('Seleccione el tipo de problema');
+                return false;
+            }
+            
+            if (!problemDesc) {
+                Swal.showValidationMessage('Describa el problema encontrado');
+                return false;
+            }
+            
+            return {
+                type: problemType,
+                description: problemDesc,
+                urgent: document.getElementById('urgentFlag').checked
+            };
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            showLoading('Registrando problema...', 'Guardando en el sistema');
+            
+            setTimeout(() => {
+                hideLoading();
+                
+                // Marcar fila visualmente
+                row.classList.add('table-danger');
+                const flagBtn = button.querySelector('i');
+                flagBtn.className = 'bi bi-flag-fill text-danger';
+                button.title = 'Problema reportado';
+                
+                showNotification(
+                    'Problema reportado', 
+                    `El item ${item.material_code} ha sido marcado con un problema`, 
+                    'warning'
+                );
+                
+            }, 1500);
+        }
+    });
+}
+
+function exportDifferences() {
+    console.log('📤 Exportando diferencias...');
+    
+    showLoading('Preparando exportación...', 'Generando archivo Excel de diferencias');
+    
+    // Obtener solo items con diferencias
+    const rows = document.querySelectorAll('#tableBody tr[data-item]');
+    const differences = [];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            if (item.estado === 'Diferencia' && row.style.display !== 'none') {
+                differences.push(item);
+            }
+        } catch (error) {
+            console.error('Error procesando fila para exportación:', error);
+        }
+    });
+    
+    if (differences.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin diferencias',
+            text: 'No hay diferencias para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    // Crear datos para Excel
+    const excelData = [
+        ['REPORTE DE DIFERENCIAS - INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Total diferencias:', differences.length],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo']
+    ];
+    
+    differences.forEach(item => {
+        const diff = item.diferencia || (item.real_count - item.stock) || 0;
+        excelData.push([
+            item.material_code || '',
+            item.material_text || '',
+            item.location || '',
+            item.stock || 0,
+            item.real_count || item.count || 0,
+            diff,
+            item.estado || '',
+            item.usuario || 'N/A',
+            item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A'
+        ]);
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Diferencias');
+    
+    // Aplicar estilos (ancho de columnas)
+    const wscols = [
+        {wch: 15}, // Código
+        {wch: 40}, // Descripción
+        {wch: 12}, // Ubicación
+        {wch: 12}, // Stock
+        {wch: 12}, // Conteo
+        {wch: 12}, // Diferencia
+        {wch: 12}, // Estado
+        {wch: 15}, // Usuario
+        {wch: 15}  // Fecha
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `diferencias_inventario_${date}.xlsx`;
+    
+    // Simular descarga (en producción sería desde el servidor)
+    setTimeout(() => {
+        XLSX.writeFile(wb, fileName);
+        hideLoading();
+        showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+    }, 2000);
+}
+
+function exportTableToExcel() {
+    console.log('📊 Exportando tabla completa a Excel...');
+    
+    showLoading('Exportando tabla...', 'Preparando archivo Excel');
+    
+    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+    
+    if (rows.length === 0) {
+        hideLoading();
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin datos',
+            text: 'No hay datos visibles para exportar',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
+    
+    const excelData = [
+        ['REPORTE COMPLETO DE INVENTARIO'],
+        ['Fecha:', new Date().toLocaleDateString()],
+        ['Hora:', new Date().toLocaleTimeString()],
+        ['Total items:', rows.length],
+        [''],
+        ['Código Material', 'Descripción', 'Ubicación', 'Stock Sistema', 
+         'Conteo Físico', 'Diferencia', 'Estado', 'Usuario', 'Fecha Conteo', 'Observaciones']
+    ];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            const diff = item.diferencia || (item.real_count - item.stock) || 0;
+            
+            excelData.push([
+                item.material_code || '',
+                item.material_text || '',
+                item.location || '',
+                item.stock || 0,
+                item.real_count || item.count || 0,
+                diff,
+                item.estado || '',
+                item.usuario || 'N/A',
+                item.timestamp ? new Date(item.timestamp).toLocaleDateString() : 'N/A',
+                item.notes || ''
+            ]);
+        } catch (error) {
+            console.error('Error exportando fila:', error);
+        }
+    });
+    
+    // Crear libro de trabajo
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+    
+    // Aplicar estilos
+    const wscols = [
+        {wch: 15}, {wch: 40}, {wch: 12}, {wch: 12}, 
+        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 15}, 
+        {wch: 15}, {wch: 30}
+    ];
+    ws['!cols'] = wscols;
+    
+    // Generar nombre de archivo
+    const date = new Date().toISOString().split('T')[0];
+    const fileName = `inventario_completo_${date}.xlsx`;
+    
+    setTimeout(() => {
+        XLSX.writeFile(wb, fileName);
+        hideLoading();
+        showNotification('Exportación completada', `Archivo ${fileName} generado`, 'success');
+    }, 2000);
+}
+
+function exportTableToPDF() {
+    console.log('📄 Exportando a PDF...');
+    
+    showLoading('Generando PDF...', 'Creando reporte en formato PDF');
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 15;
+    let yPos = margin;
+    
+    // Título
+    doc.setFontSize(20);
+    doc.setTextColor(44, 62, 80);
+    doc.setFont('helvetica', 'bold');
+    doc.text('REPORTE DE INVENTARIO', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 10;
+    
+    // Información
+    doc.setFontSize(10);
+    doc.setTextColor(108, 117, 125);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
+    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
+    yPos += 15;
+    
+    // Estadísticas
+    doc.setFontSize(12);
+    doc.setTextColor(33, 37, 41);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ESTADÍSTICAS', margin, yPos);
+    yPos += 8;
+    
+    const rows = document.querySelectorAll('#tableBody tr[data-item]:not([style*="display: none"])');
+    const okCount = Array.from(rows).filter(r => {
+        try {
+            const item = JSON.parse(r.getAttribute('data-item'));
+            return item.estado === 'OK';
+        } catch { return false; }
+    }).length;
+    
+    const diffCount = Array.from(rows).filter(r => {
+        try {
+            const item = JSON.parse(r.getAttribute('data-item'));
+            return item.estado === 'Diferencia';
+        } catch { return false; }
+    }).length;
+    
+    const pendCount = rows.length - okCount - diffCount;
+    
+    const stats = [
+        `• Total items: ${rows.length}`,
+        `• Coincidencias (OK): ${okCount} (${Math.round((okCount / rows.length) * 100)}%)`,
+        `• Diferencias: ${diffCount} (${Math.round((diffCount / rows.length) * 100)}%)`,
+        `• Pendientes: ${pendCount} (${Math.round((pendCount / rows.length) * 100)}%)`
+    ];
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    stats.forEach(stat => {
+        doc.text(stat, margin + 5, yPos);
+        yPos += 6;
+    });
+    
+    yPos += 10;
+    
+    // Tabla de datos
+    const tableData = [];
+    
+    rows.forEach(row => {
+        try {
+            const item = JSON.parse(row.getAttribute('data-item'));
+            const diff = item.diferencia || (item.real_count - item.stock) || 0;
+            
+            tableData.push([
+                item.material_code || '',
+                (item.material_text || '').substring(0, 25) + ((item.material_text || '').length > 25 ? '...' : ''),
+                item.location || '',
+                (item.stock || 0).toString(),
+                (item.real_count || item.count || 0).toString(),
+                diff > 0 ? `+${diff}` : diff.toString(),
+                item.estado || ''
+            ]);
+        } catch (error) {
+            console.error('Error procesando fila para PDF:', error);
+        }
+    });
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [['Código', 'Descripción', 'Ubicación', 'Stock', 'Conteo', 'Diferencia', 'Estado']],
+        body: tableData,
+        margin: { left: margin, right: margin },
+        styles: { 
+            fontSize: 8,
+            cellPadding: 2
+        },
+        headStyles: { 
+            fillColor: [44, 62, 80],
+            textColor: 255,
+            fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+            fillColor: [248, 249, 250]
+        }
+    });
+    
+    // Guardar PDF
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `reporte_inventario_${date}.pdf`;
+    
+    setTimeout(() => {
+        doc.save(filename);
+        hideLoading();
+        showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
+    }, 2000);
+}
+
+function startReconciliation() {
+    console.log('⚖️ Iniciando conciliación...');
+    
+    Swal.fire({
+        title: `<div class="text-primary"><i class="bi bi-arrow-repeat me-2"></i>Conciliar Inventario</div>`,
+        html: `
+            <div class="text-start">
+                <p>Esta acción ajustará el stock del sistema con los conteos físicos realizados.</p>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Atención:</strong> Esta operación actualizará los registros del sistema y no se puede deshacer.
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Fecha de conciliación</label>
+                        <input type="date" id="reconcileDate" class="form-control" 
+                               value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Referencia</label>
+                        <input type="text" id="reconcileRef" class="form-control" 
+                               placeholder="Ej: AJUSTE-INV-001">
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirmReconcile">
+                    <label class="form-check-label fw-bold" for="confirmReconcile">
+                        Confirmo la conciliación del inventario y entiendo que los cambios son permanentes
+                    </label>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Iniciar Conciliación',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Cancelar',
+        confirmButtonColor: '#27ae60',
+        cancelButtonColor: '#e74c3c',
+        width: '650px',
         preConfirm: () => {
             if (!document.getElementById('confirmReconcile').checked) {
                 Swal.showValidationMessage('Debe confirmar la conciliación');
                 return false;
             }
-            return true;
+            
+            const ref = document.getElementById('reconcileRef').value.trim();
+            if (!ref) {
+                Swal.showValidationMessage('Ingrese una referencia para la conciliación');
+                return false;
+            }
+            
+            return {
+                date: document.getElementById('reconcileDate').value,
+                reference: ref
+            };
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            showLoading('Conciliando inventario...');
-            setTimeout(() => {
-                showNotification('Conciliación completada', 'El inventario ha sido actualizado', 'success');
-                hideLoading();
-                refreshDashboard();
-            }, 3000);
+            showLoading('Conciliando inventario...', 'Actualizando stock del sistema', true);
+            
+            // Simular progreso
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                document.getElementById('loadingProgress').style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    
+                    setTimeout(() => {
+                        hideLoading();
+                        showNotification(
+                            '¡Conciliación completada!', 
+                            'El inventario ha sido actualizado correctamente', 
+                            'success'
+                        );
+                        
+                        // Recargar dashboard después de 2 segundos
+                        setTimeout(() => {
+                            refreshDashboard();
+                        }, 2000);
+                        
+                    }, 1000);
+                }
+            }, 300);
         }
     });
 }
 
 function generateReport() {
-    showLoading('Generando reporte PDF...');
+    console.log('📈 Generando reporte avanzado...');
     
-    // Simular generación de PDF
+    showLoading('Generando reporte analítico...', 'Procesando datos y estadísticas');
+    
+    // Simular generación de reporte
     setTimeout(() => {
         hideLoading();
         
         Swal.fire({
-            title: 'Reporte Generado',
+            title: `<div class="text-info"><i class="bi bi-file-earmark-pdf me-2"></i>Reporte Analítico</div>`,
             html: `
                 <div class="text-start">
-                    <p>Se ha generado el reporte completo del inventario.</p>
+                    <p>Se ha generado un reporte analítico completo del inventario.</p>
+                    
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
-                        El reporte incluye:
+                        <strong>El reporte incluye:</strong>
                         <ul class="mt-2">
-                            <li>Resumen ejecutivo</li>
-                            <li>Estadísticas de conteo</li>
-                            <li>Lista de diferencias</li>
-                            <li>Recomendaciones</li>
+                            <li>Resumen ejecutivo con KPIs</li>
+                            <li>Análisis estadístico de diferencias</li>
+                            <li>Tendencias y patrones identificados</li>
+                            <li>Recomendaciones de mejora</li>
+                            <li>Gráficos y visualizaciones</li>
+                            <li>Anexos técnicos</li>
                         </ul>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Formato</label>
+                            <select class="form-select" id="reportFormat">
+                                <option value="pdf">PDF Estándar</option>
+                                <option value="pdf_detailed">PDF Detallado</option>
+                                <option value="excel">Excel con Datos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nivel de detalle</label>
+                            <select class="form-select" id="reportDetail">
+                                <option value="summary">Resumen</option>
+                                <option value="detailed" selected>Detallado</option>
+                                <option value="full">Completo</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Descargar PDF',
-            cancelButtonText: 'Cerrar'
+            confirmButtonText: '<i class="bi bi-download me-1"></i>Descargar Reporte',
+            cancelButtonText: '<i class="bi bi-eye me-1"></i>Vista Previa',
+            confirmButtonColor: '#2980b9',
+            cancelButtonColor: '#95a5a6',
+            width: '700px',
+            preConfirm: () => {
+                return {
+                    format: document.getElementById('reportFormat').value,
+                    detail: document.getElementById('reportDetail').value
+                };
+            }
         }).then((result) => {
             if (result.isConfirmed) {
-                showNotification('Descarga iniciada', 'El archivo PDF se está descargando', 'success');
+                showNotification('Reporte en proceso', 'El archivo se está generando y descargará automáticamente', 'info');
+                // Aquí iría la lógica real de generación del reporte
             }
         });
-    }, 2500);
+    }, 2000);
+}
+
+function showAnalytics() {
+    console.log('📊 Mostrando analítica avanzada...');
+    
+    Swal.fire({
+        title: `<div class="text-purple"><i class="bi bi-graph-up me-2"></i>Analítica Avanzada</div>`,
+        html: `
+            <div class="text-center">
+                <i class="bi bi-bar-chart fs-1 text-purple mb-3"></i>
+                <h5>Análisis de Inventario</h5>
+                <p class="text-muted">Funcionalidad en desarrollo</p>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    Próximamente: Análisis predictivo, tendencias, optimización de stock y más.
+                </div>
+            </div>
+        `,
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
+        confirmButtonColor: '#8e44ad',
+        width: '500px'
+    });
+}
+
+function showHelpModal() {
+    console.log('❓ Mostrando ayuda...');
+    
+    Swal.fire({
+        title: `<div class="text-info"><i class="bi bi-question-circle me-2"></i>Ayuda del Dashboard</div>`,
+        html: `
+            <div class="text-start">
+                <h6 class="text-primary mb-3">📊 Dashboard de Inventario</h6>
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold"><i class="bi bi-speedometer2 me-2"></i>Funcionalidades principales:</h6>
+                    <ul>
+                        <li><strong>Monitoreo en tiempo real</strong> del conteo físico</li>
+                        <li><strong>Filtrado avanzado</strong> por estado y ubicación</li>
+                        <li><strong>Edición directa</strong> de conteos físicos</li>
+                        <li><strong>Exportación</strong> a Excel y PDF</li>
+                        <li><strong>Conciliación automática</strong> de inventario</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="fw-bold"><i class="bi bi-keyboard me-2"></i>Atajos de teclado:</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <kbd>Ctrl</kbd> + <kbd>R</kbd> - Actualizar dashboard<br>
+                            <kbd>Ctrl</kbd> + <kbd>F</kbd> - Buscar en tabla<br>
+                            <kbd>Ctrl</kbd> + <kbd>E</kbd> - Exportar Excel
+                        </div>
+                        <div class="col-md-6">
+                            <kbd>Ctrl</kbd> + <kbd>P</kbd> - Exportar PDF<br>
+                            <kbd>Esc</kbd> - Limpiar filtros<br>
+                            <kbd>F1</kbd> - Esta ayuda
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Nota:</strong> Los cambios en conteos físicos se guardan inmediatamente.
+                </div>
+            </div>
+        `,
+        confirmButtonText: '<i class="bi bi-check-circle me-1"></i>Entendido',
+        confirmButtonColor: '#2980b9',
+        width: '700px'
+    });
+}
+
+function toggleAutoRefresh() {
+    CONFIG.autoRefresh = !CONFIG.autoRefresh;
+    const btn = document.getElementById('autoRefreshBtn');
+    
+    if (CONFIG.autoRefresh) {
+        btn.classList.remove('btn-info');
+        btn.classList.add('btn-success');
+        btn.innerHTML = '<i class="bi bi-check-circle"></i>';
+        btn.title = 'Auto-refresh activado';
+        
+        showNotification('Auto-refresh activado', 'Los datos se actualizarán cada 30 segundos', 'success');
+        
+        // Iniciar intervalo
+        CONFIG.refreshIntervalId = setInterval(refreshDashboard, CONFIG.refreshInterval);
+        
+    } else {
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-info');
+        btn.innerHTML = '<i class="bi bi-clock"></i>';
+        btn.title = 'Auto-refresh desactivado';
+        
+        showNotification('Auto-refresh desactivado', 'Actualización automática desactivada', 'info');
+        
+        // Detener intervalo
+        if (CONFIG.refreshIntervalId) {
+            clearInterval(CONFIG.refreshIntervalId);
+        }
+    }
+}
+
+function changeChartType(type) {
+    if (CONFIG.charts.trendChart) {
+        CONFIG.charts.trendChart.config.type = type;
+        CONFIG.charts.trendChart.update();
+        
+        const message = type === 'line' ? 'Gráfico de línea activado' : 'Gráfico de barras activado';
+        showNotification('Tipo de gráfico cambiado', message, 'info');
+    }
 }
 
 // ================= UTILIDADES =================
-function showLoading(message = 'Cargando...', detail = '') {
+function showLoading(message = 'Cargando...', detail = '', showProgress = false) {
     document.getElementById('loadingMessage').textContent = message;
     document.getElementById('loadingDetail').textContent = detail;
+    
+    if (showProgress) {
+        document.getElementById('loadingProgress').style.width = '0%';
+    }
+    
     document.getElementById('loadingOverlay').classList.remove('d-none');
 }
 
@@ -2089,18 +3340,18 @@ function showNotification(title, message, type = 'info') {
     notification.className = `notification notification-${type}`;
     
     notification.innerHTML = `
-        <div class="d-flex align-items-center gap-3">
-            <div class="flex-shrink-0">
+        <div class="d-flex align-items-start gap-3">
+            <div class="flex-shrink-0 mt-1">
                 <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 
                                type === 'warning' ? 'bi-exclamation-triangle-fill' : 
                                type === 'error' ? 'bi-x-circle-fill' : 
-                               'bi-info-circle-fill'} fs-4"></i>
+                               'bi-info-circle-fill'} fs-5"></i>
             </div>
             <div class="flex-grow-1">
                 <div class="fw-bold">${title}</div>
-                <div class="small">${message}</div>
+                <div class="small mt-1">${message}</div>
             </div>
-            <button class="btn btn-link text-dark p-0" onclick="this.closest('.notification').remove()">
+            <button class="btn btn-link text-dark p-0 mt-1" onclick="closeNotification('${notificationId}')">
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
@@ -2110,47 +3361,125 @@ function showNotification(title, message, type = 'info') {
     
     // Auto-remover después de 5 segundos
     setTimeout(() => {
-        const notif = document.getElementById(notificationId);
-        if (notif) {
-            notif.style.opacity = '0';
-            notif.style.transform = 'translateX(100%)';
-            setTimeout(() => notif.remove(), 300);
-        }
+        closeNotification(notificationId);
     }, 5000);
 }
 
+function closeNotification(id) {
+    const notif = document.getElementById(id);
+    if (notif) {
+        notif.style.opacity = '0';
+        notif.style.transform = 'translateX(100%) scale(0.8)';
+        notif.style.transition = 'all 0.3s ease';
+        
+        setTimeout(() => {
+            if (notif.parentNode) {
+                notif.parentNode.removeChild(notif);
+            }
+        }, 300);
+    }
+}
+
+function formatTime(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return '--:--';
+    }
+}
+
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+    } catch {
+        return '--/--/----';
+    }
+}
+
+function checkAPIStatus() {
+    if (!CONFIG.api.base || CONFIG.api.base === '#') {
+        console.warn('⚠️ API endpoints no configurados');
+        showNotification(
+            'Modo demostración', 
+            'Algunas funcionalidades están en modo simulación', 
+            'warning'
+        );
+        return false;
+    }
+    return true;
+}
+
 function initEventListeners() {
-    // Búsqueda en tiempo real con debounce
+    console.log('🎮 Configurando event listeners...');
+    
+    // Búsqueda con debounce
     const searchInput = document.getElementById('tableSearch');
     let searchTimeout;
     
     searchInput?.addEventListener('input', function() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(filterTable, 300);
+        searchTimeout = setTimeout(filterTable, 350);
     });
     
     // Teclas rápidas
     document.addEventListener('keydown', function(e) {
+        // Ctrl + R - Actualizar
         if (e.ctrlKey && e.key === 'r') {
             e.preventDefault();
             refreshDashboard();
         }
         
+        // Ctrl + F - Buscar
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            searchInput?.focus();
+            searchInput?.select();
+        }
+        
+        // Ctrl + E - Exportar Excel
         if (e.ctrlKey && e.key === 'e') {
             e.preventDefault();
             exportDifferences();
         }
         
+        // Ctrl + P - Exportar PDF
+        if (e.ctrlKey && e.key === 'p') {
+            e.preventDefault();
+            exportTableToPDF();
+        }
+        
+        // Esc - Limpiar filtros
         if (e.key === 'Escape') {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('itemModal'));
-            if (modal) modal.hide();
+            document.getElementById('tableSearch').value = '';
+            document.getElementById('tableStatusFilter').value = 'all';
+            document.getElementById('tableLocationFilter').value = 'all';
+            filterTable();
+        }
+        
+        // F1 - Ayuda
+        if (e.key === 'F1') {
+            e.preventDefault();
+            showHelpModal();
         }
     });
+    
+    // Configurar tooltips de Bootstrap si están disponibles
+    if (typeof bootstrap !== 'undefined') {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    }
+    
+    console.log('✅ Event listeners configurados');
 }
 
 function setupAutoRefresh() {
     if (CONFIG.autoRefresh) {
-        setInterval(refreshDashboard, CONFIG.refreshInterval);
+        console.log('⏰ Auto-refresh configurado cada', CONFIG.refreshInterval / 1000, 'segundos');
+        CONFIG.refreshIntervalId = setInterval(refreshDashboard, CONFIG.refreshInterval);
     }
 }
 
@@ -2160,14 +3489,25 @@ window.editItem = editItem;
 window.recountItem = recountItem;
 window.flagItem = flagItem;
 window.exportDifferences = exportDifferences;
+window.exportTableToExcel = exportTableToExcel;
+window.exportTableToPDF = exportTableToPDF;
 window.startReconciliation = startReconciliation;
 window.generateReport = generateReport;
+window.showAnalytics = showAnalytics;
+window.showHelpModal = showHelpModal;
+window.toggleAutoRefresh = toggleAutoRefresh;
+window.changeChartType = changeChartType;
+window.filterTable = filterTable;
+window.closeNotification = closeNotification;
 
-// Inicializar tooltips de Bootstrap
-var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl);
-});
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboard);
+} else {
+    initDashboard();
+}
+
+console.log('🎉 Dashboard de Inventario cargado exitosamente');
 </script>
 
 {% endblock %}
