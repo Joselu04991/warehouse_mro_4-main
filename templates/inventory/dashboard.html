@@ -2401,7 +2401,7 @@ const CONFIG = {
         export: '{{ url_for("inventory.export_differences") }}',
         summary: '{{ url_for("inventory.get_summary") }}',
         status: '{{ url_for("inventory.get_inventory_status") }}',
-        itemDetails: '{{ url_for("inventory.view_item_count", material_code="__CODE__", location="__LOC__") }}',
+        itemDetails: '/api/inventory/item', // Nueva ruta para detalles
         bulkUpdate: '{{ url_for("inventory.bulk_update_counts") }}',
         reconcile: '{{ url_for("inventory.reconcile_inventory") }}'
     },
@@ -3139,15 +3139,8 @@ function debounceSearch() {
 // ================= FUNCIONES DE ACCIÓN =================
 async function editItem(materialCode, location) {
     try {
-        // Obtener detalles del item
-        const response = await fetch(`/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
-        if (!response.ok) {
-            throw new Error('No se pudo obtener los detalles del item');
-        }
-        
-        // Redirigir a la página de conteo
+        // Redirigir directamente a la página de conteo con los parámetros
         window.location.href = `/inventory/count?code=${encodeURIComponent(materialCode)}&loc=${encodeURIComponent(location)}`;
-        
     } catch (error) {
         console.error('Error:', error);
         showNotification('Error', 'No se pudo cargar el item para edición', 'error');
@@ -3219,12 +3212,13 @@ async function recountItem(materialCode, location) {
 async function showItemDetails(materialCode, location) {
     try {
         // Obtener detalles del item desde tu API
-        const response = await fetch(`/api/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
+        const response = await fetch(`${CONFIG.api.itemDetails}/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
         if (!response.ok) {
             throw new Error('No se pudo obtener los detalles');
         }
         
-        const item = await response.json();
+        const data = await response.json();
+        const item = data.item || {};
         
         // Mostrar detalles en un modal
         Swal.fire({
@@ -3272,8 +3266,8 @@ async function showItemDetails(materialCode, location) {
                         <div class="col-md-6">
                             <h6 class="fw-bold mb-3">Historial de Conteos</h6>
                             <div class="small">
-                                ${item.count_history && item.count_history.length > 0 ? 
-                                    item.count_history.map(h => `
+                                ${data.count_history && data.count_history.length > 0 ? 
+                                    data.count_history.map(h => `
                                         <div class="d-flex justify-content-between border-bottom py-2">
                                             <span>${new Date(h.timestamp).toLocaleString()}</span>
                                             <span class="fw-bold">${h.count}</span>
