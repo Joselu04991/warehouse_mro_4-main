@@ -2232,6 +2232,13 @@
                             <span class="action-label">Subir Inventario</span>
                         </a>
                         
+                        <a href="{{ url_for('inventory.view_history') }}" class="action-btn hover-lift">
+                            <div class="action-icon" style="background: linear-gradient(135deg, var(--purple), var(--info));">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <span class="action-label">Historial Anterior</span>
+                        </a>
+                        
                         <div class="action-btn hover-lift" onclick="exportDifferences()">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--success), var(--teal));">
                                 <i class="bi bi-file-earmark-excel"></i>
@@ -2247,17 +2254,10 @@
                         </div>
                         
                         <div class="action-btn hover-lift" onclick="generateReport()">
-                            <div class="action-icon" style="background: linear-gradient(135deg, var(--purple), var(--info));">
+                            <div class="action-icon" style="background: linear-gradient(135deg, var(--danger), var(--danger-light));">
                                 <i class="bi bi-file-earmark-pdf"></i>
                             </div>
                             <span class="action-label">Reporte PDF</span>
-                        </div>
-                        
-                        <div class="action-btn hover-lift" onclick="showAnalytics()">
-                            <div class="action-icon" style="background: linear-gradient(135deg, var(--danger), var(--danger-light));">
-                                <i class="bi bi-graph-up"></i>
-                            </div>
-                            <span class="action-label">Analítica Avanzada</span>
                         </div>
                     </div>
                 </div>
@@ -2401,9 +2401,10 @@ const CONFIG = {
         export: '{{ url_for("inventory.export_differences") }}',
         summary: '{{ url_for("inventory.get_summary") }}',
         status: '{{ url_for("inventory.get_inventory_status") }}',
-        itemDetails: '/api/inventory/item', // Nueva ruta para detalles
+        itemDetails: '{{ url_for("inventory.get_item_details") }}', // CORREGIDO: Usar la ruta de Flask
         bulkUpdate: '{{ url_for("inventory.bulk_update_counts") }}',
-        reconcile: '{{ url_for("inventory.reconcile_inventory") }}'
+        reconcile: '{{ url_for("inventory.reconcile_inventory") }}',
+        generateReport: '{{ url_for("inventory.generate_final_report") }}' // CORREGIDO: Ruta para reporte PDF
     },
     charts: {
         statusChart: null,
@@ -3211,13 +3212,21 @@ async function recountItem(materialCode, location) {
 
 async function showItemDetails(materialCode, location) {
     try {
-        // Obtener detalles del item desde tu API
-        const response = await fetch(`${CONFIG.api.itemDetails}/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
+        showLoading('Cargando detalles...', 'Obteniendo información del item');
+        
+        // Obtener detalles del item desde tu API - CORREGIDO
+        const response = await fetch(`${CONFIG.api.itemDetails}?material_code=${encodeURIComponent(materialCode)}&location=${encodeURIComponent(location)}`);
         if (!response.ok) {
             throw new Error('No se pudo obtener los detalles');
         }
         
         const data = await response.json();
+        hideLoading();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Error obteniendo detalles');
+        }
+        
         const item = data.item || {};
         
         // Mostrar detalles en un modal
@@ -3265,12 +3274,12 @@ async function showItemDetails(materialCode, location) {
                         </div>
                         <div class="col-md-6">
                             <h6 class="fw-bold mb-3">Historial de Conteos</h6>
-                            <div class="small">
+                            <div class="small" style="max-height: 200px; overflow-y: auto;">
                                 ${data.count_history && data.count_history.length > 0 ? 
                                     data.count_history.map(h => `
                                         <div class="d-flex justify-content-between border-bottom py-2">
                                             <span>${new Date(h.timestamp).toLocaleString()}</span>
-                                            <span class="fw-bold">${h.count}</span>
+                                            <span class="fw-bold ${h.count > item.stock ? 'text-success' : h.count < item.stock ? 'text-danger' : 'text-primary'}">${h.count}</span>
                                         </div>
                                     `).join('') : 
                                     '<p class="text-muted">No hay historial disponible</p>'
@@ -3309,6 +3318,7 @@ async function showItemDetails(materialCode, location) {
         
     } catch (error) {
         console.error('Error obteniendo detalles:', error);
+        hideLoading();
         showNotification('Error', 'No se pudieron cargar los detalles del item', 'error');
     }
 }
@@ -3417,8 +3427,8 @@ async function startReconciliation() {
 }
 
 function generateReport() {
-    // Redirigir a la ruta de generación de reporte de Flask
-    window.location.href = '{{ url_for("inventory.generate_final_report") }}';
+    // CORREGIDO: Redirigir a la ruta correcta de generación de reporte PDF
+    window.location.href = CONFIG.api.generateReport;
 }
 
 // ================= FUNCIONES DE EXPORTACIÓN COMPLETAS =================
@@ -3449,7 +3459,7 @@ function exportTableToPDF() {
         doc.text(`Fecha: ${new Date().toLocaleDateString()}`, margin, yPos);
         doc.text(`Hora: ${new Date().toLocaleTimeString()}`, pageWidth - margin, yPos, { align: 'right' });
         yPos += 8;
-        doc.text(`Usuario: ${document.querySelector('.header-subtitle').textContent || 'Usuario'}`, margin, yPos);
+        doc.text(`Usuario: Sistema de Inventario`, margin, yPos);
         yPos += 15;
         
         // Estadísticas principales
@@ -3478,39 +3488,15 @@ function exportTableToPDF() {
         
         yPos += 10;
         
-        // Capturar el dashboard como imagen usando html2canvas
-        html2canvas(document.querySelector('.inventory-dashboard'), {
-            scale: 0.5, // Reducir escala para que quepa
-            useCORS: true,
-            backgroundColor: '#ffffff'
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/jpeg', 0.7);
-            const imgWidth = pageWidth - (margin * 2);
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
-            // Verificar si la imagen cabe en la página
-            if (yPos + imgHeight > doc.internal.pageSize.getHeight() - margin) {
-                // Si no cabe, crear nueva página
-                doc.addPage();
-                yPos = margin;
-            }
-            
-            doc.addImage(imgData, 'JPEG', margin, yPos, imgWidth, imgHeight);
-            
-            // Generar nombre de archivo
-            const date = new Date().toISOString().split('T')[0];
-            const filename = `dashboard_inventario_${date}.pdf`;
-            
-            // Descargar PDF
-            doc.save(filename);
-            
-            hideLoading();
-            showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
-        }).catch(error => {
-            console.error('Error capturando dashboard:', error);
-            hideLoading();
-            showNotification('Error', 'No se pudo generar el PDF completo', 'error');
-        });
+        // Generar nombre de archivo
+        const date = new Date().toISOString().split('T')[0];
+        const filename = `dashboard_inventario_${date}.pdf`;
+        
+        // Descargar PDF
+        doc.save(filename);
+        
+        hideLoading();
+        showNotification('PDF generado', `Archivo ${filename} descargado`, 'success');
         
     } catch (error) {
         console.error('Error generando PDF:', error);
@@ -3681,37 +3667,6 @@ function printDashboard() {
     console.log('🖨️ Imprimiendo dashboard...');
     
     showLoading('Preparando impresión...', 'Optimizando layout para papel');
-    
-    // Preparar para impresión
-    const originalStyles = {};
-    const elementsToHide = [
-        '.notification-panel',
-        '.loading-overlay',
-        '.header-actions .dropdown',
-        '.btn-icon',
-        '.table-footer .btn-group',
-        '.action-btn:hover',
-        '.stat-card:hover',
-        '.kpi-card:hover',
-        '.chart-card:hover',
-        '.widget:hover',
-        '.difference-item:hover',
-        '.activity-item:hover',
-        '.status-indicator:hover',
-        '.smart-table tbody tr:hover'
-    ];
-    
-    // Guardar estilos originales
-    elementsToHide.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach((el, index) => {
-            const key = `${selector}_${index}`;
-            originalStyles[key] = {
-                transform: el.style.transform,
-                boxShadow: el.style.boxShadow
-            };
-        });
-    });
     
     // Aplicar estilos de impresión
     const style = document.createElement('style');
@@ -3909,19 +3864,6 @@ function printDashboard() {
         // Restaurar estilos originales después de imprimir
         setTimeout(() => {
             document.head.removeChild(style);
-            
-            // Restaurar estilos originales
-            elementsToHide.forEach(selector => {
-                const elements = document.querySelectorAll(selector);
-                elements.forEach((el, index) => {
-                    const key = `${selector}_${index}`;
-                    if (originalStyles[key]) {
-                        el.style.transform = originalStyles[key].transform;
-                        el.style.boxShadow = originalStyles[key].boxShadow;
-                    }
-                });
-            });
-            
             hideLoading();
             showNotification('Impresión lista', 'El dashboard se ha enviado a imprimir', 'success');
         }, 1000);
@@ -4186,10 +4128,10 @@ function showHelpModal() {
                             <div class="accordion-body">
                                 <p><strong><i class="bi bi-clipboard-check"></i> Nuevo Conteo:</strong> Iniciar proceso de conteo físico</p>
                                 <p><strong><i class="bi bi-upload"></i> Subir Inventario:</strong> Cargar archivo Excel con inventario</p>
+                                <p><strong><i class="bi bi-clock-history"></i> Historial Anterior:</strong> Ver inventarios antiguos</p>
                                 <p><strong><i class="bi bi-file-earmark-excel"></i> Exportar Diferencias:</strong> Generar reporte de discrepancias</p>
                                 <p><strong><i class="bi bi-arrow-repeat"></i> Conciliar Stock:</strong> Ajustar sistema con conteos físicos</p>
                                 <p><strong><i class="bi bi-file-earmark-pdf"></i> Reporte PDF:</strong> Generar reporte completo en PDF</p>
-                                <p><strong><i class="bi bi-graph-up"></i> Analítica Avanzada:</strong> Ver análisis predictivos y optimizaciones</p>
                             </div>
                         </div>
                     </div>
@@ -4249,6 +4191,7 @@ function showAbout() {
                             <li>Análisis predictivo</li>
                             <li>Exportación múltiple formatos</li>
                             <li>Conciliación automática</li>
+                            <li>Historial de inventarios</li>
                         </ul>
                     </div>
                     <div class="col-md-6">
