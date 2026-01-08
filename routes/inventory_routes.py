@@ -1498,3 +1498,43 @@ def delete_item():
             "success": False,
             "error": str(e)
         }), 500
+@inventory_bp.route('/api/inventory/item/<material_code>/<location>')
+@login_required
+def get_item_details(material_code, location):
+    """API para obtener detalles de un item específico"""
+    try:
+        item = InventoryItem.query.filter_by(
+            material_code=material_code,
+            location=location
+        ).first()
+        
+        if not item:
+            return jsonify({'success': False, 'error': 'Item no encontrado'}), 404
+        
+        # Obtener historial de conteos si existe
+        counts = Count.query.filter_by(
+            material_code=material_code,
+            location=location
+        ).order_by(Count.contado_en.desc()).limit(10).all()
+        
+        return jsonify({
+            'success': True,
+            'item': {
+                'material_code': item.material_code,
+                'material_text': item.material_text,
+                'location': item.location,
+                'stock': item.stock,
+                'real_count': item.real_count,
+                'diferencia': item.diferencia,
+                'estado': item.estado
+            },
+            'count_history': [{
+                'timestamp': count.contado_en.isoformat() if count.contado_en else None,
+                'count': count.real_count,
+                'user': count.usuario
+            } for count in counts] if counts else []
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error obteniendo detalles del item: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
