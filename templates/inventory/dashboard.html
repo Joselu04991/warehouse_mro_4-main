@@ -3218,11 +3218,104 @@ async function recountItem(materialCode, location) {
 
 async function showItemDetails(materialCode, location) {
     try {
-        // Redirigir a la página de detalles del item
-        window.location.href = `/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`;
+        // Obtener detalles del item desde tu API
+        const response = await fetch(`/api/inventory/item/${encodeURIComponent(materialCode)}/${encodeURIComponent(location)}`);
+        if (!response.ok) {
+            throw new Error('No se pudo obtener los detalles');
+        }
+        
+        const item = await response.json();
+        
+        // Mostrar detalles en un modal
+        Swal.fire({
+            title: `<i class="bi bi-info-circle text-primary me-2"></i>Detalles del Item`,
+            html: `
+                <div class="text-start">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Información Básica</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <th class="text-muted">Código:</th>
+                                    <td class="fw-bold">${materialCode}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Ubicación:</th>
+                                    <td><span class="badge bg-dark">${location}</span></td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Stock Sistema:</th>
+                                    <td class="fw-bold">${item.stock || '0'}</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Conteo Físico:</th>
+                                    <td class="fw-bold ${item.real_count > item.stock ? 'text-success' : item.real_count < item.stock ? 'text-danger' : 'text-primary'}">
+                                        ${item.real_count || 'Sin contar'}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Diferencia:</th>
+                                    <td class="fw-bold ${item.diferencia > 0 ? 'text-success' : item.diferencia < 0 ? 'text-danger' : 'text-muted'}">
+                                        ${item.diferencia > 0 ? '+' : ''}${item.diferencia || 0}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted">Estado:</th>
+                                    <td>
+                                        <span class="badge ${item.estado === 'OK' ? 'bg-success' : item.estado === 'Diferencia' ? 'bg-warning' : 'bg-info'}">
+                                            ${item.estado || 'Pendiente'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold mb-3">Historial de Conteos</h6>
+                            <div class="small">
+                                ${item.count_history && item.count_history.length > 0 ? 
+                                    item.count_history.map(h => `
+                                        <div class="d-flex justify-content-between border-bottom py-2">
+                                            <span>${new Date(h.timestamp).toLocaleString()}</span>
+                                            <span class="fw-bold">${h.count}</span>
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="text-muted">No hay historial disponible</p>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    ${item.material_text ? `
+                    <div class="mt-3">
+                        <h6 class="fw-bold mb-2">Descripción</h6>
+                        <p class="text-muted">${item.material_text}</p>
+                    </div>` : ''}
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: '<i class="bi bi-pencil me-1"></i> Editar Conteo',
+            cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Cerrar',
+            showDenyButton: true,
+            denyButtonText: '<i class="bi bi-arrow-repeat me-1"></i> Recontar',
+            width: '800px',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                denyButton: 'btn btn-warning',
+                cancelButton: 'btn btn-secondary'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Redirigir a página de conteo
+                editItem(materialCode, location);
+            } else if (result.isDenied) {
+                // Recontar item
+                recountItem(materialCode, location);
+            }
+        });
+        
     } catch (error) {
-        console.error('Error:', error);
-        showNotification('Error', 'No se pudo cargar los detalles del item', 'error');
+        console.error('Error obteniendo detalles:', error);
+        showNotification('Error', 'No se pudieron cargar los detalles del item', 'error');
     }
 }
 
