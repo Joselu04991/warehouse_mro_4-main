@@ -2028,7 +2028,7 @@
                         <i class="bi bi-three-dots"></i>
                     </button>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="moreActions">
-                        <a class="dropdown-item" href="#" onclick="showHistoricalDashboard()">
+                        <a class="dropdown-item" href="{{ url_for('inventory.history_inventory') }}">
                             <i class="bi bi-archive text-purple"></i>Dashboard de Históricos
                         </a>
                         <a class="dropdown-item" href="#" onclick="generateHistoricalReport()">
@@ -2201,11 +2201,11 @@
                                 <button class="btn btn-outline-purple" onclick="compareHistorical()">
                                     <i class="bi bi-files"></i> Comparar Históricos
                                 </button>
-                                <button class="btn btn-outline-info" onclick="generateTrendReport()">
-                                    <i class="bi bi-graph-up"></i> Reporte de Tendencias
+                                <button class="btn btn-outline-info" onclick="analyzeHistorical()">
+                                    <i class="bi bi-graph-up"></i> Análisis de Tendencias
                                 </button>
                                 <button class="btn btn-outline-success" onclick="exportAllHistorical()">
-                                    <i class="bi bi-download"></i> Exportar Todos
+                                    <i class="bi bi-download"></i> Ver Todos los Históricos
                                 </button>
                             </div>
                         </div>
@@ -2225,25 +2225,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- PANEL DE COMPARACIÓN -->
-            <div class="kpi-section glass-effect d-none" id="comparisonPanel">
-                <div class="section-header">
-                    <h2 class="section-title text-gradient">
-                        <i class="bi bi-files"></i>
-                        Comparación Activa
-                        <span class="badge bg-warning ms-2" id="comparisonCount">2 archivos</span>
-                    </h2>
-                    <div class="section-actions">
-                        <button class="btn btn-danger btn-sm" onclick="closeComparisonPanel()">
-                            <i class="bi bi-x-lg"></i> Cerrar
-                        </button>
-                    </div>
-                </div>
-                <div id="comparisonResults">
-                    <!-- Resultados de comparación dinámicos -->
                 </div>
             </div>
 
@@ -2604,13 +2585,16 @@
                 </div>
                 <div class="widget-body">
                     <div class="timeline" id="historicalTimeline">
-                        <!-- Timeline se cargará dinámicamente -->
                         <div class="text-center py-3">
-                            <p class="text-muted">Cargando timeline...</p>
+                            <i class="bi bi-clock-history fs-1 text-purple mb-3"></i>
+                            <p class="text-muted">La línea de tiempo se cargará con los históricos</p>
+                            <button class="btn btn-sm btn-outline-purple" onclick="loadHistoricalData()">
+                                <i class="bi bi-arrow-clockwise"></i> Cargar Históricos
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </widget>
 
             <!-- WIDGET DE ANÁLISIS -->
             <div class="widget glass-effect">
@@ -2632,14 +2616,14 @@
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-purple btn-sm" onclick="analyzeStockTrends()">
-                            <i class="bi bi-graph-up-arrow"></i> Tendencias de Stock
+                        <button class="btn btn-outline-purple btn-sm" onclick="showHistoricalAnalysis()">
+                            <i class="bi bi-archive"></i> Panel de Históricos
                         </button>
-                        <button class="btn btn-outline-info btn-sm" onclick="analyzeDiscrepancies()">
-                            <i class="bi bi-exclamation-triangle"></i> Análisis de Diferencias
+                        <button class="btn btn-outline-info btn-sm" onclick="analyzeHistorical()">
+                            <i class="bi bi-graph-up-arrow"></i> Análisis de Tendencias
                         </button>
-                        <button class="btn btn-outline-success btn-sm" onclick="generateEvolutionReport()">
-                            <i class="bi bi-file-earmark-text"></i> Reporte Evolutivo
+                        <button class="btn btn-outline-success btn-sm" onclick="exportAllHistorical()">
+                            <i class="bi bi-download"></i> Ver Todos
                         </button>
                     </div>
                     
@@ -2907,13 +2891,12 @@ const CONFIG = {
         bulkUpdate: '{{ url_for("inventory.bulk_update_counts") }}',
         reconcile: '{{ url_for("inventory.reconcile_inventory") }}',
         generateReport: '{{ url_for("inventory.generate_final_report") }}',
-        // NUEVAS APIs PARA HISTÓRICOS
-        historicalList: '{{ url_for("inventory.history_inventory") }}',
-        historicalStats: '/api/historical/stats',
-        historicalCompare: '/api/historical/compare',
-        historicalExport: '/api/historical/export',
-        historicalAnalyze: '/api/historical/analyze',
-        historicalPreview: '/inventory/history'
+        
+        // RUTAS PARA HISTÓRICOS (CORREGIDAS)
+        historicalStats: '{{ url_for("inventory.historical_stats") }}',
+        historicalRecent: '{{ url_for("inventory.recent_historical") }}',
+        historicalAnalyze: '{{ url_for("inventory.analyze_historical_data") }}',
+        historicalList: '{{ url_for("inventory.history_inventory") }}'
     },
     charts: {
         statusChart: null,
@@ -2941,21 +2924,21 @@ const CONFIG = {
 
 // ================= INICIALIZACIÓN =================
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard de Inventario con Históricos inicializando...');
+    console.log('🚀 Dashboard de Inventario inicializando...');
     
-    // Inicializar componentes con datos reales
+    // Inicializar componentes básicos primero
     initDashboard();
     initCharts();
     initEventListeners();
     setupAutoRefresh();
     updateTime();
     
-    // Cargar datos históricos después de un breve delay
+    // Luego cargar datos históricos
     setTimeout(() => {
         loadHistoricalData();
-    }, 1000);
+    }, 500);
     
-    console.log('✅ Dashboard listo con gestión de históricos');
+    console.log('✅ Dashboard listo');
 });
 
 function initDashboard() {
@@ -3221,41 +3204,18 @@ function initCharts() {
     }
 }
 
-// ================= NUEVAS FUNCIONES PARA HISTÓRICOS =================
+// ================= FUNCIONES PARA HISTÓRICOS (CORREGIDAS) =================
 
 // Cargar datos históricos
 async function loadHistoricalData() {
     try {
         showLoading('Cargando datos históricos...', 'Analizando archivos Excel');
         
-        // Obtener lista de snapshots
-        const response = await fetch(`${CONFIG.api.historicalList}?per_page=5`);
-        if (!response.ok) throw new Error('Error obteniendo históricos');
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Actualizar contador de históricos
-        const totalElements = doc.querySelectorAll('.table tbody tr').length;
-        document.getElementById('historicalCountValue').textContent = totalElements;
-        document.getElementById('totalHistorical').textContent = `${totalElements} archivos`;
-        
-        // Actualizar barra de progreso
-        const progressBar = document.getElementById('historicalProgress');
-        if (progressBar) {
-            const percentage = Math.min(totalElements * 10, 100);
-            progressBar.style.width = `${percentage}%`;
-        }
-        
-        // Cargar últimas importaciones
-        updateRecentHistorical(doc);
-        
-        // Cargar timeline
-        updateHistoricalTimeline(doc);
-        
-        // Obtener estadísticas
+        // 1. Cargar estadísticas
         await loadHistoricalStats();
+        
+        // 2. Cargar históricos recientes
+        await loadRecentHistorical();
         
         hideLoading();
         showNotification('Históricos actualizados', 'Datos históricos cargados correctamente', 'success');
@@ -3267,108 +3227,6 @@ async function loadHistoricalData() {
     }
 }
 
-// Actualizar lista de archivos recientes
-function updateRecentHistorical(doc) {
-    const recentContainer = document.getElementById('recentHistorical');
-    const rows = doc.querySelectorAll('.table tbody tr');
-    
-    if (rows.length === 0) {
-        recentContainer.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-                <h6 class="text-muted">No hay archivos históricos</h6>
-                <p class="text-muted extra-small mb-0">Sube tu primer Excel histórico</p>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    rows.forEach((row, index) => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 4) {
-            const snapshotId = cells[0].textContent.trim();
-            const snapshotName = cells[1].textContent.trim();
-            const fecha = cells[3].textContent.trim();
-            const total = cells[4]?.textContent.trim() || '0';
-            
-            const isNew = index === 0 ? '<span class="badge-new ms-2">NUEVO</span>' : '';
-            
-            html += `
-                <div class="historical-item" onclick="viewHistorical('${snapshotId}')">
-                    <div class="historical-filename">
-                        <i class="bi bi-file-earmark-excel text-purple"></i>
-                        ${snapshotName}
-                        ${isNew}
-                    </div>
-                    <div class="historical-meta">
-                        <span><i class="bi bi-calendar"></i> ${fecha}</span>
-                        <span><i class="bi bi-hash"></i> ${total} items</span>
-                    </div>
-                    <div class="historical-actions">
-                        <button class="historical-btn historical-btn-view" 
-                                onclick="event.stopPropagation(); viewHistorical('${snapshotId}')">
-                            <i class="bi bi-eye"></i> Ver
-                        </button>
-                        <button class="historical-btn historical-btn-download"
-                                onclick="event.stopPropagation(); downloadHistorical('${snapshotId}')">
-                            <i class="bi bi-download"></i> Descargar
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    
-    recentContainer.innerHTML = html;
-}
-
-// Actualizar timeline
-function updateHistoricalTimeline(doc) {
-    const timelineContainer = document.getElementById('historicalTimeline');
-    const rows = doc.querySelectorAll('.table tbody tr');
-    
-    if (rows.length === 0) {
-        timelineContainer.innerHTML = `
-            <div class="text-center py-3">
-                <p class="text-muted">No hay imports recientes</p>
-            </div>
-        `;
-        return;
-    }
-    
-    let html = '';
-    rows.slice(0, 5).forEach((row, index) => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 4) {
-            const snapshotName = cells[1].textContent.trim();
-            const fecha = cells[3].textContent.trim();
-            const total = cells[4]?.textContent.trim() || '0';
-            
-            html += `
-                <div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="card">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${snapshotName}</h6>
-                                    <p class="text-muted small mb-0">
-                                        <i class="bi bi-calendar"></i> ${fecha}
-                                    </p>
-                                </div>
-                                <span class="badge bg-purple">${total} items</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    
-    timelineContainer.innerHTML = html;
-}
-
 // Cargar estadísticas de históricos
 async function loadHistoricalStats() {
     try {
@@ -3378,315 +3236,192 @@ async function loadHistoricalStats() {
         const data = await response.json();
         
         if (data.success) {
+            // Actualizar contadores
+            document.getElementById('historicalCountValue').textContent = data.stats.total_snapshots || 0;
+            document.getElementById('totalHistorical').textContent = `${data.stats.total_snapshots || 0} archivos`;
             document.getElementById('totalSnapshots').textContent = data.stats.total_snapshots || 0;
             document.getElementById('totalRows').textContent = data.stats.total_rows?.toLocaleString() || 0;
+            
+            // Actualizar barra de progreso
+            const progressBar = document.getElementById('historicalProgress');
+            if (progressBar) {
+                const totalSnapshots = data.stats.total_snapshots || 0;
+                const percentage = Math.min(totalSnapshots * 10, 100);
+                progressBar.style.width = `${percentage}%`;
+            }
+            
+            // Actualizar badge
+            const historicalBadge = document.getElementById('historicalBadge');
+            if (historicalBadge) {
+                historicalBadge.innerHTML = `
+                    <i class="bi bi-database me-1"></i>
+                    ${data.stats.total_snapshots || 0} archivos
+                `;
+            }
         }
     } catch (error) {
         console.error('Error cargando estadísticas:', error);
     }
 }
 
-// Ver archivo histórico
-async function viewHistorical(snapshotId) {
+// Cargar históricos recientes
+async function loadRecentHistorical() {
     try {
-        showLoading('Cargando histórico...', 'Preparando vista previa');
-        
-        const response = await fetch(`${CONFIG.api.historicalPreview}/${snapshotId}/preview`);
-        if (!response.ok) throw new Error('Error cargando histórico');
+        const response = await fetch(CONFIG.api.historicalRecent);
+        if (!response.ok) throw new Error('Error obteniendo históricos recientes');
         
         const data = await response.json();
+        const container = document.getElementById('recentHistorical');
         
-        Swal.fire({
-            title: `<i class="bi bi-file-earmark-excel text-purple me-2"></i>Vista Previa del Histórico`,
-            html: `
-                <div class="text-start">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold mb-2">Información del Archivo</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th class="text-muted">Snapshot ID:</th>
-                                    <td class="fw-bold">${data.snapshot_id || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Nombre:</th>
-                                    <td>${data.snapshot_name || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Fecha:</th>
-                                    <td>${data.creado_en || 'N/A'}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Total Items:</th>
-                                    <td class="fw-bold">${data.total_items || 0}</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="fw-bold mb-2">Estadísticas</h6>
-                            <table class="table table-sm">
-                                <tr>
-                                    <th class="text-muted">Stock Total:</th>
-                                    <td class="fw-bold text-success">${data.total_stock?.toLocaleString() || 0}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Diferencia Total:</th>
-                                    <td class="fw-bold ${(data.total_difference || 0) >= 0 ? 'text-success' : 'text-danger'}">
-                                        ${data.total_difference || 0}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Coincidencias:</th>
-                                    <td>${data.matching_items || 0}</td>
-                                </tr>
-                                <tr>
-                                    <th class="text-muted">Diferencias:</th>
-                                    <td>${data.different_items || 0}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    ${data.preview_html ? `
-                    <h6 class="fw-bold mb-2">Vista Previa (primeras 10 filas)</h6>
-                    <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                        ${data.preview_html}
-                    </div>
-                    ` : ''}
-                </div>
-            `,
-            width: '900px',
-            showCancelButton: true,
-            confirmButtonText: '<i class="bi bi-download me-1"></i> Descargar Excel',
-            cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Cerrar',
-            showDenyButton: true,
-            denyButtonText: '<i class="bi bi-files me-1"></i> Comparar',
-            customClass: {
-                confirmButton: 'btn btn-success',
-                denyButton: 'btn btn-warning',
-                cancelButton: 'btn btn-secondary'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                downloadHistorical(snapshotId);
-            } else if (result.isDenied) {
-                selectForComparison(snapshotId);
-            }
-        });
-        
-        hideLoading();
-    } catch (error) {
-        console.error('Error viendo histórico:', error);
-        hideLoading();
-        showNotification('Error', 'No se pudo cargar la vista previa', 'error');
-    }
-}
-
-// Descargar histórico
-function downloadHistorical(snapshotId) {
-    window.open(`${CONFIG.api.historicalPreview}/${snapshotId}/download`, '_blank');
-}
-
-// Comparar históricos
-let selectedForComparison = [];
-
-function selectForComparison(snapshotId) {
-    if (!selectedForComparison.includes(snapshotId)) {
-        selectedForComparison.push(snapshotId);
-        showNotification('Seleccionado para comparación', 'Archivo añadido a la comparación', 'info');
-        
-        if (selectedForComparison.length >= 2) {
-            showComparisonPanel();
-        }
-    } else {
-        showNotification('Ya seleccionado', 'Este archivo ya está en la comparación', 'warning');
-    }
-}
-
-function showComparisonPanel() {
-    document.getElementById('comparisonPanel').classList.remove('d-none');
-    document.getElementById('comparisonCount').textContent = `${selectedForComparison.length} archivos`;
-    
-    // Cargar la comparación real
-    loadComparisonResults();
-}
-
-async function loadComparisonResults() {
-    try {
-        const response = await fetch(`${CONFIG.api.historicalCompare}?ids=${selectedForComparison.join(',')}`);
-        if (!response.ok) throw new Error('Error comparando históricos');
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            document.getElementById('comparisonResults').innerHTML = `
-                <div class="comparison-stats">
-                    <div class="comparison-stat">
-                        <div class="comparison-value text-purple">${data.comparison.total_items}</div>
-                        <div class="text-muted">Items Totales</div>
-                    </div>
-                    <div class="comparison-stat">
-                        <div class="comparison-value ${data.comparison.items_changed > 0 ? 'text-warning' : 'text-success'}">
-                            ${data.comparison.items_changed}
-                        </div>
-                        <div class="text-muted">Items Cambiados</div>
-                    </div>
-                    <div class="comparison-stat">
-                        <div class="comparison-value ${data.comparison.stock_difference >= 0 ? 'text-success' : 'text-danger'}">
-                            ${data.comparison.stock_difference >= 0 ? '+' : ''}${data.comparison.stock_difference}
-                        </div>
-                        <div class="text-muted">Diferencia de Stock</div>
-                    </div>
-                    <div class="comparison-stat">
-                        <div class="comparison-value ${data.comparison.percentage_change >= 0 ? 'text-success' : 'text-danger'}">
-                            ${data.comparison.percentage_change >= 0 ? '+' : ''}${data.comparison.percentage_change}%
-                        </div>
-                        <div class="text-muted">Cambio %</div>
-                    </div>
-                </div>
+        if (data.success && data.snapshots && data.snapshots.length > 0) {
+            let html = '';
+            
+            data.snapshots.forEach((snap, index) => {
+                const isNew = index === 0 ? '<span class="badge bg-danger ms-2">NUEVO</span>' : '';
                 
-                <h6 class="fw-bold mb-3 mt-4">📈 Cambios Significativos</h6>
-                <div class="table-responsive">
-                    <table class="comparison-table">
-                        <thead>
-                            <tr>
-                                <th>Código</th>
-                                <th>Descripción</th>
-                                <th>Antes</th>
-                                <th>Después</th>
-                                <th>Cambio</th>
-                                <th>% Cambio</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.changes.slice(0, 10).map(change => `
-                                <tr>
-                                    <td><strong>${change.material_code}</strong></td>
-                                    <td>${change.material_text || ''}</td>
-                                    <td>${change.old_value || 0}</td>
-                                    <td>${change.new_value || 0}</td>
-                                    <td>
-                                        <span class="change-indicator ${change.difference > 0 ? 'change-positive' : change.difference < 0 ? 'change-negative' : 'change-neutral'}">
-                                            ${change.difference > 0 ? '+' : ''}${change.difference}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="change-indicator ${change.percentage_change > 0 ? 'change-positive' : change.percentage_change < 0 ? 'change-negative' : 'change-neutral'}">
-                                            ${change.percentage_change > 0 ? '+' : ''}${change.percentage_change}%
-                                        </span>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="d-flex gap-2 mt-4">
-                    <button class="btn btn-success" onclick="exportComparison()">
-                        <i class="bi bi-file-earmark-excel me-1"></i>Exportar Comparación
-                    </button>
-                    <button class="btn btn-info" onclick="showDetailedComparison()">
-                        <i class="bi bi-search me-1"></i>Ver Detalles Completos
-                    </button>
+                html += `
+                    <div class="historical-item" onclick="viewHistoricalPreview('${snap.snapshot_id}')">
+                        <div class="historical-filename">
+                            <i class="bi bi-file-earmark-excel text-purple"></i>
+                            ${snap.snapshot_name || 'Sin nombre'}
+                            ${isNew}
+                        </div>
+                        <div class="historical-meta">
+                            <span><i class="bi bi-calendar"></i> ${snap.date_formatted || 'Fecha desconocida'}</span>
+                            <span><i class="bi bi-hash"></i> ${snap.total_items || 0} items</span>
+                        </div>
+                        <div class="historical-actions">
+                            <button class="historical-btn historical-btn-view" 
+                                    onclick="event.stopPropagation(); viewHistoricalPreview('${snap.snapshot_id}')">
+                                <i class="bi bi-eye"></i> Ver
+                            </button>
+                            <a href="{{ url_for('inventory.history_download', snapshot_id='') }}${snap.snapshot_id}" 
+                               class="historical-btn historical-btn-download"
+                               onclick="event.stopPropagation()">
+                                <i class="bi bi-download"></i> Descargar
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                    <h6 class="text-muted">No hay archivos históricos</h6>
+                    <p class="text-muted extra-small mb-0">Sube tu primer Excel histórico</p>
+                    <a href="{{ url_for('inventory.upload_history_form') }}" class="btn btn-sm btn-purple mt-3">
+                        <i class="bi bi-upload"></i> Subir Histórico
+                    </a>
                 </div>
             `;
         }
     } catch (error) {
-        console.error('Error cargando comparación:', error);
-        document.getElementById('comparisonResults').innerHTML = `
+        console.error('Error cargando históricos recientes:', error);
+        document.getElementById('recentHistorical').innerHTML = `
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                Error al cargar la comparación: ${error.message}
+                Error cargando archivos históricos
             </div>
         `;
     }
 }
 
-function closeComparisonPanel() {
-    document.getElementById('comparisonPanel').classList.add('d-none');
-    selectedForComparison = [];
+// Vista previa de histórico (versión simplificada)
+function viewHistoricalPreview(snapshotId) {
+    // Redirigir a la página de histórico
+    window.location.href = `{{ url_for('inventory.history_inventory') }}`;
 }
 
-// Exportar comparación
-function exportComparison() {
-    if (selectedForComparison.length < 2) {
-        showNotification('Error', 'Selecciona al menos 2 archivos para comparar', 'error');
-        return;
-    }
-    
-    window.open(`${CONFIG.api.historicalExport}?ids=${selectedForComparison.join(',')}`, '_blank');
-}
-
-// Mostrar dashboard de históricos
-function showHistoricalDashboard() {
-    window.location.href = CONFIG.api.historicalList;
-}
-
-// Generar reporte evolutivo
-async function generateEvolutionReport() {
+// Análisis de históricos
+async function analyzeHistorical() {
     try {
-        showLoading('Generando reporte...', 'Analizando evolución histórica');
+        showLoading('Analizando históricos...', 'Procesando datos de períodos anteriores');
         
-        const period = document.getElementById('analysisPeriod').value;
+        const period = document.getElementById('analysisPeriod')?.value || 30;
+        
         const response = await fetch(`${CONFIG.api.historicalAnalyze}?period=${period}`);
-        
-        if (!response.ok) throw new Error('Error generando reporte');
+        if (!response.ok) throw new Error('Error analizando datos');
         
         const data = await response.json();
         
         if (data.success) {
             Swal.fire({
-                title: '<i class="bi bi-graph-up text-info me-2"></i>Reporte Evolutivo',
+                title: '<i class="bi bi-graph-up text-info me-2"></i>Análisis de Históricos',
                 html: `
                     <div class="text-start">
-                        <div class="row mb-4">
+                        <h6 class="fw-bold mb-3">📊 Estadísticas del Período (${period} días)</h6>
+                        <div class="row mb-3">
                             <div class="col-md-6">
-                                <h6 class="fw-bold mb-3">📈 Tendencias Principales</h6>
-                                <div class="list-group">
-                                    ${data.trends.slice(0, 5).map(trend => `
-                                        <div class="list-group-item">
-                                            <div class="d-flex w-100 justify-content-between">
-                                                <strong>${trend.material_code}</strong>
-                                                <span class="badge ${trend.trend === 'up' ? 'bg-success' : trend.trend === 'down' ? 'bg-danger' : 'bg-secondary'}">
-                                                    ${trend.trend === 'up' ? '↑' : trend.trend === 'down' ? '↓' : '→'}
-                                                </span>
-                                            </div>
-                                            <p class="mb-1 small">${trend.material_text || ''}</p>
-                                            <small class="text-muted">Cambio: ${trend.percentage_change}%</small>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="fw-bold mb-3">📊 Estadísticas del Período</h6>
                                 <table class="table table-sm">
                                     <tr>
-                                        <th>Período analizado:</th>
-                                        <td>${period} días</td>
+                                        <th>Días con registros:</th>
+                                        <td class="fw-bold">${data.stats.total_days}</td>
                                     </tr>
                                     <tr>
-                                        <th>Total de imports:</th>
-                                        <td>${data.stats.total_imports}</td>
+                                        <th>Items totales:</th>
+                                        <td>${data.stats.total_items}</td>
                                     </tr>
                                     <tr>
                                         <th>Stock promedio:</th>
-                                        <td>${data.stats.average_stock?.toLocaleString() || 0}</td>
+                                        <td>${data.stats.average_stock}</td>
                                     </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm">
                                     <tr>
                                         <th>Variación total:</th>
                                         <td class="${data.stats.total_variation >= 0 ? 'text-success' : 'text-danger'} fw-bold">
-                                            ${data.stats.total_variation >= 0 ? '+' : ''}${data.stats.total_variation}%
+                                            ${data.stats.total_variation}%
                                         </td>
                                     </tr>
                                     <tr>
-                                        <th>Items más volátiles:</th>
+                                        <th>Items volátiles:</th>
                                         <td>${data.stats.volatile_items}</td>
                                     </tr>
                                 </table>
                             </div>
                         </div>
                         
-                        <h6 class="fw-bold mb-3">📋 Recomendaciones</h6>
+                        ${data.trends && data.trends.length > 0 ? `
+                        <h6 class="fw-bold mb-3">📈 Tendencias Principales</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Descripción</th>
+                                        <th>Variación</th>
+                                        <th>Tendencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.trends.map(trend => `
+                                        <tr>
+                                            <td><strong>${trend.material_code}</strong></td>
+                                            <td>${trend.material_text}</td>
+                                            <td class="${trend.percentage_change > 20 ? 'text-danger' : trend.percentage_change > 10 ? 'text-warning' : 'text-success'}">
+                                                ${trend.percentage_change}%
+                                            </td>
+                                            <td>
+                                                <span class="badge ${trend.trend === 'high' ? 'bg-danger' : 
+                                                                    trend.trend === 'medium' ? 'bg-warning' : 
+                                                                    'bg-success'}">
+                                                    ${trend.trend === 'high' ? 'ALTA' : 
+                                                     trend.trend === 'medium' ? 'MEDIA' : 'BAJA'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        ` : ''}
+                        
+                        <h6 class="fw-bold mb-3 mt-4">📋 Recomendaciones</h6>
                         <div class="alert alert-light border">
                             ${data.recommendations.map(rec => `
                                 <div class="d-flex mb-2">
@@ -3703,177 +3438,23 @@ async function generateEvolutionReport() {
                     </div>
                 `,
                 width: '900px',
-                showCancelButton: true,
-                confirmButtonText: '<i class="bi bi-download me-1"></i> Exportar Reporte',
-                cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Cerrar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    exportEvolutionReport(period);
-                }
+                showCloseButton: true,
+                showConfirmButton: false
             });
         }
         
         hideLoading();
     } catch (error) {
-        console.error('Error generando reporte:', error);
+        console.error('Error analizando históricos:', error);
         hideLoading();
-        showNotification('Error', 'No se pudo generar el reporte evolutivo', 'error');
-    }
-}
-
-// Exportar reporte evolutivo
-function exportEvolutionReport(period) {
-    window.open(`${CONFIG.api.historicalExport}/evolution?period=${period}`, '_blank');
-}
-
-// Análisis de tendencias de stock
-async function analyzeStockTrends() {
-    try {
-        showLoading('Analizando tendencias...', 'Procesando datos históricos');
-        
-        const response = await fetch(`${CONFIG.api.historicalAnalyze}/trends`);
-        if (!response.ok) throw new Error('Error analizando tendencias');
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            Swal.fire({
-                title: '<i class="bi bi-graph-up-arrow text-success me-2"></i>Tendencias de Stock',
-                html: `
-                    <div class="text-start">
-                        <h6 class="fw-bold mb-3">📈 Tendencias Principales</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Código</th>
-                                        <th>Tendencia</th>
-                                        <th>Cambio Promedio</th>
-                                        <th>Volatilidad</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.trends.slice(0, 10).map(trend => `
-                                        <tr>
-                                            <td><strong>${trend.material_code}</strong></td>
-                                            <td>
-                                                <span class="badge ${trend.trend === 'up' ? 'bg-success' : 
-                                                                    trend.trend === 'down' ? 'bg-danger' : 
-                                                                    'bg-secondary'}">
-                                                    ${trend.trend === 'up' ? '↑ Ascendente' : 
-                                                     trend.trend === 'down' ? '↓ Descendente' : '→ Estable'}
-                                                </span>
-                                            </td>
-                                            <td class="${trend.average_change >= 0 ? 'text-success' : 'text-danger'}">
-                                                ${trend.average_change >= 0 ? '+' : ''}${trend.average_change}%
-                                            </td>
-                                            <td>
-                                                <span class="badge ${trend.volatility > 20 ? 'bg-danger' : 
-                                                                    trend.volatility > 10 ? 'bg-warning' : 
-                                                                    'bg-success'}">
-                                                    ${trend.volatility}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `,
-                width: '800px'
-            });
-        }
-        
-        hideLoading();
-    } catch (error) {
-        console.error('Error analizando tendencias:', error);
-        hideLoading();
-        showNotification('Error', 'No se pudieron analizar las tendencias', 'error');
-    }
-}
-
-// Análisis de discrepancias históricas
-async function analyzeDiscrepancies() {
-    try {
-        showLoading('Analizando discrepancias...', 'Comparando históricos');
-        
-        const response = await fetch(`${CONFIG.api.historicalAnalyze}/discrepancies`);
-        if (!response.ok) throw new Error('Error analizando discrepancias');
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            Swal.fire({
-                title: '<i class="bi bi-exclamation-triangle text-warning me-2"></i>Análisis de Discrepancias',
-                html: `
-                    <div class="text-start">
-                        <h6 class="fw-bold mb-3">🔍 Discrepancias Recurrentes</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Código</th>
-                                        <th>Ubicación</th>
-                                        <th>Frecuencia</th>
-                                        <th>Discrepancia Promedio</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${data.discrepancies.slice(0, 10).map(item => `
-                                        <tr>
-                                            <td><strong>${item.material_code}</strong></td>
-                                            <td>${item.location}</td>
-                                            <td>${item.frequency} veces</td>
-                                            <td class="${item.average_difference >= 0 ? 'text-success' : 'text-danger'}">
-                                                ${item.average_difference >= 0 ? '+' : ''}${item.average_difference}
-                                            </td>
-                                            <td>
-                                                <span class="badge ${item.severity === 'high' ? 'bg-danger' : 
-                                                                    item.severity === 'medium' ? 'bg-warning' : 
-                                                                    'bg-info'}">
-                                                    ${item.severity === 'high' ? 'ALTA' : 
-                                                     item.severity === 'medium' ? 'MEDIA' : 'BAJA'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <div class="alert alert-warning mt-3">
-                            <i class="bi bi-lightbulb me-2"></i>
-                            <strong>Recomendación:</strong> ${data.recommendation || 'Revisar los items con alta frecuencia de discrepancias'}
-                        </div>
-                    </div>
-                `,
-                width: '800px'
-            });
-        }
-        
-        hideLoading();
-    } catch (error) {
-        console.error('Error analizando discrepancias:', error);
-        hideLoading();
+        showNotification('Error', 'No se pudo realizar el análisis de históricos', 'error');
     }
 }
 
 // Exportar todos los históricos
 function exportAllHistorical() {
-    Swal.fire({
-        title: 'Exportar Todos los Históricos',
-        text: '¿Deseas exportar todos los archivos históricos en un solo archivo?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, exportar todo',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            window.open(`${CONFIG.api.historicalExport}/all`, '_blank');
-        }
-    });
+    // Redirigir a la página de históricos
+    window.location.href = CONFIG.api.historicalList;
 }
 
 // Mostrar análisis histórico completo
@@ -3890,8 +3471,8 @@ function showHistoricalAnalysis() {
                             <div class="card-body">
                                 <h6 class="card-title"><i class="bi bi-graph-up text-success me-2"></i>Tendencias</h6>
                                 <p class="small text-muted">Analiza la evolución del inventario a lo largo del tiempo</p>
-                                <button class="btn btn-outline-success btn-sm w-100" onclick="analyzeStockTrends()">
-                                    Ver Tendencias
+                                <button class="btn btn-outline-success btn-sm w-100" onclick="analyzeHistorical()">
+                                    Ver Análisis
                                 </button>
                             </div>
                         </div>
@@ -3900,10 +3481,10 @@ function showHistoricalAnalysis() {
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="card-title"><i class="bi bi-files text-warning me-2"></i>Comparación</h6>
-                                <p class="small text-muted">Compara diferentes versiones de inventarios</p>
-                                <button class="btn btn-outline-warning btn-sm w-100" onclick="compareHistorical()">
-                                    Comparar Históricos
-                                </button>
+                                <p class="small text-muted">Ve y compara diferentes versiones de inventarios</p>
+                                <a href="${CONFIG.api.historicalList}" class="btn btn-outline-warning btn-sm w-100">
+                                    Ver Históricos
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -3914,21 +3495,21 @@ function showHistoricalAnalysis() {
                         <div class="card mb-3">
                             <div class="card-body">
                                 <h6 class="card-title"><i class="bi bi-download text-info me-2"></i>Exportación</h6>
-                                <p class="small text-muted">Exporta datos históricos en varios formatos</p>
-                                <button class="btn btn-outline-info btn-sm w-100" onclick="exportAllHistorical()">
-                                    Exportar Todo
-                                </button>
+                                <p class="small text-muted">Descarga archivos históricos en Excel</p>
+                                <a href="${CONFIG.api.historicalList}" class="btn btn-outline-info btn-sm w-100">
+                                    Descargar Históricos
+                                </a>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="card mb-3">
                             <div class="card-body">
-                                <h6 class="card-title"><i class="bi bi-file-earmark-text text-purple me-2"></i>Reportes</h6>
-                                <p class="small text-muted">Genera reportes detallados de evolución</p>
-                                <button class="btn btn-outline-purple btn-sm w-100" onclick="generateEvolutionReport()">
-                                    Generar Reporte
-                                </button>
+                                <h6 class="card-title"><i class="bi bi-upload text-purple me-2"></i>Carga</h6>
+                                <p class="small text-muted">Sube nuevos archivos Excel históricos</p>
+                                <a href="{{ url_for('inventory.upload_history_form') }}" class="btn btn-outline-purple btn-sm w-100">
+                                    Subir Histórico
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -3946,10 +3527,29 @@ function showHistoricalAnalysis() {
     });
 }
 
-// Mostrar comparación detallada
-function showDetailedComparison() {
-    // Aquí puedes implementar una vista más detallada de la comparación
-    showNotification('Función en desarrollo', 'La vista detallada de comparación estará disponible pronto', 'info');
+// Comparar históricos
+function compareHistorical() {
+    Swal.fire({
+        title: '<i class="bi bi-files text-warning me-2"></i>Comparar Históricos',
+        html: `
+            <div class="text-start">
+                <p>Para comparar históricos, por favor:</p>
+                <ol class="mb-3">
+                    <li>Ve a la página de Históricos</li>
+                    <li>Selecciona los archivos que deseas comparar</li>
+                    <li>Usa la función de comparación disponible allí</li>
+                </ol>
+                <div class="text-center">
+                    <a href="${CONFIG.api.historicalList}" class="btn btn-warning">
+                        <i class="bi bi-arrow-right me-1"></i> Ir a Históricos
+                    </a>
+                </div>
+            </div>
+        `,
+        showConfirmButton: false,
+        showCloseButton: true,
+        width: '500px'
+    });
 }
 
 // Cerrar modal de comparación
@@ -3957,7 +3557,7 @@ function closeComparisonModal() {
     document.getElementById('comparisonModal').style.display = 'none';
 }
 
-// ================= FUNCIONES DEL DASHBOARD ORIGINAL =================
+// ================= FUNCIONES ORIGINALES DEL DASHBOARD =================
 async function refreshDashboard() {
     console.log('🔄 Actualizando dashboard con datos reales...');
     
@@ -4010,7 +3610,7 @@ async function refreshDashboard() {
     }
 }
 
-// ================= FUNCIONES AUXILIARES ORIGINALES =================
+// ================= FUNCIONES AUXILIARES =================
 function updateDashboardWithRealData(data) {
     if (!data || !data.stats) return;
     
@@ -4688,7 +4288,7 @@ function generateReport() {
     window.location.href = CONFIG.api.generateReport;
 }
 
-// ================= FUNCIONES DE EXPORTACIÓN COMPLETAS =================
+// ================= FUNCIONES DE EXPORTACIÓN =================
 function exportTableToPDF() {
     console.log('📄 Exportando a PDF...');
     
@@ -4919,7 +4519,7 @@ function exportTableToCSV() {
     }
 }
 
-// ================= FUNCIÓN DE IMPRESIÓN COMPLETA =================
+// ================= FUNCIÓN DE IMPRESIÓN =================
 function printDashboard() {
     console.log('🖨️ Imprimiendo dashboard...');
     
@@ -5127,7 +4727,7 @@ function printDashboard() {
     }, 500);
 }
 
-// ================= FUNCIONES AVANZADAS COMPLETAS =================
+// ================= FUNCIONES AVANZADAS =================
 function showAnalytics() {
     console.log('📊 Mostrando analítica avanzada...');
     
@@ -5587,53 +5187,7 @@ function shareViaWhatsApp() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 
-// ================= FUNCIONES AUXILIARES DE ANALÍTICA =================
-function generateTrendReport() {
-    showLoading('Generando reporte...', 'Analizando tendencias históricas');
-    
-    setTimeout(() => {
-        hideLoading();
-        showNotification('Reporte generado', 'Reporte de tendencias disponible para descarga', 'success');
-        
-        // Simular descarga
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = 'reporte_tendencias.html';
-        link.click();
-    }, 2000);
-}
-
-function generateOptimizationReport() {
-    showLoading('Generando reporte...', 'Calculando optimizaciones');
-    
-    setTimeout(() => {
-        hideLoading();
-        showNotification('Reporte generado', 'Reporte de optimización disponible para descarga', 'success');
-        
-        // Simular descarga
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = 'reporte_optimizacion.html';
-        link.click();
-    }, 2000);
-}
-
-function generatePredictiveReport() {
-    showLoading('Generando reporte...', 'Ejecutando análisis predictivo');
-    
-    setTimeout(() => {
-        hideLoading();
-        showNotification('Reporte generado', 'Análisis predictivo disponible para descarga', 'success');
-        
-        // Simular descarga
-        const link = document.createElement('a');
-        link.href = '#';
-        link.download = 'analisis_predictivo.html';
-        link.click();
-    }, 2000);
-}
-
-// ================= UTILIDADES =================
+// ================= FUNCIONES AUXILIARES =================
 function showLoading(message = 'Cargando...', detail = '', showProgress = false) {
     document.getElementById('loadingMessage').textContent = message;
     document.getElementById('loadingDetail').textContent = detail;
@@ -5865,25 +5419,14 @@ window.generateTrendReport = generateTrendReport;
 window.generateOptimizationReport = generateOptimizationReport;
 window.generatePredictiveReport = generatePredictiveReport;
 window.loadHistoricalData = loadHistoricalData;
-window.viewHistorical = viewHistorical;
-window.downloadHistorical = downloadHistorical;
-window.selectForComparison = selectForComparison;
-window.showComparisonPanel = showComparisonPanel;
-window.closeComparisonPanel = closeComparisonPanel;
-window.exportComparison = exportComparison;
-window.showHistoricalDashboard = showHistoricalDashboard;
-window.generateEvolutionReport = generateEvolutionReport;
-window.analyzeStockTrends = analyzeStockTrends;
-window.analyzeDiscrepancies = analyzeDiscrepancies;
+window.viewHistoricalPreview = viewHistoricalPreview;
+window.analyzeHistorical = analyzeHistorical;
 window.exportAllHistorical = exportAllHistorical;
 window.showHistoricalAnalysis = showHistoricalAnalysis;
-window.compareHistorical = showHistoricalAnalysis;
-window.showDetailedComparison = showDetailedComparison;
+window.compareHistorical = compareHistorical;
 window.closeComparisonModal = closeComparisonModal;
 
-console.log('🎉 Dashboard con Gestión de Excels Históricos completamente funcional');
-console.log('📊 Todas las funciones están implementadas');
-console.log('🖨️ Impresión optimizada para una sola hoja');
+console.log('🎉 Dashboard con Gestión de Históricos completamente funcional');
 </script>
 
 {% endblock %}
