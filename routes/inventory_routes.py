@@ -1600,10 +1600,12 @@ def get_item_details():
 def get_historical_stats():
     """Obtener estadísticas de archivos históricos"""
     try:
-        # Contar snapshots
-        total_snapshots = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).distinct(InventoryHistory.snapshot_id).count()
+        # Contar snapshots únicos
+        total_snapshots = (
+            db.session.query(func.count(func.distinct(InventoryHistory.snapshot_id)))
+            .filter(InventoryHistory.user_id == current_user.id)
+            .scalar() or 0
+        )
         
         # Contar registros totales
         total_rows = InventoryHistory.query.filter_by(
@@ -1615,18 +1617,31 @@ def get_historical_stats():
             user_id=current_user.id
         ).order_by(InventoryHistory.creado_en.desc()).first()
         
+        # Formatear datos para el dashboard
+        stats = {
+            'total_snapshots': total_snapshots,
+            'total_rows': total_rows,
+            'last_import': last_import.creado_en.isoformat() if last_import else None,
+            'last_filename': last_import.source_filename if last_import else None
+        }
+        
         return jsonify({
             'success': True,
-            'stats': {
-                'total_snapshots': total_snapshots,
-                'total_rows': total_rows,
-                'last_import': last_import.creado_en.isoformat() if last_import else None,
-                'last_filename': last_import.source_filename if last_import else None
-            }
+            'stats': stats
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"Error obteniendo estadísticas históricas: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'stats': {
+                'total_snapshots': 0,
+                'total_rows': 0,
+                'last_import': None,
+                'last_filename': None
+            }
+        }), 500
 
 @inventory_bp.route('/inventory/history/<snapshot_id>/preview')
 @login_required
@@ -1704,65 +1719,9 @@ def preview_historical(snapshot_id):
 @inventory_bp.route('/api/historical/analyze')
 @login_required
 def analyze_historical():
-    """Analizar datos históricos"""
-    try:
-        period = int(request.args.get('period', 30))
-        
-        # Obtener snapshots del período
-        cutoff_date = now_pe() - timedelta(days=period)
-        
-        snapshots = (
-            db.session.query(
-                InventoryHistory.snapshot_id,
-                InventoryHistory.snapshot_name,
-                func.date(InventoryHistory.creado_en).label('fecha'),
-                func.count().label('total_items'),
-                func.sum(InventoryHistory.stock_sap).label('total_stock')
-            )
-            .filter(
-                InventoryHistory.user_id == current_user.id,
-                InventoryHistory.creado_en >= cutoff_date
-            )
-            .group_by(
-                InventoryHistory.snapshot_id,
-                InventoryHistory.snapshot_name,
-                func.date(InventoryHistory.creado_en)
-            )
-            .order_by(InventoryHistory.creado_en.desc())
-            .all()
-        )
-        
-        # Aquí implementarías el análisis específico
-        # Por simplicidad, devolvemos datos de ejemplo
-        
-        return jsonify({
-            'success': True,
-            'period': period,
-            'stats': {
-                'total_imports': len(snapshots),
-                'average_stock': sum(s.total_stock or 0 for s in snapshots) / len(snapshots) if snapshots else 0,
-                'total_variation': 15.5,  # Esto sería calculado
-                'volatile_items': 42      # Items con alta variación
-            },
-            'trends': [
-                {
-                    'material_code': 'MAT001',
-                    'material_text': 'Material de ejemplo',
-                    'trend': 'up',
-                    'percentage_change': 25.5
-                }
-            ],
-            'recommendations': [
-                {
-                    'title': 'Optimizar stock de items con alta variación',
-                    'description': '42 items muestran alta volatilidad en los últimos 30 días',
-                    'priority': 'high'
-                }
-            ]
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Versión simple de análisis de históricos (para compatibilidad)"""
+    period = int(request.args.get('period', 30))
+    return analyze_historical_period(period)
 
 @inventory_bp.route('/api/historical/export/all')
 @login_required
@@ -1783,24 +1742,37 @@ def export_all_historical():
 @inventory_bp.route('/historical-stats')
 @login_required
 def historical_stats():
-    """Versión SIMPLE para debug"""
-    return jsonify({
-        'success': True,
-        'stats': {
-            'total_snapshots': 5,
-            'total_rows': 100,
-            'total_stock': 1500,
-            'total_differences': 25,
-            'last_import_date': '10/04/2025 14:30',
-            'last_filename': 'inventario_2025_04_10.xlsx',
-            'last_snapshot': 'inventario_2025_04_10'
-        }
-    })
-
+    """Alias para compatibilidad con dashboard"""
+    return get_historical_stats()
+    
 @inventory_bp.route('/recent-historical')
 @login_required
 def recent_historical():
-    """Últimas Importes (5 más recientes)"""
+    """Alias para compatibilidad con dashboard"""
+    return get_recent_historical()
+
+@inventory_bp.route('/analyze-historical-data')
+@login_required
+def analyze_historical_data():
+    """Alias para compatibilidad con dashboard"""
+    period = int(request.args.get('period', 30))
+    return analyze_historical_period(period)
+    
+@inventory_bp.route('/export-historical-all')
+@login_required
+def export_historical_all():
+    """Endpoint para export-historical-all (template dashboard.html)"""
+    try:
+        # Redirigir al endpoint existente
+        return redirect(url_for('inventory.export_all_historical'))
+    except Exception as e:
+        flash(f'Error al exportar: {str(e)}', 'danger')
+        return redirect(url_for('inventory.dashboard_inventory'))
+
+@inventory_bp.route('/api/historical/recent')
+@login_required
+def get_recent_historical():
+    """Obtener los últimos 5 archivos históricos"""
     try:
         # Obtener los últimos 5 snapshots
         snapshots = (
@@ -1811,7 +1783,7 @@ def recent_historical():
                 InventoryHistory.creado_en,
                 func.count().label('item_count'),
                 func.sum(InventoryHistory.stock_sap).label('total_stock'),
-                func.sum(InventoryHistory.difere).label('total_difference')
+                func.sum(func.abs(InventoryHistory.difere)).label('total_difference')
             )
             .filter(InventoryHistory.user_id == current_user.id)
             .group_by(
@@ -1827,37 +1799,59 @@ def recent_historical():
         
         recent_data = []
         for snap in snapshots:
+            # Formatear fecha
+            fecha_str = snap.creado_en.strftime('%d/%m/%Y %H:%M') if snap.creado_en else 'N/A'
+            
+            # Calcular tiempo transcurrido
+            time_ago = ''
+            if snap.creado_en:
+                now = datetime.now()
+                diff = now - snap.creado_en
+                
+                if diff.days > 0:
+                    time_ago = f"Hace {diff.days} días"
+                elif diff.seconds // 3600 > 0:
+                    time_ago = f"Hace {diff.seconds // 3600} horas"
+                elif diff.seconds // 60 > 0:
+                    time_ago = f"Hace {diff.seconds // 60} minutos"
+                else:
+                    time_ago = "Hace unos segundos"
+            
             recent_data.append({
-                'id': snap.snapshot_id,
-                'name': snap.snapshot_name,
-                'filename': snap.source_filename,
-                'date': snap.creado_en.strftime('%d/%m/%Y %H:%M') if snap.creado_en else 'N/A',
-                'time_ago': get_time_ago(snap.creado_en) if snap.creado_en else '',
-                'items': snap.item_count,
-                'stock': float(snap.total_stock or 0),
-                'difference': float(snap.total_difference or 0),
+                'snapshot_id': snap.snapshot_id,
+                'snapshot_name': snap.snapshot_name or 'Sin nombre',
+                'filename': snap.source_filename or 'Archivo sin nombre',
+                'date': fecha_str,
+                'time_ago': time_ago,
+                'total_items': snap.item_count or 0,
+                'total_stock': float(snap.total_stock or 0),
+                'total_difference': float(snap.total_difference or 0),
                 'status': 'success' if (snap.total_difference or 0) == 0 else 'warning',
-                'download_url': url_for('inventory.history_download', snapshot_id=snap.snapshot_id),
-                'preview_url': url_for('inventory.preview_historical', snapshot_id=snap.snapshot_id)
+                'date_formatted': fecha_str  # Para compatibilidad con dashboard
             })
         
         return jsonify({
             'success': True,
-            'recent': recent_data
+            'snapshots': recent_data,
+            'recent': recent_data  # Para compatibilidad con dashboard
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        print(f"Error obteniendo históricos recientes: {str(e)}")
+        return jsonify({
+            'success': False, 
+            'error': str(e),
+            'snapshots': [],
+            'recent': []
+        }), 500
 
-@inventory_bp.route('/analyze-historical-data')
+@inventory_bp.route('/api/historical/analyze/<int:period>')
 @login_required
-def analyze_historical_data():
-    """Análisis Histórico (para el período seleccionado)"""
+def analyze_historical_period(period):
+    """Analizar datos históricos por período"""
     try:
-        period = int(request.args.get('period', 30))
-        
         # Fecha de corte
-        cutoff_date = now_pe() - timedelta(days=period)
+        cutoff_date = datetime.now() - timedelta(days=period)
         
         # Obtener snapshots del período
         snapshots = (
@@ -1883,48 +1877,82 @@ def analyze_historical_data():
             .all()
         )
         
-        # Calcular análisis
-        analysis_data = {
-            'period_days': period,
-            'total_imports': len(snapshots),
-            'total_items': sum(s.total_items or 0 for s in snapshots),
-            'total_stock': sum(s.total_stock or 0 for s in snapshots),
-            'total_difference': sum(s.total_difference or 0 for s in snapshots),
-            'avg_difference': 0,
-            'trend': 'stable',
-            'recommendations': []
-        }
+        # Calcular estadísticas
+        total_imports = len(snapshots)
+        total_items = sum(s.total_items or 0 for s in snapshots)
+        total_stock = sum(s.total_stock or 0 for s in snapshots)
+        total_difference = sum(abs(s.total_difference or 0) for s in snapshots)
         
+        # Calcular diferencia promedio
+        avg_difference = 0
         if snapshots:
-            # Calcular diferencia promedio
-            analysis_data['avg_difference'] = sum(abs(s.avg_difference or 0) for s in snapshots) / len(snapshots)
+            avg_difference = total_difference / total_imports if total_imports > 0 else 0
+        
+        # Generar datos de ejemplo para tendencias (aquí deberías calcular tendencias reales)
+        trends = []
+        if snapshots:
+            # Ejemplo de tendencias - en producción calcularías tendencias reales
+            sample_materials = (
+                db.session.query(
+                    InventoryHistory.material_code,
+                    InventoryHistory.material_text,
+                    func.avg(InventoryHistory.difere).label('avg_diff')
+                )
+                .filter(
+                    InventoryHistory.user_id == current_user.id,
+                    InventoryHistory.creado_en >= cutoff_date
+                )
+                .group_by(
+                    InventoryHistory.material_code,
+                    InventoryHistory.material_text
+                )
+                .order_by(func.abs(func.avg(InventoryHistory.difere)).desc())
+                .limit(5)
+                .all()
+            )
             
-            # Determinar tendencia
-            if len(snapshots) >= 2:
-                first = snapshots[-1]  # Más antiguo
-                last = snapshots[0]    # Más reciente
-                
-                if first.total_difference and last.total_difference:
-                    diff_change = last.total_difference - first.total_difference
-                    if diff_change > 0:
-                        analysis_data['trend'] = 'improving'
-                    elif diff_change < 0:
-                        analysis_data['trend'] = 'worsening'
-            
-            # Generar recomendaciones
-            if analysis_data['avg_difference'] > 100:
-                analysis_data['recommendations'].append({
-                    'title': 'Alta variación en inventarios',
-                    'message': f'Diferencia promedio de {analysis_data["avg_difference"]:.2f} unidades',
-                    'priority': 'high'
+            for material in sample_materials:
+                avg_diff = material.avg_diff or 0
+                trends.append({
+                    'material_code': material.material_code or 'N/A',
+                    'material_text': material.material_text or 'Sin descripción',
+                    'trend': 'high' if abs(avg_diff) > 100 else 'medium' if abs(avg_diff) > 50 else 'low',
+                    'percentage_change': round(avg_diff, 2)
                 })
+        
+        # Generar recomendaciones
+        recommendations = []
+        if avg_difference > 100:
+            recommendations.append({
+                'title': 'Alta variación en inventarios',
+                'description': f'Diferencia promedio de {avg_difference:.2f} unidades en los últimos {period} días',
+                'priority': 'high'
+            })
+        
+        if total_imports < 3:
+            recommendations.append({
+                'title': 'Frecuencia baja de imports',
+                'description': f'Solo {total_imports} import(s) en los últimos {period} días',
+                'priority': 'medium'
+            })
         
         return jsonify({
             'success': True,
-            'analysis': analysis_data,
+            'period': period,
+            'stats': {
+                'total_imports': total_imports,
+                'total_items': total_items,
+                'total_stock': total_stock,
+                'total_difference': total_difference,
+                'average_stock': total_stock / total_imports if total_imports > 0 else 0,
+                'avg_difference': avg_difference,
+                'volatile_items': len([t for t in trends if t['trend'] == 'high'])
+            },
+            'trends': trends,
+            'recommendations': recommendations,
             'snapshots': [
                 {
-                    'id': s.snapshot_id,
+                    'snapshot_id': s.snapshot_id,
                     'name': s.snapshot_name,
                     'date': s.fecha.strftime('%d/%m/%Y') if s.fecha else None,
                     'items': s.total_items,
@@ -1937,15 +1965,19 @@ def analyze_historical_data():
         })
         
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@inventory_bp.route('/export-historical-all')
-@login_required
-def export_historical_all():
-    """Endpoint para export-historical-all (template dashboard.html)"""
-    try:
-        # Redirigir al endpoint existente
-        return redirect(url_for('inventory.export_all_historical'))
-    except Exception as e:
-        flash(f'Error al exportar: {str(e)}', 'danger')
-        return redirect(url_for('inventory.dashboard_inventory'))
+        print(f"Error analizando históricos: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stats': {
+                'total_imports': 0,
+                'total_items': 0,
+                'total_stock': 0,
+                'total_difference': 0,
+                'average_stock': 0,
+                'avg_difference': 0,
+                'volatile_items': 0
+            },
+            'trends': [],
+            'recommendations': []
+        }), 500
