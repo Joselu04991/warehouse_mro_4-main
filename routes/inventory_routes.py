@@ -1660,7 +1660,7 @@ def preview_historical(snapshot_id):
                     <td>{row.location or ''}</td>
                     <td>{row.stock_sap or 0}</td>
                     <td>{row.fisico or 0}</td>
-                    <td class="{row.difere >= 0 if row.difere else False else 'text-danger' if row.difere and row.difere < 0 else ''}">
+                    <td class="{'text-success' if row.difere and row.difere >= 0 else 'text-danger' if row.difere and row.difere < 0 else ''}">
                         {row.difere or 0}
                     </td>
                 </tr>
