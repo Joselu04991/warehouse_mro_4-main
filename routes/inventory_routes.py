@@ -1762,37 +1762,6 @@ def export_all_historical():
 # HISTORICAL ENDPOINTS FOR TEMPLATE COMPATIBILITY
 # -----------------------------------------------------------------------------
 
-@inventory_bp.route('/historical-stats')
-@login_required
-def historical_stats():
-    """Alias para get_historical_stats - mantiene compatibilidad con template"""
-    try:
-        # Reutilizar la lógica de get_historical_stats
-        total_snapshots = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).distinct(InventoryHistory.snapshot_id).count()
-        
-        total_rows = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).count()
-        
-        last_import = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).order_by(InventoryHistory.creado_en.desc()).first()
-        
-        return jsonify({
-            'success': True,
-            'stats': {
-                'total_snapshots': total_snapshots,
-                'total_rows': total_rows,
-                'last_import': last_import.creado_en.isoformat() if last_import else None,
-                'last_filename': last_import.source_filename if last_import else None
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
 @inventory_bp.route('/recent-historical')
 @login_required
 def recent_historical():
@@ -1851,31 +1820,3 @@ def recent_historical():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
-# -----------------------------------------------------------------------------
-# COMPATIBILITY ENDPOINTS FOR DASHBOARD TEMPLATE
-# -----------------------------------------------------------------------------
-
-@inventory_bp.route('/historical-stats')
-@login_required
-def historical_stats():
-    """Alias para get_historical_stats"""
-    return redirect(url_for('inventory.get_historical_stats'))
-
-@inventory_bp.route('/recent-historical')
-@login_required
-def recent_historical():
-    """Alias para history_inventory con parámetros recientes"""
-    return redirect(url_for('inventory.history_inventory') + '?limit=5')
-
-@inventory_bp.route('/analyze-historical-data')
-@login_required
-def analyze_historical_data():
-    """Alias para analyze_historical"""
-    return redirect(url_for('inventory.analyze_historical'))
-
-@inventory_bp.route('/export-historical-all')
-@login_required
-def export_historical_all():
-    """Alias para export_all_historical"""
-    return redirect(url_for('inventory.export_all_historical'))
