@@ -1761,6 +1761,36 @@ def export_all_historical():
 # -----------------------------------------------------------------------------
 # HISTORICAL ENDPOINTS FOR TEMPLATE COMPATIBILITY
 # -----------------------------------------------------------------------------
+@inventory_bp.route('/historical-stats')
+@login_required
+def historical_stats():
+    """Alias para get_historical_stats - mantiene compatibilidad con template"""
+    try:
+        # Reutilizar la lógica de get_historical_stats
+        total_snapshots = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).distinct(InventoryHistory.snapshot_id).count()
+        
+        total_rows = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).count()
+        
+        last_import = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).order_by(InventoryHistory.creado_en.desc()).first()
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_snapshots': total_snapshots,
+                'total_rows': total_rows,
+                'last_import': last_import.creado_en.isoformat() if last_import else None,
+                'last_filename': last_import.source_filename if last_import else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @inventory_bp.route('/recent-historical')
 @login_required
@@ -1820,3 +1850,69 @@ def recent_historical():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/analyze-historical-data')
+@login_required
+def analyze_historical_data():
+    """Endpoint para analyze_historical_data (template dashboard.html)"""
+    try:
+        # Reutilizar la lógica de analyze_historical
+        period = int(request.args.get('period', 30))
+        
+        # Obtener snapshots del período
+        from datetime import timedelta
+        cutoff_date = now_pe() - timedelta(days=period)
+        
+        snapshots = (
+            db.session.query(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                func.date(InventoryHistory.creado_en).label('fecha'),
+                func.count().label('total_items'),
+                func.sum(InventoryHistory.stock_sap).label('total_stock'),
+                func.sum(InventoryHistory.difere).label('total_difference')
+            )
+            .filter(
+                InventoryHistory.user_id == current_user.id,
+                InventoryHistory.creado_en >= cutoff_date
+            )
+            .group_by(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                func.date(InventoryHistory.creado_en)
+            )
+            .order_by(InventoryHistory.creado_en.desc())
+            .all()
+        )
+        
+        return jsonify({
+            'success': True,
+            'period': period,
+            'total_snapshots': len(snapshots),
+            'analysis_date': now_pe().isoformat(),
+            'snapshots': [
+                {
+                    'id': s.snapshot_id,
+                    'name': s.snapshot_name,
+                    'date': s.fecha.isoformat() if s.fecha else None,
+                    'items': s.total_items,
+                    'stock': float(s.total_stock or 0),
+                    'difference': float(s.total_difference or 0)
+                }
+                for s in snapshots
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/export-historical-all')
+@login_required
+def export_historical_all():
+    """Endpoint para export-historical-all (template dashboard.html)"""
+    try:
+        # Redirigir al endpoint existente
+        return redirect(url_for('inventory.export_all_historical'))
+    except Exception as e:
+        flash(f'Error al exportar: {str(e)}', 'danger')
+        return redirect(url_for('inventory.dashboard_inventory'))
