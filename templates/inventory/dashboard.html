@@ -2232,7 +2232,6 @@
                             <span class="action-label">Subir Inventario</span>
                         </a>
                         
-                        <!-- CORREGIDO: Usar 'inventory.upload_history' en lugar de 'inventory.view_history' -->
                         <a href="{{ url_for('inventory.upload_history') }}" class="action-btn hover-lift">
                             <div class="action-icon" style="background: linear-gradient(135deg, var(--purple), var(--info));">
                                 <i class="bi bi-clock-history"></i>
@@ -2402,10 +2401,10 @@ const CONFIG = {
         export: '{{ url_for("inventory.export_differences") }}',
         summary: '{{ url_for("inventory.get_summary") }}',
         status: '{{ url_for("inventory.get_inventory_status") }}',
-        itemDetails: '{{ url_for("inventory.get_item_details") }}', // CORREGIDO: Usar la ruta de Flask
+        itemDetails: '{{ url_for("inventory.get_item_details") }}', // SOLUCIONADO: Usar solo la URL base
         bulkUpdate: '{{ url_for("inventory.bulk_update_counts") }}',
         reconcile: '{{ url_for("inventory.reconcile_inventory") }}',
-        generateReport: '{{ url_for("inventory.generate_final_report") }}' // CORREGIDO: Ruta para reporte PDF
+        generateReport: '{{ url_for("inventory.generate_final_report") }}'
     },
     charts: {
         statusChart: null,
@@ -3211,12 +3210,15 @@ async function recountItem(materialCode, location) {
     });
 }
 
+// FUNCIÓN CORREGIDA: showItemDetails
 async function showItemDetails(materialCode, location) {
     try {
         showLoading('Cargando detalles...', 'Obteniendo información del item');
         
-        // Obtener detalles del item desde tu API - CORREGIDO
-        const response = await fetch(`${CONFIG.api.itemDetails}?material_code=${encodeURIComponent(materialCode)}&location=${encodeURIComponent(location)}`);
+        // Construir URL con parámetros query string - SOLUCIÓN IMPLEMENTADA
+        const url = `${CONFIG.api.itemDetails}?material_code=${encodeURIComponent(materialCode)}&location=${encodeURIComponent(location)}`;
+        
+        const response = await fetch(url);
         if (!response.ok) {
             throw new Error('No se pudo obtener los detalles');
         }
