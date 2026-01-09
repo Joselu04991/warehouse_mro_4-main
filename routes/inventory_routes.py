@@ -1764,28 +1764,43 @@ def export_all_historical():
 @inventory_bp.route('/historical-stats')
 @login_required
 def historical_stats():
-    """Alias para get_historical_stats - mantiene compatibilidad con template"""
+    """Estadísticas de Importes para el dashboard"""
     try:
-        # Reutilizar la lógica de get_historical_stats
-        total_snapshots = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).distinct(InventoryHistory.snapshot_id).count()
+        # Total de snapshots (archivos históricos)
+        total_snapshots = db.session.query(
+            func.count(func.distinct(InventoryHistory.snapshot_id))
+        ).filter_by(user_id=current_user.id).scalar() or 0
         
+        # Total de registros (líneas en todos los históricos)
         total_rows = InventoryHistory.query.filter_by(
             user_id=current_user.id
         ).count()
         
+        # Último import
         last_import = InventoryHistory.query.filter_by(
             user_id=current_user.id
         ).order_by(InventoryHistory.creado_en.desc()).first()
+        
+        # Total stock en históricos (suma de todos los stocks)
+        total_stock = db.session.query(
+            func.sum(InventoryHistory.stock_sap)
+        ).filter_by(user_id=current_user.id).scalar() or 0
+        
+        # Total diferencias (suma de todas las diferencias)
+        total_differences = db.session.query(
+            func.sum(InventoryHistory.difere)
+        ).filter_by(user_id=current_user.id).scalar() or 0
         
         return jsonify({
             'success': True,
             'stats': {
                 'total_snapshots': total_snapshots,
                 'total_rows': total_rows,
-                'last_import': last_import.creado_en.isoformat() if last_import else None,
-                'last_filename': last_import.source_filename if last_import else None
+                'total_stock': float(total_stock),
+                'total_differences': float(total_differences),
+                'last_import_date': last_import.creado_en.strftime('%d/%m/%Y %H:%M') if last_import else None,
+                'last_filename': last_import.source_filename if last_import else None,
+                'last_snapshot': last_import.snapshot_name if last_import else None
             }
         })
         
@@ -1795,20 +1810,24 @@ def historical_stats():
 @inventory_bp.route('/recent-historical')
 @login_required
 def recent_historical():
-    """Obtener historiales recientes para el dashboard"""
+    """Últimas Importes (5 más recientes)"""
     try:
         # Obtener los últimos 5 snapshots
         snapshots = (
             db.session.query(
                 InventoryHistory.snapshot_id,
                 InventoryHistory.snapshot_name,
+                InventoryHistory.source_filename,
                 InventoryHistory.creado_en,
-                func.count().label('item_count')
+                func.count().label('item_count'),
+                func.sum(InventoryHistory.stock_sap).label('total_stock'),
+                func.sum(InventoryHistory.difere).label('total_difference')
             )
             .filter(InventoryHistory.user_id == current_user.id)
             .group_by(
                 InventoryHistory.snapshot_id,
                 InventoryHistory.snapshot_name,
+                InventoryHistory.source_filename,
                 InventoryHistory.creado_en
             )
             .order_by(InventoryHistory.creado_en.desc())
@@ -1816,36 +1835,25 @@ def recent_historical():
             .all()
         )
         
-        recent_list = []
+        recent_data = []
         for snap in snapshots:
-            # Obtener estadísticas básicas de este snapshot
-            stats = (
-                db.session.query(
-                    func.sum(InventoryHistory.stock_sap).label('total_stock'),
-                    func.sum(InventoryHistory.difere).label('total_difference'),
-                    func.avg(InventoryHistory.difere).label('avg_difference')
-                )
-                .filter(
-                    InventoryHistory.user_id == current_user.id,
-                    InventoryHistory.snapshot_id == snap.snapshot_id
-                )
-                .first()
-            )
-            
-            recent_list.append({
+            recent_data.append({
                 'id': snap.snapshot_id,
                 'name': snap.snapshot_name,
-                'date': snap.creado_en.strftime('%Y-%m-%d') if snap.creado_en else 'N/A',
+                'filename': snap.source_filename,
+                'date': snap.creado_en.strftime('%d/%m/%Y %H:%M') if snap.creado_en else 'N/A',
+                'time_ago': get_time_ago(snap.creado_en) if snap.creado_en else '',
                 'items': snap.item_count,
-                'total_stock': float(stats.total_stock or 0),
-                'total_difference': float(stats.total_difference or 0),
+                'stock': float(snap.total_stock or 0),
+                'difference': float(snap.total_difference or 0),
+                'status': 'success' if (snap.total_difference or 0) == 0 else 'warning',
                 'download_url': url_for('inventory.history_download', snapshot_id=snap.snapshot_id),
                 'preview_url': url_for('inventory.preview_historical', snapshot_id=snap.snapshot_id)
             })
         
         return jsonify({
             'success': True,
-            'recent': recent_list
+            'recent': recent_data
         })
         
     except Exception as e:
@@ -1854,15 +1862,14 @@ def recent_historical():
 @inventory_bp.route('/analyze-historical-data')
 @login_required
 def analyze_historical_data():
-    """Endpoint para analyze_historical_data (template dashboard.html)"""
+    """Análisis Histórico (para el período seleccionado)"""
     try:
-        # Reutilizar la lógica de analyze_historical
         period = int(request.args.get('period', 30))
         
-        # Obtener snapshots del período
-        from datetime import timedelta
+        # Fecha de corte
         cutoff_date = now_pe() - timedelta(days=period)
         
+        # Obtener snapshots del período
         snapshots = (
             db.session.query(
                 InventoryHistory.snapshot_id,
@@ -1870,7 +1877,8 @@ def analyze_historical_data():
                 func.date(InventoryHistory.creado_en).label('fecha'),
                 func.count().label('total_items'),
                 func.sum(InventoryHistory.stock_sap).label('total_stock'),
-                func.sum(InventoryHistory.difere).label('total_difference')
+                func.sum(InventoryHistory.difere).label('total_difference'),
+                func.avg(InventoryHistory.difere).label('avg_difference')
             )
             .filter(
                 InventoryHistory.user_id == current_user.id,
@@ -1885,19 +1893,54 @@ def analyze_historical_data():
             .all()
         )
         
+        # Calcular análisis
+        analysis_data = {
+            'period_days': period,
+            'total_imports': len(snapshots),
+            'total_items': sum(s.total_items or 0 for s in snapshots),
+            'total_stock': sum(s.total_stock or 0 for s in snapshots),
+            'total_difference': sum(s.total_difference or 0 for s in snapshots),
+            'avg_difference': 0,
+            'trend': 'stable',
+            'recommendations': []
+        }
+        
+        if snapshots:
+            # Calcular diferencia promedio
+            analysis_data['avg_difference'] = sum(abs(s.avg_difference or 0) for s in snapshots) / len(snapshots)
+            
+            # Determinar tendencia
+            if len(snapshots) >= 2:
+                first = snapshots[-1]  # Más antiguo
+                last = snapshots[0]    # Más reciente
+                
+                if first.total_difference and last.total_difference:
+                    diff_change = last.total_difference - first.total_difference
+                    if diff_change > 0:
+                        analysis_data['trend'] = 'improving'
+                    elif diff_change < 0:
+                        analysis_data['trend'] = 'worsening'
+            
+            # Generar recomendaciones
+            if analysis_data['avg_difference'] > 100:
+                analysis_data['recommendations'].append({
+                    'title': 'Alta variación en inventarios',
+                    'message': f'Diferencia promedio de {analysis_data["avg_difference"]:.2f} unidades',
+                    'priority': 'high'
+                })
+        
         return jsonify({
             'success': True,
-            'period': period,
-            'total_snapshots': len(snapshots),
-            'analysis_date': now_pe().isoformat(),
+            'analysis': analysis_data,
             'snapshots': [
                 {
                     'id': s.snapshot_id,
                     'name': s.snapshot_name,
-                    'date': s.fecha.isoformat() if s.fecha else None,
+                    'date': s.fecha.strftime('%d/%m/%Y') if s.fecha else None,
                     'items': s.total_items,
                     'stock': float(s.total_stock or 0),
-                    'difference': float(s.total_difference or 0)
+                    'difference': float(s.total_difference or 0),
+                    'avg_difference': float(s.avg_difference or 0)
                 }
                 for s in snapshots
             ]
@@ -1905,6 +1948,24 @@ def analyze_historical_data():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# Función auxiliar para mostrar "hace X tiempo"
+def get_time_ago(date):
+    """Convertir fecha a formato 'hace X tiempo'"""
+    if not date:
+        return ""
+    
+    now = now_pe()
+    diff = now - date
+    
+    if diff.days > 0:
+        return f"Hace {diff.days} días"
+    elif diff.seconds // 3600 > 0:
+        return f"Hace {diff.seconds // 3600} horas"
+    elif diff.seconds // 60 > 0:
+        return f"Hace {diff.seconds // 60} minutos"
+    else:
+        return "Hace unos segundos"
 
 @inventory_bp.route('/export-historical-all')
 @login_required
