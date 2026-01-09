@@ -1851,3 +1851,31 @@ def recent_historical():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# -----------------------------------------------------------------------------
+# COMPATIBILITY ENDPOINTS FOR DASHBOARD TEMPLATE
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route('/historical-stats')
+@login_required
+def historical_stats():
+    """Alias para get_historical_stats"""
+    return redirect(url_for('inventory.get_historical_stats'))
+
+@inventory_bp.route('/recent-historical')
+@login_required
+def recent_historical():
+    """Alias para history_inventory con parámetros recientes"""
+    return redirect(url_for('inventory.history_inventory') + '?limit=5')
+
+@inventory_bp.route('/analyze-historical-data')
+@login_required
+def analyze_historical_data():
+    """Alias para analyze_historical"""
+    return redirect(url_for('inventory.analyze_historical'))
+
+@inventory_bp.route('/export-historical-all')
+@login_required
+def export_historical_all():
+    """Alias para export_all_historical"""
+    return redirect(url_for('inventory.export_all_historical'))
