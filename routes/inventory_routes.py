@@ -1764,49 +1764,55 @@ def export_all_historical():
 @inventory_bp.route('/historical-stats')
 @login_required
 def historical_stats():
-    """Estadísticas de Importes para el dashboard"""
-    try:
-        # Total de snapshots (archivos históricos)
-        total_snapshots = db.session.query(
-            func.count(func.distinct(InventoryHistory.snapshot_id))
-        ).filter_by(user_id=current_user.id).scalar() or 0
-        
-        # Total de registros (líneas en todos los históricos)
-        total_rows = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).count()
-        
-        # Último import
-        last_import = InventoryHistory.query.filter_by(
-            user_id=current_user.id
-        ).order_by(InventoryHistory.creado_en.desc()).first()
-        
-        # Total stock en históricos (suma de todos los stocks)
-        total_stock = db.session.query(
-            func.sum(InventoryHistory.stock_sap)
-        ).filter_by(user_id=current_user.id).scalar() or 0
-        
-        # Total diferencias (suma de todas las diferencias)
-        total_differences = db.session.query(
-            func.sum(InventoryHistory.difere)
-        ).filter_by(user_id=current_user.id).scalar() or 0
-        
-        return jsonify({
-            'success': True,
-            'stats': {
-                'total_snapshots': total_snapshots,
-                'total_rows': total_rows,
-                'total_stock': float(total_stock),
-                'total_differences': float(total_differences),
-                'last_import_date': last_import.creado_en.strftime('%d/%m/%Y %H:%M') if last_import else None,
-                'last_filename': last_import.source_filename if last_import else None,
-                'last_snapshot': last_import.snapshot_name if last_import else None
-            }
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+    """Versión SIMPLE para debug"""
+    return jsonify({
+        'success': True,
+        'stats': {
+            'total_snapshots': 5,
+            'total_rows': 100,
+            'total_stock': 1500,
+            'total_differences': 25,
+            'last_import_date': '10/04/2025 14:30',
+            'last_filename': 'inventario_2025_04_10.xlsx',
+            'last_snapshot': 'inventario_2025_04_10'
+        }
+    })
 
+@inventory_bp.route('/recent-historical')
+@login_required
+def recent_historical():
+    """Versión SIMPLE para debug"""
+    return jsonify({
+        'success': True,
+        'recent': [
+            {
+                'id': 'test_1',
+                'name': 'Inventario Test 1',
+                'filename': 'test.xlsx',
+                'date': '10/04/2025 14:30',
+                'time_ago': 'Hace 2 días',
+                'items': 50,
+                'stock': 1000,
+                'difference': 10,
+                'status': 'success',
+                'download_url': '#',
+                'preview_url': '#'
+            },
+            {
+                'id': 'test_2',
+                'name': 'Inventario Test 2',
+                'filename': 'test2.xlsx',
+                'date': '09/04/2025 10:15',
+                'time_ago': 'Hace 3 días',
+                'items': 45,
+                'stock': 950,
+                'difference': -5,
+                'status': 'warning',
+                'download_url': '#',
+                'preview_url': '#'
+            }
+        ]
+    })
 @inventory_bp.route('/recent-historical')
 @login_required
 def recent_historical():
