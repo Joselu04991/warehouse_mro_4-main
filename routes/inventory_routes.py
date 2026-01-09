@@ -1,7 +1,7 @@
 # =============================================================================
 # INVENTORY ROUTES – COMPLETO CON TODAS LAS RUTAS NECESARIAS
 # =============================================================================
-
+from datetime import timedelta 
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from io import BytesIO
