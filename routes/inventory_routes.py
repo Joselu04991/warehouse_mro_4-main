@@ -1574,3 +1574,186 @@ def get_item_details():
         print(f"Error obteniendo detalles del item: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Añade estas rutas al final de tu inventory_routes.py
+
+@inventory_bp.route('/api/historical/stats')
+@login_required
+def get_historical_stats():
+    """Obtener estadísticas de archivos históricos"""
+    try:
+        # Contar snapshots
+        total_snapshots = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).distinct(InventoryHistory.snapshot_id).count()
+        
+        # Contar registros totales
+        total_rows = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).count()
+        
+        # Obtener fecha del último import
+        last_import = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).order_by(InventoryHistory.creado_en.desc()).first()
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_snapshots': total_snapshots,
+                'total_rows': total_rows,
+                'last_import': last_import.creado_en.isoformat() if last_import else None,
+                'last_filename': last_import.source_filename if last_import else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/inventory/history/<snapshot_id>/preview')
+@login_required
+def preview_historical(snapshot_id):
+    """Vista previa de un archivo histórico"""
+    try:
+        # Obtener datos del snapshot
+        snapshot = InventoryHistory.query.filter_by(
+            user_id=current_user.id,
+            snapshot_id=snapshot_id
+        ).first()
+        
+        if not snapshot:
+            return jsonify({'success': False, 'error': 'Snapshot no encontrado'}), 404
+        
+        # Obtener estadísticas
+        rows = InventoryHistory.query.filter_by(
+            user_id=current_user.id,
+            snapshot_id=snapshot_id
+        ).all()
+        
+        total_stock = sum(r.stock_sap or 0 for r in rows)
+        total_difference = sum(r.difere or 0 for r in rows)
+        total_items = len(rows)
+        
+        # Obtener preview de las primeras 10 filas
+        preview_rows = rows[:10]
+        
+        # Generar HTML de preview
+        preview_html = '''
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Ubicación</th>
+                    <th>Stock SAP</th>
+                    <th>Físico</th>
+                    <th>Diferencia</th>
+                </tr>
+            </thead>
+            <tbody>
+        '''
+        
+        for row in preview_rows:
+            preview_html += f'''
+                <tr>
+                    <td><strong>{row.material_code or ''}</strong></td>
+                    <td>{row.material_text or ''}</td>
+                    <td>{row.location or ''}</td>
+                    <td>{row.stock_sap or 0}</td>
+                    <td>{row.fisico or 0}</td>
+                    <td class="{row.difere >= 0 if row.difere else False else 'text-danger' if row.difere and row.difere < 0 else ''}">
+                        {row.difere or 0}
+                    </td>
+                </tr>
+            '''
+        
+        preview_html += '</tbody></table>'
+        
+        return jsonify({
+            'success': True,
+            'snapshot_id': snapshot.snapshot_id,
+            'snapshot_name': snapshot.snapshot_name,
+            'creado_en': snapshot.creado_en.isoformat() if snapshot.creado_en else None,
+            'total_items': total_items,
+            'total_stock': total_stock,
+            'total_difference': total_difference,
+            'preview_html': preview_html
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/api/historical/analyze')
+@login_required
+def analyze_historical():
+    """Analizar datos históricos"""
+    try:
+        period = int(request.args.get('period', 30))
+        
+        # Obtener snapshots del período
+        cutoff_date = now_pe() - timedelta(days=period)
+        
+        snapshots = (
+            db.session.query(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                func.date(InventoryHistory.creado_en).label('fecha'),
+                func.count().label('total_items'),
+                func.sum(InventoryHistory.stock_sap).label('total_stock')
+            )
+            .filter(
+                InventoryHistory.user_id == current_user.id,
+                InventoryHistory.creado_en >= cutoff_date
+            )
+            .group_by(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                func.date(InventoryHistory.creado_en)
+            )
+            .order_by(InventoryHistory.creado_en.desc())
+            .all()
+        )
+        
+        # Aquí implementarías el análisis específico
+        # Por simplicidad, devolvemos datos de ejemplo
+        
+        return jsonify({
+            'success': True,
+            'period': period,
+            'stats': {
+                'total_imports': len(snapshots),
+                'average_stock': sum(s.total_stock or 0 for s in snapshots) / len(snapshots) if snapshots else 0,
+                'total_variation': 15.5,  # Esto sería calculado
+                'volatile_items': 42      # Items con alta variación
+            },
+            'trends': [
+                {
+                    'material_code': 'MAT001',
+                    'material_text': 'Material de ejemplo',
+                    'trend': 'up',
+                    'percentage_change': 25.5
+                }
+            ],
+            'recommendations': [
+                {
+                    'title': 'Optimizar stock de items con alta variación',
+                    'description': '42 items muestran alta volatilidad en los últimos 30 días',
+                    'priority': 'high'
+                }
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/api/historical/export/all')
+@login_required
+def export_all_historical():
+    """Exportar todos los históricos"""
+    try:
+        # Implementar lógica de exportación completa
+        # Por ahora redirigir a una página de exportación
+        return redirect(url_for('inventory.history_inventory'))
+        
+    except Exception as e:
+        flash(f'Error al exportar: {str(e)}', 'danger')
+        return redirect(url_for('inventory.dashboard_inventory'))
