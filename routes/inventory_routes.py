@@ -66,6 +66,24 @@ def parse_snapshot_from_filename(filename: str):
         fecha = now_pe()
     return base, fecha
 
+# Función auxiliar para mostrar "hace X tiempo"
+def get_time_ago(date):
+    """Convertir fecha a formato 'hace X tiempo'"""
+    if not date:
+        return ""
+    
+    now = now_pe()
+    diff = now - date
+    
+    if diff.days > 0:
+        return f"Hace {diff.days} días"
+    elif diff.seconds // 3600 > 0:
+        return f"Hace {diff.seconds // 3600} horas"
+    elif diff.seconds // 60 > 0:
+        return f"Hace {diff.seconds // 60} minutos"
+    else:
+        return "Hace unos segundos"
+
 # -----------------------------------------------------------------------------
 # DASHBOARD
 # -----------------------------------------------------------------------------
@@ -196,6 +214,7 @@ def dashboard_inventory():
         last_update=last_update,
         now=datetime.now(TZ)
     )
+
 # -----------------------------------------------------------------------------
 # INVENTARIO ACTUAL
 # -----------------------------------------------------------------------------
@@ -1781,41 +1800,6 @@ def historical_stats():
 @inventory_bp.route('/recent-historical')
 @login_required
 def recent_historical():
-    """Versión SIMPLE para debug"""
-    return jsonify({
-        'success': True,
-        'recent': [
-            {
-                'id': 'test_1',
-                'name': 'Inventario Test 1',
-                'filename': 'test.xlsx',
-                'date': '10/04/2025 14:30',
-                'time_ago': 'Hace 2 días',
-                'items': 50,
-                'stock': 1000,
-                'difference': 10,
-                'status': 'success',
-                'download_url': '#',
-                'preview_url': '#'
-            },
-            {
-                'id': 'test_2',
-                'name': 'Inventario Test 2',
-                'filename': 'test2.xlsx',
-                'date': '09/04/2025 10:15',
-                'time_ago': 'Hace 3 días',
-                'items': 45,
-                'stock': 950,
-                'difference': -5,
-                'status': 'warning',
-                'download_url': '#',
-                'preview_url': '#'
-            }
-        ]
-    })
-@inventory_bp.route('/recent-historical')
-@login_required
-def recent_historical():
     """Últimas Importes (5 más recientes)"""
     try:
         # Obtener los últimos 5 snapshots
@@ -1954,24 +1938,6 @@ def analyze_historical_data():
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
-# Función auxiliar para mostrar "hace X tiempo"
-def get_time_ago(date):
-    """Convertir fecha a formato 'hace X tiempo'"""
-    if not date:
-        return ""
-    
-    now = now_pe()
-    diff = now - date
-    
-    if diff.days > 0:
-        return f"Hace {diff.days} días"
-    elif diff.seconds // 3600 > 0:
-        return f"Hace {diff.seconds // 3600} horas"
-    elif diff.seconds // 60 > 0:
-        return f"Hace {diff.seconds // 60} minutos"
-    else:
-        return "Hace unos segundos"
 
 @inventory_bp.route('/export-historical-all')
 @login_required
