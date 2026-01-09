@@ -1757,3 +1757,97 @@ def export_all_historical():
     except Exception as e:
         flash(f'Error al exportar: {str(e)}', 'danger')
         return redirect(url_for('inventory.dashboard_inventory'))
+
+# -----------------------------------------------------------------------------
+# HISTORICAL ENDPOINTS FOR TEMPLATE COMPATIBILITY
+# -----------------------------------------------------------------------------
+
+@inventory_bp.route('/historical-stats')
+@login_required
+def historical_stats():
+    """Alias para get_historical_stats - mantiene compatibilidad con template"""
+    try:
+        # Reutilizar la lógica de get_historical_stats
+        total_snapshots = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).distinct(InventoryHistory.snapshot_id).count()
+        
+        total_rows = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).count()
+        
+        last_import = InventoryHistory.query.filter_by(
+            user_id=current_user.id
+        ).order_by(InventoryHistory.creado_en.desc()).first()
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_snapshots': total_snapshots,
+                'total_rows': total_rows,
+                'last_import': last_import.creado_en.isoformat() if last_import else None,
+                'last_filename': last_import.source_filename if last_import else None
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@inventory_bp.route('/recent-historical')
+@login_required
+def recent_historical():
+    """Obtener historiales recientes para el dashboard"""
+    try:
+        # Obtener los últimos 5 snapshots
+        snapshots = (
+            db.session.query(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                InventoryHistory.creado_en,
+                func.count().label('item_count')
+            )
+            .filter(InventoryHistory.user_id == current_user.id)
+            .group_by(
+                InventoryHistory.snapshot_id,
+                InventoryHistory.snapshot_name,
+                InventoryHistory.creado_en
+            )
+            .order_by(InventoryHistory.creado_en.desc())
+            .limit(5)
+            .all()
+        )
+        
+        recent_list = []
+        for snap in snapshots:
+            # Obtener estadísticas básicas de este snapshot
+            stats = (
+                db.session.query(
+                    func.sum(InventoryHistory.stock_sap).label('total_stock'),
+                    func.sum(InventoryHistory.difere).label('total_difference'),
+                    func.avg(InventoryHistory.difere).label('avg_difference')
+                )
+                .filter(
+                    InventoryHistory.user_id == current_user.id,
+                    InventoryHistory.snapshot_id == snap.snapshot_id
+                )
+                .first()
+            )
+            
+            recent_list.append({
+                'id': snap.snapshot_id,
+                'name': snap.snapshot_name,
+                'date': snap.creado_en.strftime('%Y-%m-%d') if snap.creado_en else 'N/A',
+                'items': snap.item_count,
+                'total_stock': float(stats.total_stock or 0),
+                'total_difference': float(stats.total_difference or 0),
+                'download_url': url_for('inventory.history_download', snapshot_id=snap.snapshot_id),
+                'preview_url': url_for('inventory.preview_historical', snapshot_id=snap.snapshot_id)
+            })
+        
+        return jsonify({
+            'success': True,
+            'recent': recent_list
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
