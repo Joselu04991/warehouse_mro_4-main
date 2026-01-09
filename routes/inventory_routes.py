@@ -1538,3 +1538,42 @@ def get_item_details(material_code, location):
     except Exception as e:
         app.logger.error(f"Error obteniendo detalles del item: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+@inventory.route('/get_item_details')
+def get_item_details():
+    material_code = request.args.get('material_code')
+    location = request.args.get('location')
+    
+    # Tu lógica aquí para obtener los detalles del item
+    item = Inventory.query.filter_by(
+        material_code=material_code,
+        location=location
+    ).first()
+    
+    if item:
+        # Obtener historial de conteos
+        count_history = CountHistory.query.filter_by(
+            material_code=material_code,
+            location=location
+        ).order_by(CountHistory.timestamp.desc()).limit(10).all()
+        
+        return jsonify({
+            'success': True,
+            'item': {
+                'material_code': item.material_code,
+                'material_text': item.material_text,
+                'location': item.location,
+                'stock': item.stock,
+                'real_count': item.real_count,
+                'diferencia': item.diferencia,
+                'estado': item.estado
+            },
+            'count_history': [
+                {
+                    'timestamp': history.timestamp.isoformat(),
+                    'count': history.real_count,
+                    'user': history.user_id
+                } for history in count_history
+            ]
+        })
+    
+    return jsonify({'success': False, 'message': 'Item no encontrado'})
