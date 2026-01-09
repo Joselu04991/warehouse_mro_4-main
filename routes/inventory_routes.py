@@ -1498,12 +1498,22 @@ def delete_item():
             "success": False,
             "error": str(e)
         }), 500
-@inventory_bp.route('/api/inventory/item/<material_code>/<location>')
+
+
+@inventory_bp.route('/get_item_details')
 @login_required
-def get_item_details(material_code, location):
-    """API para obtener detalles de un item específico"""
+def get_item_details():
+    """API para obtener detalles de un item específico con parámetros query string"""
     try:
+        material_code = request.args.get('material_code')
+        location = request.args.get('location')
+        
+        if not material_code or not location:
+            return jsonify({'success': False, 'error': 'Parámetros requeridos: material_code y location'}), 400
+        
+        # Buscar el item en InventoryItem
         item = InventoryItem.query.filter_by(
+            user_id=current_user.id,
             material_code=material_code,
             location=location
         ).first()
@@ -1511,11 +1521,39 @@ def get_item_details(material_code, location):
         if not item:
             return jsonify({'success': False, 'error': 'Item no encontrado'}), 404
         
-        # Obtener historial de conteos si existe
-        counts = Count.query.filter_by(
+        # Obtener conteo si existe
+        count = InventoryCount.query.filter_by(
+            user_id=current_user.id,
             material_code=material_code,
             location=location
-        ).order_by(Count.contado_en.desc()).limit(10).all()
+        ).first()
+        
+        # Obtener historial de conteos
+        count_history = []
+        # Usar InventoryCount como historial si existe más de un registro
+        count_records = InventoryCount.query.filter_by(
+            user_id=current_user.id,
+            material_code=material_code,
+            location=location
+        ).order_by(InventoryCount.contado_en.desc()).limit(10).all()
+        
+        for record in count_records:
+            count_history.append({
+                'timestamp': record.contado_en.isoformat() if record.contado_en else None,
+                'count': record.real_count,
+                'user': current_user.username
+            })
+        
+        # Calcular estado
+        real_count = count.real_count if count else 0
+        stock = item.libre_utilizacion or 0
+        
+        if real_count == 0:
+            estado = 'Pendiente'
+        elif real_count == stock:
+            estado = 'OK'
+        else:
+            estado = 'Diferencia'
         
         return jsonify({
             'success': True,
@@ -1523,57 +1561,16 @@ def get_item_details(material_code, location):
                 'material_code': item.material_code,
                 'material_text': item.material_text,
                 'location': item.location,
-                'stock': item.stock,
-                'real_count': item.real_count,
-                'diferencia': item.diferencia,
-                'estado': item.estado
+                'base_unit': item.base_unit,
+                'stock': stock,
+                'real_count': real_count,
+                'diferencia': real_count - stock,
+                'estado': estado
             },
-            'count_history': [{
-                'timestamp': count.contado_en.isoformat() if count.contado_en else None,
-                'count': count.real_count,
-                'user': count.usuario
-            } for count in counts] if counts else []
+            'count_history': count_history
         })
         
     except Exception as e:
-        app.logger.error(f"Error obteniendo detalles del item: {str(e)}")
+        print(f"Error obteniendo detalles del item: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
-@inventory.route('/get_item_details')
-def get_item_details():
-    material_code = request.args.get('material_code')
-    location = request.args.get('location')
-    
-    # Tu lógica aquí para obtener los detalles del item
-    item = Inventory.query.filter_by(
-        material_code=material_code,
-        location=location
-    ).first()
-    
-    if item:
-        # Obtener historial de conteos
-        count_history = CountHistory.query.filter_by(
-            material_code=material_code,
-            location=location
-        ).order_by(CountHistory.timestamp.desc()).limit(10).all()
-        
-        return jsonify({
-            'success': True,
-            'item': {
-                'material_code': item.material_code,
-                'material_text': item.material_text,
-                'location': item.location,
-                'stock': item.stock,
-                'real_count': item.real_count,
-                'diferencia': item.diferencia,
-                'estado': item.estado
-            },
-            'count_history': [
-                {
-                    'timestamp': history.timestamp.isoformat(),
-                    'count': history.real_count,
-                    'user': history.user_id
-                } for history in count_history
-            ]
-        })
-    
-    return jsonify({'success': False, 'message': 'Item no encontrado'})
+
