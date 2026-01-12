@@ -2,75 +2,64 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <div class="card-header bg-warning text-dark">
-            <h3 class="mb-0"><i class="bi bi-plus-circle me-2"></i> Crear Nuevo Escenario</h3>
-        </div>
-        <div class="card-body">
-            <form>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="scenarioName" class="form-label">Nombre del Escenario</label>
-                        <input type="text" class="form-control" id="scenarioName" placeholder="Ej: Gestión de Inventario Crítico">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="scenarioType" class="form-label">Tipo de Escenario</label>
-                        <select class="form-select" id="scenarioType">
-                            <option selected>Seleccionar tipo...</option>
-                            <option value="inventory">Gestión de Inventario</option>
-                            <option value="maintenance">Mantenimiento Preventivo</option>
-                            <option value="emergency">Emergencia de Equipos</option>
-                            <option value="logistics">Logística de Repuestos</option>
-                        </select>
-                    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="bi bi-plus-circle me-2"></i> Crear Nuevo Escenario MRO</h3>
                 </div>
-                
-                <div class="mb-3">
-                    <label for="scenarioDescription" class="form-label">Descripción</label>
-                    <textarea class="form-control" id="scenarioDescription" rows="4" placeholder="Describe el escenario..."></textarea>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="difficulty" class="form-label">Dificultad</label>
-                        <select class="form-select" id="difficulty">
-                            <option value="easy">Fácil</option>
-                            <option value="medium" selected>Media</option>
-                            <option value="hard">Difícil</option>
-                            <option value="expert">Experto</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="timeLimit" class="form-label">Tiempo Límite (minutos)</label>
-                        <input type="number" class="form-control" id="timeLimit" value="30" min="5" max="120">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label for="maxPoints" class="form-label">Puntos Máximos</label>
-                        <input type="number" class="form-control" id="maxPoints" value="100" min="10" max="500">
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label">Recursos Necesarios</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="resource1">
-                        <label class="form-check-label" for="resource1">Herramientas Especializadas</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="resource2">
-                        <label class="form-check-label" for="resource2">Equipo de Seguridad</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="resource3">
-                        <label class="form-check-label" for="resource3">Repuestos Críticos</label>
-                    </div>
-                </div>
-                
-                <button type="submit" class="btn btn-warning btn-lg">
-                    <i class="bi bi-save me-2"></i>Guardar Escenario
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-{% endblock %}
+                <div class="card-body">
+                    <form id="scenarioForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="scenarioName" class="form-label">Nombre del Escenario *</label>
+                                    <input type="text" class="form-control" id="scenarioName" 
+                                           placeholder="Ej: Gestión de Inventario Crítico durante Emergencia" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="scenarioCode" class="form-label">Código de Escenario</label>
+                                    <input type="text" class="form-control" id="scenarioCode" 
+                                           placeholder="MRO-SC-001" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="scenarioType" class="form-label">Tipo de Escenario *</label>
+                                <select class="form-select" id="scenarioType" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="inventory">Gestión de Inventario</option>
+                                    <option value="maintenance">Mantenimiento Preventivo</option>
+                                    <option value="emergency">Emergencia de Equipos</option>
+                                    <option value="logistics">Logística de Repuestos</option>
+                                    <option value="quality">Control de Calidad</option>
+                                    <option value="safety">Seguridad Industrial</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">Departamento Objetivo</label>
+                                <select class="form-select" id="department" multiple>
+                                    <option value="warehouse">Almacén</option>
+                                    <option value="maintenance">Mantenimiento</option>
+                                    <option value="production">Producción</option>
+                                    <option value="logistics">Logística</option>
+                                    <option value="purchasing">Compras</option>
+                                </select>
+                                <small class="text-muted">Mantén CTRL para seleccionar múltiples</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="scenarioDescription" class="form-label">Descripción Detallada *</label>
+                            <textarea class="form-control" id="scenarioDescription" rows="4" 
+                                      placeholder="Describe el contexto, objetivos y desafíos del escenario..." required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="difficulty" class="form-label">Nivel de Dificultad *</label>
+                                <select class="form-select" id="difficulty"
