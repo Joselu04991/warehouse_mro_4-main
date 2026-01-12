@@ -2,227 +2,371 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="mb-0"><i class="bi bi-clock me-2"></i>Paytime - Registro de Tiempos</h3>
-                <span class="badge bg-light text-dark">{{ today }}</span>
-            </div>
-        </div>
-        <div class="card-body">
-            <p class="card-text">Registro y control de tiempos de trabajo para el cálculo de productividad y nómina.</p>
-            
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle me-2"></i>
-                <strong>Jornada actual:</strong> {{ total_hours }} horas registradas hoy.
-            </div>
-            
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Registrar Nuevo Tiempo</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="timeForm">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="taskType" class="form-label">Tipo de Tarea *</label>
-                                        <select class="form-select" id="taskType" required>
-                                            <option value="">Seleccionar...</option>
-                                            <option value="inventory">Conteo de Inventario</option>
-                                            <option value="picking">Picking de Pedidos</option>
-                                            <option value="packing">Empaque y Preparación</option>
-                                            <option value="maintenance">Mantenimiento de Equipos</option>
-                                            <option value="quality">Control de Calidad</option>
-                                            <option value="cleaning">Limpieza y Organización</option>
-                                            <option value="meeting">Reuniones / Capacitación</option>
-                                            <option value="other">Otra Tarea</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label for="projectCode" class="form-label">Código de Proyecto</label>
-                                        <input type="text" class="form-control" id="projectCode" 
-                                               placeholder="Ej: PROJ-2024-001">
-                                    </div>
-                                </div>
-                                
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label for="startTime" class="form-label">Hora Inicio *</label>
-                                        <input type="time" class="form-control" id="startTime" 
-                                               value="{{ now().strftime('%H:%M') }}" required>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="endTime" class="form-label">Hora Fin *</label>
-                                        <input type="time" class="form-control" id="endTime" required>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label for="duration" class="form-label">Duración</label>
-                                        <input type="text" class="form-control" id="duration" readonly 
-                                               placeholder="Calculado automáticamente">
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="taskDescription" class="form-label">Descripción de la Tarea *</label>
-                                    <textarea class="form-control" id="taskDescription" rows="3" 
-                                              placeholder="Describa la tarea realizada, materiales utilizados y cualquier detalle relevante..." required></textarea>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label">Tipo de Pago</label>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="payType" id="payNormal" value="normal" checked>
-                                        <label class="form-check-label" for="payNormal">Normal</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="payType" id="payOvertime" value="overtime">
-                                        <label class="form-check-label" for="payOvertime">Horas Extra</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="payType" id="payNight" value="night">
-                                        <label class="form-check-label" for="payNight">Nocturno</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="payType" id="payHoliday" value="holiday">
-                                        <label class="form-check-label" for="payHoliday">Festivo</label>
-                                    </div>
-                                </div>
-                                
-                                <div class="d-grid">
-                                    <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="bi bi-clock-history me-2"></i>Registrar Tiempo
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="bi bi-clock me-2"></i> Control de Tiempos de Trabajo</h3>
+                        <span class="badge bg-light text-dark">{{ today }}</span>
                     </div>
                 </div>
-                
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Registros de Hoy</h5>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Descripción:</strong> Registre y controle sus tiempos de trabajo para cálculo de nómina y productividad. 
+                        Marque horas normales, extras, nocturnas y festivas. Genere reportes para su supervisor.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i> Registrar Nuevo Tiempo</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="timeForm" onsubmit="return submitTimeForm()">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="taskType" class="form-label">Tipo de Tarea *</label>
+                                                <select class="form-select" id="taskType" required>
+                                                    <option value="">Seleccionar tipo de trabajo...</option>
+                                                    <option value="inventory">Conteo de Inventario</option>
+                                                    <option value="picking">Picking de Pedidos</option>
+                                                    <option value="packing">Empaque y Preparación</option>
+                                                    <option value="maintenance">Mantenimiento de Equipos</option>
+                                                    <option value="quality">Control de Calidad</option>
+                                                    <option value="cleaning">Limpieza y Organización</option>
+                                                    <option value="meeting">Reuniones / Capacitación</option>
+                                                    <option value="administrative">Tareas Administrativas</option>
+                                                    <option value="other">Otra Tarea</option>
+                                                </select>
+                                                <div class="form-text">Seleccione la categoría principal de trabajo</div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="projectCode" class="form-label">Código de Proyecto/Orden</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">#</span>
+                                                    <input type="text" class="form-control" id="projectCode" 
+                                                           placeholder="Ej: INV-001, PROJ-2024-01, OT-789">
+                                                    <button type="button" class="btn btn-outline-secondary" onclick="suggestProjectCode()">
+                                                        <i class="bi bi-lightbulb"></i>
+                                                    </button>
+                                                </div>
+                                                <div class="form-text">Código interno de proyecto u orden de trabajo</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <label for="startTime" class="form-label">Hora de Inicio *</label>
+                                                <input type="time" class="form-control" id="startTime" 
+                                                       value="{{ current_time }}" required>
+                                                <div class="form-text">Hora en que comenzó la tarea</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="endTime" class="form-label">Hora de Finalización *</label>
+                                                <input type="time" class="form-control" id="endTime" 
+                                                       value="" required onchange="calculateDuration()">
+                                                <div class="form-text">Hora en que terminó la tarea</div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <label for="duration" class="form-label">Duración Total</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="duration" 
+                                                           placeholder="Calculando..." readonly>
+                                                    <span class="input-group-text">horas</span>
+                                                </div>
+                                                <div class="form-text">Calculado automáticamente</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="taskDescription" class="form-label">Descripción de la Tarea *</label>
+                                            <textarea class="form-control" id="taskDescription" rows="3" 
+                                                      placeholder="Describa en detalle la tarea realizada:\n• Qué hizo exactamente\n• Materiales/herramientas utilizados\n• Resultados obtenidos\n• Dificultades encontradas\n• Cualquier observación importante..." 
+                                                      required></textarea>
+                                            <div class="form-text">Sea específico para facilitar la validación</div>
+                                            <div class="mt-1">
+                                                <small id="descCharCount" class="text-muted">0/500 caracteres</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Tipo de Pago/Hora</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="payType" id="payNormal" value="normal" checked>
+                                                    <label class="btn btn-outline-success" for="payNormal">
+                                                        <i class="bi bi-sun me-1"></i>Normal
+                                                    </label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="payType" id="payOvertime" value="overtime">
+                                                    <label class="btn btn-outline-warning" for="payOvertime">
+                                                        <i class="bi bi-clock me-1"></i>Extra
+                                                    </label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="payType" id="payNight" value="night">
+                                                    <label class="btn btn-outline-primary" for="payNight">
+                                                        <i class="bi bi-moon me-1"></i>Nocturna
+                                                    </label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="payType" id="payHoliday" value="holiday">
+                                                    <label class="btn btn-outline-danger" for="payHoliday">
+                                                        <i class="bi bi-calendar-event me-1"></i>Festivo
+                                                    </label>
+                                                </div>
+                                                <div class="form-text mt-2">
+                                                    <span id="payRateInfo">Tarifa normal: 15€/hora</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Validaciones</label>
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input" type="checkbox" id="breakTaken">
+                                                    <label class="form-check-label" for="breakTaken">
+                                                        Incluye pausa para descanso
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="equipmentUsed">
+                                                    <label class="form-check-label" for="equipmentUsed">
+                                                        Utilicé equipo especializado
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="safetyGear">
+                                                    <label class="form-check-label" for="safetyGear">
+                                                        Usé equipo de protección
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary btn-lg">
+                                                <i class="bi bi-clock-history me-2"></i> Registrar Tiempo
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="list-group">
-                                {% for record in time_records %}
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ record.task }}</h6>
-                                        <small class="text-muted">{{ record.duration }}</small>
-                                    </div>
-                                    <p class="mb-1 small">{{ record.start }} - {{ record.end }}</p>
-                                    <small class="text-muted">{{ record.employee }}</small>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i> Registros de Hoy</h5>
                                 </div>
-                                {% endfor %}
-                            </div>
-                            
-                            <div class="mt-3">
-                                <h6>Resumen del Día:</h6>
-                                <div class="row text-center">
-                                    <div class="col-6">
-                                        <div class="display-6">{{ total_hours }}</div>
-                                        <small>Horas Totales</small>
+                                <div class="card-body">
+                                    <div class="list-group" id="todayRecords">
+                                        {% for record in time_records %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">{{ record.task }}</h6>
+                                                <span class="badge 
+                                                    {% if record.duration == '2.5h' %}bg-primary
+                                                    {% elif record.duration == '1.75h' %}bg-info
+                                                    {% else %}bg-secondary{% endif %}">
+                                                    {{ record.duration }}
+                                                </span>
+                                            </div>
+                                            <p class="mb-1 small">
+                                                <i class="bi bi-clock me-1"></i>{{ record.start }} - {{ record.end }}
+                                                <br>
+                                                <i class="bi bi-person me-1"></i>{{ record.employee }}
+                                            </p>
+                                            <small class="text-muted">Proyecto: {{ record.project }}</small>
+                                            <div class="mt-2">
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord({{ record.id }})">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" onclick="editRecord({{ record.id }})">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                        
+                                        {% if time_records|length == 0 %}
+                                        <div class="list-group-item text-center text-muted">
+                                            <i class="bi bi-clock-history display-6 mb-2"></i>
+                                            <p class="mb-0">No hay registros hoy</p>
+                                            <small>Comience registrando su primer tiempo</small>
+                                        </div>
+                                        {% endif %}
                                     </div>
-                                    <div class="col-6">
-                                        <div class="display-6">{{ time_records|length }}</div>
-                                        <small>Tareas</small>
+                                    
+                                    <div class="mt-3">
+                                        <h6>Resumen del Día:</h6>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <div class="display-6">{{ total_hours }}</div>
+                                                <small>Horas Totales</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="display-6">{{ time_records|length }}</div>
+                                                <small>Tareas</small>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="display-6">{{ "%.2f"|format(total_hours|float * 15) }}€</div>
+                                                <small>Valor estimado</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <button class="btn btn-outline-success w-100 mb-2" onclick="generateDailyReport()">
+                                            <i class="bi bi-file-earmark-text me-2"></i>Generar Reporte Diario
+                                        </button>
+                                        <button class="btn btn-outline-primary w-100" onclick="sendToSupervisor()">
+                                            <i class="bi bi-send me-2"></i>Enviar a Supervisor
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="mt-3">
-                                <button class="btn btn-outline-success w-100 mb-2">
-                                    <i class="bi bi-file-earmark-text me-2"></i>Generar Reporte
-                                </button>
-                                <button class="btn btn-outline-primary w-100">
-                                    <i class="bi bi-printer me-2"></i>Imprimir Resumen
-                                </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Estadísticas de la Semana</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Día</th>
-                                            <th>Horas Normales</th>
-                                            <th>Horas Extra</th>
-                                            <th>Total Horas</th>
-                                            <th>Tareas</th>
-                                            <th>Productividad</th>
-                                            <th>Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Lunes (08/01)</td>
-                                            <td>7.5</td>
-                                            <td>1.0</td>
-                                            <td>8.5</td>
-                                            <td>6</td>
-                                            <td><span class="badge bg-success">94%</span></td>
-                                            <td><span class="badge bg-success">Aprobado</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Martes (09/01)</td>
-                                            <td>8.0</td>
-                                            <td>0.5</td>
-                                            <td>8.5</td>
-                                            <td>7</td>
-                                            <td><span class="badge bg-success">96%</span></td>
-                                            <td><span class="badge bg-success">Aprobado</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Miércoles (10/01)</td>
-                                            <td>7.0</td>
-                                            <td>1.5</td>
-                                            <td>8.5</td>
-                                            <td>5</td>
-                                            <td><span class="badge bg-warning">85%</span></td>
-                                            <td><span class="badge bg-success">Aprobado</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Jueves (11/01)</td>
-                                            <td>8.0</td>
-                                            <td>0.0</td>
-                                            <td>8.0</td>
-                                            <td>8</td>
-                                            <td><span class="badge bg-success">98%</span></td>
-                                            <td><span class="badge bg-success">Aprobado</span></td>
-                                        </tr>
-                                        <tr class="table-info">
-                                            <td><strong>Hoy (12/01)</strong></td>
-                                            <td><strong>{{ total_hours }}</strong></td>
-                                            <td><strong>0.0</strong></td>
-                                            <td><strong>{{ total_hours }}</strong></td>
-                                            <td><strong>{{ time_records|length }}</strong></td>
-                                            <td><strong><span class="badge bg-info">En curso</span></strong></td>
-                                            <td><strong><span class="badge bg-warning">Pendiente</span></strong></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Promedio Semanal</td>
-                                            <td>7.6</td>
-                                            <td>0.6</td>
-                                            <td>8.2</td>
-                                            <td>6.5</td>
-                                            <td><span class="badge bg-success">93.2%</span></td>
-                                            <td>-</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i> Estadísticas de la Semana</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Día</th>
+                                                    <th>Horas Normales</th>
+                                                    <th>Horas Extra</th>
+                                                    <th>Nocturnas</th>
+                                                    <th>Total Horas</th>
+                                                    <th>Tareas Completadas</th>
+                                                    <th>Productividad</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Lunes (08/01)</td>
+                                                    <td>7.5</td>
+                                                    <td>1.0</td>
+                                                    <td>0.0</td>
+                                                    <td>8.5</td>
+                                                    <td>6</td>
+                                                    <td><span class="badge bg-success">94%</span></td>
+                                                    <td><span class="badge bg-success">Aprobado</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Martes (09/01)</td>
+                                                    <td>8.0</td>
+                                                    <td>0.5</td>
+                                                    <td>0.0</td>
+                                                    <td>8.5</td>
+                                                    <td>7</td>
+                                                    <td><span class="badge bg-success">96%</span></td>
+                                                    <td><span class="badge bg-success">Aprobado</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Miércoles (10/01)</td>
+                                                    <td>7.0</td>
+                                                    <td>1.5</td>
+                                                    <td>0.0</td>
+                                                    <td>8.5</td>
+                                                    <td>5</td>
+                                                    <td><span class="badge bg-warning">85%</span></td>
+                                                    <td><span class="badge bg-success">Aprobado</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Jueves (11/01)</td>
+                                                    <td>8.0</td>
+                                                    <td>0.0</td>
+                                                    <td>0.0</td>
+                                                    <td>8.0</td>
+                                                    <td>8</td>
+                                                    <td><span class="badge bg-success">98%</span></td>
+                                                    <td><span class="badge bg-success">Aprobado</span></td>
+                                                </tr>
+                                                <tr class="table-info">
+                                                    <td><strong>Hoy ({{ today }})</strong></td>
+                                                    <td><strong>{{ total_hours }}</strong></td>
+                                                    <td><strong>0.0</strong></td>
+                                                    <td><strong>0.0</strong></td>
+                                                    <td><strong>{{ total_hours }}</strong></td>
+                                                    <td><strong>{{ time_records|length }}</strong></td>
+                                                    <td><strong><span class="badge bg-info">En curso</span></strong></td>
+                                                    <td><strong><span class="badge bg-warning">Pendiente</span></strong></td>
+                                                </tr>
+                                                <tr class="table-secondary">
+                                                    <td><strong>Promedio Semanal</strong></td>
+                                                    <td><strong>7.6</strong></td>
+                                                    <td><strong>0.6</strong></td>
+                                                    <td><strong>0.0</strong></td>
+                                                    <td><strong>8.2</strong></td>
+                                                    <td><strong>6.5</strong></td>
+                                                    <td><strong><span class="badge bg-success">93.2%</span></strong></td>
+                                                    <td><strong>-</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6><i class="bi bi-cash-coin me-2"></i> Estimación de Pago Semanal</h6>
+                                                    <div class="row text-center mt-2">
+                                                        <div class="col-4">
+                                                            <h5>41h</h5>
+                                                            <small>Horas totales</small>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <h5>615€</h5>
+                                                            <small>Bruto estimado</small>
+                                                        </div>
+                                                        <div class="col-4">
+                                                            <h5>492€</h5>
+                                                            <small>Neto estimado</small>
+                                                        </div>
+                                                    </div>
+                                                    <div class="progress mt-2" style="height: 20px;">
+                                                        <div class="progress-bar bg-success" style="width: 85%">85% Horas normales</div>
+                                                        <div class="progress-bar bg-warning" style="width: 15%">15% Horas extra</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6><i class="bi bi-graph-up me-2"></i> Metas y Objetivos</h6>
+                                                    <div class="mb-2">
+                                                        <small>Meta semanal: 40 horas</small>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <small>Productividad objetivo: 90%</small>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-info" style="width: 93%"></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mb-0">
+                                                        <small>Tareas objetivo: 30</small>
+                                                        <div class="progress" style="height: 10px;">
+                                                            <div class="progress-bar bg-warning" style="width: 87%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -239,44 +383,254 @@ function calculateDuration() {
     const endTime = document.getElementById('endTime').value;
     
     if (startTime && endTime) {
-        const start = new Date(`2000-01-01T${startTime}:00`);
-        const end = new Date(`2000-01-01T${endTime}:00`);
+        const [startHour, startMinute] = startTime.split(':').map(Number);
+        const [endHour, endMinute] = endTime.split(':').map(Number);
         
-        if (end <= start) {
-            end.setDate(end.getDate() + 1); // Si termina al día siguiente
+        let startTotal = startHour * 60 + startMinute;
+        let endTotal = endHour * 60 + endMinute;
+        
+        // Si termina al día siguiente (ej: 23:00 a 01:00)
+        if (endTotal < startTotal) {
+            endTotal += 24 * 60;
         }
         
-        const diffMs = end - start;
-        const diffHours = diffMs / (1000 * 60 * 60);
+        const durationMinutes = endTotal - startTotal;
+        const durationHours = durationMinutes / 60;
         
-        document.getElementById('duration').value = diffHours.toFixed(2) + ' horas';
+        document.getElementById('duration').value = durationHours.toFixed(2);
+        
+        // Validar duración máxima
+        if (durationHours > 12) {
+            alert('⚠️ Advertencia: Duración superior a 12 horas.\n\nVerifique las horas ingresadas.');
+        }
+        
+        // Actualizar información de pago
+        updatePayInfo();
     }
 }
 
-document.getElementById('startTime').addEventListener('change', calculateDuration);
-document.getElementById('endTime').addEventListener('change', calculateDuration);
-
-// Manejar envío del formulario
-document.getElementById('timeForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+// Actualizar información de pago según tipo seleccionado
+function updatePayInfo() {
+    const duration = parseFloat(document.getElementById('duration').value) || 0;
+    const payType = document.querySelector('input[name="payType"]:checked').value;
     
-    const startTime = document.getElementById('startTime').value;
-    const endTime = document.getElementById('endTime').value;
-    const taskDescription = document.getElementById('taskDescription').value;
+    let rate, description;
     
-    if (!startTime || !endTime || !taskDescription) {
-        alert('Por favor complete todos los campos obligatorios');
-        return;
+    switch(payType) {
+        case 'normal':
+            rate = 15;
+            description = 'Tarifa normal';
+            break;
+        case 'overtime':
+            rate = 22.5; // 50% extra
+            description = 'Tarifa extra (50% adicional)';
+            break;
+        case 'night':
+            rate = 18; // 20% extra
+            description = 'Tarifa nocturna (20% adicional)';
+            break;
+        case 'holiday':
+            rate = 30; // 100% extra
+            description = 'Tarifa festiva (100% adicional)';
+            break;
     }
     
-    const taskId = 'TASK-' + new Date().getTime().toString().slice(-6);
+    const total = duration * rate;
+    document.getElementById('payRateInfo').innerHTML = 
+        `<strong>${description}: ${rate}€/hora</strong><br>Total estimado: ${total.toFixed(2)}€`;
+}
+
+// Sugerir código de proyecto
+function suggestProjectCode() {
+    const taskType = document.getElementById('taskType').value;
+    const date = new Date().toISOString().slice(0,10).replace(/-/g, '');
     
-    alert(`✅ Tiempo registrado exitosamente\n\nID: ${taskId}\n\nEl registro ha sido guardado en el sistema.`);
+    let prefix = '';
+    switch(taskType) {
+        case 'inventory': prefix = 'INV'; break;
+        case 'picking': prefix = 'PICK'; break;
+        case 'packing': prefix = 'PACK'; break;
+        case 'maintenance': prefix = 'MNT'; break;
+        case 'quality': prefix = 'QUAL'; break;
+        case 'cleaning': prefix = 'CLN'; break;
+        case 'meeting': prefix = 'MTG'; break;
+        default: prefix = 'PROJ';
+    }
     
-    // Limpiar formulario
-    this.reset();
-    document.getElementById('startTime').value = new Date().toTimeString().slice(0, 5);
-    document.getElementById('duration').value = '';
+    const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    document.getElementById('projectCode').value = `${prefix}-${date.slice(2)}-${randomNum}`;
+}
+
+// Contador de caracteres para descripción
+document.getElementById('taskDescription').addEventListener('input', function() {
+    const length = this.value.length;
+    const charCount = document.getElementById('descCharCount');
+    charCount.textContent = `${length}/500 caracteres`;
+    
+    if (length > 450) {
+        charCount.className = 'text-danger';
+    } else if (length > 300) {
+        charCount.className = 'text-warning';
+    } else {
+        charCount.className = 'text-muted';
+    }
+});
+
+// Event listeners para actualizar cálculos
+document.getElementById('startTime').addEventListener('change', calculateDuration);
+document.getElementById('endTime').addEventListener('change', calculateDuration);
+document.querySelectorAll('input[name="payType"]').forEach(radio => {
+    radio.addEventListener('change', updatePayInfo);
+});
+
+// Enviar formulario
+function submitTimeForm() {
+    const taskType = document.getElementById('taskType').value;
+    const startTime = document.getElementById('startTime').value;
+    const endTime = document.getElementById('endTime').value;
+    const duration = document.getElementById('duration').value;
+    const description = document.getElementById('taskDescription').value;
+    
+    if (!taskType || !startTime || !endTime || !description) {
+        alert('❌ Complete todos los campos obligatorios');
+        return false;
+    }
+    
+    if (parseFloat(duration) <= 0) {
+        alert('❌ La hora de finalización debe ser posterior a la de inicio');
+        return false;
+    }
+    
+    if (description.length < 20) {
+        alert('❌ La descripción debe tener al menos 20 caracteres');
+        return false;
+    }
+    
+    const taskId = 'TIME-' + new Date().getTime().toString().slice(-8);
+    const payType = document.querySelector('input[name="payType"]:checked').value;
+    const payTypes = {
+        'normal': 'Normal',
+        'overtime': 'Horas Extra',
+        'night': 'Nocturna',
+        'holiday': 'Festiva'
+    };
+    
+    // Mostrar confirmación
+    const confirmation = `
+        ✅ CONFIRMACIÓN DE REGISTRO
+        ============================
+        
+        ID: ${taskId}
+        Tarea: ${document.getElementById('taskType').options[document.getElementById('taskType').selectedIndex].text}
+        Horario: ${startTime} - ${endTime}
+        Duración: ${duration} horas
+        Tipo de pago: ${payTypes[payType]}
+        Valor estimado: ${(parseFloat(duration) * (payType === 'normal' ? 15 : payType === 'overtime' ? 22.5 : payType === 'night' ? 18 : 30)).toFixed(2)}€
+        
+        ¿Confirmar registro?
+    `;
+    
+    if (confirm(confirmation)) {
+        // Simular registro exitoso
+        alert('✅ Tiempo registrado exitosamente!\n\nEl registro ha sido guardado en el sistema.');
+        
+        // Recargar la página después de 2 segundos
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// Funciones para registros existentes
+function deleteRecord(recordId) {
+    if (confirm(`¿Eliminar registro ID: ${recordId}?\n\nEsta acción no se puede deshacer.`)) {
+        alert(`🗑️ Registro ${recordId} eliminado.`);
+        // Recargar para actualizar
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+
+function editRecord(recordId) {
+    alert(`✏️ Editando registro ${recordId}...\n\nEsta funcionalidad abrirá el formulario con los datos del registro.`);
+}
+
+// Reportes
+function generateDailyReport() {
+    const today = new Date().toLocaleDateString();
+    alert(`📊 Generando reporte diario para ${today}...\n\nContenido del reporte:\n• Resumen de horas trabajadas\n• Desglose por tipo de tarea\n• Valor total estimado\n• Productividad del día\n\nEl reporte se generará en PDF.`);
+    
+    setTimeout(() => {
+        alert(`✅ Reporte diario generado.\n\nDescargar desde: /reportes/tiempos_${new Date().toISOString().slice(0,10)}.pdf`);
+    }, 2000);
+}
+
+function sendToSupervisor() {
+    const supervisor = prompt('Nombre del supervisor:');
+    if (supervisor) {
+        alert(`📤 Enviando registros a ${supervisor}...\n\nSe notificará al supervisor para su aprobación.`);
+        
+        setTimeout(() => {
+            alert(`✅ Registros enviados a ${supervisor}.\n\nRecibirá una notificación cuando sean aprobados.`);
+        }, 1500);
+    }
+}
+
+// Inicializar
+document.addEventListener('DOMContentLoaded', function() {
+    calculateDuration();
+    updatePayInfo();
 });
 </script>
+
+<style>
+.btn-check:checked + .btn {
+    border-width: 3px;
+    font-weight: bold;
+}
+
+.table-info {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.table-secondary {
+    background-color: rgba(108, 117, 125, 0.1) !important;
+}
+
+.list-group-item {
+    transition: all 0.3s;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+#duration {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+@media print {
+    .navbar, .card-header, .btn, .alert {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
 {% endblock %}
