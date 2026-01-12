@@ -1,3 +1,4 @@
+# models/user.py
 from datetime import datetime, date
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -11,9 +12,9 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    # 🏭 ROLES ESPECÍFICOS PARA ALMACÉN MRO
+    # 🏭 ROLES ESPECÍFICOS PARA ALMACÉN MRO (actualizar valores existentes)
     role = db.Column(db.String(30), default="aprendiz")  
-    # Valores posibles: 'aprendiz', 'tecnico_almacen', 'planificador', 'supervisor', 'admin'
+    # Valores: 'aprendiz', 'tecnico_almacen', 'planificador', 'supervisor', 'admin'
     
     # 🔧 Campos adicionales para almacén MRO
     employee_id = db.Column(db.String(20), unique=True, nullable=True)  # Ej: MRO-001
@@ -27,22 +28,22 @@ class User(UserMixin, db.Model):
     score = db.Column(db.Integer, default=20)
     score_year = db.Column(db.Integer, default=date.today().year)
     
-    # 🎯 PUNTOS ESPECÍFICOS PARA SIMULADOR
-    simulator_score = db.Column(db.Integer, default=0)
-    scenarios_completed = db.Column(db.Integer, default=0)
-    correct_decisions = db.Column(db.Integer, default=0)
+    # 🎯 PUNTOS ESPECÍFICOS PARA SIMULADOR MRO
+    mro_score = db.Column(db.Integer, default=0)
+    mro_scenarios_completed = db.Column(db.Integer, default=0)
+    mro_correct_decisions = db.Column(db.Integer, default=0)
     
-    # 📈 NIVELES Y PROGRESIÓN
+    # 📈 NIVELES Y PROGRESIÓN MRO
     mro_level = db.Column(db.String(50), default='Aprendiz Nivel 1')
-    xp_points = db.Column(db.Integer, default=0)
+    mro_xp = db.Column(db.Integer, default=0)
     
-    # 📊 MÉTRICAS DE DESEMPEÑO
+    # 📊 MÉTRICAS DE DESEMPEÑO MRO
     inventory_accuracy = db.Column(db.Float, default=0.0)  # % exactitud en inventarios
     order_fulfillment_rate = db.Column(db.Float, default=0.0)  # % órdenes cumplidas a tiempo
     safety_score = db.Column(db.Integer, default=100)  # Puntaje de seguridad (100 = perfecto)
     sap_proficiency = db.Column(db.Float, default=0.0)  # % dominio de transacciones SAP
     
-    # 🔐 CAMPOS EXISTENTES
+    # 🔐 CAMPOS EXISTENTES (mantener)
     email_confirmed = db.Column(db.Boolean, default=True)
     email_token = db.Column(db.String(255), nullable=True)
     twofa_secret = db.Column(db.String(50), nullable=True)
@@ -59,8 +60,7 @@ class User(UserMixin, db.Model):
     perfil_completado = db.Column(db.Boolean, default=False)
 
     # 🔗 Relaciones (si las tienes definidas)
-    # decisions = db.relationship('UserDecision', backref='user', lazy=True)
-    # inventory_counts = db.relationship('InventoryCount', backref='user', lazy=True)
+    # mro_decisions ya está definida por backref en UserDecisionMRO
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -124,7 +124,7 @@ class User(UserMixin, db.Model):
                 'can_manage_suppliers': True,
                 'can_set_reorder_points': True
             }
-        elif self.role == 'supervisor':
+        else:  # supervisor/admin
             return {
                 'can_scan_items': True,
                 'can_view_inventory': True,
@@ -135,18 +135,7 @@ class User(UserMixin, db.Model):
                 'max_items_per_order': 500,
                 'require_approval': False,
                 'allowed_zones': ['Todas las zonas'],
-                'sap_transactions': ['Todas las transacciones'],
-                'can_manage_users': True,
-                'can_override_all': True
-            }
-        else:  # admin/user por defecto
-            return {
-                'can_scan_items': False,
-                'can_view_inventory': True,
-                'can_create_orders': False,
-                'can_approve_orders': False,
-                'can_adjust_stock': False,
-                'can_generate_reports': True
+                'sap_transactions': ['Todas las transacciones']
             }
     
     def calculate_mro_level(self):
@@ -181,31 +170,31 @@ class User(UserMixin, db.Model):
         # Encontrar el nivel actual basado en XP
         current_level = levels[0][1]
         for xp_required, level_name in reversed(levels):
-            if self.xp_points >= xp_required:
+            if self.mro_xp >= xp_required:
                 current_level = level_name
                 break
         
         self.mro_level = current_level
         return current_level
     
-    def add_xp(self, points, activity_type):
-        """Añade puntos de experiencia según la actividad realizada"""
+    def add_mro_xp(self, points, activity_type):
+        """Añade puntos de experiencia MRO según la actividad realizada"""
         # Multiplicadores según tipo de actividad
         multipliers = {
-            'decision_correct': 1.5,      # Decisión correcta en simulador
-            'inventory_accurate': 1.2,    # Conteo preciso
-            'order_completed': 1.3,       # Orden completada a tiempo
-            'safety_compliant': 1.1,      # Cumplimiento de seguridad
-            'training_completed': 2.0,    # Completó entrenamiento
-            'problem_solved': 1.8,        # Resolvió problema complejo
-            'sap_transaction': 1.4        # Uso correcto de SAP
+            'decision_correct': 1.5,
+            'inventory_accurate': 1.2,
+            'order_completed': 1.3,
+            'safety_compliant': 1.1,
+            'training_completed': 2.0,
+            'problem_solved': 1.8,
+            'sap_transaction': 1.4
         }
         
         multiplier = multipliers.get(activity_type, 1.0)
         
         # Rol bonus
         role_bonus = {
-            'aprendiz': 1.5,      # Aprendices ganan más XP
+            'aprendiz': 1.5,
             'tecnico_almacen': 1.2,
             'planificador': 1.0,
             'supervisor': 0.8,
@@ -215,66 +204,52 @@ class User(UserMixin, db.Model):
         role_multiplier = role_bonus.get(self.role, 1.0)
         
         total_xp = int(points * multiplier * role_multiplier)
-        self.xp_points += total_xp
+        self.mro_xp += total_xp
         
         # Actualizar nivel
         self.calculate_mro_level()
         
         return total_xp
     
-    def get_simulator_effectiveness(self):
-        """Calcula la efectividad en el simulador"""
-        if self.scenarios_completed == 0:
+    def get_mro_effectiveness(self):
+        """Calcula la efectividad en el simulador MRO"""
+        if self.mro_scenarios_completed == 0:
             return 0
-        return (self.correct_decisions / self.scenarios_completed) * 100
+        return (self.mro_correct_decisions / self.mro_scenarios_completed) * 100
     
-    def get_overall_performance(self):
-        """Calcula el desempeño general"""
-        weights = {
-            'inventory_accuracy': 0.3,
-            'order_fulfillment_rate': 0.3,
-            'safety_score': 0.2,
-            'simulator_effectiveness': 0.2
-        }
-        
-        simulator_effectiveness = self.get_simulator_effectiveness()
+    def get_mro_performance(self):
+        """Calcula el desempeño general MRO"""
+        mro_effectiveness = self.get_mro_effectiveness()
         
         performance = (
-            (self.inventory_accuracy * weights['inventory_accuracy']) +
-            (self.order_fulfillment_rate * weights['order_fulfillment_rate']) +
-            ((self.safety_score / 100) * weights['safety_score']) +
-            ((simulator_effectiveness / 100) * weights['simulator_effectiveness'])
+            (self.inventory_accuracy * 0.3) +
+            (self.order_fulfillment_rate * 0.3) +
+            ((self.safety_score / 100) * 0.2) +
+            ((mro_effectiveness / 100) * 0.2)
         ) * 100
         
         return round(performance, 1)
     
-    def to_dict(self, include_sensitive=False):
-        """Convierte el usuario a diccionario para JSON"""
-        data = {
+    def to_mro_dict(self):
+        """Convierte el usuario a diccionario para JSON (solo datos MRO)"""
+        return {
             'id': self.id,
             'username': self.username,
-            'email': self.email,
             'role': self.role,
             'role_display': self.get_role_display_name(),
             'employee_id': self.employee_id,
             'department': self.department,
             'shift': self.shift,
             'mro_level': self.mro_level,
-            'xp_points': self.xp_points,
-            'score': self.score,
-            'simulator_score': self.simulator_score,
-            'scenarios_completed': self.scenarios_completed,
-            'correct_decisions': self.correct_decisions,
-            'performance': self.get_overall_performance(),
+            'mro_xp': self.mro_xp,
+            'mro_score': self.mro_score,
+            'mro_scenarios_completed': self.mro_scenarios_completed,
+            'mro_correct_decisions': self.mro_correct_decisions,
+            'mro_effectiveness': self.get_mro_effectiveness(),
+            'mro_performance': self.get_mro_performance(),
             'inventory_accuracy': self.inventory_accuracy,
             'order_fulfillment_rate': self.order_fulfillment_rate,
             'safety_score': self.safety_score,
             'sap_proficiency': self.sap_proficiency,
             'permissions': self.get_role_permissions()
         }
-        
-        if include_sensitive:
-            data['last_login'] = self.last_login.isoformat() if self.last_login else None
-            data['created_at'] = self.created_at.isoformat() if self.created_at else None
-        
-        return data
