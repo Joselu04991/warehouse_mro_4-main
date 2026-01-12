@@ -23,7 +23,6 @@ from .warehouse2d import WarehouseLocation
 from .inventory_count import InventoryCount
 from .task import Task
 from .score import Score
-from .scenario_mro import ScenarioMRO, UserDecisionMRO
 
 # Importar productividad si existe (el archivo se llama 'productivitydad.py')
 try:
@@ -34,3 +33,4 @@ except ImportError as e:
     # Puedes definir un modelo vacío o manejarlo de otra forma
     class Productividad:
         pass
+
