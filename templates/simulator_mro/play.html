@@ -1,0 +1,522 @@
+{% extends "simulator_mro/base.html" %}
+
+{% block title %}{{ scenario.title }} - Simulador MRO{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timer-container {
+        position: sticky;
+        top: 70px;
+        z-index: 100;
+        background: rgba(30, 41, 59, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 2px solid #2d3748;
+    }
+    
+    .timer {
+        font-family: 'Courier New', monospace;
+        font-size: 2.5rem;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .scenario-header {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 5px solid #0d6efd;
+    }
+    
+    .sap-data-item {
+        background: #0f172a;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 8px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        border: 1px solid #1e293b;
+    }
+    
+    .sap-data-key {
+        color: #60a5fa;
+        font-weight: bold;
+    }
+    
+    .sap-data-value {
+        color: #f8f9fa;
+    }
+    
+    .option-correct {
+        border-color: #198754 !important;
+        background: rgba(25, 135, 84, 0.15) !important;
+    }
+    
+    .option-incorrect {
+        border-color: #dc3545 !important;
+        background: rgba(220, 53, 69, 0.15) !important;
+    }
+    
+    .feedback-panel {
+        animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Timer y progreso -->
+    <div class="timer-container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <span class="badge level-{{ user.role }}">{{ user.role_display }}</span>
+                        <span class="badge bg-info">{{ user.mro_level }}</span>
+                    </div>
+                    <div>
+                        <small class="text-muted">Escenario</small>
+                        <div class="h6 mb-0">{{ scenario.title }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="timer" id="timer">
+                    {{ scenario.estimated_time }}
+                </div>
+                <div class="text-center">
+                    <small class="text-muted">Tiempo restante</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Contenido del escenario -->
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Descripción del escenario -->
+            <div class="scenario-header">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <span class="badge bg-dark me-2">
+                            <i class="fas fa-tag me-1"></i>{{ scenario.category }}
+                        </span>
+                        <span class="badge bg-{% if scenario.criticality == 'alto' %}danger{% elif scenario.criticality == 'medio' %}warning{% else %}success{% endif %}">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ scenario.criticality|upper }}
+                        </span>
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted">Dificultad: {{ scenario.difficulty_label }}</small>
+                        <div>
+                            <span class="badge bg-secondary">
+                                {{ scenario.points[user.role] }} pts
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 class="mb-4">{{ scenario.title }}</h4>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted mb-2">Contexto:</h6>
+                    <p class="lead">{{ scenario.description }}</p>
+                </div>
+                
+                <!-- Datos SAP -->
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-database me-2"></i> Datos del Sistema SAP
+                    </h6>
+                    <div class="sap-panel p-3 mb-3">
+                        <div class="small text-primary mb-2">
+                            <i class="fas fa-terminal me-1"></i> Transacción: {{ scenario.sap_transaction }}
+                        </div>
+                        {% if scenario.sap_data %}
+                            {% for key, value in scenario.sap_data.items() %}
+                            <div class="sap-data-item">
+                                <span class="sap-data-key">{{ key }}:</span>
+                                <span class="sap-data-value"> {{ value }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3 text-muted">
+                                <i class="fas fa-database fa-2x mb-2"></i>
+                                <p>No hay datos SAP para este escenario</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Opciones de decisión -->
+            <div id="decision-section">
+                <h4 class="mb-4">
+                    <i class="fas fa-question-circle me-2"></i> ¿Cuál es la acción correcta?
+                </h4>
+                
+                <div class="decision-options" id="decision-options">
+                    {% for key, text in scenario.options.items() %}
+                    <div class="decision-option" data-option="{{ key }}">
+                        <div class="d-flex align-items-start">
+                            <span class="option-letter">{{ key }}</span>
+                            <div class="flex-grow-1">
+                                {{ text }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="mt-4 text-center">
+                    <div class="btn-group" role="group">
+                        <button id="submit-decision" class="btn mro-btn-primary btn-lg px-5" disabled>
+                            <i class="fas fa-paper-plane me-2"></i> ENVIAR RESPUESTA
+                        </button>
+                        <button id="btn-help" class="btn btn-outline-light">
+                            <i class="fas fa-question me-2"></i> Ayuda
+                        </button>
+                        <button id="btn-skip" class="btn btn-outline-warning">
+                            <i class="fas fa-forward me-2"></i> Saltar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel de feedback (oculto inicialmente) -->
+            <div id="feedback-section" class="d-none">
+                <!-- Se llenará dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Panel lateral derecho -->
+        <div class="col-lg-4">
+            <!-- Información del usuario -->
+            <div class="mro-card p-4 mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-user-circle me-2"></i> Tu Progreso
+                </h6>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Puntuación actual</small>
+                        <small id="current-score">{{ user.mro_score }}</small>
+                    </div>
+                    <div class="progress progress-mro">
+                        <div class="progress-bar bg-warning" 
+                             style="width: {{ (user.mro_score % 1000) / 10 }}%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Efectividad</small>
+                        <small>{{ "%.1f"|format(user.mro_effectiveness) }}%</small>
+                    </div>
+                    <div class="progress progress-mro">
+                        <div class="progress-bar bg-success" 
+                             style="width: {{ user.mro_effectiveness }}%"></div>
+                    </div>
+                </div>
+                <div class="text-center mt-4">
+                    <div class="display-6">{{ user.mro_xp }}</div>
+                    <small class="text-muted">Puntos de Experiencia</small>
+                </div>
+            </div>
+            
+            <!-- Información del material -->
+            <div class="mro-card p-4 mb-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-box-open me-2"></i> Información del Material
+                </h6>
+                <div class="mb-2">
+                    <small class="text-muted">Tipo:</small>
+                    <div class="fw-bold">{{ scenario.material_type }}</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Zona:</small>
+                    <div class="fw-bold">{{ scenario.warehouse_zone }}</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Crítico:</small>
+                    <div class="fw-bold text-{% if scenario.criticality == 'alto' %}danger{% elif scenario.criticality == 'medio' %}warning{% else %}success{% endif %}">
+                        {{ scenario.criticality|upper }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recordatorios de seguridad -->
+            <div class="mro-card p-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-shield-alt me-2"></i> Recordatorios de Seguridad
+                </h6>
+                <ul class="list-unstyled small">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Verificar etiquetas de riesgo
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Usar EPP correspondiente
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Mantener pasillos despejados
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Reportar condiciones inseguras
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let timeLeft = {{ scenario.estimated_time }};
+    let timerInterval;
+    let selectedOption = null;
+    let scenarioId = {{ scenario.id }};
+    let startTime = new Date();
+    
+    // Iniciar temporizador
+    function startTimer() {
+        timerInterval = setInterval(function() {
+            timeLeft--;
+            updateTimerDisplay();
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeUp();
+            }
+        }, 1000);
+    }
+    
+    // Actualizar display del timer
+    function updateTimerDisplay() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        const timerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        $('#timer').text(timerText);
+        
+        // Cambiar color según tiempo
+        if (timeLeft <= 30) {
+            $('#timer').addClass('timer-danger');
+        } else if (timeLeft <= 60) {
+            $('#timer').addClass('text-warning');
+        } else {
+            $('#timer').removeClass('timer-danger text-warning');
+        }
+    }
+    
+    // Tiempo agotado
+    function timeUp() {
+        showNotification('¡Tiempo agotado! La respuesta se enviará automáticamente.', 'warning');
+        if (selectedOption) {
+            submitDecision(selectedOption);
+        } else {
+            // Enviar respuesta aleatoria si no seleccionó
+            const options = ['A', 'B', 'C'];
+            selectedOption = options[Math.floor(Math.random() * options.length)];
+            submitDecision(selectedOption);
+        }
+    }
+    
+    // Seleccionar opción
+    $('.decision-option').click(function() {
+        $('.decision-option').removeClass('selected');
+        $(this).addClass('selected');
+        selectedOption = $(this).data('option');
+        $('#submit-decision').prop('disabled', false);
+    });
+    
+    // Enviar decisión
+    $('#submit-decision').click(function() {
+        if (selectedOption) {
+            submitDecision(selectedOption);
+        }
+    });
+    
+    // Función para enviar decisión al servidor
+    function submitDecision(option) {
+        clearInterval(timerInterval);
+        
+        const timeTaken = {{ scenario.estimated_time }} - timeLeft;
+        
+        // Deshabilitar interacción
+        $('.decision-option').off('click');
+        $('#submit-decision').prop('disabled', true);
+        $('#submit-decision').html('<i class="fas fa-spinner fa-spin me-2"></i> EVALUANDO...');
+        
+        // Enviar al servidor
+        $.ajax({
+            url: '{{ url_for("simulator_mro.evaluate_decision") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                scenario_id: scenarioId,
+                selected_option: option,
+                time_taken: timeTaken
+            }),
+            success: function(response) {
+                showFeedback(response);
+            },
+            error: function(xhr) {
+                showNotification('Error al evaluar la respuesta', 'danger');
+                $('#submit-decision').html('<i class="fas fa-paper-plane me-2"></i> ENVIAR RESPUESTA');
+            }
+        });
+    }
+    
+    // Mostrar feedback
+    function showFeedback(data) {
+        // Ocultar sección de decisión
+        $('#decision-section').hide();
+        
+        // Mostrar resultado
+        let feedbackHtml = `
+        <div class="feedback-panel">
+            <div class="scenario-header ${data.is_correct ? 'border-success' : 'border-danger'}">
+                <div class="text-center mb-4">
+                    <div class="display-1 ${data.is_correct ? 'text-success' : 'text-danger'}">
+                        ${data.is_correct ? '✓' : '✗'}
+                    </div>
+                    <h3 class="mb-3">${data.is_correct ? '¡DECISIÓN CORRECTA!' : 'DECISIÓN INCORRECTA'}</h3>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="mro-card p-3 text-center">
+                                <div class="h4 ${data.is_correct ? 'text-success' : 'text-danger'}">
+                                    ${data.points_earned > 0 ? '+' : ''}${data.points_earned}
+                                </div>
+                                <small class="text-muted">Puntos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mro-card p-3 text-center">
+                                <div class="h4 text-info">+${data.xp_gained}</div>
+                                <small class="text-muted">XP Ganados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mro-card p-3 text-center">
+                                <div class="h4">${data.new_level}</div>
+                                <small class="text-muted">Nuevo Nivel</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${!data.is_correct ? `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Respuesta correcta: <strong>${data.correct_option}</strong>
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <!-- Feedback -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-comment me-2"></i> Feedback</h5>
+                    <div class="alert ${data.is_correct ? 'alert-success' : 'alert-danger'}">
+                        ${data.feedback}
+                    </div>
+                </div>
+                
+                <!-- Análisis profesional -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i> Análisis Profesional</h5>
+                    <p>${data.analysis}</p>
+                </div>
+                
+                <!-- Procedimiento SAP -->
+                ${data.sap_procedure && data.sap_procedure.length > 0 ? `
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-database me-2"></i> Procedimiento SAP Correcto</h5>
+                    <ol class="list-group list-group-numbered">
+                        ${data.sap_procedure.map(step => `<li class="list-group-item bg-dark text-light border-secondary">${step}</li>`).join('')}
+                    </ol>
+                </div>
+                ` : ''}
+                
+                <!-- Consideraciones de seguridad -->
+                ${data.safety_considerations ? `
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-shield-alt me-2"></i> Consideraciones de Seguridad</h5>
+                    <p>${data.safety_considerations}</p>
+                </div>
+                ` : ''}
+                
+                <!-- Aprendizaje clave -->
+                <div class="mb-4">
+                    <h5 class="mb-3"><i class="fas fa-lightbulb me-2"></i> Aprendizaje Clave</h5>
+                    <div class="alert alert-info">
+                        ${data.key_learning}
+                    </div>
+                </div>
+                
+                <!-- Botones de acción -->
+                <div class="text-center mt-4">
+                    <div class="btn-group" role="group">
+                        <a href="{{ url_for('simulator_mro.dashboard') }}" class="btn btn-outline-light">
+                            <i class="fas fa-home me-2"></i> Volver al Dashboard
+                        </a>
+                        <button id="btn-play-again" class="btn mro-btn-primary">
+                            <i class="fas fa-redo me-2"></i> Jugar Otro Escenario
+                        </button>
+                        <a href="{{ url_for('simulator_mro.get_leaderboard') }}" class="btn btn-outline-info">
+                            <i class="fas fa-trophy me-2"></i> Ver Clasificación
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        
+        $('#feedback-section').html(feedbackHtml).removeClass('d-none');
+        
+        // Actualizar puntuación en tiempo real
+        $('#current-score').text(data.user_stats.mro_score);
+        
+        // Botón para jugar otro escenario
+        $('#btn-play-again').click(function() {
+            window.location.href = '/mro-simulator/api/random-scenario';
+        });
+    }
+    
+    // Botón de ayuda
+    $('#btn-help').click(function() {
+        showNotification('💡 Consejo: Lee cuidadosamente todos los datos SAP antes de decidir.', 'info');
+    });
+    
+    // Botón de saltar
+    $('#btn-skip').click(function() {
+        if (confirm('¿Estás seguro de que quieres saltar este escenario? Perderás puntos.')) {
+            timeUp();
+        }
+    });
+    
+    // Iniciar el temporizador
+    startTimer();
+    updateTimerDisplay();
+    
+    // Prevenir salir sin guardar
+    window.addEventListener('beforeunload', function(e) {
+        if (timerInterval) {
+            e.preventDefault();
+            e.returnValue = '¿Estás seguro de que quieres salir? Perderás el progreso del escenario.';
+        }
+    });
+});
+</script>
+{% endblock %}
