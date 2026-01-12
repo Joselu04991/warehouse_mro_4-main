@@ -8,21 +8,35 @@ db = SQLAlchemy()
 # IMPORTAR TODOS LOS MODELOS PARA QUE SQLAlchemy LOS REGISTRE
 # ======================================================
 
+# Modelos de usuarios y autenticación
 from .user import User
+from .activated import Activated  # Si este modelo existe
+
+# Modelos de inventario y almacén
 from .inventory import InventoryItem
-from .bultos import Bulto
+from .inventory_history import InventoryHistory
+from .inventory_count import InventoryCount
+from .warehouse2d import WarehouseLocation
+from .bulios import Bulto  # Archivo: bulios.py
+
+# Modelos de equipos y operaciones
+from .equipos import Equipo
 from .post_registro import PostRegistro
+from .productivitydad import Productividad  # Archivo: productivitydad.py
+
+# Modelos de alertas y auditoría
 from .alerts import Alert
 from .alertas_ai import AlertaIA
 from .technician_error import TechnicianError
-from .equipos import Equipo
-from .productividad import Productividad
 from .auditoria import Auditoria
-from .inventory_history import InventoryHistory
-from .warehouse2d import WarehouseLocation
-from .actividad import ActividadUsuario
-from .inventory_count import InventoryCount
+
+# Modelos de tareas y productividad
 from .task import Task
 from .score import Score
-# Añadir nuevos modelos MRO
+
+# Modelos MRO (Maintenance, Repair and Operations)
 from .scenario_mro import ScenarioMRO, UserDecisionMRO
+
+# Modelos adicionales (si existen)
+from .analisis_oc import AnalisisOC  # Si el modelo existe
+from .turnos import Turno  # Si el modelo existe
