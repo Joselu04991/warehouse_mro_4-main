@@ -53,6 +53,18 @@
         .accordion-body .list-group-item {
             padding-left: 40px !important;
         }
+        
+        /* Estilo especial para Simulador MRO */
+        .simulator-badge {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: #000;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
     </style>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -204,7 +216,7 @@
                 <i class="bi bi-graph-up-arrow me-2"></i>Productividades
             </a>
 
-<div class="accordion" id="accordionTasks">
+            <div class="accordion" id="accordionTasks">
 
                 <div class="accordion-item bg-dark border-0">
 
@@ -242,6 +254,7 @@
 
                 </div>
             </div>
+
             <a href="{{ url_for('qr.vista_qr') }}" class="list-group-item">
                 <i class="bi bi-qr-code-scan me-2"></i>QR de Equipos
             </a>
@@ -253,6 +266,47 @@
             <a href="{{ url_for('alertas_ai.listado_ai') }}" class="list-group-item">
                 <i class="bi bi-robot me-2"></i>Alertas Inteligentes
             </a>
+
+            <!-- ======================== SIMULADOR MRO ======================== -->
+            <div class="accordion" id="accordionSimulator">
+
+                <div class="accordion-item bg-dark border-0">
+
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#simulatorMenu">
+                            <i class="bi bi-joystick me-2"></i> Simulador MRO
+                            <span class="simulator-badge">NUEVO</span>
+                        </button>
+                    </h2>
+
+                    <div id="simulatorMenu" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+
+                            <a href="{{ url_for('simulator_mro.dashboard') }}"
+                               class="list-group-item bg-dark text-white">
+                                🎮 Dashboard Simulador
+                            </a>
+
+                            <a href="{{ url_for('simulator_mro.get_leaderboard') }}"
+                               class="list-group-item bg-dark text-white">
+                                🏆 Clasificación
+                            </a>
+
+                            {% if current_user.role in ['planificador', 'supervisor', 'admin', 'owner'] %}
+                            <a href="{{ url_for('simulator_mro.create_scenario') }}"
+                               class="list-group-item bg-dark text-white">
+                                ✏️ Crear Escenario
+                            </a>
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
 
             {% if current_user.role == "owner" %}
             <div class="role-title">
@@ -302,7 +356,8 @@
                 </ul>
             </div>
         </nav>
-{% if task_alerts %}
+        
+        {% if task_alerts %}
         <div class="alert alert-warning">
             <h6 class="fw-bold mb-2">
                 <i class="bi bi-bell-fill me-1"></i> Alertas de Tareas
@@ -314,6 +369,7 @@
             </ul>
         </div>
         {% endif %}
+        
         <div class="container-fluid py-4">
             {% block content %}{% endblock %}
         </div>
@@ -328,12 +384,24 @@
     document.getElementById("menu-toggle")?.addEventListener("click", () => {
         document.getElementById("wrapper").classList.toggle("toggled");
     });
+    
+    // Marcar como activo el menú del simulador si estamos en esa sección
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/mro-simulator')) {
+            // Abrir automáticamente el acordeón del simulador
+            const simulatorAccordion = document.getElementById('simulatorMenu');
+            if (simulatorAccordion) {
+                simulatorAccordion.classList.add('show');
+                const button = document.querySelector('[data-bs-target="#simulatorMenu"]');
+                if (button) {
+                    button.classList.remove('collapsed');
+                    button.setAttribute('aria-expanded', 'true');
+                }
+            }
+        }
+    });
 </script>
 
 </body>
 </html>
-
-
-
-
-
