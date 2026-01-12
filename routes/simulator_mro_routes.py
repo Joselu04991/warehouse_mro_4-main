@@ -52,7 +52,9 @@ def access_directories():
         {'name': '/mro/backups/daily', 'files': 7, 'size': '1.2 GB', 'last_modified': '2024-01-12', 'permissions': 'rwx------'},
         {'name': '/mro/uploads/user_data', 'files': 312, 'size': '356.4 MB', 'last_modified': '2024-01-12', 'permissions': 'rwxrwx---'},
     ]
-    return render_template('simulator_mro/access_directories.html', directories=directories)
+    return render_template('simulator_mro/access_directories.html', 
+                          directories=directories,
+                          current_date=datetime.now().strftime('%Y-%m-%d'))
 
 @simulator_mro_bp.route('/create-claims')
 @login_required
@@ -66,7 +68,14 @@ def create_claims():
         {'id': 4, 'name': 'Retraso en Entrega', 'code': 'RE004', 'priority': 'Alta', 'avg_resolution': '5 días'},
         {'id': 5, 'name': 'Problema de Calidad', 'code': 'PC005', 'priority': 'Media', 'avg_resolution': '4 días'},
     ]
-    return render_template('simulator_mro/create_claims.html', claim_types=claim_types)
+    
+    # Generar último ID
+    last_id = f"CLM-{datetime.now().strftime('%Y-%m')}-015"
+    
+    return render_template('simulator_mro/create_claims.html', 
+                          claim_types=claim_types,
+                          last_id=last_id,
+                          current_date=datetime.now().strftime('%Y-%m-%d'))
 
 @simulator_mro_bp.route('/database-claims')
 @login_required
@@ -114,7 +123,9 @@ def database_claims():
             'due_date': '2024-01-11'
         },
     ]
-    return render_template('simulator_mro/database_claims.html', claims=claims)
+    return render_template('simulator_mro/database_claims.html', 
+                          claims=claims,
+                          current_date=datetime.now().strftime('%Y-%m-%d'))
 
 @simulator_mro_bp.route('/warehouse-claims')
 @login_required
@@ -133,13 +144,20 @@ def warehouse_claims():
             {'zone': 'E', 'claims': 5, 'priority': 'Media'},
         ]
     }
-    return render_template('simulator_mro/warehouse_claims.html', data=warehouse_data)
+    
+    formatted_date = datetime.now().strftime('%d/%m/%Y')
+    
+    return render_template('simulator_mro/warehouse_claims.html', 
+                          data=warehouse_data,
+                          formatted_date=formatted_date)
 
 @simulator_mro_bp.route('/paytime')
 @login_required
 def paytime():
     # Datos reales de tiempos
     today = datetime.now().strftime('%Y-%m-%d')
+    formatted_time = datetime.now().strftime('%H:%M')
+    
     time_records = [
         {'task': 'Conteo de Inventario - Zona A', 'start': '08:00', 'end': '10:30', 'duration': '2.5h', 'employee': current_user.username},
         {'task': 'Picking de Órdenes Urgentes', 'start': '10:45', 'end': '12:30', 'duration': '1.75h', 'employee': current_user.username},
@@ -147,10 +165,12 @@ def paytime():
         {'task': 'Auditoría de Calidad', 'start': '15:15', 'end': '16:45', 'duration': '1.5h', 'employee': current_user.username},
     ]
     total_hours = 7.25
+    
     return render_template('simulator_mro/paytime.html', 
                           time_records=time_records, 
                           total_hours=total_hours,
-                          today=today)
+                          today=today,
+                          current_time=formatted_time)
 
 @simulator_mro_bp.route('/abscains')
 @login_required
@@ -195,7 +215,12 @@ def abscains():
             'reason': 'Curso de seguridad industrial'
         },
     ]
-    return render_template('simulator_mro/abscains.html', absences=absences)
+    
+    today_date = datetime.now().strftime('%Y-%m-%d')
+    
+    return render_template('simulator_mro/abscains.html', 
+                          absences=absences,
+                          today_date=today_date)
 
 @simulator_mro_bp.route('/delete-sections')
 @login_required
@@ -208,7 +233,9 @@ def delete_sections():
         {'id': 3, 'name': 'Backups Antiguos', 'created': '2023-10-20', 'items': 8, 'size': '210.5 MB'},
         {'id': 4, 'name': 'Registros de Debug', 'created': '2023-12-25', 'items': 42, 'size': '156.7 MB'},
     ]
-    return render_template('simulator_mro/delete_sections.html', sections=sections)
+    return render_template('simulator_mro/delete_sections.html', 
+                          sections=sections,
+                          current_date=datetime.now().strftime('%Y-%m-%d'))
 
 @simulator_mro_bp.route('/delete-questions')
 @login_required
@@ -222,4 +249,6 @@ def delete_questions():
         {'id': 104, 'text': 'Equipos descontinuados en almacén', 'category': 'Equipos', 'created': '2023-08-15', 'used': 0},
         {'id': 105, 'text': 'Proceso de calidad anterior a normativa ISO-9001:2023', 'category': 'Calidad', 'created': '2023-06-30', 'used': 3},
     ]
-    return render_template('simulator_mro/delete_questions.html', questions=questions)
+    return render_template('simulator_mro/delete_questions.html', 
+                          questions=questions,
+                          current_date=datetime.now().strftime('%Y-%m-%d'))
