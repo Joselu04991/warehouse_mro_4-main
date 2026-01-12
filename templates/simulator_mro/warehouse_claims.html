@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-building me-2"></i>Warehouse Claims</h3>
+                <span class="badge bg-light text-dark">Almacén Principal - {{ now().strftime('%d/%m/%Y') }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Reclamaciones activas en el almacén físico. Monitoreo en tiempo real de problemas y soluciones.</p>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Información en tiempo real:</strong> Los datos se actualizan automáticamente cada 5 minutos.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Mapa de Reclamaciones por Zona</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="warehouse-map">
+                                <div class="row text-center">
+                                    {% for zone in data.locations %}
+                                    <div class="col">
+                                        <div class="zone-card 
+                                            {% if zone.priority == 'Crítica' %}zone-critical
+                                            {% elif zone.priority == 'Alta' %}zone-high
+                                            {% else %}zone-medium{% endif %}">
+                                            <h4>Zona {{ zone.zone }}</h4>
+                                            <div class="zone-claims">{{ zone.claims }} recl.</div>
+                                            <div class="zone-priority">{{ zone.priority }}</div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <h6>Leyenda:</h6>
+                                    <div class="d-flex">
+                                        <div class="legend-item me-3">
+                                            <span class="legend-color" style="background-color: #dc3545;"></span>
+                                            <span>Crítica (4h)</span>
+                                        </div>
+                                        <div class="legend-item me-3">
+                                            <span class="legend-color" style="background-color: #ffc107;"></span>
+                                            <span>Alta (24h)</span>
+                                        </div>
+                                        <div class="legend-item">
+                                            <span class="legend-color" style="background-color: #0dcaf0;"></span>
+                                            <span>Media (48h)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">Estadísticas del Día</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Reclamaciones Totales
+                                    <span class="badge bg-primary rounded-pill">{{ data.total_claims }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Activas
+                                    <span class="badge bg-warning rounded-pill">{{ data.active_claims }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Resueltas Hoy
+                                    <span class="badge bg-success rounded-pill">{{ data.resolved_today }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Tiempo Promedio
+                                    <span class="badge bg-info rounded-pill">{{ data.avg_resolution_time }}</span>
+                                </li>
+                            </ul>
+                            
+                            <div class="mt-4">
+                                <h6>Reclamaciones por Tipo:</h6>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" style="width: 45%">Falta Material (45%)</div>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" style="width: 30%">Daño Equipo (30%)</div>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-info" style="width: 15%">Error Ubicación (15%)</div>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar bg-secondary" style="width: 10%">Otros (10%)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Reclamaciones Recientes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Hora</th>
+                                            <th>Zona</th>
+                                            <th>Descripción</th>
+                                            <th>Técnico</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>08:30</td>
+                                            <td><span class="badge bg-danger">C</span></td>
+                                            <td>Falta de rodamientos SKF-6205 en estante C-12</td>
+                                            <td>Juan Pérez</td>
+                                            <td><span class="badge bg-warning">En Proceso</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>09:15</td>
+                                            <td><span class="badge bg-warning">A</span></td>
+                                            <td>Montacargas atascado en pasillo principal</td>
+                                            <td>Carlos Rodríguez</td>
+                                            <td><span class="badge bg-success">Resuelto</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>10:45</td>
+                                            <td><span class="badge bg-info">B</span></td>
+                                            <td>Error en etiquetado de cajas zona B</td>
+                                            <td>Ana Martínez</td>
+                                            <td><span class="badge bg-warning">En Proceso</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>11:30</td>
+                                            <td><span class="badge bg-danger">C</span></td>
+                                            <td>Fuga de aceite en máquina CNC zona C</td>
+                                            <td>María González</td>
+                                            <td><span class="badge bg-secondary">Pendiente</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.warehouse-map {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.zone-card {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 5px;
+    color: white;
+    text-align: center;
+}
+
+.zone-critical {
+    background: linear-gradient(45deg, #dc3545, #ff6b6b);
+}
+
+.zone-high {
+    background: linear-gradient(45deg, #ffc107, #feca57);
+    color: #000;
+}
+
+.zone-medium {
+    background: linear-gradient(45deg, #0dcaf0, #63d9ff);
+}
+
+.zone-claims {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.zone-priority {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    margin-right: 8px;
+    display: inline-block;
+}
+</style>
+{% endblock %}
