@@ -296,89 +296,6 @@
                 <i class="bi bi-robot me-2"></i>Alertas Inteligentes
             </a>
 
-            <!-- ======================== SIMULADOR MRO ======================== -->
-            <div class="accordion" id="accordionSimulator">
-
-                <div class="accordion-item bg-dark border-0">
-
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#simulatorMenu">
-                            <i class="bi bi-joystick me-2"></i> Simulador MRO
-                            <span class="simulator-badge">NUEVO</span>
-                        </button>
-                    </h2>
-
-                    <div id="simulatorMenu" class="accordion-collapse collapse">
-                        <div class="accordion-body p-0">
-
-                            <!-- RUTAS PRINCIPALES QUE SÍ EXISTEN -->
-                            <a href="{{ url_for('simulator_mro.dashboard') }}"
-                               class="list-group-item bg-dark text-white">
-                                🎮 Dashboard Simulador
-                            </a>
-
-                            <a href="{{ url_for('simulator_mro.get_leaderboard') }}"
-                               class="list-group-item bg-dark text-white">
-                                🏆 Clasificación
-                            </a>
-
-                            {% if current_user.role in ['planificador', 'supervisor', 'admin', 'owner'] %}
-                            <a href="{{ url_for('simulator_mro.create_scenario') }}"
-                               class="list-group-item bg-dark text-white">
-                                ✏️ Crear Escenario
-                            </a>
-                            
-                            <!-- MÓDULOS AVANZADOS - VERSIÓN FUNCIONAL -->
-                            <div class="role-title" style="padding-left: 40px; margin-top: 10px; margin-bottom: 5px;">
-                                <i class="bi bi-puzzle-fill me-2"></i>Módulos Avanzados
-                            </div>
-
-                            <!-- Create Claims -->
-                            <a href="{{ url_for('simulator_mro.create_claims') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                📝 Create Claims
-                                <span class="badge badge-plan">PLAN</span>
-                            </a>
-                            
-                            <!-- Warehouse Claims -->
-                            <a href="{{ url_for('simulator_mro.warehouse_claims') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                🏭 Warehouse Claims
-                                <span class="badge badge-tec">TEC</span>
-                            </a>
-                            
-                            <!-- Paytime -->
-                            <a href="{{ url_for('simulator_mro.paytime') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                ⏰ Paytime
-                                <span class="badge badge-tec">TEC</span>
-                            </a>
-                            
-                            <!-- Absences -->
-                            <a href="{{ url_for('simulator_mro.abscains') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                👤 Absences
-                                <span class="badge badge-sup">SUP</span>
-                            </a>
-                            
-                            {% if current_user.role in ['admin', 'owner'] %}
-                            <!-- Delete Sections -->
-                            <a href="{{ url_for('simulator_mro.delete_sections') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                🗑 Delete Sections
-                                <span class="badge badge-owner">OWNER</span>
-                            </a>
-                            
-                            <!-- Delete Questions -->
-                            <a href="{{ url_for('simulator_mro.delete_questions') }}"
-                               class="list-group-item bg-dark text-white module-item">
-                                ❓ Delete Questions
-                                <span class="badge badge-owner">OWNER</span>
-                            </a>
-                            {% endif %}
                             {% endif %}
 
                         </div>
@@ -506,5 +423,6 @@
 
 </body>
 </html>
+
 
 
