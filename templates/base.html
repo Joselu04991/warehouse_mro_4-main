@@ -65,6 +65,28 @@
             margin-left: 8px;
             vertical-align: middle;
         }
+        
+        /* Estilo para módulos especiales */
+        .module-item {
+            padding-left: 50px !important;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .module-item:hover {
+            border-left: 3px solid #f8c000;
+            background: #2c3238 !important;
+        }
+        
+        .module-badge {
+            background: #28a745;
+            color: white;
+            font-size: 0.6rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
     </style>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -300,6 +322,69 @@
                                class="list-group-item bg-dark text-white">
                                 ✏️ Crear Escenario
                             </a>
+                            
+                            <!-- MÓDULOS DE SIMULADOR - SOLO PARA ROLES ESPECÍFICOS -->
+                            <div class="role-title" style="padding-left: 40px; margin-top: 10px; margin-bottom: 5px;">
+                                <i class="bi bi-puzzle-fill me-2"></i>Módulos Avanzados
+                            </div>
+                            
+                            <!-- Access Directories -->
+                            <a href="{{ url_for('simulator_mro.access_directories') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                📂 Access Directories
+                                <span class="module-badge">ADMIN</span>
+                            </a>
+                            
+                            <!-- Create Claims -->
+                            <a href="{{ url_for('simulator_mro.create_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                📝 Create Claims
+                                <span class="module-badge">PLAN</span>
+                            </a>
+                            
+                            <!-- Database Claims -->
+                            <a href="{{ url_for('simulator_mro.database_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                🗄 Database Claims
+                                <span class="module-badge">TEC</span>
+                            </a>
+                            
+                            <!-- Warehouse Claims -->
+                            <a href="{{ url_for('simulator_mro.warehouse_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                🏭 Warehouse Claims
+                                <span class="module-badge">TEC</span>
+                            </a>
+                            
+                            <!-- Paytime -->
+                            <a href="{{ url_for('simulator_mro.paytime') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                ⏰ Paytime
+                                <span class="module-badge">TEC</span>
+                            </a>
+                            
+                            <!-- Absences -->
+                            <a href="{{ url_for('simulator_mro.abscains') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                👤 Absences
+                                <span class="module-badge">SUP</span>
+                            </a>
+                            
+                            <!-- Delete Sections -->
+                            {% if current_user.role in ['admin', 'owner'] %}
+                            <a href="{{ url_for('simulator_mro.delete_sections') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                🗑 Delete Sections
+                                <span class="module-badge" style="background: #dc3545;">OWNER</span>
+                            </a>
+                            
+                            <!-- Delete Questions -->
+                            <a href="{{ url_for('simulator_mro.delete_questions') }}"
+                               class="list-group-item bg-dark text-white module-item">
+                                ❓ Delete Questions
+                                <span class="module-badge" style="background: #dc3545;">OWNER</span>
+                            </a>
+                            {% endif %}
                             {% endif %}
 
                         </div>
@@ -388,8 +473,18 @@
     // Marcar como activo el menú del simulador si estamos en esa sección
     document.addEventListener('DOMContentLoaded', function() {
         const currentPath = window.location.pathname;
-        if (currentPath.includes('/mro-simulator')) {
-            // Abrir automáticamente el acordeón del simulador
+        
+        // Abrir automáticamente el acordeón del simulador si estamos en cualquier ruta de simulador
+        if (currentPath.includes('/mro-simulator') || 
+            currentPath.includes('/access-directories') ||
+            currentPath.includes('/create-claims') ||
+            currentPath.includes('/database-claims') ||
+            currentPath.includes('/warehouse-claims') ||
+            currentPath.includes('/paytime') ||
+            currentPath.includes('/abscains') ||
+            currentPath.includes('/delete-sections') ||
+            currentPath.includes('/delete-questions')) {
+            
             const simulatorAccordion = document.getElementById('simulatorMenu');
             if (simulatorAccordion) {
                 simulatorAccordion.classList.add('show');
@@ -400,6 +495,18 @@
                 }
             }
         }
+        
+        // Resaltar el enlace activo en el sidebar
+        const currentUrl = window.location.pathname;
+        const sidebarLinks = document.querySelectorAll('#sidebar-wrapper a');
+        
+        sidebarLinks.forEach(link => {
+            if (link.href && link.href.includes(currentUrl)) {
+                link.classList.add('active');
+                link.style.backgroundColor = '#0d6efd';
+                link.style.color = 'white';
+            }
+        });
     });
 </script>
 
