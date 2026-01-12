@@ -331,49 +331,64 @@
                                 ✏️ Crear Escenario
                             </a>
                             
-                            <!-- MÓDULOS AVANZADOS - VERSIÓN SEGURA (sin rutas rotas) -->
+                            <!-- MÓDULOS AVANZADOS - VERSIÓN FUNCIONAL -->
                             <div class="role-title" style="padding-left: 40px; margin-top: 10px; margin-bottom: 5px;">
-                                <i class="bi bi-puzzle-fill me-2"></i>Módulos Próximamente
+                                <i class="bi bi-puzzle-fill me-2"></i>Módulos Avanzados
                             </div>
                             
-                            <!-- Enlaces DISABLED hasta que crees las rutas -->
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Access Directories -->
+                            <a href="{{ url_for('simulator_mro.access_directories') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 📂 Access Directories
                                 <span class="badge badge-admin">ADMIN</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Create Claims -->
+                            <a href="{{ url_for('simulator_mro.create_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 📝 Create Claims
                                 <span class="badge badge-plan">PLAN</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Database Claims -->
+                            <a href="{{ url_for('simulator_mro.database_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 🗄 Database Claims
                                 <span class="badge badge-tec">TEC</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Warehouse Claims -->
+                            <a href="{{ url_for('simulator_mro.warehouse_claims') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 🏭 Warehouse Claims
                                 <span class="badge badge-tec">TEC</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Paytime -->
+                            <a href="{{ url_for('simulator_mro.paytime') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 ⏰ Paytime
                                 <span class="badge badge-tec">TEC</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Absences -->
+                            <a href="{{ url_for('simulator_mro.abscains') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 👤 Absences
                                 <span class="badge badge-sup">SUP</span>
                             </a>
                             
                             {% if current_user.role in ['admin', 'owner'] %}
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Delete Sections -->
+                            <a href="{{ url_for('simulator_mro.delete_sections') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 🗑 Delete Sections
                                 <span class="badge badge-owner">OWNER</span>
                             </a>
                             
-                            <a href="#" class="list-group-item bg-dark text-white module-item disabled" style="opacity: 0.6;">
+                            <!-- Delete Questions -->
+                            <a href="{{ url_for('simulator_mro.delete_questions') }}"
+                               class="list-group-item bg-dark text-white module-item">
                                 ❓ Delete Questions
                                 <span class="badge badge-owner">OWNER</span>
                             </a>
@@ -505,3 +520,4 @@
 
 </body>
 </html>
+
