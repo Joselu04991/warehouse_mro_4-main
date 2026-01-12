@@ -1,0 +1,489 @@
+{% extends "simulator_mro/base.html" %}
+
+{% block title %}Crear Escenario - Simulador MRO{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: #1e293b;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 5px solid #6f42c1;
+    }
+    
+    .form-section h5 {
+        color: #6f42c1;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #2d3748;
+    }
+    
+    .form-label {
+        color: #cbd5e1;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        background: #0f172a;
+        border: 1px solid #2d3748;
+        color: #f8f9fa;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        background: #0f172a;
+        border-color: #6f42c1;
+        color: #f8f9fa;
+        box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+    }
+    
+    .preview-card {
+        position: sticky;
+        top: 80px;
+        background: #1e293b;
+        border-radius: 10px;
+        padding: 20px;
+        border: 2px dashed #4b5563;
+    }
+    
+    .option-preview {
+        background: #0f172a;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #2d3748;
+    }
+    
+    .sap-preview {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        background: #0f172a;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Formulario de creación -->
+        <div class="col-lg-8">
+            <div class="mro-card p-4 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="h4 mb-0">
+                        <i class="fas fa-plus-circle me-2 text-purple"></i> Crear Nuevo Escenario
+                    </h3>
+                    <div class="badge bg-purple">
+                        Planificador: {{ current_user.username }}
+                    </div>
+                </div>
+                
+                <form id="create-scenario-form">
+                    <!-- Sección 1: Información básica -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-info-circle me-2"></i> Información Básica</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Título del escenario *</label>
+                                <input type="text" class="form-control" name="title" required
+                                       placeholder="Ej: Discrepancia en conteo de herramientas">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Categoría *</label>
+                                <select class="form-select" name="category" required>
+                                    <option value="inventario">Inventario</option>
+                                    <option value="seguridad">Seguridad</option>
+                                    <option value="sap">SAP</option>
+                                    <option value="calidad">Calidad</option>
+                                    <option value="emergencia">Emergencia</option>
+                                    <option value="compras">Compras</option>
+                                    <option value="logistica">Logística</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Dificultad *</label>
+                                <select class="form-select" name="difficulty" required>
+                                    <option value="1">1 - Básico</option>
+                                    <option value="2">2 - Fácil</option>
+                                    <option value="3" selected>3 - Intermedio</option>
+                                    <option value="4">4 - Difícil</option>
+                                    <option value="5">5 - Avanzado</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descripción detallada *</label>
+                            <textarea class="form-control" name="description" rows="4" required
+                                      placeholder="Describe la situación que enfrenta el usuario..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tiempo estimado (segundos)</label>
+                                <input type="number" class="form-control" name="estimated_time" 
+                                       value="300" min="60" max="600">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Zona del almacén</label>
+                                <input type="text" class="form-control" name="warehouse_zone"
+                                       placeholder="Ej: Zona A - Herramientas">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nivel de criticidad</label>
+                                <select class="form-select" name="criticality">
+                                    <option value="bajo">Bajo</option>
+                                    <option value="medio" selected>Medio</option>
+                                    <option value="alto">Alto</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 2: Configuración de roles -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-users me-2"></i> Configuración de Roles</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Roles objetivo *</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="target_roles" 
+                                       value="aprendiz" id="role-aprendiz" checked>
+                                <label class="form-check-label" for="role-aprendiz">
+                                    Aprendices
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="target_roles" 
+                                       value="tecnico_almacen" id="role-tecnico" checked>
+                                <label class="form-check-label" for="role-tecnico">
+                                    Técnicos de Almacén
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="target_roles" 
+                                       value="planificador" id="role-planificador">
+                                <label class="form-check-label" for="role-planificador">
+                                    Planificadores
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Puntos para Aprendices</label>
+                                <input type="number" class="form-control" name="points_aprendiz" 
+                                       value="100" min="0" max="500">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Puntos para Técnicos</label>
+                                <input type="number" class="form-control" name="points_tecnico" 
+                                       value="80" min="0" max="500">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Puntos para Planificadores</label>
+                                <input type="number" class="form-control" name="points_planificador" 
+                                       value="60" min="0" max="500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 3: Datos SAP -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-database me-2"></i> Datos del Sistema SAP</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Transacción SAP</label>
+                                <select class="form-select" name="sap_transaction">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="MIGO">MIGO - Entrada/Retiro de mercancías</option>
+                                    <option value="MB1A">MB1A - Retiro para consumo</option>
+                                    <option value="MB1B">MB1B - Transferencia de almacén</option>
+                                    <option value="MB1C">MB1C - Ingreso de mercancías</option>
+                                    <option value="MI04">MI04 - Conteo físico</option>
+                                    <option value="MB51">MB51 - Listado de movimientos de material</option>
+                                    <option value="LX03">LX03 - Informe de ubicaciones</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo de material</label>
+                                <select class="form-select" name="material_type">
+                                    <option value="Herramienta">Herramienta</option>
+                                    <option value="Repuesto">Repuesto</option>
+                                    <option value="Consumible">Consumible</option>
+                                    <option value="Equipo">Equipo</option>
+                                    <option value="Insumo">Insumo</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Datos SAP (JSON)</label>
+                            <textarea class="form-control" name="sap_data_json" rows="4" 
+                                      placeholder='{"material": "COD-001", "stock": 10, "ubicacion": "ZA-01-01"}'>
+{
+    "material": "EJEMPLO-001",
+    "stock_sap": 15,
+    "stock_minimo": 5,
+    "ubicacion": "ZA-12-04",
+    "ultimo_movimiento": "2024-01-15"
+}
+                            </textarea>
+                            <small class="text-muted">Usa formato JSON para los datos del sistema</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 4: Opciones de decisión -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-question-circle me-2"></i> Opciones de Decisión</h5>
+                        
+                        <div class="option-preview mb-4">
+                            <label class="form-label">Opción A (incorrecta típica) *</label>
+                            <textarea class="form-control" name="option_a" rows="2" required
+                                      placeholder="Opción incorrecta común..."></textarea>
+                        </div>
+                        
+                        <div class="option-preview mb-4">
+                            <label class="form-label">Opción B (incorrecta común) *</label>
+                            <textarea class="form-control" name="option_b" rows="2" required
+                                      placeholder="Otra opción incorrecta..."></textarea>
+                        </div>
+                        
+                        <div class="option-preview mb-4">
+                            <label class="form-label">Opción C (correcta) *</label>
+                            <textarea class="form-control" name="option_c" rows="2" required
+                                      placeholder="La opción correcta..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Opción correcta *</label>
+                                <select class="form-select" name="correct_option" required>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C" selected>C</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 5: Feedback educativo -->
+                    <div class="form-section">
+                        <h5><i class="fas fa-graduation-cap me-2"></i> Feedback Educativo</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Feedback para respuesta correcta *</label>
+                            <textarea class="form-control" name="feedback_correct" rows="3" required
+                                      placeholder="Felicitaciones y explicación breve..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Feedback para respuesta incorrecta *</label>
+                            <textarea class="form-control" name="feedback_incorrect" rows="3" required
+                                      placeholder="Explicación del error y corrección..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Análisis profesional *</label>
+                            <textarea class="form-control" name="professional_analysis" rows="4" required
+                                      placeholder="Análisis detallado del procedimiento correcto..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Procedimiento SAP (pasos separados por |)</label>
+                            <textarea class="form-control" name="sap_procedure" rows="3"
+                                      placeholder="MB51|Ver movimientos|LX03|Verificar ubicaciones..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Consideraciones de seguridad</label>
+                            <textarea class="form-control" name="safety_considerations" rows="3"
+                                      placeholder="Precauciones de seguridad relacionadas..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Aprendizaje clave *</label>
+                            <textarea class="form-control" name="key_learning" rows="2" required
+                                      placeholder="La lección principal que debe recordar..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn mro-btn-primary btn-lg px-5">
+                            <i class="fas fa-save me-2"></i> CREAR ESCENARIO
+                        </button>
+                        <button type="button" id="preview-btn" class="btn btn-outline-light ms-2">
+                            <i class="fas fa-eye me-2"></i> Vista Previa
+                        </button>
+                        <a href="{{ url_for('simulator_mro.dashboard') }}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Vista previa -->
+        <div class="col-lg-4">
+            <div class="preview-card">
+                <h6 class="mb-3">
+                    <i class="fas fa-eye me-2"></i> Vista Previa
+                </h6>
+                
+                <div id="preview-content">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-file-alt fa-3x mb-3"></i>
+                        <p>Completa el formulario para ver la vista previa</p>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Instrucciones para planificadores:</h6>
+                    <ul class="small text-muted">
+                        <li>Los escenarios deben ser basados en casos reales</li>
+                        <li>Las opciones incorrectas deben ser errores comunes</li>
+                        <li>El feedback debe ser educativo y constructivo</li>
+                        <li>Verificar que los datos SAP sean realistas</li>
+                        <li>Considerar diferentes niveles de experiencia</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Vista previa en tiempo real
+    function updatePreview() {
+        const formData = new FormData(document.getElementById('create-scenario-form'));
+        const data = Object.fromEntries(formData.entries());
+        
+        let previewHtml = `
+            <div class="mb-3">
+                <h6>${data.title || 'Título del escenario'}</h6>
+                <p class="small text-muted">${data.description?.substring(0, 100) || 'Descripción...'}...</p>
+            </div>
+            
+            <div class="mb-3">
+                <div class="d-flex gap-2 mb-2">
+                    ${data.target_roles ? 
+                        data.target_roles.map(role => `<span class="badge bg-secondary">${role}</span>`).join('') : 
+                        '<span class="badge bg-secondary">aprendiz</span>'
+                    }
+                    <span class="badge bg-${getDifficultyColor(data.difficulty || 3)}">
+                        Dificultad: ${data.difficulty || 3}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <h6>Opciones:</h6>
+                <div class="option-preview small">
+                    <strong>A:</strong> ${data.option_a?.substring(0, 50) || 'Opción A...'}
+                </div>
+                <div class="option-preview small">
+                    <strong>B:</strong> ${data.option_b?.substring(0, 50) || 'Opción B...'}
+                </div>
+                <div class="option-preview small">
+                    <strong>C:</strong> ${data.option_c?.substring(0, 50) || 'Opción C...'}
+                </div>
+                <div class="mt-2">
+                    <small>Correcta: <strong>${data.correct_option || 'C'}</strong></small>
+                </div>
+            </div>
+            
+            ${data.sap_transaction ? `
+            <div class="sap-preview small">
+                <strong>SAP:</strong> ${data.sap_transaction}
+            </div>
+            ` : ''}
+            
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Puntos: Aprendiz(${data.points_aprendiz || 100}) | 
+                    Técnico(${data.points_tecnico || 80}) | 
+                    Planificador(${data.points_planificador || 60})
+                </small>
+            </div>
+        `;
+        
+        $('#preview-content').html(previewHtml);
+    }
+    
+    function getDifficultyColor(difficulty) {
+        const colors = {
+            '1': 'success',
+            '2': 'info',
+            '3': 'warning',
+            '4': 'orange',
+            '5': 'danger'
+        };
+        return colors[difficulty] || 'warning';
+    }
+    
+    // Actualizar vista previa en tiempo real
+    $('#create-scenario-form').on('input change', updatePreview);
+    
+    // Botón de vista previa
+    $('#preview-btn').click(function() {
+        updatePreview();
+        $('html, body').animate({
+            scrollTop: $('.preview-card').offset().top - 20
+        }, 500);
+    });
+    
+    // Enviar formulario
+    $('#create-scenario-form').submit(function(e) {
+        e.preventDefault();
+        
+        // Recolectar datos
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Procesar checkboxes de roles
+        const roles = [];
+        $('input[name="target_roles"]:checked').each(function() {
+            roles.push($(this).val());
+        });
+        data.target_roles = roles.join(',');
+        
+        // Convertir JSON
+        try {
+            data.sap_data_json = JSON.parse(data.sap_data_json);
+        } catch (e) {
+            showNotification('Error en el formato JSON de datos SAP', 'danger');
+            return;
+        }
+        
+        // Enviar al servidor
+        $.ajax({
+            url: '{{ url_for("simulator_mro.create_scenario") }}',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            beforeSend: function() {
+                $('button[type="submit"]').prop('disabled', true);
+                $('button[type="submit"]').html('<i class="fas fa-spinner fa-spin me-2"></i> CREANDO...');
+            },
+            success: function(response) {
+                showNotification('Escenario creado exitosamente', 'success');
+                setTimeout(function() {
+                    window.location.href = '/mro-simulator/play/' + response.scenario_id;
+                }, 1500);
+            },
+            error: function(xhr) {
+                showNotification('Error al crear el escenario: ' + (xhr.responseJSON?.error || 'Error desconocido'), 'danger');
+                $('button[type="submit"]').prop('disabled', false);
+                $('button[type="submit"]').html('<i class="fas fa-save me-2"></i> CREAR ESCENARIO');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}
