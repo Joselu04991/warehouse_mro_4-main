@@ -8,16 +8,15 @@ db = SQLAlchemy()
 # IMPORTAR TODOS LOS MODELOS PARA QUE SQLAlchemy LOS REGISTRE
 # ======================================================
 
-# Modelos existentes (basados en tus archivos)
+# Solo importar los modelos que SABEMOS que existen
 from .user import User
 from .inventory import InventoryItem
-from .bulios import Bulto  # Archivo: bulios.py
+from .bultos import Bulto  # ¡IMPORTANTE! Archivo es 'bultos.py'
 from .post_registro import PostRegistro
 from .alerts import Alert
 from .alertas_ai import AlertaIA
 from .technician_error import TechnicianError
 from .equipos import Equipo
-from .productivitydad import Productividad  # Archivo: productivitydad.py
 from .auditoria import Auditoria
 from .inventory_history import InventoryHistory
 from .warehouse2d import WarehouseLocation
@@ -26,10 +25,12 @@ from .task import Task
 from .score import Score
 from .scenario_mro import ScenarioMRO, UserDecisionMRO
 
-# Modelos adicionales que tienes pero no están en las importaciones originales
-from .analisis_oc import AnalisisOC  # Si existe este modelo
-from .turnos import Turno  # Si existe este modelo
-
-# NOTA: NO importar 'activated' porque no existe ese archivo
-# El archivo 'activated.py' existe pero puede que no tenga un modelo llamado 'Activated'
-# Si necesitas importarlo, primero verifica qué contiene ese archivo
+# Importar productividad si existe (el archivo se llama 'productivitydad.py')
+try:
+    from .productivitydad import Productividad
+    print("✅ Productividad importado correctamente")
+except ImportError as e:
+    print(f"⚠️  No se pudo importar Productividad: {e}")
+    # Puedes definir un modelo vacío o manejarlo de otra forma
+    class Productividad:
+        pass
