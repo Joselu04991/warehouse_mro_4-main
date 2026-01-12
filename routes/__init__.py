@@ -14,6 +14,7 @@ from routes.auditoria_routes import auditoria_bp
 from routes.alertas_ai_routes import alertas_ai_bp
 from routes.admin_roles_routes import admin_roles_bp
 from routes.tasks_routes import tasks_bp
+from routes.simulator_routes import simulator_bp
 
 def register_blueprints(app):
 
@@ -61,7 +62,11 @@ def register_blueprints(app):
     
     app.register_blueprint(tasks_bp)
     print("👉 Cargado: tasks")
+
+    app.register_blueprint(simulator_bp)
+    print("👉 Cargado: simulator")
     print("\n========== BLUEPRINTS CARGADOS OK ==========\n")
+
 
 
 
