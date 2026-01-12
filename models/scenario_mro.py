@@ -3,6 +3,7 @@ from datetime import datetime
 from models import db
 
 class ScenarioMRO(db.Model):
+    """Escenarios de entrenamiento para almacén MRO"""
     __tablename__ = "scenarios_mro"
     
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +14,7 @@ class ScenarioMRO(db.Model):
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(50), nullable=False)  # inventario, seguridad, sap, calidad, emergencia
     
-    # Roles objetivo (puede tener múltiples)
+    # Roles objetivo (puede tener múltiples separados por coma)
     target_roles = db.Column(db.String(200), default='aprendiz,tecnico_almacen,planificador')
     difficulty = db.Column(db.Integer, default=1)  # 1-5
     estimated_time = db.Column(db.Integer, default=300)  # segundos
@@ -46,10 +47,6 @@ class ScenarioMRO(db.Model):
     sap_procedure = db.Column(db.Text)  # Pasos en SAP separados por |
     safety_considerations = db.Column(db.Text)
     key_learning = db.Column(db.Text)
-    
-    # Imágenes o recursos
-    image_url = db.Column(db.String(255), nullable=True)
-    video_url = db.Column(db.String(255), nullable=True)
     
     # Metadata
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -112,27 +109,20 @@ class ScenarioMRO(db.Model):
                 'tecnico': self.points_tecnico,
                 'planificador': self.points_planificador
             },
-            'feedback': {
-                'correct': self.feedback_correct,
-                'incorrect': self.feedback_incorrect
-            },
             'educational': {
                 'analysis': self.professional_analysis,
                 'sap_procedure': self.sap_procedure.split('|') if self.sap_procedure else [],
                 'safety': self.safety_considerations,
                 'key_learning': self.key_learning
             },
-            'resources': {
-                'image': self.image_url,
-                'video': self.video_url
-            },
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'is_active': self.is_active
         }
 
 
-class UserDecision(db.Model):
-    __tablename__ = "user_decisions"
+class UserDecisionMRO(db.Model):
+    """Decisiones tomadas por usuarios en el simulador MRO"""
+    __tablename__ = "user_decisions_mro"
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -151,7 +141,7 @@ class UserDecision(db.Model):
     decision_time = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relaciones
-    user = db.relationship('User', backref='decisions')
+    user = db.relationship('User', backref='mro_decisions')
     scenario = db.relationship('ScenarioMRO', backref='decisions')
     
     def to_dict(self):
