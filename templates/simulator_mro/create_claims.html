@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-pencil-square me-2"></i>Create Claims</h3>
+                <span class="badge bg-dark">Último ID: CLM-{{ now().strftime('%Y-%m') }}-015</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Crear nuevas reclamaciones para el sistema MRO. Complete todos los campos obligatorios.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <form id="claimForm" method="POST" action="{{ url_for('simulator_mro.create_claims') }}">
+                        <div class="mb-3">
+                            <label for="claimType" class="form-label">Tipo de Reclamación *</label>
+                            <select class="form-select" id="claimType" name="claim_type" required>
+                                <option value="">Seleccionar tipo...</option>
+                                {% for type in claim_types %}
+                                <option value="{{ type.id }}" data-priority="{{ type.priority }}">
+                                    {{ type.name }} ({{ type.code }}) - {{ type.priority }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="priority" class="form-label">Prioridad *</label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    <option value="baja">Baja (72 horas)</option>
+                                    <option value="media" selected>Media (48 horas)</option>
+                                    <option value="alta">Alta (24 horas)</option>
+                                    <option value="critica">Crítica (4 horas)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="department" class="form-label">Departamento *</label>
+                                <select class="form-select" id="department" name="department" required>
+                                    <option value="almacen">Almacén</option>
+                                    <option value="mantenimiento">Mantenimiento</option>
+                                    <option value="produccion">Producción</option>
+                                    <option value="calidad">Calidad</option>
+                                    <option value="logistica">Logística</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción Detallada *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" 
+                                      placeholder="Describa el problema en detalle, incluyya ubicación, materiales afectados y cualquier información relevante..." required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="location" class="form-label">Ubicación</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       placeholder="Ej: Zona A, Estante 12, Nivel 3">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="material_code" class="form-label">Código de Material</label>
+                                <input type="text" class="form-control" id="material_code" name="material_code" 
+                                       placeholder="Ej: MAT-7892-SKF">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="evidence" class="form-label">Evidencia (opcional)</label>
+                            <input type="file" class="form-control" id="evidence" name="evidence" accept=".jpg,.png,.pdf,.docx">
+                            <small class="text-muted">Formatos aceptados: JPG, PNG, PDF, DOCX (máx. 10MB)</small>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="urgent" name="urgent">
+                            <label class="form-check-label" for="urgent">
+                                <strong class="text-danger">Reclamación Urgente</strong> - Notificar a supervisor inmediatamente
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="reset" class="btn btn-secondary me-md-2">Limpiar Formulario</button>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-send me-2"></i>Crear Reclamación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i> Información</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Tipos de Reclamación Disponibles:</h6>
+                            <div class="list-group">
+                                {% for type in claim_types %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <strong>{{ type.name }}</strong>
+                                        <small class="text-muted">{{ type.code }}</small>
+                                    </div>
+                                    <small>Prioridad: {{ type.priority }} | Resolución: {{ type.avg_resolution }}</small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Estadísticas del Mes:</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Reclamaciones creadas: 42</li>
+                                    <li><i class="bi bi-clock text-warning me-2"></i>En proceso: 15</li>
+                                    <li><i class="bi bi-x-circle text-danger me-2"></i>Pendientes: 8</li>
+                                    <li><i class="bi bi-graph-up text-primary me-2"></i>Tiempo promedio: 2.3 días</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('claimType').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const priority = selectedOption.getAttribute('data-priority');
+    if (priority) {
+        document.getElementById('priority').value = priority.toLowerCase();
+    }
+});
+
+document.getElementById('claimForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const description = document.getElementById('description').value;
+    if (description.length < 20) {
+        alert('La descripción debe tener al menos 20 caracteres');
+        return;
+    }
+    
+    // Simular envío
+    const claimId = 'CLM-' + new Date().getFullYear() + '-' + 
+                   String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    
+    alert(`✅ Reclamación creada exitosamente\n\nID: ${claimId}\n\nSerá asignada a un técnico en las próximas horas.`);
+    this.reset();
+});
+</script>
+{% endblock %}
