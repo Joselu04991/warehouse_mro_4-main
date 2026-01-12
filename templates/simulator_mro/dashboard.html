@@ -4,78 +4,144 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
+            <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0"><i class="bi bi-joystick me-2"></i> Simulador MRO - Dashboard</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="bi bi-joystick me-2"></i> Dashboard del Simulador MRO</h3>
+                        <span class="badge bg-warning">Sistema Activo</span>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row mb-4">
                         <div class="col-md-8">
-                            <h4 class="card-title">Bienvenido al Simulador de Mantenimiento, Reparación y Operaciones</h4>
+                            <h4 class="card-title">¡Bienvenido al Sistema de Simulación MRO!</h4>
                             <p class="card-text">
-                                Este módulo te permite practicar escenarios reales de gestión MRO en un entorno simulado.
-                                Desarrolla tus habilidades de toma de decisiones, gestión de recursos y resolución de problemas.
+                                Este sistema te permite practicar y mejorar tus habilidades en <strong>Mantenimiento, Reparación y Operaciones (MRO)</strong>. 
+                                Gestiona reclamaciones, controla tiempos, administra ausencias y toma decisiones estratégicas en un entorno simulado.
                             </p>
                             
-                            <div class="row mt-4">
-                                <div class="col-md-4">
-                                    <div class="card text-center border-primary">
-                                        <div class="card-body">
-                                            <i class="bi bi-trophy-fill text-warning" style="font-size: 2rem;"></i>
-                                            <h5 class="card-title mt-2">Tu Puntuación</h5>
-                                            <p class="card-text display-6">850</p>
-                                            <p class="text-muted">Puntos totales</p>
-                                        </div>
-                                    </div>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>¿Qué es MRO?</strong> Son los procesos de mantenimiento, reparación y operaciones que aseguran 
+                                el funcionamiento continuo de equipos e instalaciones en empresas industriales.
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5><i class="bi bi-person-badge me-2"></i>Tu Rol</h5>
+                                    <div class="display-6">{{ current_user.role|title }}</div>
+                                    <p class="text-muted mb-0">Nivel de acceso actual</p>
                                 </div>
-                                
-                                <div class="col-md-4">
-                                    <div class="card text-center border-success">
-                                        <div class="card-body">
-                                            <i class="bi bi-list-task text-success" style="font-size: 2rem;"></i>
-                                            <h5 class="card-title mt-2">Escenarios</h5>
-                                            <p class="card-text display-6">12/20</p>
-                                            <p class="text-muted">Completados</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-4">
-                                    <div class="card text-center border-info">
-                                        <div class="card-body">
-                                            <i class="bi bi-graph-up-arrow text-info" style="font-size: 2rem;"></i>
-                                            <h5 class="card-title mt-2">Ranking</h5>
-                                            <p class="card-text display-6">#8</p>
-                                            <p class="text-muted">Posición global</p>
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-3">📊 Tus Estadísticas</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-center border-primary">
+                                <div class="card-body">
+                                    <i class="bi bi-trophy-fill text-warning" style="font-size: 2rem;"></i>
+                                    <h5 class="card-title mt-2">Puntuación</h5>
+                                    <p class="card-text display-6">850</p>
+                                    <small class="text-muted">Puntos totales acumulados</small>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="col-md-4">
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-center border-success">
+                                <div class="card-body">
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 2rem;"></i>
+                                    <h5 class="card-title mt-2">Escenarios</h5>
+                                    <p class="card-text display-6">12/20</p>
+                                    <small class="text-muted">Completados vs Totales</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-center border-info">
+                                <div class="card-body">
+                                    <i class="bi bi-graph-up-arrow text-info" style="font-size: 2rem;"></i>
+                                    <h5 class="card-title mt-2">Ranking</h5>
+                                    <p class="card-text display-6">#8</p>
+                                    <small class="text-muted">Posición global</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <div class="card text-center border-warning">
+                                <div class="card-body">
+                                    <i class="bi bi-clock-history text-warning" style="font-size: 2rem;"></i>
+                                    <h5 class="card-title mt-2">Tiempo</h5>
+                                    <p class="card-text display-6">42h</p>
+                                    <small class="text-muted">Horas de práctica</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
                             <div class="card">
                                 <div class="card-header bg-info text-white">
                                     <h6 class="mb-0"><i class="bi bi-lightning-charge me-2"></i> Acciones Rápidas</h6>
                                 </div>
                                 <div class="card-body">
-                                    <a href="{{ url_for('simulator_mro.get_leaderboard') }}" class="btn btn-success w-100 mb-2">
-                                        <i class="bi bi-trophy me-2"></i>Ver Ranking
-                                    </a>
-                                    
-                                    {% if current_user.role in ['planificador', 'supervisor', 'admin', 'owner'] %}
-                                    <a href="{{ url_for('simulator_mro.create_scenario') }}" class="btn btn-warning w-100 mb-2">
-                                        <i class="bi bi-plus-circle me-2"></i>Crear Escenario
-                                    </a>
-                                    {% endif %}
-                                    
-                                    <div class="mt-3">
-                                        <h6>Próximos Módulos:</h6>
-                                        <ul class="list-unstyled">
-                                            <li><i class="bi bi-clock text-muted me-2"></i>Access Directories</li>
-                                            <li><i class="bi bi-clock text-muted me-2"></i>Create Claims</li>
-                                            <li><i class="bi bi-clock text-muted me-2"></i>Database Claims</li>
-                                        </ul>
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('simulator_mro.create_claims') }}" class="btn btn-warning">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Nueva Reclamación
+                                        </a>
+                                        <a href="{{ url_for('simulator_mro.paytime') }}" class="btn btn-primary">
+                                            <i class="bi bi-clock me-2"></i>Registrar Tiempo de Trabajo
+                                        </a>
+                                        <a href="{{ url_for('simulator_mro.get_leaderboard') }}" class="btn btn-success">
+                                            <i class="bi bi-trophy me-2"></i>Ver Ranking de Técnicos
+                                        </a>
+                                        {% if current_user.role in ['planificador', 'supervisor', 'admin', 'owner'] %}
+                                        <a href="{{ url_for('simulator_mro.create_scenario') }}" class="btn btn-info">
+                                            <i class="bi bi-puzzle me-2"></i>Crear Nuevo Escenario
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i> Próximas Actividades</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="list-group">
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Escenario: Inventario Crítico</h6>
+                                                <span class="badge bg-warning">Mañana</span>
+                                            </div>
+                                            <p class="mb-1">Gestiona faltantes en inventario crítico</p>
+                                            <small>Duración: 45 min | Dificultad: Media</small>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Evaluación Mensual MRO</h6>
+                                                <span class="badge bg-info">En 3 días</span>
+                                            </div>
+                                            <p class="mb-1">Examen de conocimientos MRO</p>
+                                            <small>Prepara: Mantenimiento preventivo</small>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <div class="d-flex w-100 justify-content-between">
+                                                <h6 class="mb-1">Capacitación: Seguridad Industrial</h6>
+                                                <span class="badge bg-success">En 1 semana</span>
+                                            </div>
+                                            <p class="mb-1">Curso obligatorio de seguridad</p>
+                                            <small>Duración: 2 horas</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -83,47 +149,50 @@
                     </div>
                     
                     <div class="mt-4">
-                        <h5>Escenarios Disponibles</h5>
+                        <h5><i class="bi bi-puzzle me-2"></i>Módulos Disponibles</h5>
                         <div class="row mt-3">
                             <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Inventario Crítico</h6>
-                                        <p class="card-text small">Gestiona faltantes en inventario crítico</p>
-                                        <span class="badge bg-warning">Media</span>
-                                        <span class="badge bg-info">45 min</span>
+                                <a href="{{ url_for('simulator_mro.access_directories') }}" class="card text-decoration-none h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-folder text-primary" style="font-size: 1.8rem;"></i>
+                                        <h6 class="mt-2">Permisos de Directorios</h6>
+                                        <p class="small text-muted">Gestiona accesos al sistema</p>
+                                        <span class="badge bg-primary">ADMIN</span>
                                     </div>
-                                </div>
+                                </a>
                             </div>
+                            
                             <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Mantenimiento Preventivo</h6>
-                                        <p class="card-text small">Planifica mantenimiento de equipos</p>
-                                        <span class="badge bg-success">Fácil</span>
-                                        <span class="badge bg-info">30 min</span>
+                                <a href="{{ url_for('simulator_mro.create_claims') }}" class="card text-decoration-none h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-clipboard-plus text-warning" style="font-size: 1.8rem;"></i>
+                                        <h6 class="mt-2">Crear Reclamaciones</h6>
+                                        <p class="small text-muted">Reporta problemas y fallas</p>
+                                        <span class="badge bg-warning">PLAN</span>
                                     </div>
-                                </div>
+                                </a>
                             </div>
+                            
                             <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Emergencia de Equipo</h6>
-                                        <p class="card-text small">Responde a falla de equipo crítico</p>
-                                        <span class="badge bg-danger">Difícil</span>
-                                        <span class="badge bg-info">60 min</span>
+                                <a href="{{ url_for('simulator_mro.database_claims') }}" class="card text-decoration-none h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-database text-success" style="font-size: 1.8rem;"></i>
+                                        <h6 class="mt-2">Base de Datos</h6>
+                                        <p class="small text-muted">Reclamaciones registradas</p>
+                                        <span class="badge bg-success">TEC</span>
                                     </div>
-                                </div>
+                                </a>
                             </div>
+                            
                             <div class="col-md-3 mb-3">
-                                <div class="card h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title">Logística de Repuestos</h6>
-                                        <p class="card-text small">Coordina envío de repuestos urgentes</p>
-                                        <span class="badge bg-warning">Media</span>
-                                        <span class="badge bg-info">40 min</span>
+                                <a href="{{ url_for('simulator_mro.paytime') }}" class="card text-decoration-none h-100">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-clock text-info" style="font-size: 1.8rem;"></i>
+                                        <h6 class="mt-2">Control de Tiempos</h6>
+                                        <p class="small text-muted">Registro para nómina</p>
+                                        <span class="badge bg-info">TEC</span>
                                     </div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -132,4 +201,17 @@
         </div>
     </div>
 </div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
 {% endblock %}
