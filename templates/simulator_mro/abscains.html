@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-person-x me-2"></i>Absences - Gestión de Ausencias</h3>
+                <span class="badge bg-light text-dark">Activas: {{ absences|selectattr('status', 'equalto', 'Aprobada')|list|length + absences|selectattr('status', 'equalto', 'Pendiente')|list|length }}</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Registro y administración de ausencias del personal. Solo supervisores y administradores pueden gestionar aprobaciones.</p>
+            
+            <div class="alert alert-info">
+                <i class="bi bi-calendar-week me-2"></i>
+                <strong>Recordatorio:</strong> Las ausencias deben ser reportadas con al menos 48 horas de anticipación, excepto en casos de emergencia.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Registrar Nueva Ausencia</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="absenceForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="employeeSelect" class="form-label">Empleado *</label>
+                                        <select class="form-select" id="employeeSelect" required>
+                                            <option value="">Seleccionar empleado...</option>
+                                            <option value="{{ current_user.id }}">{{ current_user.username }} (Yo)</option>
+                                            <option value="1">Juan Pérez - Técnico Senior</option>
+                                            <option value="2">María González - Planificador</option>
+                                            <option value="3">Carlos Rodríguez - Supervisor</option>
+                                            <option value="4">Ana Martínez - Operadora</option>
+                                            <option value="5">Luis Fernández - Almacenista</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="absenceType" class="form-label">Tipo de Ausencia *</label>
+                                        <select class="form-select" id="absenceType" required>
+                                            <option value="">Seleccionar tipo...</option>
+                                            <option value="vacation">Vacaciones Programadas</option>
+                                            <option value="sick">Enfermedad / Consulta Médica</option>
+                                            <option value="personal">Asuntos Personales</option>
+                                            <option value="training">Capacitación / Curso</option>
+                                            <option value="emergency">Emergencia Familiar</option>
+                                            <option value="other">Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">Fecha Inicio *</label>
+                                        <input type="date" class="form-control" id="startDate" 
+                                               value="{{ now().strftime('%Y-%m-%d') }}" min="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">Fecha Fin *</label>
+                                        <input type="date" class="form-control" id="endDate" 
+                                               value="{{ now().strftime('%Y-%m-%d') }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="reason" class="form-label">Motivo Detallado *</label>
+                                    <textarea class="form-control" id="reason" rows="3" 
+                                              placeholder="Describa el motivo de la ausencia con detalle. Para enfermedades, incluya síntomas..." required></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Documentación Adjunta</label>
+                                    <input type="file" class="form-control" id="documentation" 
+                                           accept=".pdf,.jpg,.png,.docx">
+                                    <small class="text-muted">Para ausencias médicas o de capacitación, adjunte comprobante (PDF, JPG, DOCX)</small>
+                                </div>
+                                
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="emergencyCheck">
+                                    <label class="form-check-label" for="emergencyCheck">
+                                        <strong class="text-danger">Ausencia por Emergencia</strong> - Notificar inmediatamente al supervisor
+                                    </label>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-danger btn-lg">
+                                        <i class="bi bi-send me-2"></i>Solicitar Ausencia
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Ausencias Activas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                {% for absence in absences %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ absence.employee }}</h6>
+                                        <span class="badge 
+                                            {% if absence.status == 'Aprobada' %}bg-success
+                                            {% elif absence.status == 'Pendiente' %}bg-warning
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ absence.status }}
+                                        </span>
+                                    </div>
+                                    <p class="mb-1 small">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        {{ absence.start_date }} al {{ absence.end_date }}
+                                        ({{ absence.days }} día{{ 's' if absence.days > 1 else '' }})
+                                    </p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-file-text me-1"></i>
+                                        {{ absence.type }} - {{ absence.reason[:50] }}...
+                                    </small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Estadísticas del Mes:</h6>
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="display-6">{{ absences|length }}</div>
+                                        <small>Solicitudes</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="display-6">
+                                            {{ absences|selectattr('status', 'equalto', 'Aprobada')|list|length }}
+                                        </div>
+                                        <small>Aprobadas</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="display-6">
+                                            {{ absences|map(attribute='days')|sum }}
+                                        </div>
+                                        <small>Días Totales</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Calendario de Ausencias - Enero 2024</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Empleado</th>
+                                            {% for day in range(1, 32) %}
+                                            <th>{{ day }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-start">Juan Pérez</td>
+                                            {% for day in range(1, 32) %}
+                                            <td>
+                                                {% if day >= 15 and day <= 19 %}
+                                                <span class="badge bg-success" title="Vacaciones">V</span>
+                                                {% elif day == 12 %}
+                                                <span class="badge bg-info" title="Enfermedad">E</span>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start">María González</td>
+                                            {% for day in range(1, 32) %}
+                                            <td>
+                                                {% if day >= 22 and day <= 24 %}
+                                                <span class="badge bg-primary" title="Capacitación">C</span>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start">Carlos Rodríguez</td>
+                                            {% for day in range(1, 32) %}
+                                            <td>
+                                                {% if day == 18 %}
+                                                <span class="badge bg-warning" title="Personal">P</span>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                        <tr>
+                                            <td class="text-start">{{ current_user.username }}</td>
+                                            {% for day in range(1, 32) %}
+                                            <td>
+                                                {% if day == 25 %}
+                                                <span class="badge bg-danger" title="Consulta Médica">M</span>
+                                                {% else %}
+                                                <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <h6>Leyenda:</h6>
+                                <div class="d-flex flex-wrap">
+                                    <span class="badge bg-success me-2 mb-1">V = Vacaciones</span>
+                                    <span class="badge bg-info me-2 mb-1">E = Enfermedad</span>
+                                    <span class="badge bg-primary me-2 mb-1">C = Capacitación</span>
+                                    <span class="badge bg-warning me-2 mb-1">P = Personal</span>
+                                    <span class="badge bg-danger me-2 mb-1">M = Médica</span>
+                                    <span class="badge bg-secondary me-2 mb-1">F = Festivo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calcular días automáticamente
+function calculateDays() {
+    const startDate = new Date(document.getElementById('startDate').value);
+    const endDate = new Date(document.getElementById('endDate').value);
+    
+    if (startDate && endDate && endDate >= startDate) {
+        const diffTime = Math.abs(endDate - startDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Mostrar advertencia si son más de 5 días
+        if (diffDays > 5) {
+            alert(`⚠️ Atención: Solicita ${diffDays} días de ausencia.\n\nPara períodos mayores a 5 días, se requiere aprobación de Gerencia.`);
+        }
+    }
+}
+
+document.getElementById('startDate').addEventListener('change', calculateDays);
+document.getElementById('endDate').addEventListener('change', calculateDays);
+
+// Manejar envío del formulario
+document.getElementById('absenceForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const employee = document.getElementById('employeeSelect').value;
+    const absenceType = document.getElementById('absenceType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const reason = document.getElementById('reason').value;
+    
+    if (!employee || !absenceType || !startDate || !endDate || !reason) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+        alert('La fecha de fin no puede ser anterior a la fecha de inicio');
+        return;
+    }
+    
+    const absenceId = 'ABS-' + new Date().getFullYear() + '-' + 
+                     String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+    
+    alert(`✅ Solicitud de ausencia registrada\n\nID: ${absenceId}\n\nSerá revisada por el supervisor en las próximas 24 horas.`);
+    
+    // Limpiar formulario
+    this.reset();
+    document.getElementById('startDate').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('endDate').value = new Date().toISOString().slice(0, 10);
+});
+
+// Para supervisores: aprobar/rechazar ausencias
+function manageAbsence(action, absenceId) {
+    if (action === 'approve') {
+        if (confirm(`¿Aprobar ausencia ${absenceId}?`)) {
+            alert(`✅ Ausencia ${absenceId} aprobada.\n\nSe notificará al empleado.`);
+        }
+    } else if (action === 'reject') {
+        const reason = prompt(`Indique el motivo para rechazar la ausencia ${absenceId}:`);
+        if (reason) {
+            alert(`❌ Ausencia ${absenceId} rechazada.\n\nMotivo: ${reason}`);
+        }
+    }
+}
+</script>
+{% endblock %}
