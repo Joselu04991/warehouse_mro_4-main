@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h3 class="mb-0"><i class="bi bi-trophy me-2"></i> Clasificación del Simulador</h3>
+        </div>
+        <div class="card-body">
+            <p>La clasificación estará disponible cuando el simulador esté activo.</p>
+            
+            <div class="table-responsive mt-4">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Posición</th>
+                            <th>Técnico</th>
+                            <th>Puntuación</th>
+                            <th>Escenarios Completados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td><i class="bi bi-person-circle me-2"></i>Juan Pérez</td>
+                            <td><span class="badge bg-warning">850 pts</span></td>
+                            <td>12</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td><i class="bi bi-person-circle me-2"></i>María González</td>
+                            <td><span class="badge bg-secondary">780 pts</span></td>
+                            <td>10</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td><i class="bi bi-person-circle me-2"></i>Carlos Rodríguez</td>
+                            <td><span class="badge bg-danger">720 pts</span></td>
+                            <td>8</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
