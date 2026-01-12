@@ -1,3 +1,4 @@
+# models/__init__.py
 from flask_sqlalchemy import SQLAlchemy
 
 # Crear instancia global de SQLAlchemy
@@ -23,7 +24,5 @@ from .actividad import ActividadUsuario
 from .inventory_count import InventoryCount
 from .task import Task
 from .score import Score
-
-
-
-
+# Añadir nuevos modelos MRO
+from .scenario_mro import ScenarioMRO, UserDecisionMRO
