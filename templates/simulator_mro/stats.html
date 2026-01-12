@@ -1,0 +1,223 @@
+{% extends "simulator_mro/base.html" %}
+
+{% block title %}Mis Estadísticas - Simulador MRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="mro-card p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-2">
+                    <i class="fas fa-chart-line me-2"></i> Mis Estadísticas
+                </h1>
+                <p class="text-muted mb-0">
+                    Seguimiento de tu progreso en el simulador MRO
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="h2 mb-0" id="performance-score">{{ user.mro_performance }}%</div>
+                <small class="text-muted">Desempeño general</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Métricas principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="mro-card p-3">
+                <div class="text-center">
+                    <div class="display-6 text-primary">{{ user.mro_score }}</div>
+                    <small class="text-muted">Puntuación MRO</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="mro-card p-3">
+                <div class="text-center">
+                    <div class="display-6 text-success">{{ user.mro_xp }}</div>
+                    <small class="text-muted">Experiencia (XP)</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="mro-card p-3">
+                <div class="text-center">
+                    <div class="display-6 text-warning">{{ user.mro_scenarios_completed }}</div>
+                    <small class="text-muted">Escenarios jugados</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="mro-card p-3">
+                <div class="text-center">
+                    <div class="display-6 text-info">{{ user.mro_correct_decisions }}</div>
+                    <small class="text-muted">Decisiones correctas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Gráficos y estadísticas -->
+        <div class="col-lg-8 mb-4">
+            <div class="mro-card p-4 h-100">
+                <h5 class="mb-4">Efectividad por categoría</h5>
+                <div id="category-chart">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Progreso del nivel -->
+        <div class="col-lg-4 mb-4">
+            <div class="mro-card p-4 h-100">
+                <h5 class="mb-4">Progreso del nivel</h5>
+                <div class="text-center mb-4">
+                    <div class="display-4">{{ user.mro_level }}</div>
+                    <small class="text-muted">Nivel actual</small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Próximo nivel</small>
+                        <small id="next-level-xp">-</small>
+                    </div>
+                    <div class="progress progress-mro">
+                        <div class="progress-bar bg-info" id="level-progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h6>Logros recientes:</h6>
+                    <div id="recent-achievements">
+                        <!-- Se llenará dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Historial detallado -->
+    <div class="mro-card p-4">
+        <h5 class="mb-4">Historial de decisiones</h5>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Escenario</th>
+                        <th>Decisión</th>
+                        <th>Resultado</th>
+                        <th>Tiempo</th>
+                        <th>Puntos</th>
+                        <th>Categoría</th>
+                    </tr>
+                </thead>
+                <tbody id="decisions-history">
+                    <!-- Se llenará dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-3">
+            <button id="load-more" class="btn btn-outline-light">Cargar más</button>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Cargar estadísticas
+    loadUserStats();
+    
+    function loadUserStats() {
+        $.getJSON('{{ url_for("simulator_mro.get_user_stats") }}')
+            .done(function(data) {
+                updateCharts(data);
+                updateHistory(data);
+                updateLevelProgress(data.user);
+            })
+            .fail(function() {
+                showNotification('Error al cargar estadísticas', 'danger');
+            });
+    }
+    
+    function updateCharts(data) {
+        // Gráfico de efectividad por categoría
+        let chartHtml = '';
+        if (data.category_stats && Object.keys(data.category_stats).length > 0) {
+            for (const [category, stats] of Object.entries(data.category_stats)) {
+                chartHtml += `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>${category.charAt(0).toUpperCase() + category.slice(1)}</small>
+                        <small>${stats.accuracy}% (${stats.correct}/${stats.total})</small>
+                    </div>
+                    <div class="progress progress-mro">
+                        <div class="progress-bar" style="width: ${stats.accuracy}%"></div>
+                    </div>
+                </div>`;
+            }
+        } else {
+            chartHtml = '<p class="text-center text-muted py-4">No hay datos de categorías aún</p>';
+        }
+        $('#category-chart').html(chartHtml);
+        
+        // Actualizar puntuación de desempeño
+        $('#performance-score').text(data.performance + '%');
+    }
+    
+    function updateHistory(data) {
+        // Historial de decisiones (primeras 10)
+        let historyHtml = '';
+        // Aquí iría la lógica para mostrar el historial
+        // Por ahora solo un placeholder
+        historyHtml = `
+        <tr>
+            <td colspan="7" class="text-center py-4 text-muted">
+                <i class="fas fa-history fa-2x mb-3"></i>
+                <p>No hay historial disponible</p>
+                <p class="small">Juega algunos escenarios para generar historial</p>
+            </td>
+        </tr>`;
+        
+        $('#decisions-history').html(historyHtml);
+    }
+    
+    function updateLevelProgress(user) {
+        // Calcular progreso hacia el próximo nivel
+        const xp = user.mro_xp;
+        let nextLevelXP = 0;
+        
+        // Lógica simplificada para cálculo de niveles
+        if (user.role === 'aprendiz') {
+            if (xp < 500) nextLevelXP = 500;
+            else if (xp < 1000) nextLevelXP = 1000;
+            else if (xp < 2000) nextLevelXP = 2000;
+            else nextLevelXP = 3500;
+        } else if (user.role === 'tecnico_almacen') {
+            if (xp < 1000) nextLevelXP = 1000;
+            else if (xp < 2500) nextLevelXP = 2500;
+            else if (xp < 5000) nextLevelXP = 5000;
+            else nextLevelXP = 8000;
+        } else if (user.role === 'planificador') {
+            if (xp < 1500) nextLevelXP = 1500;
+            else if (xp < 3500) nextLevelXP = 3500;
+            else if (xp < 7000) nextLevelXP = 7000;
+            else nextLevelXP = 10000;
+        }
+        
+        if (nextLevelXP > 0) {
+            const progress = Math.min(100, (xp / nextLevelXP) * 100);
+            $('#level-progress-bar').css('width', progress + '%');
+            $('#next-level-xp').text(nextLevelXP - xp + ' XP restantes');
+        }
+    }
+    
+    // Auto-refresh cada minuto
+    setInterval(loadUserStats, 60000);
+});
+</script>
+{% endblock %}
+{% endblock %}
