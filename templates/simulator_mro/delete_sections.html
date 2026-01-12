@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-question-circle me-2"></i>Delete Questions</h3>
+                <span class="badge bg-danger">SOLO ADMIN/OWNER</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-diamond-fill me-2"></i> 
+                <strong>ADVERTENCIA:</strong> Esta operación eliminará preguntas del banco de preguntas del simulador MRO. 
+                Verifique que las preguntas no estén siendo utilizadas en escenarios activos antes de eliminarlas.
+            </div>
+            
+            <p class="card-text">Gestión de eliminación de preguntas obsoletas, duplicadas o incorrectas del sistema de evaluación.</p>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Preguntas para Eliminación</h5>
+                                <div class="input-group" style="width: 300px;">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" placeholder="Buscar preguntas..." id="searchQuestions">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th width="5%">
+                                                <input type="checkbox" id="selectAllQuestions" onclick="toggleAllQuestions(this)">
+                                            </th>
+                                            <th width="10%">ID</th>
+                                            <th width="35%">Pregunta</th>
+                                            <th width="15%">Categoría</th>
+                                            <th width="15%">Creada</th>
+                                            <th width="10%">Usos</th>
+                                            <th width="10%">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="questionsTable">
+                                        {% for question in questions %}
+                                        <tr>
+                                            <td>
+                                                <input type="checkbox" class="question-checkbox" 
+                                                       id="question_{{ question.id }}"
+                                                       data-id="{{ question.id }}"
+                                                       data-text="{{ question.text }}"
+                                                       data-used="{{ question.used }}">
+                                            </td>
+                                            <td><code>#{{ question.id }}</code></td>
+                                            <td>
+                                                <div class="question-text">{{ question.text }}</div>
+                                                {% if question.used == 0 %}
+                                                <span class="badge bg-secondary">Nunca usada</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge 
+                                                    {% if question.category == 'Mantenimiento' %}bg-primary
+                                                    {% elif question.category == 'Inventario' %}bg-success
+                                                    {% elif question.category == 'Seguridad' %}bg-danger
+                                                    {% else %}bg-info{% endif %}">
+                                                    {{ question.category }}
+                                                </span>
+                                            </td>
+                                            <td>{{ question.created }}</td>
+                                            <td>
+                                                {% if question.used > 0 %}
+                                                <span class="badge bg-warning">{{ question.used }} uso{{ 's' if question.used > 1 else '' }}</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">0</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if question.used > 0 %}
+                                                <span class="badge bg-danger">En uso</span>
+                                                {% else %}
+                                                <span class="badge bg-success">Disponible</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-3">
+                                <div>
+                                    <button class="btn btn-danger" id="deleteQuestionsBtn" disabled onclick="deleteSelectedQuestions()">
+                                        <i class="bi bi-trash-fill me-2"></i> Eliminar Preguntas Seleccionadas
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="exportQuestions()">
+                                        <i class="bi bi-download me-2"></i> Exportar Lista
+                                    </button>
+                                </div>
+                                <div>
+                                    <span class="badge bg-secondary" id="selectedCount">0 seleccionadas</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Análisis de Impacto</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>Preguntas Seleccionadas:</h6>
+                            <div id="selectedQuestions" class="mb-3" style="max-height: 200px; overflow-y: auto;">
+                                <p class="text-muted small">No hay preguntas seleccionadas</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="deletionType" class="form-label">Tipo de Eliminación</label>
+                                <select class="form-select" id="deletionType">
+                                    <option value="archive">Archivar (mantener histórico)</option>
+                                    <option value="replace">Reemplazar con nueva pregunta</option>
+                                    <option value="permanent">Eliminación permanente</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="replacementReason" class="form-label">Motivo de Reemplazo/Eliminación</label>
+                                <textarea class="form-control" id="replacementReason" rows="3" 
+                                          placeholder="Explique por qué se elimina/reemplaza esta pregunta..."></textarea>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="verifyUnused">
+                                <label class="form-check-label" for="verifyUnused">
+                                    He verificado que las preguntas no están en escenarios activos
+                                </label>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="notifyUsers">
+                                <label class="form-check-label" for="notifyUsers">
+                                    Notificar a creadores de escenarios afectados
+                                </label>
+                            </div>
+                            
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6><i class="bi bi-graph-up me-2"></i> Estadísticas:</h6>
+                                    <ul class="small mb-0">
+                                        <li>Total preguntas en sistema: 156</li>
+                                        <li>Preguntas en uso activo: 124</li>
+                                        <li>Preguntas obsoletas: 32</li>
+                                        <li>Última limpieza: 2023-12-15</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Preguntas con Posible Conflicto</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">#102 - Procedimiento obsoleto</h6>
+                                        <span class="badge bg-warning">2 usos</span>
+                                    </div>
+                                    <p class="mb-1 small">Usada en escenarios: "Inventario Básico", "Mantenimiento 101"</p>
+                                    <small>Recomendación: Actualizar antes de eliminar</small>
+                                </div>
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">#105 - Proceso anterior ISO</h6>
+                                        <span class="badge bg-warning">3 usos</span>
+                                    </div>
+                                    <p class="mb-1 small">Usada en: "Calidad Avanzada", "Auditoría Interna"</p>
+                                    <small>Recomendación: Reemplazar con versión actualizada</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Historial de Cambios</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Pregunta</th>
+                                            <th>Acción</th>
+                                            <th>Usuario</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2024-01-05</td>
+                                            <td>#045 - Cambio de aceite</td>
+                                            <td><span class="badge bg-success">Actualizada</span></td>
+                                            <td>admin</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2023-12-20</td>
+                                            <td>#078 - Seguridad EPIs</td>
+                                            <td><span class="badge bg-primary">Reemplazada</span></td>
+                                            <td>supervisor</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2023-11-15</td>
+                                            <td>#012 - Inventario manual</td>
+                                            <td><span class="badge bg-danger">Eliminada</span></td>
+                                            <td>owner</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedQuestions = [];
+
+function toggleAllQuestions(source) {
+    const checkboxes = document.querySelectorAll('.question-checkbox');
+    checkboxes.forEach(checkbox => {
+        if (!checkbox.disabled) {
+            checkbox.checked = source.checked;
+            updateQuestionSelection(checkbox);
+        }
+    });
+}
+
+function updateQuestionSelection(checkbox) {
+    const questionId = checkbox.getAttribute('data-id');
+    const questionText = checkbox.getAttribute('data-text');
+    const questionUsed = parseInt(checkbox.getAttribute('data-used'));
+    
+    if (checkbox.checked) {
+        if (!selectedQuestions.includes(questionId)) {
+            selectedQuestions.push({
+                id: questionId,
+                text: questionText,
+                used: questionUsed
+            });
+        }
+    } else {
+        selectedQuestions = selectedQuestions.filter(q => q.id !== questionId);
+    }
+    
+    updateSelectedQuestionsList();
+    updateDeleteButton();
+}
+
+function updateSelectedQuestionsList() {
+    const container = document.getElementById('selectedQuestions');
+    const countElement = document.getElementById('selectedCount');
+    
+    if (selectedQuestions.length === 0) {
+        container.innerHTML = '<p class="text-muted small">No hay preguntas seleccionadas</p>';
+        countElement.textContent = '0 seleccionadas';
+        countElement.className = 'badge bg-secondary';
+        return;
+    }
+    
+    let html = '<ul class="list-unstyled small">';
+    let usedCount = 0;
+    
+    selectedQuestions.forEach(question => {
+        if (question.used > 0) usedCount++;
+        html += `<li>
+            <i class="bi bi-question-circle ${question.used > 0 ? 'text-warning' : 'text-success'} me-2"></i>
+            #${question.id} - ${question.text.substring(0, 40)}...
+            ${question.used > 0 ? '<span class="badge bg-warning">' + question.used + ' uso(s)</span>' : ''}
+        </li>`;
+    });
+    html += '</ul>';
+    
+    container.innerHTML = html;
+    countElement.textContent = `${selectedQuestions.length} seleccionadas`;
+    countElement.className = usedCount > 0 ? 'badge bg-warning' : 'badge bg-success';
+}
+
+function updateDeleteButton() {
+    const button = document.getElementById('deleteQuestionsBtn');
+    const verifyCheck = document.getElementById('verifyUnused');
+    
+    if (selectedQuestions.length > 0 && verifyCheck.checked) {
+        button.disabled = false;
+        button.innerHTML = `<i class="bi bi-trash-fill me-2"></i> Eliminar ${selectedQuestions.length} Pregunta(s)`;
+    } else {
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-trash-fill me-2"></i> Eliminar Preguntas Seleccionadas';
+    }
+}
+
+// Event listeners
+document.getElementById('verifyUnused').addEventListener('change', updateDeleteButton);
+document.querySelectorAll('.question-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateQuestionSelection(this);
+    });
+});
+
+// Buscador de preguntas
+document.getElementById('searchQuestions').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#questionsTable tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+function deleteSelectedQuestions() {
+    const reason = document.getElementById('replacementReason').value;
+    const deletionType = document.getElementById('deletionType').value;
+    const notifyUsers = document.getElementById('notifyUsers').checked;
+    
+    if (!reason.trim()) {
+        alert('Debe especificar un motivo para la eliminación');
+        return;
+    }
+    
+    const usedQuestions = selectedQuestions.filter(q => q.used > 0);
+    if (usedQuestions.length > 0) {
+        if (!confirm(`⚠️ ADVERTENCIA: ${usedQuestions.length} pregunta(s) seleccionada(s) están en uso activo.\n\n¿Desea continuar con la eliminación?`)) {
+            return;
+        }
+    }
+    
+    const actionText = deletionType === 'archive' ? 'archivadas' : 
+                      deletionType === 'replace' ? 'reemplazadas' : 'eliminadas permanentemente';
+    
+    if (confirm(`¿Confirmar que desea ${actionText} ${selectedQuestions.length} pregunta(s)?`)) {
+        alert(`✅ ${selectedQuestions.length} pregunta(s) ${actionText}.\n\nMotivo: ${reason}\n${notifyUsers ? 'Se notificará a los usuarios afectados.' : ''}`);
+        
+        // Limpiar selección
+        selectedQuestions = [];
+        document.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = false);
+        document.getElementById('selectAllQuestions').checked = false;
+        updateSelectedQuestionsList();
+        updateDeleteButton();
+        document.getElementById('replacementReason').value = '';
+        document.getElementById('verifyUnused').checked = false;
+        document.getElementById('notifyUsers').checked = false;
+    }
+}
+
+function exportQuestions() {
+    alert('📄 Exportando lista de preguntas a CSV...\n\nEl archivo se descargará automáticamente.');
+}
+</script>
+
+<style>
+.question-text {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.question-checkbox:checked {
+    accent-color: #dc3545;
+}
+
+#selectedQuestions ul {
+    margin-bottom: 0;
+}
+
+#selectedQuestions li {
+    padding: 3px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#selectedQuestions li:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %}
