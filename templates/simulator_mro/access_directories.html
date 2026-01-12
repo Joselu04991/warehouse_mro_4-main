@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-folder me-2"></i>Access Directories</h3>
+                <span class="badge bg-light text-dark">Sistema: MRO v2.1.4</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Gestión de directorios del sistema de simulación MRO. Solo usuarios autorizados pueden modificar permisos.</p>
+            
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Importante:</strong> Los cambios en permisos afectan directamente al funcionamiento del simulador.
+            </div>
+            
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Directorios del Sistema</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Directorio</th>
+                                            <th>Archivos</th>
+                                            <th>Tamaño</th>
+                                            <th>Modificado</th>
+                                            <th>Permisos</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for dir in directories %}
+                                        <tr>
+                                            <td><code>{{ dir.name }}</code></td>
+                                            <td><span class="badge bg-primary">{{ dir.files }}</span></td>
+                                            <td><span class="badge bg-secondary">{{ dir.size }}</span></td>
+                                            <td>{{ dir.last_modified }}</td>
+                                            <td><code>{{ dir.permissions }}</code></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-info" onclick="showPermissions('{{ dir.name }}')">
+                                                    <i class="bi bi-shield-lock"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Estadísticas</h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Directorios Totales
+                                    <span class="badge bg-primary rounded-pill">6</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Archivos Totales
+                                    <span class="badge bg-success rounded-pill">630</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Espacio Total
+                                    <span class="badge bg-warning rounded-pill">1.76 GB</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Último Backup
+                                    <span class="badge bg-info rounded-pill">Hoy 02:00</span>
+                                </li>
+                            </ul>
+                            
+                            <div class="mt-4">
+                                <h6>Cambiar Permisos</h6>
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label">Directorio</label>
+                                        <select class="form-select">
+                                            {% for dir in directories %}
+                                            <option value="{{ dir.name }}">{{ dir.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nuevos Permisos</label>
+                                        <input type="text" class="form-control" value="rwxr-xr-x" pattern="[r-][w-][x-][r-][w-][x-][r-][w-][x-]">
+                                        <small class="text-muted">Formato: rwxr-xr-x (usuario-grupo-otros)</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-warning w-100">Actualizar Permisos</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPermissions(dirName) {
+    alert(`Permisos para: ${dirName}\n\nUsuario: Lectura/Escritura/Ejecución\nGrupo: Lectura/Ejecución\nOtros: Lectura/Ejecución`);
+}
+</script>
+{% endblock %}
