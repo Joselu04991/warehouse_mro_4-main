@@ -2,236 +2,354 @@
 
 {% block content %}
 <div class="container">
-    <div class="card">
-        <div class="card-header bg-dark text-white">
-            <div class="d-flex justify-content-between align-items-center">
-                <h3 class="mb-0"><i class="bi bi-question-circle me-2"></i>Delete Questions</h3>
-                <span class="badge bg-danger">SOLO ADMIN/OWNER</span>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-warning">
-                <i class="bi bi-exclamation-diamond-fill me-2"></i> 
-                <strong>ADVERTENCIA:</strong> Esta operación eliminará preguntas del banco de preguntas del simulador MRO. 
-                Verifique que las preguntas no estén siendo utilizadas en escenarios activos antes de eliminarlas.
-            </div>
-            
-            <p class="card-text">Gestión de eliminación de preguntas obsoletas, duplicadas o incorrectas del sistema de evaluación.</p>
-            
-            <div class="row">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Preguntas para Eliminación</h5>
-                                <div class="input-group" style="width: 300px;">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" class="form-control" placeholder="Buscar preguntas..." id="searchQuestions">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th width="5%">
-                                                <input type="checkbox" id="selectAllQuestions" onclick="toggleAllQuestions(this)">
-                                            </th>
-                                            <th width="10%">ID</th>
-                                            <th width="35%">Pregunta</th>
-                                            <th width="15%">Categoría</th>
-                                            <th width="15%">Creada</th>
-                                            <th width="10%">Usos</th>
-                                            <th width="10%">Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="questionsTable">
-                                        {% for question in questions %}
-                                        <tr>
-                                            <td>
-                                                <input type="checkbox" class="question-checkbox" 
-                                                       id="question_{{ question.id }}"
-                                                       data-id="{{ question.id }}"
-                                                       data-text="{{ question.text }}"
-                                                       data-used="{{ question.used }}">
-                                            </td>
-                                            <td><code>#{{ question.id }}</code></td>
-                                            <td>
-                                                <div class="question-text">{{ question.text }}</div>
-                                                {% if question.used == 0 %}
-                                                <span class="badge bg-secondary">Nunca usada</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <span class="badge 
-                                                    {% if question.category == 'Mantenimiento' %}bg-primary
-                                                    {% elif question.category == 'Inventario' %}bg-success
-                                                    {% elif question.category == 'Seguridad' %}bg-danger
-                                                    {% else %}bg-info{% endif %}">
-                                                    {{ question.category }}
-                                                </span>
-                                            </td>
-                                            <td>{{ question.created }}</td>
-                                            <td>
-                                                {% if question.used > 0 %}
-                                                <span class="badge bg-warning">{{ question.used }} uso{{ 's' if question.used > 1 else '' }}</span>
-                                                {% else %}
-                                                <span class="badge bg-secondary">0</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if question.used > 0 %}
-                                                <span class="badge bg-danger">En uso</span>
-                                                {% else %}
-                                                <span class="badge bg-success">Disponible</span>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div class="d-flex justify-content-between mt-3">
-                                <div>
-                                    <button class="btn btn-danger" id="deleteQuestionsBtn" disabled onclick="deleteSelectedQuestions()">
-                                        <i class="bi bi-trash-fill me-2"></i> Eliminar Preguntas Seleccionadas
-                                    </button>
-                                    <button class="btn btn-outline-primary" onclick="exportQuestions()">
-                                        <i class="bi bi-download me-2"></i> Exportar Lista
-                                    </button>
-                                </div>
-                                <div>
-                                    <span class="badge bg-secondary" id="selectedCount">0 seleccionadas</span>
-                                </div>
-                            </div>
-                        </div>
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="mb-0"><i class="bi bi-trash me-2"></i> Eliminación de Secciones</h3>
+                        <span class="badge bg-light text-dark">Total: {{ sections|length }}</span>
                     </div>
                 </div>
-                
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Análisis de Impacto</h5>
-                        </div>
-                        <div class="card-body">
-                            <h6>Preguntas Seleccionadas:</h6>
-                            <div id="selectedQuestions" class="mb-3" style="max-height: 200px; overflow-y: auto;">
-                                <p class="text-muted small">No hay preguntas seleccionadas</p>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="deletionType" class="form-label">Tipo de Eliminación</label>
-                                <select class="form-select" id="deletionType">
-                                    <option value="archive">Archivar (mantener histórico)</option>
-                                    <option value="replace">Reemplazar con nueva pregunta</option>
-                                    <option value="permanent">Eliminación permanente</option>
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label for="replacementReason" class="form-label">Motivo de Reemplazo/Eliminación</label>
-                                <textarea class="form-control" id="replacementReason" rows="3" 
-                                          placeholder="Explique por qué se elimina/reemplaza esta pregunta..."></textarea>
-                            </div>
-                            
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="verifyUnused">
-                                <label class="form-check-label" for="verifyUnused">
-                                    He verificado que las preguntas no están en escenarios activos
-                                </label>
-                            </div>
-                            
-                            <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="notifyUsers">
-                                <label class="form-check-label" for="notifyUsers">
-                                    Notificar a creadores de escenarios afectados
-                                </label>
-                            </div>
-                            
-                            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>¡Precaución!</strong> Esta acción eliminará permanentemente las secciones seleccionadas junto con todas sus preguntas asociadas. Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-search me-2"></i> Buscar y Seleccionar Secciones</h5>
+                                </div>
                                 <div class="card-body">
-                                    <h6><i class="bi bi-graph-up me-2"></i> Estadísticas:</h6>
-                                    <ul class="small mb-0">
-                                        <li>Total preguntas en sistema: 156</li>
-                                        <li>Preguntas en uso activo: 124</li>
-                                        <li>Preguntas obsoletas: 32</li>
-                                        <li>Última limpieza: 2023-12-15</li>
-                                    </ul>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                                <input type="text" class="form-control" id="searchSections" 
+                                                       placeholder="Buscar secciones por nombre, código o descripción..."
+                                                       onkeyup="filterSections()">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                                                <select class="form-select" id="filterCategory" onchange="filterSections()">
+                                                    <option value="">Todas las categorías</option>
+                                                    <option value="operativa">Operativa</option>
+                                                    <option value="seguridad">Seguridad</option>
+                                                    <option value="calidad">Calidad</option>
+                                                    <option value="administrativa">Administrativa</option>
+                                                    <option value="tecnica">Técnica</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="selectAllSections" onclick="toggleAllSections()">
+                                                <label class="form-check-label" for="selectAllSections">
+                                                    Seleccionar todas las secciones visibles
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span id="selectedCount" class="badge bg-primary">0 seleccionadas</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table table-hover" id="sectionsTable">
+                                            <thead class="table-light sticky-top">
+                                                <tr>
+                                                    <th width="50">
+                                                        <input type="checkbox" onclick="toggleAllSections()">
+                                                    </th>
+                                                    <th>Nombre de Sección</th>
+                                                    <th>Categoría</th>
+                                                    <th>Preguntas</th>
+                                                    <th>Creada</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr data-category="operativa">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="1">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Procedimientos Operativos Estándar</strong>
+                                                        <div class="text-muted small">POE-2024-001</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info">Operativa</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">15 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>15/01/2024</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Activa</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(1)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(1)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr data-category="seguridad">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="2">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Normas de Seguridad Industrial</strong>
+                                                        <div class="text-muted small">NSI-2023-045</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-danger">Seguridad</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">22 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>22/12/2023</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Activa</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(2)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(2)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr data-category="calidad">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="3">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Control de Calidad - ISO 9001</strong>
+                                                        <div class="text-muted small">CCQ-2024-003</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-warning">Calidad</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">18 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>10/01/2024</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Activa</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(3)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(3)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr data-category="administrativa">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="4">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Procedimientos Administrativos</strong>
+                                                        <div class="text-muted small">PAD-2023-028</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary">Administrativa</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">12 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>05/11/2023</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">Inactiva</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(4)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(4)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr data-category="tecnica">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="5">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Mantenimiento Técnico Preventivo</strong>
+                                                        <div class="text-muted small">MTP-2024-002</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Técnica</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">25 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>08/01/2024</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Activa</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(5)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(5)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr data-category="seguridad">
+                                                    <td>
+                                                        <input type="checkbox" class="section-checkbox" value="6">
+                                                    </td>
+                                                    <td>
+                                                        <strong>Equipos de Protección Personal</strong>
+                                                        <div class="text-muted small">EPP-2023-019</div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-danger">Seguridad</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">8 preguntas</span>
+                                                    </td>
+                                                    <td>
+                                                        <small>15/09/2023</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-success">Activa</span>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="viewSectionDetails(6)">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editSection(6)">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="alert alert-info">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            Secciones seleccionadas para eliminación: <span id="selectedSectionsList" class="fw-bold">Ninguna</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Preguntas con Posible Conflicto</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="list-group">
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">#102 - Procedimiento obsoleto</h6>
-                                        <span class="badge bg-warning">2 usos</span>
-                                    </div>
-                                    <p class="mb-1 small">Usada en escenarios: "Inventario Básico", "Mantenimiento 101"</p>
-                                    <small>Recomendación: Actualizar antes de eliminar</small>
+                        
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i> Opciones de Eliminación</h5>
                                 </div>
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">#105 - Proceso anterior ISO</h6>
-                                        <span class="badge bg-warning">3 usos</span>
+                                <div class="card-body">
+                                    <div class="mb-4">
+                                        <h6><i class="bi bi-clock-history me-2"></i> Tipo de Eliminación</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="deleteType" id="deletePermanent" value="permanent" checked>
+                                            <label class="form-check-label" for="deletePermanent">
+                                                <strong>Eliminación Permanente</strong>
+                                                <div class="form-text">Elimina completamente de la base de datos</div>
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="radio" name="deleteType" id="deleteArchive" value="archive">
+                                            <label class="form-check-label" for="deleteArchive">
+                                                <strong>Archivar</strong>
+                                                <div class="form-text">Mueve a archivo histórico (recuperable)</div>
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="deleteType" id="deleteDeactivate" value="deactivate">
+                                            <label class="form-check-label" for="deleteDeactivate">
+                                                <strong>Desactivar</strong>
+                                                <div class="form-text">Solo cambia estado a inactivo</div>
+                                            </label>
+                                        </div>
                                     </div>
-                                    <p class="mb-1 small">Usada en: "Calidad Avanzada", "Auditoría Interna"</p>
-                                    <small>Recomendación: Reemplazar con versión actualizada</small>
+                                    
+                                    <div class="mb-4">
+                                        <h6><i class="bi bi-bell me-2"></i> Notificaciones</h6>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="notifyUsers" checked>
+                                            <label class="form-check-label" for="notifyUsers">
+                                                Notificar a usuarios afectados
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="notifyAdmin" checked>
+                                            <label class="form-check-label" for="notifyAdmin">
+                                                Notificar a administradores
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="generateReport">
+                                            <label class="form-check-label" for="generateReport">
+                                                Generar reporte de eliminación
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label for="deleteReason" class="form-label">Razón de Eliminación *</label>
+                                        <textarea class="form-control" id="deleteReason" rows="3" 
+                                                  placeholder="Explique por qué está eliminando estas secciones..."
+                                                  required></textarea>
+                                        <div class="form-text">Esta información quedará en el historial</div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-danger btn-lg" onclick="confirmDeleteSections()" id="deleteButton" disabled>
+                                            <i class="bi bi-trash me-2"></i> Eliminar Secciones Seleccionadas
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="clearSelection()">
+                                            <i class="bi bi-x-circle me-2"></i> Limpiar Selección
+                                        </button>
+                                        <button class="btn btn-outline-primary" onclick="exportSelection()">
+                                            <i class="bi bi-download me-2"></i> Exportar Lista
+                                        </button>
+                                    </div>
+                                    
+                                    <hr class="my-4">
+                                    
+                                    <div class="alert alert-warning">
+                                        <h6><i class="bi bi-exclamation-octagon me-2"></i> Impacto Estimado</h6>
+                                        <ul class="mb-0 small">
+                                            <li>Preguntas afectadas: <span id="totalQuestions">0</span></li>
+                                            <li>Evaluaciones impactadas: <span id="affectedEvaluations">0</span></li>
+                                            <li>Usuarios afectados: <span id="affectedUsers">0</span></li>
+                                        </ul>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Historial de Cambios</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Fecha</th>
-                                            <th>Pregunta</th>
-                                            <th>Acción</th>
-                                            <th>Usuario</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>2024-01-05</td>
-                                            <td>#045 - Cambio de aceite</td>
-                                            <td><span class="badge bg-success">Actualizada</span></td>
-                                            <td>admin</td>
-                                        </tr>
-                                        <tr>
-                                            <td>2023-12-20</td>
-                                            <td>#078 - Seguridad EPIs</td>
-                                            <td><span class="badge bg-primary">Reemplazada</span></td>
-                                            <td>supervisor</td>
-                                        </tr>
-                                        <tr>
-                                            <td>2023-11-15</td>
-                                            <td>#012 - Inventario manual</td>
-                                            <td><span class="badge bg-danger">Eliminada</span></td>
-                                            <td>owner</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
@@ -242,161 +360,308 @@
 </div>
 
 <script>
-let selectedQuestions = [];
-
-function toggleAllQuestions(source) {
-    const checkboxes = document.querySelectorAll('.question-checkbox');
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar eventos de checkboxes
+    const checkboxes = document.querySelectorAll('.section-checkbox');
     checkboxes.forEach(checkbox => {
-        if (!checkbox.disabled) {
-            checkbox.checked = source.checked;
-            updateQuestionSelection(checkbox);
-        }
+        checkbox.addEventListener('change', updateSelectionCount);
     });
-}
-
-function updateQuestionSelection(checkbox) {
-    const questionId = checkbox.getAttribute('data-id');
-    const questionText = checkbox.getAttribute('data-text');
-    const questionUsed = parseInt(checkbox.getAttribute('data-used'));
     
-    if (checkbox.checked) {
-        if (!selectedQuestions.includes(questionId)) {
-            selectedQuestions.push({
-                id: questionId,
-                text: questionText,
-                used: questionUsed
-            });
-        }
-    } else {
-        selectedQuestions = selectedQuestions.filter(q => q.id !== questionId);
-    }
-    
-    updateSelectedQuestionsList();
-    updateDeleteButton();
-}
-
-function updateSelectedQuestionsList() {
-    const container = document.getElementById('selectedQuestions');
-    const countElement = document.getElementById('selectedCount');
-    
-    if (selectedQuestions.length === 0) {
-        container.innerHTML = '<p class="text-muted small">No hay preguntas seleccionadas</p>';
-        countElement.textContent = '0 seleccionadas';
-        countElement.className = 'badge bg-secondary';
-        return;
-    }
-    
-    let html = '<ul class="list-unstyled small">';
-    let usedCount = 0;
-    
-    selectedQuestions.forEach(question => {
-        if (question.used > 0) usedCount++;
-        html += `<li>
-            <i class="bi bi-question-circle ${question.used > 0 ? 'text-warning' : 'text-success'} me-2"></i>
-            #${question.id} - ${question.text.substring(0, 40)}...
-            ${question.used > 0 ? '<span class="badge bg-warning">' + question.used + ' uso(s)</span>' : ''}
-        </li>`;
-    });
-    html += '</ul>';
-    
-    container.innerHTML = html;
-    countElement.textContent = `${selectedQuestions.length} seleccionadas`;
-    countElement.className = usedCount > 0 ? 'badge bg-warning' : 'badge bg-success';
-}
-
-function updateDeleteButton() {
-    const button = document.getElementById('deleteQuestionsBtn');
-    const verifyCheck = document.getElementById('verifyUnused');
-    
-    if (selectedQuestions.length > 0 && verifyCheck.checked) {
-        button.disabled = false;
-        button.innerHTML = `<i class="bi bi-trash-fill me-2"></i> Eliminar ${selectedQuestions.length} Pregunta(s)`;
-    } else {
-        button.disabled = true;
-        button.innerHTML = '<i class="bi bi-trash-fill me-2"></i> Eliminar Preguntas Seleccionadas';
-    }
-}
-
-// Event listeners
-document.getElementById('verifyUnused').addEventListener('change', updateDeleteButton);
-document.querySelectorAll('.question-checkbox').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        updateQuestionSelection(this);
-    });
+    // Inicializar contador
+    updateSelectionCount();
 });
 
-// Buscador de preguntas
-document.getElementById('searchQuestions').addEventListener('input', function() {
-    const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#questionsTable tr');
+function filterSections() {
+    const searchTerm = document.getElementById('searchSections').value.toLowerCase();
+    const filterCategory = document.getElementById('filterCategory').value;
+    const rows = document.querySelectorAll('#sectionsTable tbody tr');
     
     rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
+        const sectionName = row.cells[1].textContent.toLowerCase();
+        const category = row.getAttribute('data-category');
+        const shouldShow = 
+            (sectionName.includes(searchTerm) || searchTerm === '') &&
+            (filterCategory === '' || category === filterCategory);
+        
+        row.style.display = shouldShow ? '' : 'none';
     });
-});
+}
 
-function deleteSelectedQuestions() {
-    const reason = document.getElementById('replacementReason').value;
-    const deletionType = document.getElementById('deletionType').value;
-    const notifyUsers = document.getElementById('notifyUsers').checked;
+function toggleAllSections() {
+    const selectAll = document.getElementById('selectAllSections');
+    const checkboxes = document.querySelectorAll('.section-checkbox');
+    const visibleRows = document.querySelectorAll('#sectionsTable tbody tr:not([style*="display: none"])');
     
-    if (!reason.trim()) {
-        alert('Debe especificar un motivo para la eliminación');
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        if (row.style.display !== 'none') {
+            checkbox.checked = selectAll.checked;
+        }
+    });
+    
+    updateSelectionCount();
+}
+
+function updateSelectionCount() {
+    const checkboxes = document.querySelectorAll('.section-checkbox:checked');
+    const selectedCount = checkboxes.length;
+    const selectAllCheckbox = document.getElementById('selectAllSections');
+    
+    // Actualizar contador
+    document.getElementById('selectedCount').textContent = `${selectedCount} seleccionadas`;
+    document.getElementById('selectedCount').className = selectedCount > 0 ? 'badge bg-danger' : 'badge bg-primary';
+    
+    // Actualizar lista de seleccionados
+    const selectedNames = [];
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const sectionName = row.cells[1].querySelector('strong').textContent;
+        selectedNames.push(sectionName);
+    });
+    
+    document.getElementById('selectedSectionsList').textContent = 
+        selectedNames.length > 0 ? selectedNames.join(', ') : 'Ninguna';
+    
+    // Habilitar/deshabilitar botón de eliminar
+    document.getElementById('deleteButton').disabled = selectedCount === 0;
+    
+    // Calcular impacto
+    if (selectedCount > 0) {
+        // Simular cálculo de impacto
+        const totalQuestions = selectedCount * 15; // Ejemplo
+        const affectedEvaluations = selectedCount * 3;
+        const affectedUsers = selectedCount * 8;
+        
+        document.getElementById('totalQuestions').textContent = totalQuestions;
+        document.getElementById('affectedEvaluations').textContent = affectedEvaluations;
+        document.getElementById('affectedUsers').textContent = affectedUsers;
+    } else {
+        document.getElementById('totalQuestions').textContent = '0';
+        document.getElementById('affectedEvaluations').textContent = '0';
+        document.getElementById('affectedUsers').textContent = '0';
+    }
+    
+    // Actualizar checkbox "seleccionar todos"
+    const visibleCheckboxes = document.querySelectorAll('#sectionsTable tbody tr:not([style*="display: none"]) .section-checkbox');
+    const checkedVisible = document.querySelectorAll('#sectionsTable tbody tr:not([style*="display: none"]) .section-checkbox:checked');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = visibleCheckboxes.length > 0 && checkedVisible.length === visibleCheckboxes.length;
+        selectAllCheckbox.indeterminate = checkedVisible.length > 0 && checkedVisible.length < visibleCheckboxes.length;
+    }
+}
+
+function viewSectionDetails(sectionId) {
+    alert(`Ver detalles de sección ID: ${sectionId}\n\nEsta funcionalidad abriría un modal con información detallada de la sección.`);
+}
+
+function editSection(sectionId) {
+    alert(`Editar sección ID: ${sectionId}\n\nEsta funcionalidad redirigiría al formulario de edición de sección.`);
+}
+
+function confirmDeleteSections() {
+    const checkboxes = document.querySelectorAll('.section-checkbox:checked');
+    const selectedCount = checkboxes.length;
+    const deleteType = document.querySelector('input[name="deleteType"]:checked').value;
+    const deleteReason = document.getElementById('deleteReason').value;
+    
+    if (!deleteReason.trim()) {
+        alert('Por favor, proporcione una razón para la eliminación.');
+        document.getElementById('deleteReason').focus();
         return;
     }
     
-    const usedQuestions = selectedQuestions.filter(q => q.used > 0);
-    if (usedQuestions.length > 0) {
-        if (!confirm(`⚠️ ADVERTENCIA: ${usedQuestions.length} pregunta(s) seleccionada(s) están en uso activo.\n\n¿Desea continuar con la eliminación?`)) {
-            return;
-        }
-    }
+    // Obtener nombres de secciones seleccionadas
+    const selectedNames = [];
+    const selectedIds = [];
     
-    const actionText = deletionType === 'archive' ? 'archivadas' : 
-                      deletionType === 'replace' ? 'reemplazadas' : 'eliminadas permanentemente';
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const sectionName = row.cells[1].querySelector('strong').textContent;
+        selectedNames.push(sectionName);
+        selectedIds.push(checkbox.value);
+    });
     
-    if (confirm(`¿Confirmar que desea ${actionText} ${selectedQuestions.length} pregunta(s)?`)) {
-        alert(`✅ ${selectedQuestions.length} pregunta(s) ${actionText}.\n\nMotivo: ${reason}\n${notifyUsers ? 'Se notificará a los usuarios afectados.' : ''}`);
+    const deleteTypeText = {
+        'permanent': 'ELIMINACIÓN PERMANENTE',
+        'archive': 'ARCHIVADO',
+        'deactivate': 'DESACTIVACIÓN'
+    }[deleteType];
+    
+    const confirmation = confirm(
+        `¿ESTÁ SEGURO DE REALIZAR ${deleteTypeText}?\n\n` +
+        `Secciones a afectar (${selectedCount}):\n${selectedNames.join('\n')}\n\n` +
+        `Razón: ${deleteReason}\n\n` +
+        `Esta acción ${deleteType === 'permanent' ? 'NO SE PUEDE DESHACER' : 'puede revertirse desde el historial'}.`
+    );
+    
+    if (confirmation) {
+        // Simular eliminación
+        showLoading();
         
-        // Limpiar selección
-        selectedQuestions = [];
-        document.querySelectorAll('.question-checkbox').forEach(cb => cb.checked = false);
-        document.getElementById('selectAllQuestions').checked = false;
-        updateSelectedQuestionsList();
-        updateDeleteButton();
-        document.getElementById('replacementReason').value = '';
-        document.getElementById('verifyUnused').checked = false;
-        document.getElementById('notifyUsers').checked = false;
+        setTimeout(() => {
+            hideLoading();
+            
+            // Simular éxito
+            const modalHtml = `
+                <div class="modal fade" id="successModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i> Operación Exitosa</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Se ha completado la operación exitosamente:</p>
+                                <ul>
+                                    <li>Secciones procesadas: <strong>${selectedCount}</strong></li>
+                                    <li>Tipo de operación: <strong>${deleteTypeText}</strong></li>
+                                    <li>Razón registrada: "${deleteReason}"</li>
+                                </ul>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Los cambios se reflejarán en el sistema inmediatamente.
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-success" data-bs-dismiss="modal" onclick="location.reload()">
+                                    <i class="bi bi-check-lg me-2"></i> Aceptar y Recargar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Agregar modal al DOM
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+            
+            // Limpiar selección después de eliminar
+            setTimeout(() => {
+                clearSelection();
+            }, 3000);
+            
+        }, 1500);
     }
 }
 
-function exportQuestions() {
-    alert('📄 Exportando lista de preguntas a CSV...\n\nEl archivo se descargará automáticamente.');
+function clearSelection() {
+    const checkboxes = document.querySelectorAll('.section-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    document.getElementById('selectAllSections').checked = false;
+    document.getElementById('selectAllSections').indeterminate = false;
+    document.getElementById('deleteReason').value = '';
+    
+    updateSelectionCount();
 }
+
+function exportSelection() {
+    const checkboxes = document.querySelectorAll('.section-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor, seleccione al menos una sección para exportar.');
+        return;
+    }
+    
+    // Crear datos para exportar
+    let exportData = "Secciones seleccionadas para eliminación\n";
+    exportData += "Fecha: " + new Date().toLocaleString() + "\n";
+    exportData += "Total: " + checkboxes.length + " secciones\n\n";
+    
+    checkboxes.forEach((checkbox, index) => {
+        const row = checkbox.closest('tr');
+        const cells = row.cells;
+        exportData += `${index + 1}. ${cells[1].querySelector('strong').textContent}\n`;
+        exportData += `   Código: ${cells[1].querySelector('.text-muted').textContent}\n`;
+        exportData += `   Categoría: ${cells[2].textContent}\n`;
+        exportData += `   Preguntas: ${cells[3].textContent}\n`;
+        exportData += `   Estado: ${cells[5].textContent}\n\n`;
+    });
+    
+    exportData += "\nRazón de eliminación:\n";
+    exportData += document.getElementById('deleteReason').value || "(Sin razón especificada)";
+    
+    // Crear y descargar archivo
+    const blob = new Blob([exportData], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `secciones-eliminar-${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    alert(`Archivo exportado con ${checkboxes.length} secciones seleccionadas.`);
+}
+
+function showLoading() {
+    const button = document.getElementById('deleteButton');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Procesando...';
+    button.disabled = true;
+    
+    // Guardar texto original
+    button.setAttribute('data-original-text', originalText);
+}
+
+function hideLoading() {
+    const button = document.getElementById('deleteButton');
+    const originalText = button.getAttribute('data-original-text');
+    if (originalText) {
+        button.innerHTML = originalText;
+    }
+    button.disabled = false;
+}
+
+// Inicializar tooltips de Bootstrap
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
 </script>
 
 <style>
-.question-text {
-    font-size: 0.9rem;
-    line-height: 1.2;
+.sticky-top {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
 }
 
-.question-checkbox:checked {
-    accent-color: #dc3545;
+.table-hover tbody tr:hover {
+    background-color: rgba(220, 53, 69, 0.05) !important;
 }
 
-#selectedQuestions ul {
-    margin-bottom: 0;
+.section-checkbox:checked + td {
+    background-color: rgba(220, 53, 69, 0.1);
 }
 
-#selectedQuestions li {
-    padding: 3px 0;
-    border-bottom: 1px solid #eee;
+#sectionsTable tbody tr td:first-child {
+    border-left: 3px solid transparent;
 }
 
-#selectedQuestions li:last-child {
-    border-bottom: none;
+#sectionsTable tbody tr input[type="checkbox"]:checked ~ td {
+    border-left-color: #dc3545;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+.modal {
+    z-index: 1050;
 }
 </style>
 {% endblock %}
