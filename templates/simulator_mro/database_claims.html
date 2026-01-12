@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0"><i class="bi bi-database me-2"></i>Database Claims</h3>
+                <div>
+                    <span class="badge bg-light text-dark me-2">Total: {{ claims|length }}</span>
+                    <span class="badge bg-warning">Activas: {{ claims|selectattr('status', 'equalto', 'En Proceso')|list|length + claims|selectattr('status', 'equalto', 'Pendiente')|list|length }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">Reclamaciones registradas en la base de datos del sistema MRO.</p>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-primary">Pendientes</h5>
+                            <p class="card-text display-6">{{ claims|selectattr('status', 'equalto', 'Pendiente')|list|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">En Proceso</h5>
+                            <p class="card-text display-6">{{ claims|selectattr('status', 'equalto', 'En Proceso')|list|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-success">Resueltas</h5>
+                            <p class="card-text display-6">{{ claims|selectattr('status', 'equalto', 'Resuelta')|list|length }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <h5 class="card-title text-info">Vencen Hoy</h5>
+                            <p class="card-text display-6">2</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Asignado a</th>
+                            <th>Fecha Límite</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for claim in claims %}
+                        <tr>
+                            <td><strong>{{ claim.id }}</strong></td>
+                            <td>
+                                <span class="badge 
+                                    {% if claim.type == 'Falta de Material' %}bg-warning
+                                    {% elif claim.type == 'Daño en Equipo' %}bg-danger
+                                    {% elif claim.type == 'Error Documentación' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ claim.type }}
+                                </span>
+                            </td>
+                            <td style="max-width: 300px;">
+                                <small>{{ claim.description }}</small>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if claim.priority == 'Crítica' %}bg-danger
+                                    {% elif claim.priority == 'Alta' %}bg-warning
+                                    {% elif claim.priority == 'Media' %}bg-info
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ claim.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if claim.status == 'Resuelta' %}bg-success
+                                    {% elif claim.status == 'En Proceso' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ claim.status }}
+                                </span>
+                            </td>
+                            <td>{{ claim.assigned_to }}</td>
+                            <td>
+                                <span class="{% if claim.due_date == '2024-01-12' %}text-danger fw-bold{% endif %}">
+                                    {{ claim.due_date }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="viewClaim('{{ claim.id }}')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% if claim.status != 'Resuelta' %}
+                                <button class="btn btn-sm btn-outline-success" onclick="resolveClaim('{{ claim.id }}')">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-chat"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-filter me-2"></i>Filtrar Reclamaciones</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <select class="form-select form-select-sm">
+                                        <option>Por Prioridad</option>
+                                        <option>Crítica</option>
+                                        <option>Alta</option>
+                                        <option>Media</option>
+                                        <option>Baja</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <select class="form-select form-select-sm">
+                                        <option>Por Estado</option>
+                                        <option>Pendiente</option>
+                                        <option>En Proceso</option>
+                                        <option>Resuelta</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-primary w-100">Aplicar Filtros</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-download me-2"></i>Exportar Datos</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-file-excel me-2"></i>Exportar a Excel
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-file-pdf me-2"></i>Generar Reporte PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewClaim(claimId) {
+    alert(`Ver detalles de reclamación: ${claimId}\n\nEsta funcionalidad mostrará todos los detalles, historial y archivos adjuntos.`);
+}
+
+function resolveClaim(claimId) {
+    if (confirm(`¿Marcar reclamación ${claimId} como resuelta?`)) {
+        alert(`✅ Reclamación ${claimId} marcada como resuelta.\n\nSe notificará al solicitante.`);
+        // Recargar página para ver cambios
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+</script>
+{% endblock %}
