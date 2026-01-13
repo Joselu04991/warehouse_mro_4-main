@@ -296,11 +296,90 @@
                 <i class="bi bi-robot me-2"></i>Alertas Inteligentes
             </a>
 
-                            {% endif %}
+            <!-- ======================== SIMULADOR MRO ======================== -->
+            <div class="accordion" id="accordionSimulator">
+                <div class="accordion-item bg-dark border-0">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#simulatorMenu">
+                            <i class="bi bi-cpu me-2"></i> Simulador MRO
+                            <span class="simulator-badge">NUEVO</span>
+                        </button>
+                    </h2>
 
+                    <div id="simulatorMenu" class="accordion-collapse collapse">
+                        <div class="accordion-body p-0">
+                            <a href="{{ url_for('simulator_mro.dashboard') }}"
+                               class="list-group-item module-item">
+                                📊 Dashboard Simulador
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.create_scenario') }}"
+                               class="list-group-item module-item">
+                                🎮 Crear Escenario
+                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
+                                <span class="module-badge">Plan</span>
+                                {% endif %}
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.access_directories') }}"
+                               class="list-group-item module-item">
+                                📁 Directorios Sistema
+                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
+                                <span class="module-badge">Plan</span>
+                                {% endif %}
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.create_claims') }}"
+                               class="list-group-item module-item">
+                                ⚠️ Crear Reclamaciones
+                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
+                                <span class="module-badge">Plan</span>
+                                {% endif %}
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.database_claims') }}"
+                               class="list-group-item module-item">
+                                🗄 Base de Reclamaciones
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.warehouse_claims') }}"
+                               class="list-group-item module-item">
+                                🏭 Reclamaciones Almacén
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.paytime') }}"
+                               class="list-group-item module-item">
+                                ⏰ Registro Tiempos
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.abscains') }}"
+                               class="list-group-item module-item">
+                                👥 Gestión Ausencias
+                                {% if current_user.role in ['supervisor','admin','owner'] %}
+                                <span class="module-badge">Sup</span>
+                                {% endif %}
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.delete_sections') }}"
+                               class="list-group-item module-item">
+                                🗑 Eliminar Secciones
+                                {% if current_user.role in ['admin','owner'] %}
+                                <span class="module-badge">Admin</span>
+                                {% endif %}
+                            </a>
+                            
+                            <a href="{{ url_for('simulator_mro.delete_questions') }}"
+                               class="list-group-item module-item">
+                                ❓ Eliminar Preguntas
+                                {% if current_user.role in ['admin','owner'] %}
+                                <span class="module-badge">Admin</span>
+                                {% endif %}
+                            </a>
                         </div>
                     </div>
-
                 </div>
             </div>
 
@@ -423,6 +502,3 @@
 
 </body>
 </html>
-
-
-
