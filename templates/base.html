@@ -53,47 +53,6 @@
         .accordion-body .list-group-item {
             padding-left: 40px !important;
         }
-        
-        /* Estilo especial para Simulador MRO */
-        .simulator-badge {
-            background: linear-gradient(45deg, #ff6b6b, #feca57);
-            color: #000;
-            font-weight: bold;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-        
-        /* Estilo para módulos especiales */
-        .module-item {
-            padding-left: 50px !important;
-            font-size: 0.9rem;
-            border-left: 3px solid transparent;
-            transition: all 0.3s;
-        }
-        
-        .module-item:hover {
-            border-left: 3px solid #f8c000;
-            background: #2c3238 !important;
-        }
-        
-        .module-badge {
-            background: #28a745;
-            color: white;
-            font-size: 0.6rem;
-            padding: 1px 6px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-        
-        /* Estilos para badges de roles */
-        .badge-admin { background: #dc3545; }
-        .badge-plan { background: #0d6efd; }
-        .badge-sup { background: #6f42c1; }
-        .badge-tec { background: #20c997; }
-        .badge-owner { background: #000; }
     </style>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -296,95 +255,6 @@
                 <i class="bi bi-robot me-2"></i>Alertas Inteligentes
             </a>
 
-            <!-- ======================== SIMULADOR MRO ======================== -->
-            <div class="accordion" id="accordionSimulator">
-                <div class="accordion-item bg-dark border-0">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button collapsed"
-                                type="button"
-                                data-bs-toggle="collapse"
-                                data-bs-target="#simulatorMenu">
-                            <i class="bi bi-cpu me-2"></i> Simulador MRO
-                            <span class="simulator-badge">NUEVO</span>
-                        </button>
-                    </h2>
-
-                    <div id="simulatorMenu" class="accordion-collapse collapse">
-                        <div class="accordion-body p-0">
-                            <!-- IMPORTANTE: Cambié simulator_mro.dashboard a dashboard.dashboard -->
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item">
-                                📊 Dashboard Simulador
-                            </a>
-                            
-                            <!-- Enlaces deshabilitados hasta que crees las rutas -->
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                🎮 Crear Escenario
-                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
-                                <span class="module-badge">Plan</span>
-                                {% endif %}
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                📁 Directorios Sistema
-                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
-                                <span class="module-badge">Plan</span>
-                                {% endif %}
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                ⚠️ Crear Reclamaciones
-                                {% if current_user.role in ['planificador','supervisor','admin','owner'] %}
-                                <span class="module-badge">Plan</span>
-                                {% endif %}
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                🗄 Base de Reclamaciones
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                🏭 Reclamaciones Almacén
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                ⏰ Registro Tiempos
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                👥 Gestión Ausencias
-                                {% if current_user.role in ['supervisor','admin','owner'] %}
-                                <span class="module-badge">Sup</span>
-                                {% endif %}
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                🗑 Eliminar Secciones
-                                {% if current_user.role in ['admin','owner'] %}
-                                <span class="module-badge">Admin</span>
-                                {% endif %}
-                            </a>
-                            
-                            <a href="{{ url_for('dashboard.dashboard') }}"
-                               class="list-group-item module-item disabled">
-                                ❓ Eliminar Preguntas
-                                {% if current_user.role in ['admin','owner'] %}
-                                <span class="module-badge">Admin</span>
-                                {% endif %}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             {% if current_user.role == "owner" %}
             <div class="role-title">
                 <i class="bi bi-shield-lock-fill me-2"></i>Administración Owner
@@ -432,7 +302,7 @@
 
                 </ul>
             </div>
-</nav>
+        </nav>
         
         {% if task_alerts %}
         <div class="alert alert-warning">
@@ -462,26 +332,10 @@
         document.getElementById("wrapper").classList.toggle("toggled");
     });
     
-    // Marcar como activo el menú del simulador si estamos en esa sección
+    // Resaltar el enlace activo en el sidebar
     document.addEventListener('DOMContentLoaded', function() {
-        const currentPath = window.location.pathname;
-        
-        // Abrir automáticamente el acordeón del simulador si estamos en cualquier ruta de simulador
-        if (currentPath.includes('/mro-simulator')) {
-            const simulatorAccordion = document.getElementById('simulatorMenu');
-            if (simulatorAccordion) {
-                simulatorAccordion.classList.add('show');
-                const button = document.querySelector('[data-bs-target="#simulatorMenu"]');
-                if (button) {
-                    button.classList.remove('collapsed');
-                    button.setAttribute('aria-expanded', 'true');
-                }
-            }
-        }
-        
-        // Resaltar el enlace activo en el sidebar
         const currentUrl = window.location.pathname;
-        const sidebarLinks = document.querySelectorAll('#sidebar-wrapper a:not(.disabled)');
+        const sidebarLinks = document.querySelectorAll('#sidebar-wrapper a');
         
         sidebarLinks.forEach(link => {
             if (link.href && link.href.includes(currentUrl)) {
@@ -489,15 +343,6 @@
                 link.style.backgroundColor = '#0d6efd';
                 link.style.color = 'white';
             }
-        });
-        
-        // Tooltip para enlaces deshabilitados
-        const disabledLinks = document.querySelectorAll('.disabled');
-        disabledLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                alert('Este módulo estará disponible en la próxima actualización');
-            });
         });
     });
 </script>
