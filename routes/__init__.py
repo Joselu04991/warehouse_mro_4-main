@@ -14,8 +14,6 @@ from routes.auditoria_routes import auditoria_bp
 from routes.alertas_ai_routes import alertas_ai_bp
 from routes.admin_roles_routes import admin_roles_bp
 from routes.tasks_routes import tasks_bp
-# Añadir el nuevo blueprint de MRO
-from routes.simulator_mro_routes import simulator_mro_bp
 
 def register_blueprints(app):
 
@@ -64,9 +62,6 @@ def register_blueprints(app):
     app.register_blueprint(tasks_bp)
     print("👉 Cargado: tasks")
 
-    # Nuevo simulador MRO con roles
-    app.register_blueprint(simulator_mro_bp)
-    print("👉 Cargado: simulator_mro")
-    
     print("\n========== BLUEPRINTS CARGADOS OK ==========\n")
+
 
