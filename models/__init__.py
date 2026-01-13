@@ -30,7 +30,30 @@ try:
     print("✅ Productividad importado correctamente")
 except ImportError as e:
     print(f"⚠️  No se pudo importar Productividad: {e}")
-    # Puedes definir un modelo vacío o manejarlo de otra forma
-    class Productividad:
-        pass
+    # Crear un modelo dummy para evitar errores
+    class Productividad(db.Model):
+        __tablename__ = 'productividad_dummy'
+        id = db.Column(db.Integer, primary_key=True)
+        # Campos mínimos para que no falle
+        fecha = db.Column(db.Date)
+        usuario_id = db.Column(db.Integer)
 
+# Si no tienes el archivo simulator_mro_routes.py, crea uno dummy
+try:
+    from .scenario_mro import ScenarioMRO, UserDecisionMRO
+except ImportError:
+    print("⚠️  scenario_mro.py no encontrado - creando modelos dummy")
+    
+    # Crear modelos dummy
+    class ScenarioMRO(db.Model):
+        __tablename__ = 'scenarios_mro_dummy'
+        id = db.Column(db.Integer, primary_key=True)
+        nombre = db.Column(db.String(100))
+    
+    class UserDecisionMRO(db.Model):
+        __tablename__ = 'user_decisions_mro_dummy'
+        id = db.Column(db.Integer, primary_key=True)
+        usuario_id = db.Column(db.Integer)
+
+# Opcional: También corregir el nombre del archivo si prefieres
+# Puedes renombrar 'productivitydad.py' a 'productividad.py' y actualizar la importación
