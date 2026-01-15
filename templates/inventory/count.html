@@ -148,6 +148,17 @@
     cursor: not-allowed;
   }
   
+  /* ================= DECIMAL INPUT STYLES ================= */
+  .decimal-input {
+    font-family: 'Courier New', monospace;
+  }
+  
+  .input-hint {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 2px;
+  }
+  
   /* ================= VOICE CONTROL STYLES ================= */
   .voice-controls {
     position: sticky;
@@ -403,9 +414,14 @@
             <i class="bi bi-clipboard-check me-2"></i>Conteo Físico de Inventario
           </h1>
           <p class="mb-0 opacity-75">
-            Dictado por voz • Guardado automático • Modo guantes
+            Dictado por voz • Guardado automático • Modo guantes • Decimales permitidos
           </p>
         </div>
+        <div class="col-md-4 text-end">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-1"></i>
+            <span>{{ session.get('username', 'Usuario') }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -467,6 +483,14 @@
               <i class="bi bi-speaker me-1"></i>Confirmación por voz
             </label>
           </div>
+          
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleDecimals" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleDecimals">
+              <i class="bi bi-dot me-1"></i>Permitir decimales
+            </label>
+          </div>
         </div>
       </div>
       
@@ -490,6 +514,9 @@
       <h5 class="mb-0 fw-bold">Items para Conteo</h5>
       <div class="text-light small">
         <span class="badge bg-info me-2">Total: {{ items|length }}</span>
+        <span class="badge bg-warning me-2" id="decimalIndicator">
+          <i class="bi bi-dot me-1"></i>Decimales permitidos
+        </span>
         <span class="opacity-75">Stock: Sistema | Conteo: Físico</span>
       </div>
     </div>
@@ -543,16 +570,20 @@
               <!-- Conteo Físico -->
               <td class="text-center position-relative">
                 <input type="text"
-                       class="form-control count-input"
+                       class="form-control count-input decimal-input"
                        value="{% if i.real_count and i.real_count > 0 %}{{ i.real_count }}{% endif %}"
-                       inputmode="numeric"
-                       pattern="[0-9]*"
+                       inputmode="decimal"
+                       pattern="[0-9]*[.,]?[0-9]*"
                        autocomplete="off"
                        data-code="{{ i.material_code }}"
                        data-loc="{{ i.location }}"
                        data-stock="{{ i.stock }}"
+                       data-allows-decimals="{{ i.allows_decimals|default(true) }}"
                        placeholder="0"
                        aria-label="Conteo para {{ i.material_code }}">
+                <div class="input-hint">
+                  Use punto o coma para decimales
+                </div>
                 <div class="saving-indicator">
                   <div class="spinner-border spinner-border-sm text-success" role="status">
                     <span class="visually-hidden">Guardando...</span>
@@ -596,6 +627,10 @@
       <div class="legend-item">
         <div class="legend-color legend-pendiente"></div>
         <span>Pendiente: Sin conteo</span>
+      </div>
+      <div class="legend-item">
+        <i class="bi bi-dot text-primary me-1"></i>
+        <span class="text-primary">Decimales permitidos para este material</span>
       </div>
     </div>
   </div>
@@ -644,7 +679,7 @@
           <div class="alert alert-info mt-3">
             <i class="bi bi-info-circle me-2"></i>
             <strong>Información:</strong> El inventario se guarda automáticamente cuando ingresas un conteo. 
-            El botón "Guardar Inventario" cierra oficialmente el proceso de conteo.
+            Use punto o coma para ingresar decimales (ej: 12.5 o 12,5).
           </div>
         </div>
         <div class="modal-footer">
@@ -666,7 +701,7 @@
             <i class="bi bi-info-circle me-2"></i>
             <span id="statusText">Preparado para dictado</span>
             <div id="voiceInstructions" class="small mt-1">
-              Di "código" seguido de números y "cantidad" seguido de números
+              Para decimales: diga "código X cantidad Y punto Z" o use "coma"
             </div>
           </div>
         </div>
@@ -682,11 +717,10 @@
   </div>
 </div>
 
-<!-- ================= SCRIPT MEJORADO CON NUEVA FUNCIONALIDAD ================= -->
+<!-- ================= SCRIPT MEJORADO CON DECIMALES ================= -->
 <script>
 /**
- * Sistema de Conteo Físico - Versión Mejorada
- * Agrega botones para guardar inventario y exportar diferencias
+ * Sistema de Conteo Físico - Versión con Decimales
  */
 
 (function() {
@@ -696,6 +730,8 @@
   const CONFIG = {
     DEBOUNCE_DELAY: 800,
     SPEECH_LANG: 'es-PE',
+    DECIMAL_SEPARATOR: '.', // Separador por defecto
+    MAX_DECIMALS: 3, // Máximo de decimales permitidos
     INVENTORY_API: {
       save: "{{ url_for('inventory.save_inventory') }}",
       export: "{{ url_for('inventory.export_differences') }}",
@@ -709,12 +745,14 @@
       recognition: null,
       isListening: false,
       continuous: true,
-      feedback: true
+      feedback: true,
+      allowDecimals: true
     },
     ui: {
       glovesMode: false,
       savingRows: new Set(),
-      inventorySaved: false
+      inventorySaved: false,
+      decimalsEnabled: true
     },
     stats: {
       total: {{ items|length }},
@@ -734,7 +772,9 @@
     voiceInstructions: document.getElementById('voiceInstructions'),
     toggleContinuous: document.getElementById('toggleContinuous'),
     toggleSpeak: document.getElementById('toggleSpeak'),
+    toggleDecimals: document.getElementById('toggleDecimals'),
     pageContainer: document.querySelector('.page-container'),
+    decimalIndicator: document.getElementById('decimalIndicator'),
     
     // Nuevos elementos
     btnSaveInventory: document.getElementById('btnSaveInventory'),
@@ -755,6 +795,70 @@
   // ================= FUNCIONES UTILITARIAS =================
   
   /**
+   * Valida y formatea número decimal
+   */
+  function formatDecimal(value, allowDecimals = true) {
+    if (!value) return '';
+    
+    // Reemplazar coma por punto para procesamiento
+    let strValue = value.toString().replace(',', '.');
+    
+    // Validar que sea un número válido
+    if (isNaN(parseFloat(strValue))) {
+      return '';
+    }
+    
+    // Si no permite decimales, redondear al entero más cercano
+    if (!allowDecimals && !State.ui.decimalsEnabled) {
+      const intValue = Math.round(parseFloat(strValue));
+      return intValue.toString();
+    }
+    
+    // Validar formato decimal
+    const parts = strValue.split('.');
+    if (parts.length > 2) {
+      // Si hay más de un punto, solo tomar la primera parte
+      strValue = parts[0] + '.' + parts[1];
+    }
+    
+    // Limitar decimales
+    if (parts.length === 2) {
+      strValue = parts[0] + '.' + parts[1].substring(0, CONFIG.MAX_DECIMALS);
+    }
+    
+    // Usar punto como separador decimal
+    return strValue.replace(',', '.');
+  }
+  
+  /**
+   * Normaliza número decimal para comparación
+   */
+  function parseDecimal(value) {
+    if (!value) return 0;
+    
+    const num = parseFloat(value.toString().replace(',', '.'));
+    return isNaN(num) ? 0 : num;
+  }
+  
+  /**
+   * Compara números considerando decimales
+   */
+  function compareDecimals(a, b, tolerance = 0.001) {
+    const numA = parseDecimal(a);
+    const numB = parseDecimal(b);
+    return Math.abs(numA - numB) <= tolerance;
+  }
+  
+  /**
+   * Verifica si un item permite decimales
+   */
+  function allowsDecimalInput(input) {
+    if (!State.ui.decimalsEnabled) return false;
+    const allowsDecimals = input.dataset.allowsDecimals !== 'false';
+    return allowsDecimals;
+  }
+  
+  /**
    * Actualiza la interfaz de voz
    */
   function updateVoiceUI(state, message = '') {
@@ -763,7 +867,9 @@
         icon: 'bi-mic',
         btnClass: 'btn-primary',
         defaultMsg: 'Preparado para dictado',
-        instructions: 'Di "código" seguido de números y "cantidad" seguido de números'
+        instructions: State.ui.decimalsEnabled 
+          ? 'Para decimales: diga "código X cantidad Y punto Z"' 
+          : 'Di "código" seguido de números y "cantidad" seguido de números'
       },
       listening: {
         icon: 'bi-mic-fill',
@@ -832,13 +938,13 @@
     let differences = 0;
     
     inputs.forEach(input => {
-      const value = parseInt(input.value) || 0;
-      const stock = parseInt(input.dataset.stock) || 0;
+      const value = parseDecimal(input.value);
+      const stock = parseDecimal(input.dataset.stock);
       
       if (value > 0) {
         counted++;
         
-        if (value === stock) {
+        if (compareDecimals(value, stock)) {
           ok++;
         } else if (value !== 0) {
           differences++;
@@ -882,8 +988,8 @@
     
     row.classList.remove('row-saving', 'row-saved');
     
-    const count = parseInt(input.value) || 0;
-    const stock = parseInt(input.dataset.stock) || 0;
+    const count = parseDecimal(input.value);
+    const stock = parseDecimal(input.dataset.stock);
     
     if (success) {
       row.classList.add('row-saving');
@@ -897,7 +1003,7 @@
           if (count === 0) {
             badge.className = 'status-badge pendiente';
             badge.innerHTML = '<i class="bi bi-clock me-1"></i>Pendiente';
-          } else if (count === stock) {
+          } else if (compareDecimals(count, stock)) {
             badge.className = 'status-badge ok';
             badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>OK';
           } else {
@@ -917,7 +1023,7 @@
    * Guarda una fila en el servidor
    */
   async function saveRow(input) {
-    const value = parseInt(input.value || "0", 10) || 0;
+    const value = formatDecimal(input.value, allowsDecimalInput(input));
     const code = input.dataset.code;
     
     if (State.ui.savingRows.has(code)) return;
@@ -942,8 +1048,10 @@
       
       showSaveFeedback(input, true);
       
-      if (value > 0) {
-        speak(`Registrado ${value} para ${code}`);
+      const countNum = parseDecimal(value);
+      if (countNum > 0) {
+        const countStr = countNum % 1 === 0 ? countNum.toString() : countNum.toFixed(2);
+        speak(`Registrado ${countStr} para ${code}`);
       }
       
     } catch (error) {
@@ -1078,6 +1186,7 @@
       Items Contados: ${State.stats.counted} (${Math.round((State.stats.counted/State.stats.total)*100)}%)
       Coincidencias: ${State.stats.ok}
       Diferencias: ${State.stats.differences}
+      Decimales permitidos: ${State.ui.decimalsEnabled ? 'Sí' : 'No'}
       
       === RESUMEN ===
       - ${State.stats.counted} de ${State.stats.total} items contados
@@ -1134,6 +1243,7 @@
           <h1>Resumen de Inventario</h1>
           <p>Fecha: ${new Date().toLocaleString()}</p>
           <p>Usuario: {{ session.get('username', 'Usuario') }}</p>
+          <p>Decimales permitidos: ${State.ui.decimalsEnabled ? 'Sí' : 'No'}</p>
           <div class="summary">
             <div class="summary-item">
               <span class="label">Total de Items:</span>
@@ -1172,7 +1282,115 @@
     printWindow.close();
   }
   
-  // ================= RECONOCIMIENTO DE VOZ (código existente) =================
+  /**
+   * Procesa comandos de voz con decimales
+   */
+  function processVoiceCommand(transcript) {
+    console.log('Voz reconocida:', transcript);
+    
+    // Convertir "coma" a punto para decimales
+    let processedTranscript = transcript
+      .toLowerCase()
+      .replace(/coma/g, 'punto')
+      .replace(/ y medio/g, ' punto cinco')
+      .replace(/ y cuarto/g, ' punto veinticinco')
+      .replace(/ y tres cuartos/g, ' punto setenta y cinco');
+    
+    // Buscar patrones de código y cantidad
+    const patterns = [
+      /código\s*(\d+)\s*cantidad\s*(\d+(?:[.,]\d+)?)/i,
+      /código\s*(\d+)\s*(\d+(?:[.,]\d+)?)/i,
+      /(\d+)\s*cantidad\s*(\d+(?:[.,]\d+)?)/i,
+      /(\d+)\s*(\d+(?:[.,]\d+)?)/i
+    ];
+    
+    let match = null;
+    for (const pattern of patterns) {
+      match = processedTranscript.match(pattern);
+      if (match) break;
+    }
+    
+    if (match && match.length >= 3) {
+      const code = match[1];
+      let quantity = match[2].replace(',', '.'); // Normalizar decimales
+      
+      // Si no permite decimales, redondear
+      const input = findInputByCode(code);
+      if (input && !allowsDecimalInput(input)) {
+        quantity = Math.round(parseFloat(quantity)).toString();
+      }
+      
+      if (input) {
+        input.value = quantity;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        saveRow(input);
+        
+        const quantityNum = parseFloat(quantity);
+        const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+        speak(`Registrado ${quantityStr} para código ${code}`);
+        updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+      } else {
+        updateVoiceUI('error', `Código ${code} no encontrado`);
+        speak(`Código ${code} no existe`);
+      }
+    } else {
+      // Intentar extraer números directamente
+      const numbers = processedTranscript.match(/\d+(?:[.,]\d+)?/g);
+      
+      if (numbers && numbers.length >= 2) {
+        let code = numbers[0];
+        let quantity = numbers[1].replace(',', '.');
+        
+        // Buscar si el código existe
+        const input = findInputByCode(code);
+        
+        if (input) {
+          // Si no permite decimales, redondear
+          if (!allowsDecimalInput(input)) {
+            quantity = Math.round(parseFloat(quantity)).toString();
+          }
+          
+          input.value = quantity;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          saveRow(input);
+          
+          const quantityNum = parseFloat(quantity);
+          const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+          speak(`Registrado ${quantityStr} para código ${code}`);
+          updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+        } else {
+          // Intentar con el número más largo como código
+          const sortedNumbers = numbers.sort((a, b) => b.length - a.length);
+          code = sortedNumbers[0];
+          quantity = sortedNumbers[1] || sortedNumbers[0];
+          
+          const input2 = findInputByCode(code);
+          if (input2) {
+            if (!allowsDecimalInput(input2)) {
+              quantity = Math.round(parseFloat(quantity.replace(',', '.'))).toString();
+            }
+            
+            input2.value = quantity;
+            input2.dispatchEvent(new Event('input', { bubbles: true }));
+            saveRow(input2);
+            
+            const quantityNum = parseFloat(quantity);
+            const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+            speak(`Registrado ${quantityStr} para código ${code}`);
+            updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+          } else {
+            updateVoiceUI('error', 'No se pudo identificar código válido');
+            speak('Por favor di código y cantidad claramente');
+          }
+        }
+      } else {
+        updateVoiceUI('error', 'No se entendió código y cantidad');
+        speak('Por favor di código y cantidad');
+      }
+    }
+  }
+  
+  // ================= RECONOCIMIENTO DE VOZ =================
   
   function initVoiceRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1189,7 +1407,7 @@
       State.voice.recognition.lang = CONFIG.SPEECH_LANG;
       State.voice.recognition.interimResults = false;
       State.voice.recognition.continuous = false;
-      State.voice.recognition.maxAlternatives = 1;
+      State.voice.recognition.maxAlternatives = 3; // Aumentar alternativas para mejor reconocimiento
       
       State.voice.recognition.onstart = () => {
         State.voice.isListening = true;
@@ -1197,31 +1415,8 @@
       };
       
       State.voice.recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
-        console.log('Voz reconocida:', transcript);
-        
-        const numbers = transcript.match(/\d+/g) || [];
-        
-        if (numbers.length >= 2) {
-          const code = numbers.reduce((a, b) => a.length >= b.length ? a : b);
-          const quantity = numbers.find(n => n !== code) || numbers[1];
-          
-          const input = findInputByCode(code);
-          
-          if (input) {
-            input.value = quantity;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            saveRow(input);
-            speak(`Registrado ${quantity} para código ${code}`);
-            updateVoiceUI('listening', `Registrado ${quantity} para ${code}`);
-          } else {
-            updateVoiceUI('error', `Código ${code} no encontrado`);
-            speak(`Código ${code} no existe`);
-          }
-        } else {
-          updateVoiceUI('error', 'No se entendió código y cantidad');
-          speak('Por favor di código y cantidad');
-        }
+        const transcript = event.results[0][0].transcript;
+        processVoiceCommand(transcript);
         
         if (State.voice.continuous && State.voice.isListening) {
           setTimeout(() => {
@@ -1327,7 +1522,7 @@
     }
   }
   
-  // ================= MANEJO DE INPUTS =================
+  // ================= MANEJO DE INPUTS CON DECIMALES =================
   
   function setupInputHandlers() {
     let saveTimer;
@@ -1336,14 +1531,38 @@
       input.addEventListener('input', function() {
         clearTimeout(saveTimer);
         
-        this.value = this.value.replace(/[^0-9]/g, '');
+        // Permitir solo números, punto y coma
+        let value = this.value.replace(/[^0-9.,]/g, '');
+        
+        // Reemplazar comas por puntos para validación interna
+        let normalizedValue = value.replace(',', '.');
+        
+        // Validar que solo haya un separador decimal
+        const decimalCount = (normalizedValue.match(/\./g) || []).length;
+        if (decimalCount > 1) {
+          // Si hay más de un punto, mantener solo el primero
+          const parts = normalizedValue.split('.');
+          normalizedValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        // Limitar decimales
+        if (normalizedValue.includes('.')) {
+          const parts = normalizedValue.split('.');
+          if (parts[1].length > CONFIG.MAX_DECIMALS) {
+            parts[1] = parts[1].substring(0, CONFIG.MAX_DECIMALS);
+            normalizedValue = parts.join('.');
+          }
+        }
+        
+        // Actualizar valor visual manteniendo coma si el usuario la usó
+        this.value = value.includes(',') ? normalizedValue.replace('.', ',') : normalizedValue;
         
         const row = this.closest('tr');
         if (row) {
           row.classList.add('row-saving');
         }
         
-        if (this.value && this.value !== '0') {
+        if (this.value && parseDecimal(this.value) > 0) {
           saveTimer = setTimeout(() => {
             saveRow(this);
           }, CONFIG.DEBOUNCE_DELAY);
@@ -1351,6 +1570,16 @@
       });
       
       input.addEventListener('blur', function() {
+        // Formatear al perder foco
+        if (this.value) {
+          const formattedValue = formatDecimal(this.value, allowsDecimalInput(this));
+          this.value = formattedValue;
+          
+          if (parseDecimal(formattedValue) > 0) {
+            saveRow(this);
+          }
+        }
+        
         const row = this.closest('tr');
         if (row) {
           setTimeout(() => {
@@ -1358,13 +1587,81 @@
           }, 300);
         }
       });
+      
+      // Permitir atajos de teclado
+      input.addEventListener('keydown', function(e) {
+        // Incrementar/decrementar con flechas
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const current = parseDecimal(this.value) || 0;
+          const increment = allowsDecimalInput(this) ? 0.5 : 1;
+          this.value = formatDecimal(current + increment, allowsDecimalInput(this));
+          this.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const current = parseDecimal(this.value) || 0;
+          const decrement = allowsDecimalInput(this) ? 0.5 : 1;
+          const newValue = Math.max(0, current - decrement);
+          this.value = formatDecimal(newValue, allowsDecimalInput(this));
+          this.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
     });
+  }
+  
+  // ================= TOGGLE DECIMALES =================
+  
+  function toggleDecimals() {
+    State.ui.decimalsEnabled = DOM.toggleDecimals.checked;
+    
+    if (State.ui.decimalsEnabled) {
+      DOM.decimalIndicator.style.display = 'inline-block';
+      speak('Decimales permitidos');
+      
+      // Actualizar todos los inputs
+      document.querySelectorAll('.count-input').forEach(input => {
+        input.pattern = "[0-9]*[.,]?[0-9]*";
+        input.inputMode = "decimal";
+        
+        // Si no permite decimales, marcar visualmente
+        if (!allowsDecimalInput(input)) {
+          input.style.borderColor = '#ffc107';
+          input.title = 'Este material no permite decimales';
+        }
+      });
+    } else {
+      DOM.decimalIndicator.style.display = 'none';
+      speak('Solo números enteros');
+      
+      // Convertir todos los valores a enteros
+      document.querySelectorAll('.count-input').forEach(input => {
+        input.pattern = "[0-9]*";
+        input.inputMode = "numeric";
+        input.style.borderColor = '';
+        input.title = '';
+        
+        // Redondear valores existentes
+        if (input.value) {
+          const currentValue = parseDecimal(input.value);
+          if (!isNaN(currentValue)) {
+            input.value = Math.round(currentValue).toString();
+            if (currentValue > 0) {
+              saveRow(input);
+            }
+          }
+        }
+      });
+      
+      updateStatistics();
+    }
+    
+    updateVoiceUI(State.voice.isListening ? 'listening' : 'idle');
   }
   
   // ================= INICIALIZACIÓN =================
   
   function initApp() {
-    console.log('Inicializando sistema de conteo mejorado...');
+    console.log('Inicializando sistema de conteo con decimales...');
     
     // Inicializar reconocimiento de voz
     if (initVoiceRecognition()) {
@@ -1380,6 +1677,9 @@
       State.voice.feedback = this.checked;
     });
     
+    // Configurar toggle de decimales
+    DOM.toggleDecimals.addEventListener('change', toggleDecimals);
+    
     // Configurar modo guantes
     DOM.btnGloves.addEventListener('click', toggleGlovesMode);
     
@@ -1393,6 +1693,9 @@
     // Actualizar estadísticas iniciales
     updateStatistics();
     
+    // Inicializar estado de decimales
+    toggleDecimals();
+    
     // Eventos de visibilidad
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && State.voice.isListening) {
@@ -1400,7 +1703,7 @@
       }
     });
     
-    console.log('Sistema de conteo mejorado inicializado correctamente');
+    console.log('Sistema de conteo con decimales inicializado correctamente');
   }
   
   // Iniciar aplicación
@@ -1413,4 +1716,3 @@
 })();
 </script>
 {% endblock %}
-
