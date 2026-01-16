@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+      <h5 class="mb-0">📸 Digitalizar Guía / Ticket de Báscula</h5>
+    </div>
+
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Seleccionar archivo</label>
+          <input type="file"
+                 class="form-control"
+                 name="file"
+                 accept=".jpg,.jpeg,.png,.pdf"
+                 required>
+          <small class="text-muted">
+            Formatos permitidos: JPG, PNG, PDF
+          </small>
+        </div>
+
+        <div class="alert alert-info">
+          <ul class="mb-0">
+            <li>El sistema leerá automáticamente el documento</li>
+            <li>Extraerá pesos, placas, conductor y empresa</li>
+            <li>Generará un Excel ordenado</li>
+          </ul>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a href="/documents" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+          <button type="submit" class="btn btn-success">
+            Procesar documento
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
