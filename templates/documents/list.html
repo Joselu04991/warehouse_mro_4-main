@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">📄 Documentos Digitalizados</h4>
+    <a href="/documents/upload" class="btn btn-primary">
+      + Nuevo documento
+    </a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-striped table-hover mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Proceso</th>
+            <th>Proveedor</th>
+            <th>Conductor</th>
+            <th>Placa</th>
+            <th>Peso Neto (KG)</th>
+            <th>Fecha</th>
+            <th>Excel</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for doc in documents %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ doc.process_number or '-' }}</td>
+            <td>{{ doc.provider or '-' }}</td>
+            <td>{{ doc.driver or '-' }}</td>
+            <td>{{ doc.plate_tractor or '-' }}</td>
+            <td>
+              {% if doc.net_weight %}
+                {{ "%.2f"|format(doc.net_weight|float) }}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ doc.created_at.strftime('%d/%m/%Y') }}</td>
+            <td>
+              {% if doc.excel_file %}
+                <a href="/{{ doc.excel_file }}" class="btn btn-sm btn-success">
+                  Descargar
+                </a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">
+              No hay documentos procesados
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
