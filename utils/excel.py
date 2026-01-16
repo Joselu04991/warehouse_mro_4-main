@@ -126,9 +126,8 @@ def sort_location_advanced(loc):
     except:
         return 999999
 
-
 # =============================================================================
-# EXCEL PRO DE DISCREPANCIAS CON FUNCIONES INTERACTIVAS
+# EXCEL PRO DE DISCREPANCIAS CON 3 COLORES
 # =============================================================================
 def generate_discrepancies_excel(df, meta=None):
 
@@ -153,104 +152,84 @@ def generate_discrepancies_excel(df, meta=None):
     # =========================
     columnas = [
         "Código Material",
-        "Descripción",
+        "Descripción", 
         "Unidad",
         "Ubicación",
         "Stock sistema",
         "Stock contado",
         "Diferencia",
         "Estado",
-        "Observaciones",
-        "Acción requerida",
-        "Prioridad",
     ]
 
+    # Asegurar que existan todas las columnas
     for c in columnas:
         if c not in df.columns:
             if "Stock" in c or c == "Diferencia":
                 df[c] = 0
-            elif c in ["Observaciones", "Acción requerida"]:
+            elif c == "Estado":
                 df[c] = ""
-            elif c == "Prioridad":
-                df[c] = "MEDIA"
 
-    # Normalización numérica
-    df["Stock sistema"] = df["Stock sistema"].astype(float)
-    df["Stock contado"] = df["Stock contado"].astype(float)
-
-    # Diferencia SIEMPRE recalculada
+    # Asegurar que los valores sean numéricos para cálculos
+    df["Stock sistema"] = pd.to_numeric(df["Stock sistema"], errors='coerce').fillna(0)
+    df["Stock contado"] = pd.to_numeric(df["Stock contado"], errors='coerce').fillna(0)
+    
+    # Calcular diferencia para análisis interno
     df["Diferencia"] = df["Stock contado"] - df["Stock sistema"]
-
+    
     # Estado automático
     def estado(row):
-        if row["Stock contado"] == 0:
+        stock_contado = row.get("Stock contado", 0)
+        diferencia = row.get("Diferencia", 0)
+        
+        if stock_contado == 0:
             return "NO CONTADO"
-        if row["Diferencia"] == 0:
+        if diferencia == 0:
             return "OK"
-        if row["Diferencia"] < 0:
-            return "FALTA" if abs(row["Diferencia"]) < 5 else "CRÍTICO"
+        if diferencia < 0:
+            return "FALTA" if abs(diferencia) < 5 else "CRÍTICO"
         return "SOBRA"
 
     df["Estado"] = df.apply(estado, axis=1)
 
-    # Asignar prioridad automática
-    def asignar_prioridad(row):
-        if row["Estado"] == "CRÍTICO":
-            return "ALTA"
-        elif row["Estado"] == "FALTA":
-            return "MEDIA"
-        elif row["Estado"] == "SOBRA":
-            return "BAJA"
-        elif row["Estado"] == "NO CONTADO":
-            return "ALTA"
-        return "BAJA"
-
-    df["Prioridad"] = df.apply(asignar_prioridad, axis=1)
-
-    # Ordenar por prioridad y diferencia
-    df = df.sort_values(by=["Prioridad", "Diferencia"], ascending=[True, True])
-
     # =========================
-    # ESTILOS
+    # ESTILOS Y COLORES (SOLO 3)
     # =========================
     header_fill = PatternFill("solid", fgColor="1F4E78")
     header_font = Font(bold=True, color="FFFFFF")
     title_font = Font(bold=True, size=14, color="FFFFFF")
     bold = Font(bold=True)
-    italic = Font(italic=True)
 
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left = Alignment(horizontal="left", vertical="center")
+    right = Alignment(horizontal="right", vertical="center")
 
     thin = Side(style="thin")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # Colores para estados
+    # SOLO 3 COLORES PARA DIFERENCIAS:
+    fill_falta_rojo = PatternFill("solid", fgColor="FFC7CE")  # ROJO si falta
+    fill_exacto_verde = PatternFill("solid", fgColor="C6EFCE")  # VERDE si exacto
+    fill_sobra_amarillo = PatternFill("solid", fgColor="FFEB9C")  # AMARILLO si sobra
+
+    # COLORES PARA ESTADOS
     fill_ok = PatternFill("solid", fgColor="C6EFCE")
-    fill_falta = PatternFill("solid", fgColor="FFEB9C")
-    fill_critico = PatternFill("solid", fgColor="FFC7CE")
-    fill_sobra = PatternFill("solid", fgColor="BFEFFF")
+    fill_falta_estado = PatternFill("solid", fgColor="FFEB9C")
+    fill_critico = PatternFill("solid", fgColor="FF9999")
+    fill_sobra_estado = PatternFill("solid", fgColor="FFEB9C")  # Mismo amarillo
     fill_nocont = PatternFill("solid", fgColor="E7E6E6")
-    
-    # Colores para prioridad
-    fill_alta = PatternFill("solid", fgColor="FF6666")
-    fill_media = PatternFill("solid", fgColor="FFFF99")
-    fill_baja = PatternFill("solid", fgColor="99CCFF")
 
     # =========================
-    # HOJA 1 – INSTRUCCIONES Y RESUMEN
+    # HOJA 1 – RESUMEN
     # =========================
     ws0 = wb.active
-    ws0.title = "INSTRUCCIONES"
+    ws0.title = "RESUMEN"
 
-    # Título principal
     ws0["A1"] = "REPORTE DE DISCREPANCIAS – WAREHOUSE MRO"
-    ws0.merge_cells("A1:K1")
+    ws0.merge_cells("A1:F1")
     ws0["A1"].font = title_font
     ws0["A1"].fill = header_fill
-    ws0["A1"].alignment = center
+    ws0["A1"].alignment = left
 
-    # Información de generación
     generado_por = (meta or {}).get("generado_por", "Sistema MRO")
     generado_en = (meta or {}).get(
         "generado_en",
@@ -259,187 +238,101 @@ def generate_discrepancies_excel(df, meta=None):
 
     ws0["A3"] = "Generado por:"
     ws0["B3"] = generado_por
-    ws0["A4"] = "Fecha generación:"
+    ws0["A4"] = "Generado en:"
     ws0["B4"] = generado_en
-    ws0["A5"] = "Hoja de datos:"
-    ws0["B5"] = "Ver hoja 'DETALLE' para información completa"
 
-    for row in range(3, 6):
+    for row in range(3, 5):
         ws0[f"A{row}"].font = bold
 
-    # Instrucciones para usar el Excel
-    ws0["A7"] = "INSTRUCCIONES DE USO:"
-    ws0["A7"].font = Font(bold=True, size=12, color="1F4E78")
-    
-    instrucciones = [
-        ("Filtrar datos:", "Usar Autofiltro en los encabezados de la hoja 'DETALDE'"),
-        ("Ordenar:", "Click en encabezados para ordenar ascendente/descendente"),
-        ("Resumen rápido:", "Ver hoja 'RESUMEN' para métricas clave"),
-        ("Prioridades:", "ALTA=Urgente, MEDIA=Planificar, BAJA=Monitorear"),
-        ("Actualizar:", "Modificar columnas 'Observaciones' y 'Acción requerida'"),
-        ("Estados:", "OK=Correcto, FALTA=Diferencia <5, CRÍTICO=Diferencia ≥5"),
-        ("Exportar filtros:", "Copiar filas visibles después de filtrar"),
-    ]
-    
-    fila = 8
-    for titulo, desc in instrucciones:
-        ws0[f"A{fila}"] = titulo
-        ws0[f"B{fila}"] = desc
-        ws0[f"A{fila}"].font = bold
-        ws0[f"B{fila}"].font = italic
-        fila += 1
-
-    # Atajos útiles
-    fila += 1
-    ws0[f"A{fila}"] = "ATAJOS EXCEL:"
-    ws0[f"A{fila}"].font = Font(bold=True, size=11, color="FF0000")
-    fila += 1
-    
-    atajos = [
-        ("Ctrl+Shift+L", "Activar/Desactivar filtros"),
-        ("Alt+D+F+F", "Aplicar filtro avanzado"),
-        ("Ctrl+T", "Crear tabla dinámica"),
-        ("Ctrl+Shift+Arrow", "Seleccionar rango de datos"),
-        ("Alt+F1", "Crear gráfico rápido"),
-    ]
-    
-    for atajo, funcion in atajos:
-        ws0[f"A{fila}"] = atajo
-        ws0[f"B{fila}"] = funcion
-        ws0[f"A{fila}"].font = Font(bold=True, color="0000FF")
-        fila += 1
-
-    # =========================
-    # HOJA 2 – RESUMEN ESTADÍSTICO
-    # =========================
-    ws1 = wb.create_sheet("RESUMEN")
-    
-    # Encabezado resumen
-    ws1["A1"] = "RESUMEN ESTADÍSTICO"
-    ws1.merge_cells("A1:D1")
-    ws1["A1"].font = title_font
-    ws1["A1"].fill = header_fill
-    ws1["A1"].alignment = center
-
-    # Métricas básicas
     total = len(df)
     ok = (df["Estado"] == "OK").sum()
     exactitud = round((ok / total) * 100, 2) if total else 0
-    total_diferencia = df["Diferencia"].sum()
-    items_criticos = (df["Estado"] == "CRÍTICO").sum()
-    items_nocontados = (df["Estado"] == "NO CONTADO").sum()
 
-    metricas = [
-        ("Total ítems:", total),
-        ("Exactitud inventario:", f"{exactitud}%"),
-        ("Diferencia total:", total_diferencia),
-        ("Ítems CRÍTICOS:", items_criticos),
-        ("Ítems NO CONTADOS:", items_nocontados),
-        ("Ítems OK:", ok),
-        ("Ítems con FALTANTE:", (df["Estado"] == "FALTA").sum()),
-        ("Ítems con SOBRA:", (df["Estado"] == "SOBRA").sum()),
-    ]
+    ws0["D3"] = "Total ítems:"
+    ws0["E3"] = total
+    ws0["D4"] = "Exactitud:"
+    ws0["E4"] = f"{exactitud}%"
 
-    fila_res = 3
-    for label, valor in metricas:
-        ws1[f"A{fila_res}"] = label
-        ws1[f"B{fila_res}"] = valor
-        ws1[f"A{fila_res}"].font = bold
-        fila_res += 1
+    for row in range(3, 5):
+        ws0[f"D{row}"].font = bold
 
     # Resumen por Estado
-    fila_res += 1
-    ws1[f"A{fila_res}"] = "RESUMEN POR ESTADO"
-    ws1[f"A{fila_res}"].font = Font(bold=True, size=12, color="1F4E78")
-    ws1.merge_cells(f"A{fila_res}:C{fila_res}")
-    
-    fila_res += 1
-    ws1[f"A{fila_res}"] = "Estado"
-    ws1[f"B{fila_res}"] = "Cantidad"
-    ws1[f"C{fila_res}"] = "Porcentaje"
-    for col in ["A", "B", "C"]:
-        ws1[f"{col}{fila_res}"].font = bold
-        ws1[f"{col}{fila_res}"].fill = PatternFill("solid", fgColor="E0E0E0")
-    
+    ws0["A6"] = "Resumen por Estado"
+    ws0["A6"].font = Font(bold=True, size=12)
+
+    ws0.append(["Estado", "Cantidad"])
+    ws0["A7"].font = bold
+    ws0["B7"].font = bold
+
     estados = ["OK", "FALTA", "CRÍTICO", "SOBRA", "NO CONTADO"]
-    fila_res += 1
+    fila = 8
     for estado_lbl in estados:
-        cantidad = int((df["Estado"] == estado_lbl).sum())
-        porcentaje = round((cantidad / total) * 100, 2) if total else 0
-        
-        ws1[f"A{fila_res}"] = estado_lbl
-        ws1[f"B{fila_res}"] = cantidad
-        ws1[f"C{fila_res}"] = f"{porcentaje}%"
-        
-        # Color según estado
-        if estado_lbl == "OK":
-            fill = fill_ok
-        elif estado_lbl == "FALTA":
-            fill = fill_falta
-        elif estado_lbl == "CRÍTICO":
-            fill = fill_critico
-        elif estado_lbl == "SOBRA":
-            fill = fill_sobra
-        else:
-            fill = fill_nocont
-            
-        for col in ["A", "B", "C"]:
-            ws1[f"{col}{fila_res}"].fill = fill
-        
-        fila_res += 1
+        ws0[f"A{fila}"] = estado_lbl
+        ws0[f"B{fila}"] = int((df["Estado"] == estado_lbl).sum())
+        fila += 1
 
-    # Resumen por Prioridad
-    fila_res += 1
-    ws1[f"A{fila_res}"] = "RESUMEN POR PRIORIDAD"
-    ws1[f"A{fila_res}"].font = Font(bold=True, size=12, color="1F4E78")
-    ws1.merge_cells(f"A{fila_res}:C{fila_res}")
+    # Leyenda de los 3 colores
+    ws0["D6"] = "Colores de Diferencia:"
+    ws0["D6"].font = Font(bold=True, size=12)
+    ws0.merge_cells("D6:E6")
     
-    fila_res += 1
-    ws1[f"A{fila_res}"] = "Prioridad"
-    ws1[f"B{fila_res}"] = "Cantidad"
-    ws1[f"C{fila_res}"] = "Porcentaje"
-    for col in ["A", "B", "C"]:
-        ws1[f"{col}{fila_res}"].font = bold
-        ws1[f"{col}{fila_res}"].fill = PatternFill("solid", fgColor="E0E0E0")
+    fila_color = 7
+    colores_info = [
+        ("Diferencia < 0", "ROJO", "Falta"),
+        ("Diferencia = 0", "VERDE", "Exacto"),
+        ("Diferencia > 0", "AMARILLO", "Sobra"),
+    ]
     
-    prioridades = ["ALTA", "MEDIA", "BAJA"]
-    fila_res += 1
-    for prioridad in prioridades:
-        cantidad = int((df["Prioridad"] == prioridad).sum())
-        porcentaje = round((cantidad / total) * 100, 2) if total else 0
+    for texto, color, significado in colores_info:
+        ws0[f"D{fila_color}"] = texto
+        ws0[f"E{fila_color}"] = color
+        ws0[f"F{fila_color}"] = significado
         
-        ws1[f"A{fila_res}"] = prioridad
-        ws1[f"B{fila_res}"] = cantidad
-        ws1[f"C{fila_res}"] = f"{porcentaje}%"
-        
-        # Color según prioridad
-        if prioridad == "ALTA":
-            fill = fill_alta
-        elif prioridad == "MEDIA":
-            fill = fill_media
-        else:
-            fill = fill_baja
+        # Aplicar color de muestra
+        if "ROJO" in color:
+            ws0[f"E{fila_color}"].fill = fill_falta_rojo
+        elif "VERDE" in color:
+            ws0[f"E{fila_color}"].fill = fill_exacto_verde
+        elif "AMARILLO" in color:
+            ws0[f"E{fila_color}"].fill = fill_sobra_amarillo
             
-        for col in ["A", "B", "C"]:
-            ws1[f"{col}{fila_res}"].fill = fill
-        
-        fila_res += 1
+        ws0[f"E{fila_color}"].font = bold
+        ws0[f"E{fila_color}"].alignment = center
+        fila_color += 1
 
-    # Ajustar anchos de columna
-    for col in ["A", "B", "C", "D"]:
-        ws1.column_dimensions[col].width = 25
+    for col in range(1, 7):
+        ws0.column_dimensions[get_column_letter(col)].width = 22
 
     # =========================
-    # HOJA 3 – DETALLE COMPLETO
+    # HOJA 2 – DETALLE CON FÓRMULA SIMPLE
     # =========================
-    ws = wb.create_sheet("DETALLE")
+    ws = wb.create_sheet("DISCREPANCIAS")
     
     # Escribir encabezados
     ws.append(columnas)
-    
-    # Escribir datos
-    for r in df.itertuples(index=False):
-        ws.append(list(r))
+
+    # Escribir datos CON FÓRMULA =F-E
+    for i, row in df.iterrows():
+        row_data = []
+        row_num = i + 2  # +2 porque la fila 1 es encabezado
+        
+        # Primeras 6 columnas con valores estáticos
+        row_data.extend([
+            row["Código Material"],
+            row["Descripción"],
+            row["Unidad"],
+            row["Ubicación"],
+            row["Stock sistema"],  # Columna E
+            row["Stock contado"],   # Columna F
+        ])
+        
+        # COLUMNA G: DIFERENCIA CON FÓRMULA =F-E
+        row_data.append(f'=F{row_num}-E{row_num}')
+        
+        # COLUMNA H: Estado
+        row_data.append(row["Estado"])
+        
+        ws.append(row_data)
 
     # Estilos para encabezados
     for cell in ws[1]:
@@ -449,7 +342,7 @@ def generate_discrepancies_excel(df, meta=None):
         cell.border = border
 
     # Ajustar anchos de columna
-    widths = [18, 40, 10, 12, 14, 14, 12, 12, 25, 25, 12]
+    widths = [20, 45, 10, 14, 16, 16, 16, 14]
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -457,147 +350,134 @@ def generate_discrepancies_excel(df, meta=None):
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
-    # Aplicar estilos a los datos
-    for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
-        estado_val = str(row[7].value)  # Columna Estado
-        prioridad_val = str(row[10].value)  # Columna Prioridad (índice 10)
-
-        # Color según estado
-        if estado_val == "CRÍTICO":
-            estado_fill = fill_critico
-        elif estado_val == "FALTA":
-            estado_fill = fill_falta
-        elif estado_val == "SOBRA":
-            estado_fill = fill_sobra
-        elif estado_val == "NO CONTADO":
-            estado_fill = fill_nocont
-        else:
-            estado_fill = fill_ok
-
-        # Color según prioridad
-        if prioridad_val == "ALTA":
-            prioridad_fill = fill_alta
-        elif prioridad_val == "MEDIA":
-            prioridad_fill = fill_media
-        else:
-            prioridad_fill = fill_baja
-
-        # Aplicar colores a celdas específicas
-        for idx, cell in enumerate(row, start=1):
-            cell.border = border
-            cell.alignment = center if idx <= 8 else left  # Primeras 8 columnas centradas, resto izquierda
-            
-            # Estado colorea toda la fila
-            if idx <= 10:  # No aplicar a Prioridad
-                cell.fill = estado_fill
-            
-            # Prioridad solo colorea su propia celda
-            if idx == 11:  # Columna Prioridad
-                cell.fill = prioridad_fill
-                cell.font = Font(bold=True)
-
-        # Formato condicional para diferencias
-        dif_cell = row[6]  # Columna Diferencia
-        if dif_cell.value is not None:
-            try:
-                dif_val = float(dif_cell.value)
-                if dif_val < 0:
-                    dif_cell.font = Font(color="FF0000", bold=True)  # Rojo para negativo
-                elif dif_val > 0:
-                    dif_cell.font = Font(color="00B050", bold=True)  # Verde para positivo
-            except:
-                pass
-
     # =========================
-    # HOJA 4 – FILTROS RÁPIDOS
+    # APLICAR LOS 3 COLORES A LA COLUMNA DIFERENCIA (G)
     # =========================
-    ws2 = wb.create_sheet("FILTROS_RAPIDOS")
+    from openpyxl.formatting.rule import CellIsRule
     
-    ws2["A1"] = "FILTROS RÁPIDOS PRE-CONFIGURADOS"
-    ws2.merge_cells("A1:D1")
+    # 1. 🔴 ROJO: Diferencia NEGATIVA (< 0) - FALTA
+    red_rule = CellIsRule(operator='lessThan', formula=['0'], 
+                         fill=fill_falta_rojo)
+    ws.conditional_formatting.add(f'G2:G{total+1}', red_rule)
+    
+    # 2. 🟢 VERDE: Diferencia CERO (= 0) - EXACTO
+    green_rule = CellIsRule(operator='equal', formula=['0'], 
+                           fill=fill_exacto_verde)
+    ws.conditional_formatting.add(f'G2:G{total+1}', green_rule)
+    
+    # 3. 🟡 AMARILLO: Diferencia POSITIVA (> 0) - SOBRA
+    yellow_rule = CellIsRule(operator='greaterThan', formula=['0'], 
+                            fill=fill_sobra_amarillo)
+    ws.conditional_formatting.add(f'G2:G{total+1}', yellow_rule)
+
+    # =========================
+    # APLICAR COLORES A LA COLUMNA ESTADO (H)
+    # =========================
+    from openpyxl.formatting.rule import FormulaRule
+    
+    # CRÍTICO - ROJO OSCURO
+    critico_rule = FormulaRule(formula=['$H2="CRÍTICO"'], 
+                              fill=PatternFill("solid", fgColor="FF9999"))
+    ws.conditional_formatting.add(f'A2:H{total+1}', critico_rule)
+    
+    # FALTA - AMARILLO CLARO
+    falta_estado_rule = FormulaRule(formula=['$H2="FALTA"'], 
+                                   fill=PatternFill("solid", fgColor="FFEB9C"))
+    ws.conditional_formatting.add(f'A2:H{total+1}', falta_estado_rule)
+    
+    # SOBRA - AMARILLO (mismo que falta)
+    sobra_estado_rule = FormulaRule(formula=['$H2="SOBRA"'], 
+                                   fill=fill_sobra_amarillo)
+    ws.conditional_formatting.add(f'A2:H{total+1}', sobra_estado_rule)
+    
+    # NO CONTADO - GRIS
+    nocont_rule = FormulaRule(formula=['$H2="NO CONTADO"'], 
+                             fill=PatternFill("solid", fgColor="E7E6E6"))
+    ws.conditional_formatting.add(f'A2:H{total+1}', nocont_rule)
+    
+    # OK - VERDE (mismo que exacto)
+    ok_rule = FormulaRule(formula=['$H2="OK"'], 
+                         fill=fill_exacto_verde)
+    ws.conditional_formatting.add(f'A2:H{total+1}', ok_rule)
+
+    # Aplicar bordes y alineaciones
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=8):
+        for cell in row:
+            cell.border = border
+            
+            # Alinear según tipo de dato
+            if cell.column in [5, 6, 7]:  # Columnas E, F, G (números)
+                cell.alignment = right
+                if cell.column == 7:  # Columna G (Diferencia)
+                    cell.number_format = '0'  # Formato número sin decimales
+            elif cell.column in [1, 3, 4, 8]:  # Código, Unidad, Ubicación, Estado
+                cell.alignment = center
+            else:  # Descripción
+                cell.alignment = left
+
+    # =========================
+    # HOJA 3 - FÓRMULA SIMPLE
+    # =========================
+    ws2 = wb.create_sheet("AYUDA")
+    
+    ws2["A1"] = "FÓRMULA DE DIFERENCIA"
+    ws2.merge_cells("A1:C1")
     ws2["A1"].font = title_font
     ws2["A1"].fill = header_fill
     ws2["A1"].alignment = center
 
-    instrucciones_filtros = [
-        ("Para usar:", "Copiar las fórmulas a la hoja 'DETALLE' en una nueva columna"),
-        ("Filtrar por:", "Luego filtrar por TRUE en la nueva columna"),
-    ]
-    
-    fila_filtro = 3
-    for titulo, desc in instrucciones_filtros:
-        ws2[f"A{fila_filtro}"] = titulo
-        ws2[f"B{fila_filtro}"] = desc
-        ws2[f"A{fila_filtro}"].font = bold
-        ws2[f"B{fila_filtro}"].font = italic
-        ws2.merge_cells(f"B{fila_filtro}:D{fila_filtro}")
-        fila_filtro += 1
-
-    fila_filtro += 1
-    ws2[f"A{fila_filtro}"] = "Tipo de Filtro"
-    ws2[f"B{fila_filtro}"] = "Fórmula a usar"
-    ws2[f"C{fila_filtro}"] = "Descripción"
-    ws2[f"D{fila_filtro}"] = "Cantidad"
-    
-    for col in ["A", "B", "C", "D"]:
-        ws2[f"{col}{fila_filtro}"].font = bold
-        ws2[f"{col}{fila_filtro}"].fill = PatternFill("solid", fgColor="E0E0E0")
-
-    filtros = [
-        (
-            "CRÍTICOS URGENTES",
-            '=AND($H2="CRÍTICO", $K2="ALTA")',
-            "Items críticos con prioridad alta",
-            items_criticos
-        ),
-        (
-            "NO CONTADOS",
-            '=$H2="NO CONTADO"',
-            "Items que no fueron contados",
-            items_nocontados
-        ),
-        (
-            "FALTANTES SIGNIFICATIVOS",
-            '=AND($G2<-10, $H2="CRÍTICO")',
-            "Faltantes mayores a 10 unidades",
-            (df["Diferencia"] < -10).sum()
-        ),
-        (
-            "SOBRAS IMPORTANTES",
-            '=AND($G2>20, $H2="SOBRA")',
-            "Sobras mayores a 20 unidades",
-            (df["Diferencia"] > 20).sum()
-        ),
-        (
-            "UBICACIONES ESPECÍFICAS",
-            '=OR(LEFT($D2,1)="E", LEFT($D2,2)="A1")',
-            "Ubicaciones que comienzan con E o A1",
-            df["Ubicación"].str.startswith(("E", "A1")).sum()
-        ),
+    ayuda = [
+        ("", "", ""),
+        ("FÓRMULA EN COLUMNA G:", "", ""),
+        ("Diferencia =", "Stock contado - Stock sistema", ""),
+        ("", "", ""),
+        ("EN EXCEL:", "=F2 - E2", ""),
+        ("", "", ""),
+        ("COLORES AUTOMÁTICOS:", "", ""),
+        ("🔴 ROJO", "Si Diferencia < 0", "(Falta material)"),
+        ("🟢 VERDE", "Si Diferencia = 0", "(Exacto)"),
+        ("🟡 AMARILLO", "Si Diferencia > 0", "(Sobra material)"),
+        ("", "", ""),
+        ("EJEMPLO PRÁCTICO:", "", ""),
+        ("Stock sistema (E2):", "10", ""),
+        ("Stock contado (F2):", "8", ""),
+        ("Diferencia (G2):", "=F2-E2 = -2", "🔴 ROJO (Falta 2 unidades)"),
+        ("", "", ""),
+        ("Stock sistema (E3):", "10", ""),
+        ("Stock contado (F3):", "10", ""),
+        ("Diferencia (G3):", "=F3-E3 = 0", "🟢 VERDE (Exacto)"),
+        ("", "", ""),
+        ("Stock sistema (E4):", "10", ""),
+        ("Stock contado (F4):", "15", ""),
+        ("Diferencia (G4):", "=F4-E4 = 5", "🟡 AMARILLO (Sobra 5 unidades)"),
     ]
 
-    fila_filtro += 1
-    for nombre, formula, desc, cantidad in filtros:
-        ws2[f"A{fila_filtro}"] = nombre
-        ws2[f"B{fila_filtro}"] = formula
-        ws2[f"C{fila_filtro}"] = desc
-        ws2[f"D{fila_filtro}"] = cantidad
-        
-        # Color alternado para filas
-        if fila_filtro % 2 == 0:
-            fill = PatternFill("solid", fgColor="F2F2F2")
-        else:
-            fill = PatternFill("solid", fgColor="FFFFFF")
-            
-        for col in ["A", "B", "C", "D"]:
-            ws2[f"{col}{fila_filtro}"].fill = fill
-            ws2[f"{col}{fila_filtro}"].border = border
-        
-        fila_filtro += 1
+    fila_ayuda = 3
+    for item in ayuda:
+        ws2.append(item)
+        if fila_ayuda == 3:  # Encabezados
+            for col in range(1, 4):
+                ws2.cell(row=fila_ayuda, column=col).font = bold
+        fila_ayuda += 1
+
+    # Resaltar las fórmulas
+    for row in range(5, fila_ayuda):
+        if "=F" in str(ws2[f"B{row}"].value):
+            ws2[f"B{row}"].font = Font(color="0000FF", italic=True)
+        if "🔴" in str(ws2[f"A{row}"].value):
+            ws2[f"A{row}"].fill = fill_falta_rojo
+            ws2[f"A{row}"].font = bold
+        if "🟢" in str(ws2[f"A{row}"].value):
+            ws2[f"A{row}"].fill = fill_exacto_verde
+            ws2[f"A{row}"].font = bold
+        if "🟡" in str(ws2[f"A{row}"].value):
+            ws2[f"A{row}"].fill = fill_sobra_amarillo
+            ws2[f"A{row}"].font = bold
 
     # Ajustar anchos
-    for col, width in zip(["A", "B", "C", "D"], [25, 50, 40, 15]):
-        ws2.column_dimensions[col].width = width
+    ws2.column_dimensions['A'].width = 25
+    ws2.column_dimensions['B'].width = 30
+    ws2.column_dimensions['C'].width = 35
 
     # =========================
     # GUARDAR Y RETORNAR
@@ -641,5 +521,6 @@ def generate_history_snapshot_excel(items, snapshot_name):
     wb.save(output)
     output.seek(0)
     return output
+
 
 
