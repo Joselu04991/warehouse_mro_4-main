@@ -127,7 +127,7 @@ def sort_location_advanced(loc):
         return 999999
 
 # =============================================================================
-# EXCEL PRO CON FÓRMULA DE DIFERENCIA DIRECTAMENTE
+# EXCEL CON FÓRMULA DE ESTADO DIRECTAMENTE EN LAS CELDAS
 # =============================================================================
 def generate_discrepancies_excel(df, meta=None):
 
@@ -169,14 +169,14 @@ def generate_discrepancies_excel(df, meta=None):
             elif c == "Estado":
                 df[c] = ""
 
-    # Asegurar que los valores sean numéricos para cálculos
+    # Asegurar que los valores sean numéricos
     df["Stock sistema"] = pd.to_numeric(df["Stock sistema"], errors='coerce').fillna(0)
     df["Stock contado"] = pd.to_numeric(df["Stock contado"], errors='coerce').fillna(0)
     
-    # Calcular diferencia para análisis interno
+    # Calcular diferencia REAL
     df["Diferencia"] = df["Stock contado"] - df["Stock sistema"]
     
-    # Calcular estado
+    # Calcular estado REAL (para mostrar inicialmente)
     def estado(row):
         stock_contado = row.get("Stock contado", 0)
         diferencia = row.get("Diferencia", 0)
@@ -192,7 +192,7 @@ def generate_discrepancies_excel(df, meta=None):
     df["Estado"] = df.apply(estado, axis=1)
 
     # =========================
-    # ESTILOS Y COLORES
+    # ESTILOS
     # =========================
     header_fill = PatternFill("solid", fgColor="1F4E78")
     header_font = Font(bold=True, color="FFFFFF")
@@ -206,12 +206,12 @@ def generate_discrepancies_excel(df, meta=None):
     thin = Side(style="thin")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # COLORES PARA ESTADOS
-    fill_ok = PatternFill("solid", fgColor="C6EFCE")  # VERDE para OK
-    fill_falta = PatternFill("solid", fgColor="FFEB9C")  # AMARILLO para FALTA
-    fill_critico = PatternFill("solid", fgColor="FFC7CE")  # ROJO para CRÍTICO
-    fill_sobra = PatternFill("solid", fgColor="FFEB9C")  # AMARILLO para SOBRA
-    fill_nocont = PatternFill("solid", fgColor="E7E6E6")  # GRIS para NO CONTADO
+    # COLORES
+    fill_ok = PatternFill("solid", fgColor="C6EFCE")
+    fill_falta = PatternFill("solid", fgColor="FFEB9C")
+    fill_critico = PatternFill("solid", fgColor="FFC7CE")
+    fill_sobra = PatternFill("solid", fgColor="FFEB9C")
+    fill_nocont = PatternFill("solid", fgColor="E7E6E6")
 
     # =========================
     # HOJA 1 – RESUMEN
@@ -251,7 +251,6 @@ def generate_discrepancies_excel(df, meta=None):
     for row in range(3, 5):
         ws0[f"D{row}"].font = bold
 
-    # Resumen por Estado
     ws0["A6"] = "Resumen por Estado"
     ws0["A6"].font = Font(bold=True, size=12)
 
@@ -266,66 +265,33 @@ def generate_discrepancies_excel(df, meta=None):
         ws0[f"B{fila}"] = int((df["Estado"] == estado_lbl).sum())
         fila += 1
 
-    # Leyenda de colores
-    ws0["D6"] = "Colores por Estado:"
-    ws0["D6"].font = Font(bold=True, size=12)
-    ws0.merge_cells("D6:F6")
-    
-    fila_color = 7
-    colores_info = [
-        ("OK", "VERDE", "Coincidencia exacta"),
-        ("FALTA", "AMARILLO", "Faltan menos de 5 unidades"),
-        ("CRÍTICO", "ROJO", "Faltan 5 o más unidades"),
-        ("SOBRA", "AMARILLO", "Sobra material"),
-        ("NO CONTADO", "GRIS", "No se contó el material"),
-    ]
-    
-    for estado_lbl, color, significado in colores_info:
-        ws0[f"D{fila_color}"] = estado_lbl
-        ws0[f"E{fila_color}"] = color
-        ws0[f"F{fila_color}"] = significado
-        
-        # Aplicar color de muestra
-        if estado_lbl == "OK":
-            ws0[f"E{fila_color}"].fill = fill_ok
-        elif estado_lbl == "FALTA":
-            ws0[f"E{fila_color}"].fill = fill_falta
-        elif estado_lbl == "CRÍTICO":
-            ws0[f"E{fila_color}"].fill = fill_critico
-        elif estado_lbl == "SOBRA":
-            ws0[f"E{fila_color}"].fill = fill_sobra
-        else:  # NO CONTADO
-            ws0[f"E{fila_color}"].fill = fill_nocont
-            
-        ws0[f"E{fila_color}"].font = bold
-        ws0[f"E{fila_color}"].alignment = center
-        fila_color += 1
-
     for col in range(1, 7):
         ws0.column_dimensions[get_column_letter(col)].width = 22
 
     # =========================
-    # HOJA 2 – DETALLE CON FÓRMULA DE DIFERENCIA
+    # HOJA 2 – DETALLE CON FÓRMULAS REALES
     # =========================
     ws = wb.create_sheet("DISCREPANCIAS")
     
     # Escribir encabezados
     ws.append(columnas)
 
-    # Escribir datos con FÓRMULA EN DIFERENCIA
+    # Escribir datos CON FÓRMULAS REALES
     for i, row in df.iterrows():
         row_num = i + 2  # +2 porque la fila 1 es encabezado
         
-        # Poner los valores directamente con fórmula en Diferencia
+        # FÓRMULA CORREGIDA - SIN PROBLEMAS DE CARACTERES ESPECIALES
+        formula_estado = f'IF(F{row_num}=0,"NO CONTADO",IF(G{row_num}=0,"OK",IF(G{row_num}<0,IF(ABS(G{row_num})<5,"FALTA","CRÍTICO"),"SOBRA")))'
+        
         ws.append([
             row["Código Material"],
             row["Descripción"],
             row["Unidad"],
             row["Ubicación"],
-            row["Stock sistema"],  # Columna E - Valor
-            row["Stock contado"],   # Columna F - Valor
-            f'=F{row_num}-E{row_num}',  # Columna G - FÓRMULA DE DIFERENCIA
-            row["Estado"],          # Columna H - Valor calculado
+            row["Stock sistema"],  # Valor
+            row["Stock contado"],   # Valor
+            f'F{row_num}-E{row_num}',  # Fórmula diferencia
+            formula_estado,  # Fórmula estado
         ])
 
     # Estilos para encabezados
@@ -335,136 +301,102 @@ def generate_discrepancies_excel(df, meta=None):
         cell.alignment = center
         cell.border = border
 
-    # Ajustar anchos de columna
+    # Ajustar anchos
     widths = [20, 45, 10, 14, 16, 16, 16, 14]
     for i, w in enumerate(widths, start=1):
         ws.column_dimensions[get_column_letter(i)].width = w
 
-    # Congelar paneles y agregar filtros
+    # Congelar paneles y filtros
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
 
     # =========================
-    # APLICAR COLORES A LAS FILAS SEGÚN ESTADO
+    # APLICAR COLORES SEGÚN FÓRMULA DE ESTADO
     # =========================
-    # Aplicar colores basados en el estado actual
-    for row_idx, row in enumerate(ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=8), start=2):
-        estado_celda = ws[f"H{row_idx}"].value  # Estado en columna H
-        
-        if estado_celda == "OK":
-            fill = fill_ok
-        elif estado_celda == "FALTA":
-            fill = fill_falta
-        elif estado_celda == "CRÍTICO":
-            fill = fill_critico
-        elif estado_celda == "SOBRA":
-            fill = fill_sobra
-        elif estado_celda == "NO CONTADO":
-            fill = fill_nocont
-        else:
-            fill = None
-        
-        # Aplicar color a toda la fila
-        if fill:
-            for cell in row:
-                cell.fill = fill
-                cell.border = border
-                
-                # Alinear según tipo de dato
-                if cell.column in [5, 6, 7]:  # Columnas E, F, G (números)
-                    cell.alignment = right
-                    if cell.column == 7:  # Columna G (Diferencia con fórmula)
-                        # Resaltar diferencias basado en el valor calculado
-                        dif_calculada = row[6].value  # Ya es la fórmula
-                        # Si queremos resaltar, podemos hacerlo con formato condicional manual
-                        pass
-                        cell.number_format = '0'  # Formato número sin decimales
-                elif cell.column in [1, 3, 4, 8]:  # Código, Unidad, Ubicación, Estado
-                    cell.alignment = center
-                else:  # Descripción
-                    cell.alignment = left
+    from openpyxl.formatting.rule import FormulaRule
+    
+    # Aplicar formatos condicionales basados en la fórmula de estado
+    # VERDE para OK
+    ok_rule = FormulaRule(formula=[f'$H2="OK"'], fill=fill_ok)
+    ws.conditional_formatting.add(f'A2:H{total+1}', ok_rule)
+    
+    # AMARILLO para FALTA
+    falta_rule = FormulaRule(formula=[f'$H2="FALTA"'], fill=fill_falta)
+    ws.conditional_formatting.add(f'A2:H{total+1}', falta_rule)
+    
+    # ROJO para CRÍTICO
+    critico_rule = FormulaRule(formula=[f'$H2="CRÍTICO"'], fill=fill_critico)
+    ws.conditional_formatting.add(f'A2:H{total+1}', critico_rule)
+    
+    # AMARILLO para SOBRA
+    sobra_rule = FormulaRule(formula=[f'$H2="SOBRA"'], fill=fill_sobra)
+    ws.conditional_formatting.add(f'A2:H{total+1}', sobra_rule)
+    
+    # GRIS para NO CONTADO
+    nocont_rule = FormulaRule(formula=[f'$H2="NO CONTADO"'], fill=fill_nocont)
+    ws.conditional_formatting.add(f'A2:H{total+1}', nocont_rule)
+
+    # Aplicar bordes y alineaciones
+    for row in ws.iter_rows(min_row=2, max_row=ws.max_row, min_col=1, max_col=8):
+        for cell in row:
+            cell.border = border
+            if cell.column in [5, 6, 7]:  # Números
+                cell.alignment = right
+                if cell.column == 7:  # Diferencia
+                    cell.number_format = '0'
+            elif cell.column in [1, 3, 4, 8]:  # Centrado
+                cell.alignment = center
+            else:  # Izquierda
+                cell.alignment = left
 
     # =========================
-    # HOJA 3 - FÓRMULA DE ESTADO PARA COPIAR
+    # HOJA 3 - INSTRUCCIONES
     # =========================
-    ws2 = wb.create_sheet("FÓRMULA_ESTADO")
+    ws2 = wb.create_sheet("INSTRUCCIONES")
     
-    ws2["A1"] = "FÓRMULA PARA COLUMNA ESTADO"
+    ws2["A1"] = "CÓMO USAR ESTE EXCEL"
     ws2.merge_cells("A1:D1")
     ws2["A1"].font = title_font
     ws2["A1"].fill = header_fill
     ws2["A1"].alignment = center
 
-    # Instrucciones para agregar fórmula de estado
     instrucciones = [
-        ("PARA HACER DINÁMICO:", "", "", ""),
-        ("1", "Insertar nueva columna", "Después de Diferencia", "Columna I"),
-        ("2", "Copiar esta fórmula:", '=IF(F2=0,"NO CONTADO",IF(G2=0,"OK",IF(G2<0,IF(ABS(G2)<5,"FALTA","CRÍTICO"),"SOBRA")))', ""),
-        ("3", "Pegar en celda I2", "", ""),
-        ("4", "Arrastrar hacia abajo", "Click en esquina inferior derecha", ""),
+        ("¡LISTO!", "Las fórmulas ya están incluidas", "", ""),
         ("", "", "", ""),
-        ("FÓRMULA COMPLETA:", "", "", ""),
-        ("Estado =", 'IF(F2=0,', "Si no se contó", ""),
-        ("", '"NO CONTADO",', "", ""),
-        ("", 'IF(G2=0,', "Si diferencia es 0", ""),
-        ("", '"OK",', "", ""),
-        ("", 'IF(G2<0,', "Si diferencia negativa", ""),
-        ("", 'IF(ABS(G2)<5,', "Si falta menos de 5", ""),
-        ("", '"FALTA",', "", ""),
-        ("", '"CRÍTICO"),', "Si falta 5 o más", ""),
-        ("", '"SOBRA")))', "Si diferencia positiva", ""),
+        ("COLUMNA G (Diferencia):", "Fórmula: =F2-E2", "Se calcula automáticamente", ""),
+        ("COLUMNA H (Estado):", 'Fórmula: =IF(F2=0,"NO CONTADO",IF(G2=0,"OK",IF(G2<0,IF(ABS(G2)<5,"FALTA","CRÍTICO"),"SOBRA")))', "Se calcula automáticamente", ""),
+        ("", "", "", ""),
+        ("QUÉ MODIFICAR:", "", "", ""),
+        ("1", "Columna E: Stock sistema", "Modifica valores según necesites", ""),
+        ("2", "Columna F: Stock contado", "Modifica valores según inventario real", ""),
+        ("", "", "", ""),
+        ("QUÉ PASA AUTOMÁTICAMENTE:", "", "", ""),
+        ("•", "Columna G se recalcula", "= Contado - Sistema", ""),
+        ("•", "Columna H se actualiza", "Según las reglas definidas", ""),
+        ("•", "Color de fila cambia", "Según el estado resultante", ""),
         ("", "", "", ""),
         ("EJEMPLO:", "", "", ""),
-        ("Si E2=10, F2=8", "G2 = 8-10 = -2", "I2 = FALTA", "Color AMARILLO"),
-        ("Si E2=10, F2=10", "G2 = 10-10 = 0", "I2 = OK", "Color VERDE"),
-        ("Si E2=10, F2=5", "G2 = 5-10 = -5", "I2 = CRÍTICO", "Color ROJO"),
-        ("Si E2=10, F2=15", "G2 = 15-10 = 5", "I2 = SOBRA", "Color AMARILLO"),
-        ("Si E2=10, F2=0", "G2 = 0-10 = -10", "I2 = NO CONTADO", "Color GRIS"),
+        ("Si E2=10 y F2=8:", "G2 = 8-10 = -2", "H2 = FALTA", "Color AMARILLO"),
+        ("Si cambias F2 a 12:", "G2 = 12-10 = 2", "H2 = SOBRA", "Color AMARILLO"),
+        ("Si cambias F2 a 5:", "G2 = 5-10 = -5", "H2 = CRÍTICO", "Color ROJO"),
+        ("Si F2=0:", "G2 = 0-10 = -10", "H2 = NO CONTADO", "Color GRIS"),
     ]
 
     fila_inst = 3
     for inst in instrucciones:
         ws2.append(inst)
-        if fila_inst == 3:  # Encabezados
+        if fila_inst == 3:
             for col in range(1, 5):
                 ws2.cell(row=fila_inst, column=col).font = bold
                 ws2.cell(row=fila_inst, column=col).fill = PatternFill("solid", fgColor="E0E0E0")
         fila_inst += 1
 
-    # Resaltar la fórmula principal
-    for row in range(5, 20):
-        if 'IF(F2=0,"NO CONTADO"' in str(ws2[f"B{row}"].value):
-            ws2[f"B{row}"].font = Font(color="0000FF", bold=True, size=11)
-            ws2[f"B{row}"].fill = PatternFill("solid", fgColor="FFFFCC")
-
-    # Mostrar cómo aplicar formatos condicionales
-    fila_format = fila_inst + 2
-    ws2[f"A{fila_format}"] = "APLICAR COLORES AUTOMÁTICOS:"
-    ws2[f"A{fila_format}"].font = Font(bold=True, size=12, color="1F4E78")
-    ws2.merge_cells(f"A{fila_format}:D{fila_format}")
-    
-    fila_format += 1
-    formatos = [
-        ("1", "Seleccionar columnas A:H", "", ""),
-        ("2", "Home → Conditional Formatting → New Rule", "", ""),
-        ("3", "Seleccionar 'Use a formula...'", "", ""),
-        ("4", "Para VERDE (OK):", '=$H2="OK"', ""),
-        ("5", "Para AMARILLO (FALTA):", '=$H2="FALTA"', ""),
-        ("6", "Para ROJO (CRÍTICO):", '=$H2="CRÍTICO"', ""),
-        ("7", "Para AMARILLO (SOBRA):", '=$H2="SOBRA"', ""),
-        ("8", "Para GRIS (NO CONTADO):", '=$H2="NO CONTADO"', ""),
-    ]
-    
-    for fmt in formatos:
-        ws2.append(fmt)
-        fila_format += 1
-
     # Ajustar anchos
-    for col, width in zip(["A", "B", "C", "D"], [15, 50, 25, 20]):
+    for col, width in zip(["A", "B", "C", "D"], [15, 40, 30, 20]):
         ws2.column_dimensions[col].width = width
 
     # =========================
-    # GUARDAR Y RETORNAR
+    # GUARDAR
     # =========================
     wb.save(output)
     output.seek(0)
@@ -505,6 +437,7 @@ def generate_history_snapshot_excel(items, snapshot_name):
     wb.save(output)
     output.seek(0)
     return output
+
 
 
 
