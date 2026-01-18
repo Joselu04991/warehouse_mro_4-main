@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between mb-3">
+    <h4>Documentos de Almacén</h4>
+    <a href="/warehouse-documents/upload" class="btn btn-primary">Nuevo documento</a>
+  </div>
+  <table class="table table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Proceso</th>
+        <th>Proveedor</th>
+        <th>Conductor</th>
+        <th>Placa</th>
+        <th>Peso Neto</th>
+        <th>Excel</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in documents %}
+      <tr>
+        <td>{{ d.process_number }}</td>
+        <td>{{ d.provider }}</td>
+        <td>{{ d.driver }}</td>
+        <td>{{ d.plate_tractor }}</td>
+        <td>{{ d.net_weight }}</td>
+        <td><a href="/{{ d.excel_file }}" class="btn btn-sm btn-success">Descargar</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
