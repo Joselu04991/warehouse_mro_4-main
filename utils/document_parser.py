@@ -1,23 +1,14 @@
 import re
 
 def parse_document(text):
-    data = {}
+    def find(p):
+        m = re.search(p, text, re.IGNORECASE)
+        return m.group(1).strip() if m else None
 
-    data["process_number"] = re.search(r"PROCESO\s*:\s*(\d+)", text)
-    data["weighing_number"] = re.search(r"NRO\.?\s*PESAJE\s*:\s*(\d+)", text)
-
-    data["plate_tractor"] = re.search(r"PLACA\s*TRACTO\s*:\s*([A-Z0-9\-]+)", text)
-    data["plate_trailer"] = re.search(r"PLACA\s*CARRETA\s*:\s*([A-Z0-9\-]+)", text)
-
-    data["driver"] = re.search(r"CONDUCTOR\s*:\s*(.*)", text)
-    data["provider"] = re.search(r"EMPRESA\s*(.*)", text)
-
-    data["gross_weight"] = re.search(r"BRUTO\s+(\d+)", text)
-    data["tare_weight"] = re.search(r"TARA\s+(\d+)", text)
-    data["net_weight"] = re.search(r"NETO\s+(\d+)", text)
-
-    clean = {}
-    for k, v in data.items():
-        clean[k] = v.group(1).strip() if v else None
-
-    return clean
+    return {
+        "process_number": find(r"PROCESO\s*:\s*(\d+)"),
+        "provider": find(r"EMPRESA\s*:\s*(.*)"),
+        "driver": find(r"CONDUCTOR\s*:\s*(.*)"),
+        "plate_tractor": find(r"PLACA\s*:\s*([A-Z0-9\-]+)"),
+        "net_weight": find(r"NETO\s+(\d+)")
+    }
