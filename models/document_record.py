@@ -1,5 +1,6 @@
 from datetime import datetime, date, time
-from app import db  # Importar db desde app, NO desde models
+# Importar db desde el módulo models, NO desde app
+from . import db
 
 class DocumentRecord(db.Model):
     __tablename__ = 'document_records'
@@ -73,7 +74,7 @@ class DocumentRecord(db.Model):
             'PRODUCTO': self.product or '',
             'CANTIDAD': self.guide_net_weight or 0.0,
             'UNIDAD': self.unit or 'KILOGRAMO',
-            'HUMEDAD': None,  # Estos vienen de otro lugar
+            'HUMEDAD': None,
             'IMPUREZAS': None,
             'TEMPERATURA': None,
             'ESTADO': self.status or 'APROBADO',
