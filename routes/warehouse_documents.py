@@ -91,25 +91,28 @@ def save_uploaded_file(file) -> Tuple[Optional[Path], Optional[str]]:
 
 
 def process_document(file_path: Path) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    """Procesa un documento mediante OCR y parsing."""
+    """Procesa un documento de 3 páginas mediante OCR y parsing."""
     try:
-        logger.info(f"Procesando documento: {file_path}")
+        logger.info(f"Procesando documento (3 páginas): {file_path}")
         
         # Extraer texto con OCR
         text = extract_text(str(file_path))
-        if not text or len(text.strip()) < 10:  # Mínimo razonable de texto
+        if not text or len(text.strip()) < 50:  # Mínimo razonable para 3 páginas
             return None, "No se pudo extraer texto del documento o está vacío"
         
-        # Parsear documento
+        # Parsear documento (3 páginas)
         data = parse_document(text)
         if not data:
             return None, "No se pudo procesar la información del documento"
         
-        # Validar datos mínimos
-        required_fields = ['process_number', 'provider']
+        # Validar datos mínimos para documentos de 3 páginas
+        required_fields = ['process_number', 'net_weight', 'driver', 'plate_tractor']
         missing_fields = [field for field in required_fields if not data.get(field)]
         if missing_fields:
             return None, f"Faltan campos requeridos: {', '.join(missing_fields)}"
+        
+        logger.info(f"Datos extraídos - Proceso: {data.get('process_number')}, "
+                   f"Peso: {data.get('net_weight')} kg")
         
         return data, None
         
@@ -127,7 +130,10 @@ def create_excel_file(data: Dict[str, Any], original_path: Path) -> Optional[Pat
         excel_filename = f"{original_path.stem}.xlsx"
         excel_path = get_upload_folder() / excel_filename
         
-        generate_excel(data, str(excel_path))
+        # Preparar datos para Excel incluyendo todos los campos de las 3 páginas
+        excel_data = prepare_excel_data(data)
+        
+        generate_excel(excel_data, str(excel_path))
         
         if not excel_path.exists() or excel_path.stat().st_size == 0:
             logger.error(f"Archivo Excel no creado o vacío: {excel_path}")
@@ -139,6 +145,129 @@ def create_excel_file(data: Dict[str, Any], original_path: Path) -> Optional[Pat
     except Exception as e:
         logger.error(f"Error creando Excel: {e}")
         return None
+
+
+def prepare_excel_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Prepara los datos para Excel con todos los campos de las 3 páginas."""
+    return {
+        'headers': [
+            'NÚMERO DE PROCESO', 'NÚMERO DE PESAJE', 'PROVEEDOR', 'CONDUCTOR',
+            'CÉDULA CONDUCTOR', 'PLACA TRACTO', 'PLACA REMOLQUE', 'PESO NETO (KG)',
+            'PESO BRUTO (KG)', 'TARA (KG)', 'PRODUCTO', 'CANTIDAD', 'UNIDAD',
+            'CONCENTRACIÓN', 'CÓDIGO PRODUCTO', 'CÓDIGO UN', 'CÓDIGO VERIFICACIÓN',
+            'FECHA PESAJE', 'FECHA EMISIÓN', 'MOTIVO TRASLADO', 'MODALIDAD TRANSPORTE',
+            'DIRECCIÓN ORIGEN', 'DIRECCIÓN DESTINO', 'RUTA FISCAL', 'NIT/RUC PROVEEDOR',
+            'OBSERVACIONES', 'ESTADO'
+        ],
+        'rows': [[
+            data.get('process_number', ''),
+            data.get('weigh_number', ''),
+            data.get('provider', data.get('recipient', '')),
+            data.get('driver', ''),
+            data.get('driver_id', ''),
+            data.get('plate_tractor', ''),
+            data.get('plate_trailer', ''),
+            data.get('net_weight', 0),
+            data.get('bruto_weight', 0),
+            data.get('tare_weight', 0),
+            data.get('product', ''),
+            data.get('guide_net_weight', 0),
+            data.get('unit', 'KG'),
+            data.get('concentration', ''),
+            data.get('product_code', ''),
+            data.get('un_code', ''),
+            data.get('verification_code', ''),
+            data.get('weigh_date', datetime.now()).strftime('%Y-%m-%d %H:%M') if data.get('weigh_date') else '',
+            data.get('issue_date', datetime.now()).strftime('%Y-%m-%d') if data.get('issue_date') else '',
+            data.get('transfer_reason', ''),
+            data.get('transport_mode', ''),
+            data.get('origin_address', ''),
+            data.get('destination_address', ''),
+            data.get('fiscal_route', ''),
+            data.get('provider_nit', ''),
+            data.get('observations', ''),
+            'PROCESADO'
+        ]]
+    }
+
+
+def save_document_to_db(data: Dict[str, Any], saved_path: Path, excel_path: Path) -> Optional[DocumentRecord]:
+    """Guarda los datos del documento en la base de datos."""
+    try:
+        # Extraer datos para el modelo
+        process_number = data.get('process_number', '')
+        provider = data.get('provider', data.get('recipient', ''))
+        driver = data.get('driver', '')
+        plate_tractor = data.get('plate_tractor', '')
+        net_weight = data.get('net_weight')
+        
+        # Crear registro del documento
+        record = DocumentRecord(
+            # Página 1 - Ticket de Pesaje
+            process_number=process_number,
+            weigh_number=data.get('weigh_number'),
+            card=data.get('card'),
+            operation=data.get('operation'),
+            tare_weight=data.get('tare_weight'),
+            bruto_weight=data.get('bruto_weight'),
+            net_weight=net_weight,
+            tare_date=data.get('tare_date'),
+            bruto_date=data.get('bruto_date'),
+            net_date=data.get('net_date'),
+            weigh_date=data.get('weigh_date'),
+            
+            # Página 2 - Traslado
+            issue_date=data.get('issue_date'),
+            origin_address=data.get('origin_address'),
+            transfer_reason=data.get('transfer_reason'),
+            transport_mode=data.get('transport_mode'),
+            transfer_start=data.get('transfer_start'),
+            vehicle_brand=data.get('vehicle_brand'),
+            plate_tractor=plate_tractor,
+            driver_document_type=data.get('driver_document_type'),
+            driver=driver,
+            driver_id=data.get('driver_id'),
+            destination_address=data.get('destination_address'),
+            fiscal_route=data.get('fiscal_route'),
+            recipient=provider,
+            provider_nit=data.get('provider_nit'),
+            
+            # Página 3 - Mercancía
+            product=data.get('product'),
+            product_code=data.get('product_code'),
+            un_code=data.get('un_code'),
+            concentration=data.get('concentration'),
+            unit=data.get('unit'),
+            guide_net_weight=data.get('guide_net_weight'),
+            guide_gross_weight=data.get('guide_gross_weight'),
+            verification_code=data.get('verification_code'),
+            plate_trailer=data.get('plate_trailer'),
+            observations=data.get('observations'),
+            
+            # Sistema
+            original_file=str(saved_path),
+            excel_file=str(excel_path),
+            file_size=saved_path.stat().st_size,
+            status='PROCESADO'
+        )
+        
+        # Solo añadir uploaded_by si current_user existe y tiene id
+        if current_user and hasattr(current_user, 'id'):
+            record.uploaded_by = current_user.id
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        logger.info(f"Documento guardado en BD: ID {record.id}, Proceso: {record.process_number}")
+        return record
+        
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logger.error(f"Error de base de datos: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error guardando documento en BD: {e}")
+        raise
 
 
 def get_document_list_data():
@@ -155,7 +284,7 @@ def get_document_list_data():
             query = query.filter(DocumentRecord.process_number.ilike(f'%{process_number}%'))
         
         if provider:
-            query = query.filter(DocumentRecord.provider.ilike(f'%{provider}%'))
+            query = query.filter(DocumentRecord.recipient.ilike(f'%{provider}%'))
         
         pagination = query.order_by(DocumentRecord.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
@@ -238,7 +367,7 @@ def upload_document():
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
         
-        # Procesar documento
+        # Procesar documento (3 páginas)
         data, error = process_document(saved_path)
         if error:
             try:
@@ -260,27 +389,15 @@ def upload_document():
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
         
-        # Guardar en base de datos - VERSIÓN CORREGIDA
+        # Guardar en base de datos
         try:
-            record = DocumentRecord(
-                process_number=data.get("process_number", ""),
-                provider=data.get("provider", ""),
-                driver=data.get("driver", ""),
-                plate_tractor=data.get("plate_tractor", ""),
-                net_weight=data.get("net_weight"),
-                original_file=str(saved_path),
-                excel_file=str(excel_path),
-                file_size=saved_path.stat().st_size
-            )
-            
-            # Solo añadir uploaded_by si current_user existe y tiene id
-            if current_user and hasattr(current_user, 'id'):
-                record.uploaded_by = current_user.id
-            
-            db.session.add(record)
-            db.session.commit()
+            record = save_document_to_db(data, saved_path, excel_path)
             
             flash(f"✅ Documento procesado exitosamente: {record.process_number}", "success")
+            logger.info(f"Documento {record.id} procesado: {record.process_number}, "
+                       f"Peso: {record.net_weight} kg, "
+                       f"Producto: {record.product}")
+            
             return redirect(url_for("warehouse_documents.list_documents"))
             
         except SQLAlchemyError as e:
@@ -300,6 +417,15 @@ def upload_document():
                                  supported_extensions=supported_extensions)
         except Exception as e:
             logger.error(f"Error inesperado: {e}", exc_info=True)
+            
+            # Limpiar archivos
+            for file_path in [saved_path, excel_path]:
+                try:
+                    if file_path.exists():
+                        file_path.unlink()
+                except:
+                    pass
+            
             flash("Error inesperado al procesar documento", "danger")
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
@@ -365,7 +491,8 @@ def delete_document(document_id):
         db.session.delete(document)
         db.session.commit()
         
-        flash("Documento eliminado exitosamente", "success")
+        flash("✅ Documento eliminado exitosamente", "success")
+        logger.info(f"Documento {document_id} eliminado. Archivos: {', '.join(files_deleted)}")
         
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -401,16 +528,126 @@ def view_document(document_id):
             size_bytes = os.path.getsize(document.excel_file)
             excel_size = f"({size_bytes / 1024 / 1024:.2f} MB)"
         
-        return render_template(
-            "documents/view.html",
-            document=document,
-            original_exists=original_exists,
-            excel_exists=excel_exists,
-            original_size=original_size,
-            excel_size=excel_size
-        )
+        # Preparar datos para vista detallada
+        document_data = {
+            # Información básica
+            'id': document.id,
+            'process_number': document.process_number,
+            'status': document.status,
+            'created_at': document.created_at,
+            
+            # Página 1 - Pesaje
+            'weigh_number': document.weigh_number,
+            'card': document.card,
+            'operation': document.operation,
+            'tare_weight': document.tare_weight,
+            'bruto_weight': document.bruto_weight,
+            'net_weight': document.net_weight,
+            'tare_date': document.tare_date,
+            'bruto_date': document.bruto_date,
+            'net_date': document.net_date,
+            'weigh_date': document.weigh_date,
+            
+            # Página 2 - Traslado
+            'issue_date': document.issue_date,
+            'origin_address': document.origin_address,
+            'transfer_reason': document.transfer_reason,
+            'transport_mode': document.transport_mode,
+            'transfer_start': document.transfer_start,
+            'vehicle_brand': document.vehicle_brand,
+            'plate_tractor': document.plate_tractor,
+            'driver': document.driver,
+            'driver_id': document.driver_id,
+            'destination_address': document.destination_address,
+            'fiscal_route': document.fiscal_route,
+            'recipient': document.recipient,
+            'provider_nit': document.provider_nit,
+            
+            # Página 3 - Mercancía
+            'product': document.product,
+            'product_code': document.product_code,
+            'un_code': document.un_code,
+            'concentration': document.concentration,
+            'unit': document.unit,
+            'guide_net_weight': document.guide_net_weight,
+            'guide_gross_weight': document.guide_gross_weight,
+            'verification_code': document.verification_code,
+            'plate_trailer': document.plate_trailer,
+            'observations': document.observations,
+            
+            # Sistema
+            'original_file': document.original_file,
+            'excel_file': document.excel_file,
+            'file_size': document.file_size,
+            'original_exists': original_exists,
+            'excel_exists': excel_exists,
+            'original_size': original_size,
+            'excel_size': excel_size
+        }
+        
+        return render_template("documents/view.html", document=document_data)
         
     except Exception as e:
         logger.error(f"Error en view_document: {e}")
         flash("Error al cargar documento", "danger")
         return redirect(url_for("warehouse_documents.list_documents"))
+
+
+@warehouse_documents_bp.route("/export/<int:document_id>")
+@login_required
+def export_document(document_id):
+    """Exporta un documento individual a Excel."""
+    try:
+        document = DocumentRecord.query.get_or_404(document_id)
+        
+        # Crear datos para exportación
+        export_data = {
+            'headers': ['Campo', 'Valor'],
+            'rows': [
+                ['NÚMERO DE PROCESO', document.process_number],
+                ['NÚMERO DE PESAJE', document.weigh_number],
+                ['PROVEEDOR', document.recipient],
+                ['CONDUCTOR', document.driver],
+                ['CÉDULA CONDUCTOR', document.driver_id],
+                ['PLACA TRACTO', document.plate_tractor],
+                ['PLACA REMOLQUE', document.plate_trailer],
+                ['PESO NETO (KG)', document.net_weight],
+                ['PESO BRUTO (KG)', document.bruto_weight],
+                ['TARA (KG)', document.tare_weight],
+                ['PRODUCTO', document.product],
+                ['CANTIDAD', document.guide_net_weight],
+                ['UNIDAD', document.unit],
+                ['CONCENTRACIÓN', document.concentration],
+                ['CÓDIGO PRODUCTO', document.product_code],
+                ['CÓDIGO UN', document.un_code],
+                ['CÓDIGO VERIFICACIÓN', document.verification_code],
+                ['FECHA PESAJE', document.weigh_date.strftime('%Y-%m-%d %H:%M') if document.weigh_date else ''],
+                ['FECHA EMISIÓN', document.issue_date.strftime('%Y-%m-%d') if document.issue_date else ''],
+                ['MOTIVO TRASLADO', document.transfer_reason],
+                ['MODALIDAD TRANSPORTE', document.transport_mode],
+                ['DIRECCIÓN ORIGEN', document.origin_address],
+                ['DIRECCIÓN DESTINO', document.destination_address],
+                ['RUTA FISCAL', document.fiscal_route],
+                ['NIT/RUC PROVEEDOR', document.provider_nit],
+                ['OBSERVACIONES', document.observations],
+                ['ESTADO', document.status]
+            ]
+        }
+        
+        # Crear archivo temporal
+        export_filename = f"export_{document.process_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        export_path = get_upload_folder() / export_filename
+        
+        generate_excel(export_data, str(export_path))
+        
+        return send_file(
+            export_path,
+            as_attachment=True,
+            download_name=export_filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        logger.error(f"Error exportando documento: {e}")
+        flash("Error al exportar documento", "danger")
+        return redirect(url_for("warehouse_documents.view_document", document_id=document_id))
