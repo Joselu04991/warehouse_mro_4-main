@@ -23,6 +23,7 @@ from .warehouse2d import WarehouseLocation
 from .inventory_count import InventoryCount
 from .task import Task
 from .score import Score
+from .document_record import DocumentRecord
 
 # Importar productividad si existe (el archivo se llama 'productivitydad.py')
 try:
@@ -57,3 +58,4 @@ except ImportError:
 
 # Opcional: También corregir el nombre del archivo si prefieres
 # Puedes renombrar 'productivitydad.py' a 'productividad.py' y actualizar la importación
+
