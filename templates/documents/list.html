@@ -7,9 +7,9 @@
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2 class="mb-1">Documentos de Almacén</h2>
+      <h2 class="mb-1">📄 Documentos de Almacén</h2>
       <p class="text-muted mb-0">
-        {% if pagination %}
+        {% if pagination and pagination.total > 0 %}
           <small>
             Mostrando {{ pagination.items|length }} de {{ pagination.total }} documentos
             {% if total_weight > 0 %}
@@ -35,14 +35,14 @@
       <form method="GET" action="{{ url_for('warehouse_documents.list_documents') }}" 
             class="row g-2 align-items-end">
         <div class="col-md-4">
-          <label class="form-label small mb-1">Número de Proceso</label>
+          <label class="form-label small mb-1">🔍 Número de Proceso</label>
           <input type="text" class="form-control form-control-sm" 
                  name="process_number" 
-                 placeholder="Buscar proceso..."
+                 placeholder="Ej: PROC-20240118-ABCD"
                  value="{{ process_number }}">
         </div>
         <div class="col-md-4">
-          <label class="form-label small mb-1">Proveedor</label>
+          <label class="form-label small mb-1">🏢 Proveedor</label>
           <input type="text" class="form-control form-control-sm" 
                  name="provider" 
                  placeholder="Buscar proveedor..."
@@ -56,7 +56,7 @@
             {% if process_number or provider %}
             <a href="{{ url_for('warehouse_documents.list_documents') }}" 
                class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-x-lg"></i>
+              <i class="bi bi-x-lg"></i> Limpiar
             </a>
             {% endif %}
           </div>
@@ -73,13 +73,13 @@
         <table class="table table-hover mb-0">
           <thead class="table-light">
             <tr>
-              <th width="120">Fecha</th>
-              <th>Proceso</th>
-              <th>Proveedor</th>
-              <th>Conductor</th>
-              <th>Placa</th>
-              <th class="text-end">Peso Neto</th>
-              <th width="140" class="text-center">Acciones</th>
+              <th width="120">📅 Fecha</th>
+              <th>🔢 Proceso</th>
+              <th>🏢 Proveedor</th>
+              <th>👤 Conductor</th>
+              <th>🚚 Placa</th>
+              <th class="text-end">⚖️ Peso Neto</th>
+              <th width="180" class="text-center">🔧 Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -90,11 +90,11 @@
                 <small class="text-muted">{{ doc.created_at.strftime('%H:%M') }}</small>
               </td>
               <td>
-                <strong>{{ doc.process_number }}</strong>
+                <strong class="text-primary">{{ doc.process_number or 'Sin número' }}</strong>
                 {% if doc.file_size %}
                 <br>
                 <small class="text-muted">
-                  {{ (doc.file_size / 1024 / 1024)|round(2) }} MB
+                  📏 {{ (doc.file_size / 1024 / 1024)|round(2) }} MB
                 </small>
                 {% endif %}
               </td>
@@ -102,32 +102,52 @@
               <td>{{ doc.driver or '-' }}</td>
               <td>
                 {% if doc.plate_tractor %}
-                <span class="badge bg-secondary">{{ doc.plate_tractor }}</span>
+                <span class="badge bg-dark">{{ doc.plate_tractor }}</span>
                 {% else %}
                 -
                 {% endif %}
               </td>
               <td class="text-end">
                 {% if doc.net_weight %}
-                <strong>{{ "{:,.2f}".format(doc.net_weight) }} kg</strong>
+                <strong class="text-success">{{ "{:,.2f}".format(doc.net_weight) }} kg</strong>
                 {% else %}
                 -
                 {% endif %}
               </td>
               <td class="text-center">
                 <div class="btn-group btn-group-sm" role="group">
+                  <!-- Ver detalles -->
+                  <a href="{{ url_for('warehouse_documents.view_document', document_id=doc.id) }}"
+                     class="btn btn-outline-info" 
+                     title="Ver detalles">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  
+                  <!-- Descargar Excel -->
+                  {% if doc.excel_file %}
                   <a href="{{ url_for('warehouse_documents.download_file', 
                                      document_id=doc.id, file_type='excel') }}"
                      class="btn btn-outline-success" 
                      title="Descargar Excel">
                     <i class="bi bi-file-excel"></i>
                   </a>
+                  {% else %}
+                  <button class="btn btn-outline-secondary" disabled title="Excel no disponible">
+                    <i class="bi bi-file-excel"></i>
+                  </button>
+                  {% endif %}
+                  
+                  <!-- Descargar Original -->
+                  {% if doc.original_file %}
                   <a href="{{ url_for('warehouse_documents.download_file', 
                                      document_id=doc.id, file_type='original') }}"
                      class="btn btn-outline-secondary" 
                      title="Ver original">
-                    <i class="bi bi-eye"></i>
+                    <i class="bi bi-file-earmark"></i>
                   </a>
+                  {% endif %}
+                  
+                  <!-- Eliminar -->
                   <form method="POST" 
                         action="{{ url_for('warehouse_documents.delete_document', 
                                          document_id=doc.id) }}"
@@ -146,9 +166,9 @@
           {% if total_weight > 0 %}
           <tfoot class="table-light">
             <tr>
-              <td colspan="5" class="text-end"><strong>Total peso:</strong></td>
+              <td colspan="5" class="text-end"><strong>📊 Total peso:</strong></td>
               <td class="text-end">
-                <strong>{{ "{:,.2f}".format(total_weight) }} kg</strong>
+                <strong class="text-primary">{{ "{:,.2f}".format(total_weight) }} kg</strong>
               </td>
               <td></td>
             </tr>
@@ -204,20 +224,24 @@
             </li>
             {% endif %}
           </ul>
+          <p class="text-center text-muted mt-2 mb-0">
+            Página {{ pagination.page }} de {{ pagination.pages }}
+          </p>
         </nav>
       </div>
       {% endif %}
       
       {% else %}
+      <!-- Estado vacío -->
       <div class="text-center py-5">
         <div class="text-muted mb-3">
-          <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+          <i class="bi bi-inbox" style="font-size: 4rem;"></i>
         </div>
-        <h5>No hay documentos</h5>
-        <p class="text-muted mb-4">Comienza subiendo tu primer documento</p>
+        <h4>📭 No hay documentos</h4>
+        <p class="text-muted mb-4">Comienza subiendo tu primer documento de almacén</p>
         <a href="{{ url_for('warehouse_documents.upload_document') }}"
-           class="btn btn-primary">
-           <i class="bi bi-cloud-upload me-1"></i> Subir Documento
+           class="btn btn-primary btn-lg">
+           <i class="bi bi-cloud-upload me-2"></i> Subir Primer Documento
         </a>
       </div>
       {% endif %}
