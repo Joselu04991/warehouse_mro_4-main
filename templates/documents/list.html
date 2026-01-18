@@ -1,33 +1,308 @@
 {% extends "base.html" %}
+
+{% block title %}Documentos de Almacén{% endblock %}
+
 {% block content %}
 <div class="container-fluid">
-  <div class="d-flex justify-content-between mb-3">
-    <h4>Documentos de Almacén</h4>
-    <a href="/warehouse-documents/upload" class="btn btn-primary">Nuevo documento</a>
+  <!-- Header con estadísticas -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0">Documentos de Almacén</h2>
+      <p class="text-muted mb-0">
+        <small>
+          Total: {{ documents|length }} documento{% if documents|length != 1 %}s{% endif %}
+          {% if total_weight %} | Peso total: {{ total_weight }} kg{% endif %}
+        </small>
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('warehouse_documents.upload_document') }}"
+         class="btn btn-primary">
+         <i class="bi bi-cloud-upload"></i> Subir Documento
+      </a>
+      {% if documents %}
+      <a href="{{ url_for('warehouse_documents.export_all') }}"
+         class="btn btn-outline-secondary"
+         title="Exportar todos los datos a Excel">
+         <i class="bi bi-file-earmark-excel"></i> Exportar Todo
+      </a>
+      {% endif %}
+    </div>
   </div>
-  <table class="table table-striped">
-    <thead class="table-dark">
-      <tr>
-        <th>Proceso</th>
-        <th>Proveedor</th>
-        <th>Conductor</th>
-        <th>Placa</th>
-        <th>Peso Neto</th>
-        <th>Excel</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for d in documents %}
-      <tr>
-        <td>{{ d.process_number }}</td>
-        <td>{{ d.provider }}</td>
-        <td>{{ d.driver }}</td>
-        <td>{{ d.plate_tractor }}</td>
-        <td>{{ d.net_weight }}</td>
-        <td><a href="/{{ d.excel_file }}" class="btn btn-sm btn-success">Descargar</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+
+  <!-- Filtros rápidos -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <form method="GET" action="{{ url_for('warehouse_documents.search_documents') }}" 
+            class="row g-2" id="filterForm">
+        <div class="col-md-3">
+          <label for="process_number" class="form-label">Número de Proceso</label>
+          <input type="text" class="form-control" id="process_number" 
+                 name="process_number" placeholder="Buscar por proceso..."
+                 value="{{ request.args.get('process_number', '') }}">
+        </div>
+        <div class="col-md-3">
+          <label for="provider" class="form-label">Proveedor</label>
+          <input type="text" class="form-control" id="provider" 
+                 name="provider" placeholder="Buscar proveedor..."
+                 value="{{ request.args.get('provider', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label for="date_from" class="form-label">Desde</label>
+          <input type="date" class="form-control" id="date_from" 
+                 name="date_from" value="{{ request.args.get('date_from', '') }}">
+        </div>
+        <div class="col-md-2">
+          <label for="date_to" class="form-label">Hasta</label>
+          <input type="date" class="form-control" id="date_to" 
+                 name="date_to" value="{{ request.args.get('date_to', '') }}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <div class="btn-group w-100">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-search"></i> Buscar
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+              <i class="bi bi-x-circle"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabla de documentos -->
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th width="120">
+                <a href="?sort=created_at&order={% if request.args.get('sort') == 'created_at' and request.args.get('order') != 'desc' %}desc{% else %}asc{% endif %}"
+                   class="text-decoration-none text-dark">
+                  Fecha <i class="bi bi-arrow-down-up"></i>
+                </a>
+              </th>
+              <th>
+                <a href="?sort=process_number&order={% if request.args.get('sort') == 'process_number' and request.args.get('order') != 'desc' %}desc{% else %}asc{% endif %}"
+                   class="text-decoration-none text-dark">
+                  Proceso <i class="bi bi-arrow-down-up"></i>
+                </a>
+              </th>
+              <th>Proveedor</th>
+              <th>Conductor</th>
+              <th>Placa</th>
+              <th class="text-end">Peso Neto</th>
+              <th width="180" class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in documents %}
+            <tr>
+              <td>
+                <small class="text-muted">{{ d.created_at.strftime('%d/%m/%Y') }}</small><br>
+                <small class="text-muted">{{ d.created_at.strftime('%H:%M') }}</small>
+              </td>
+              <td>
+                <strong>{{ d.process_number }}</strong>
+              </td>
+              <td>
+                {{ d.provider }}
+                {% if d.uploaded_by %}
+                <br><small class="text-muted">Subido por: {{ d.uploaded_by.username if d.uploaded_by else 'Sistema' }}</small>
+                {% endif %}
+              </td>
+              <td>{{ d.driver or '-' }}</td>
+              <td>
+                {% if d.plate_tractor %}
+                <span class="badge bg-secondary">{{ d.plate_tractor }}</span>
+                {% else %}
+                -
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if d.net_weight %}
+                <strong>{{ "{:,.2f}".format(d.net_weight|float) }} kg</strong>
+                {% else %}
+                -
+                {% endif %}
+              </td>
+              <td class="text-center">
+                <div class="btn-group btn-group-sm" role="group">
+                  <a href="{{ url_for('warehouse_documents.document_detail', document_id=d.id) }}"
+                     class="btn btn-outline-info" title="Ver detalles">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{{ url_for('warehouse_documents.download_file', document_id=d.id, file_type='excel') }}"
+                     class="btn btn-outline-success" title="Descargar Excel">
+                    <i class="bi bi-file-excel"></i>
+                  </a>
+                  <a href="{{ url_for('warehouse_documents.download_file', document_id=d.id, file_type='original') }}"
+                     class="btn btn-outline-secondary" title="Descargar original">
+                    <i class="bi bi-file-earmark"></i>
+                  </a>
+                  <button type="button" class="btn btn-outline-danger" 
+                          title="Eliminar" 
+                          onclick="confirmDelete({{ d.id }}, '{{ d.process_number }}')">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-5">
+                <div class="text-muted mb-3">
+                  <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                </div>
+                <h5>No hay documentos</h5>
+                <p class="text-muted">Comienza subiendo tu primer documento</p>
+                <a href="{{ url_for('warehouse_documents.upload_document') }}"
+                   class="btn btn-primary">
+                   <i class="bi bi-cloud-upload"></i> Subir Documento
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          {% if documents and (total_weight or documents|length > 10) %}
+          <tfoot class="table-light">
+            <tr>
+              <td colspan="5" class="text-end"><strong>Total:</strong></td>
+              <td class="text-end">
+                <strong>{{ "{:,.2f}".format(total_weight|float) }} kg</strong>
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+          {% endif %}
+        </table>
+      </div>
+    </div>
+    
+    <!-- Paginación -->
+    {% if pagination and pagination.pages > 1 %}
+    <div class="card-footer">
+      <nav aria-label="Paginación de documentos">
+        <ul class="pagination justify-content-center mb-0">
+          {% if pagination.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('warehouse_documents.list_documents', page=pagination.prev_num, **request.args) }}">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </a>
+          </li>
+          {% endif %}
+          
+          {% for page in pagination.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+            {% if page %}
+              <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('warehouse_documents.list_documents', page=page, **request.args) }}">
+                  {{ page }}
+                </a>
+              </li>
+            {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">...</span>
+              </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if pagination.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('warehouse_documents.list_documents', page=pagination.next_num, **request.args) }}">
+              Siguiente <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+        <p class="text-center text-muted mt-2 mb-0">
+          Mostrando {{ pagination.items|length }} de {{ pagination.total }} documentos
+        </p>
+      </nav>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Modal de confirmación de eliminación -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirmar Eliminación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar el documento <strong id="deleteProcessNumber"></strong>?</p>
+          <p class="text-danger"><small>Esta acción no se puede deshacer. Se eliminarán tanto el registro como los archivos asociados.</small></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form id="deleteForm" method="POST" style="display: inline;">
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function clearFilters() {
+  document.getElementById('process_number').value = '';
+  document.getElementById('provider').value = '';
+  document.getElementById('date_from').value = '';
+  document.getElementById('date_to').value = '';
+  window.location.href = "{{ url_for('warehouse_documents.list_documents') }}";
+}
+
+function confirmDelete(documentId, processNumber) {
+  document.getElementById('deleteProcessNumber').textContent = processNumber;
+  document.getElementById('deleteForm').action = "{{ url_for('warehouse_documents.delete_document', document_id=0) }}".replace('0', documentId);
+  
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+  deleteModal.show();
+}
+
+// Auto-submit filters on Enter
+document.getElementById('filterForm').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+    e.preventDefault();
+    this.submit();
+  }
+});
+
+// Date validation
+document.getElementById('date_from').addEventListener('change', function() {
+  const dateTo = document.getElementById('date_to');
+  if (this.value && dateTo.value && this.value > dateTo.value) {
+    dateTo.value = this.value;
+  }
+});
+
+// Format numbers in table
+document.querySelectorAll('.net-weight').forEach(el => {
+  const value = parseFloat(el.textContent);
+  if (!isNaN(value)) {
+    el.textContent = value.toLocaleString('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg';
+  }
+});
+</script>
+
+<style>
+.table-hover tbody tr:hover {
+  background-color: rgba(0, 123, 255, 0.05);
+}
+.badge {
+  font-family: monospace;
+}
+.text-end {
+  white-space: nowrap;
+}
+.btn-group-sm > .btn {
+  padding: 0.25rem 0.5rem;
+}
+</style>
 {% endblock %}
