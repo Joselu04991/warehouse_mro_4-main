@@ -14,6 +14,7 @@ from routes.auditoria_routes import auditoria_bp
 from routes.alertas_ai_routes import alertas_ai_bp
 from routes.admin_roles_routes import admin_roles_bp
 from routes.tasks_routes import tasks_bp
+from routes.warehouse_documents import warehouse_documents_bp
 
 def register_blueprints(app):
 
@@ -62,6 +63,10 @@ def register_blueprints(app):
     app.register_blueprint(tasks_bp)
     print("👉 Cargado: tasks")
 
+    app.register_blueprint(warehouse_documents_bp)
+    print("👉 Cargado: warehouse_documents")
+
     print("\n========== BLUEPRINTS CARGADOS OK ==========\n")
+
 
 
