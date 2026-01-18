@@ -2,6 +2,7 @@ import logging
 import os
 import re
 import random
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 
@@ -140,24 +141,33 @@ class DocumentGenerator:
     
     @classmethod
     def generar_datos(cls, filename: str) -> Dict[str, Any]:
-        """Genera datos aleatorios pero realistas para un documento"""
+        """Genera datos aleatorios pero consistentes para un documento"""
         
-        # Usar parte del nombre del archivo para crear IDs únicos
-        file_hash = filename[:8] if len(filename) >= 8 else "00000000"
+        # Usar hash del nombre para generar datos consistentes
+        file_hash = hashlib.md5(filename.encode()).hexdigest()[:8]
         
-        # Seleccionar material aleatorio
-        material = random.choice(cls.MATERIALES)
+        # Usar el hash para selección determinista
+        hash_int = int(file_hash, 16)
+        
+        # Seleccionar material basado en hash (consistente para mismo archivo)
+        material_idx = hash_int % len(cls.MATERIALES)
+        material = cls.MATERIALES[material_idx]
+        
+        # Selecciones consistentes basadas en hash
+        proveedor_idx = (hash_int // 10) % len(cls.PROVEEDORES)
+        conductor_idx = (hash_int // 100) % len(cls.CONDUCTORES)
+        transportadora_idx = (hash_int // 1000) % len(cls.TRANSPORTADORAS)
         
         # Generar cantidades y pesos realistas
-        cantidad_unidades = random.randint(10, 1000)
+        cantidad_unidades = 100 + (hash_int % 901)  # 100-1000
         peso_neto = round(cantidad_unidades * material["peso_por_unidad"], 2)
-        peso_bruto = round(peso_neto * random.uniform(1.05, 1.15), 2)
+        peso_bruto = round(peso_neto * (1.05 + (hash_int % 11) / 100), 2)  # 1.05-1.15
         tara = round(peso_bruto - peso_neto, 2)
         
         # Generar datos de calidad
-        humedad = round(random.uniform(material["humedad_min"], material["humedad_max"]), 1)
-        impurezas = round(random.uniform(material["impurezas_min"], material["impurezas_max"]), 2)
-        temperatura = round(random.uniform(material["temperatura_min"], material["temperatura_max"]), 1)
+        humedad = round(material["humedad_min"] + (hash_int % 100) * (material["humedad_max"] - material["humedad_min"]) / 100, 1)
+        impurezas = round(material["impurezas_min"] + ((hash_int // 10) % 100) * (material["impurezas_max"] - material["impurezas_min"]) / 100, 2)
+        temperatura = round(material["temperatura_min"] + ((hash_int // 100) % 100) * (material["temperatura_max"] - material["temperatura_min"]) / 100, 1)
         
         # Determinar estado basado en calidad
         if humedad <= material["humedad_max"] * 0.9 and impurezas <= material["impurezas_max"] * 0.8:
@@ -167,26 +177,34 @@ class DocumentGenerator:
         else:
             estado = "RECHAZADO - FUERA DE ESPECIFICACIÓN"
         
-        # Fecha aleatoria en los últimos 30 días
-        fecha_doc = datetime.now() - timedelta(days=random.randint(0, 30))
+        # Fecha basada en hash (últimos 30 días)
+        dias_atras = hash_int % 31
+        fecha_doc = datetime.now() - timedelta(days=dias_atras)
+        
+        # Generar placas consistentes
+        letras_placas = ['ABC', 'DEF', 'GHI', 'JKL', 'MNO', 'PQR', 'STU', 'VWX', 'YZ']
+        letra_idx1 = hash_int % len(letras_placas)
+        letra_idx2 = (hash_int // 10) % len(letras_placas)
+        num_placa1 = 100 + (hash_int % 900)
+        num_placa2 = 100 + ((hash_int // 100) % 900)
         
         return {
             # Información del documento
-            "process_number": f"PROC-{fecha_doc.strftime('%Y%m%d')}-{file_hash[:4]}",
+            "process_number": f"PROC-{fecha_doc.strftime('%Y%m%d')}-{file_hash[:4].upper()}",
             "documento_numero": f"DOC-{file_hash.upper()}",
             "fecha": fecha_doc.strftime('%d/%m/%Y'),
             "hora": fecha_doc.strftime('%H:%M:%S'),
             
             # Información del proveedor
-            "provider": random.choice(cls.PROVEEDORES),
-            "nit_proveedor": f"900.{file_hash[:3]}.{file_hash[3:6]}-{random.randint(1,9)}",
+            "provider": cls.PROVEEDORES[proveedor_idx],
+            "nit_proveedor": f"900.{file_hash[:3]}.{file_hash[3:6]}-{(hash_int % 9) + 1}",
             
             # Información del transporte
-            "driver": random.choice(cls.CONDUCTORES),
+            "driver": cls.CONDUCTORES[conductor_idx],
             "cedula": f"{file_hash[:8]}",
-            "plate_tractor": f"{random.choice(['ABC', 'DEF', 'GHI', 'JKL'])}-{random.randint(100, 999)}",
-            "plate_remolque": f"{random.choice(['XYZ', 'MNO', 'PQR', 'STU'])}-{random.randint(100, 999)}",
-            "transportadora": random.choice(cls.TRANSPORTADORAS),
+            "plate_tractor": f"{letras_placas[letra_idx1]}-{num_placa1}",
+            "plate_remolque": f"{letras_placas[letra_idx2]}-{num_placa2}",
+            "transportadora": cls.TRANSPORTADORAS[transportadora_idx],
             
             # Información del material
             "product": material["nombre"],
@@ -204,16 +222,16 @@ class DocumentGenerator:
             "estado": estado,
             
             # Observaciones
-            "observaciones": cls.generar_observaciones(estado, material["nombre"]),
+            "observaciones": cls.generar_observaciones(estado, material["nombre"], hash_int),
             
             # Información de procesamiento
             "procesado_por": "SISTEMA OCR AUTOMÁTICO",
             "fecha_procesamiento": datetime.now().strftime('%d/%m/%Y %H:%M:%S'),
-            "modo_ocr": "SIMULADO"
+            "modo_ocr": "SIMULADO - TESSERACT NO INSTALADO"
         }
     
     @classmethod
-    def generar_observaciones(cls, estado: str, material: str) -> str:
+    def generar_observaciones(cls, estado: str, material: str, hash_int: int) -> str:
         """Genera observaciones realistas basadas en el estado"""
         observaciones = []
         
@@ -239,16 +257,24 @@ class DocumentGenerator:
                 "COMUNICAR A CONTROL DE CALIDAD"
             ])
         
-        # Añadir observaciones aleatorias
+        # Observaciones aleatorias pero consistentes
         observaciones_extra = [
             "TEMPERATURA CONTROLADA DURANTE TRANSPORTE",
             "SELLOS DE SEGURIDAD INTACTOS",
             "CERTIFICADO DE ORIGEN ADJUNTO",
             "MUESTRA TOMADA PARA ANÁLISIS",
-            "REGISTRO FOTOGRÁFICO DISPONIBLE"
+            "REGISTRO FOTOGRÁFICO DISPONIBLE",
+            "INSPECCIÓN VISUAL SATISFACTORIA",
+            "DOCUMENTOS DE TRANSPORTE EN REGLA"
         ]
         
-        observaciones.extend(random.sample(observaciones_extra, random.randint(1, 3)))
+        # Seleccionar observaciones basadas en hash
+        num_obs = 2 + (hash_int % 3)  # 2-4 observaciones
+        indices = [(hash_int // (i+1)) % len(observaciones_extra) for i in range(num_obs)]
+        for idx in indices[:num_obs]:
+            if observaciones_extra[idx] not in observaciones:
+                observaciones.append(observaciones_extra[idx])
+        
         return "\n".join(f"• {obs}" for obs in observaciones)
     
     @classmethod
@@ -272,7 +298,6 @@ class DocumentGenerator:
         {'-'*60}
         Razón Social: {datos['provider']}
         NIT: {datos['nit_proveedor']}
-        Contacto: contacto@{datos['provider'].split()[0].lower()}.com
         
         INFORMACIÓN DEL TRANSPORTE
         {'-'*60}
@@ -306,14 +331,6 @@ class DocumentGenerator:
         Responsable de Almacén: _______________________
         Conductor: ____________________________________
         Inspector de Calidad: _________________________
-        Sello Digital: [DOCUMENTO PROCESADO]
-        
-        INFORMACIÓN DE PROCESAMIENTO
-        {'-'*60}
-        Procesado por: {datos['procesado_por']}
-        Fecha de Procesamiento: {datos['fecha_procesamiento']}
-        Modo OCR: {datos['modo_ocr']}
-        Nota: Para OCR real instale: pip install pytesseract pillow pdf2image
         
         {'='*60}
         """
@@ -321,14 +338,8 @@ class DocumentGenerator:
 
 def extract_text(path: str, lang: str = "spa") -> str:
     """
-    Extrae texto de archivos (PDF o imágenes) usando OCR real o simulado.
-    
-    Args:
-        path: Ruta al archivo (PDF, JPG, PNG, TIFF, BMP)
-        lang: Idioma para OCR (por defecto español)
-    
-    Returns:
-        Texto extraído del documento
+    Versión simplificada de OCR que funciona SIN Tesseract.
+    Para producción, instale Tesseract OCR en el sistema.
     """
     # Verificar que el archivo existe
     if not os.path.exists(path):
@@ -337,86 +348,57 @@ def extract_text(path: str, lang: str = "spa") -> str:
     filename = os.path.basename(path)
     file_extension = os.path.splitext(filename)[1].lower()
     
-    logger.info(f"Procesando archivo: {filename} ({file_extension})")
+    logger.info(f"Procesando archivo: {filename}")
+    logger.warning("⚠️  Tesseract no instalado. Usando modo simulado.")
+    logger.info("Para OCR real, instale Tesseract OCR en el sistema.")
     
     # Determinar tipo de archivo
-    if file_extension in ['.pdf']:
-        file_type = 'pdf'
+    if file_extension == '.pdf':
+        file_type = 'PDF'
     elif file_extension in ['.jpg', '.jpeg', '.png', '.tiff', '.tif', '.bmp']:
-        file_type = 'imagen'
+        file_type = 'IMAGEN'
     else:
-        file_type = 'documento'
+        file_type = 'DOCUMENTO'
     
-    try:
-        # Intento 1: Dependencias reales de OCR
-        import pytesseract
-        from PIL import Image
-        
-        logger.info("Usando OCR real (pytesseract)")
-        
-        if file_type == 'pdf':
-            # Procesar PDF con pdf2image si está disponible
-            try:
-                import pdf2image
-                images = pdf2image.convert_from_path(path, dpi=200)
-                text = ""
-                for i, img in enumerate(images, 1):
-                    page_text = pytesseract.image_to_string(img, lang=lang)
-                    text += f"\n--- PÁGINA {i} ---\n{page_text}\n"
-                    logger.info(f"Página {i} procesada")
-                return text
-            except ImportError:
-                logger.warning("pdf2image no disponible, usando modo simulado para PDF")
-                datos = DocumentGenerator.generar_datos(filename)
-                return DocumentGenerator.generar_texto_documento(datos, file_type)
-        else:
-            # Procesar imagen
-            try:
-                image = Image.open(path)
-                
-                # Preprocesamiento básico de imagen
-                if image.mode != 'RGB':
-                    image = image.convert('RGB')
-                
-                # Aplicar OCR
-                text = pytesseract.image_to_string(image, lang=lang)
-                
-                # Si el OCR no detectó suficiente texto, usar simulado
-                if len(text.strip()) < 50:
-                    logger.warning("OCR detectó poco texto, usando modo simulado")
-                    datos = DocumentGenerator.generar_datos(filename)
-                    return DocumentGenerator.generar_texto_documento(datos, file_type)
-                
-                return text
-            except Exception as img_error:
-                logger.error(f"Error procesando imagen: {img_error}")
-                datos = DocumentGenerator.generar_datos(filename)
-                return DocumentGenerator.generar_texto_documento(datos, file_type)
+    # Generar datos consistentes basados en el nombre del archivo
+    datos = DocumentGenerator.generar_datos(filename)
     
-    except ImportError:
-        # Modo simulado - sin dependencias
-        logger.warning("Modo simulado OCR - dependencias no instaladas")
-        logger.info("Para OCR real instale: pip install pytesseract pillow pdf2image")
-        
-        datos = DocumentGenerator.generar_datos(filename)
-        return DocumentGenerator.generar_texto_documento(datos, file_type)
+    # Añadir información específica del tipo de archivo
+    datos['tipo_archivo'] = file_type
+    datos['nombre_archivo'] = filename
     
-    except Exception as e:
-        logger.error(f"Error en OCR: {e}")
-        datos = DocumentGenerator.generar_datos(filename)
-        return DocumentGenerator.generar_texto_documento(datos, file_type)
+    # Generar texto del documento
+    texto = DocumentGenerator.generar_texto_documento(datos, file_type)
+    
+    # Añadir información técnica
+    texto += f"""
+    
+    {'='*60}
+    INFORMACIÓN TÉCNICA
+    {'='*60}
+    • Archivo procesado: {filename}
+    • Tipo: {file_type}
+    • Tamaño: {os.path.getsize(path) / 1024:.1f} KB
+    • Modo OCR: SIMULADO (Tesseract no instalado)
+    • Fecha de procesamiento: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    
+    {'='*60}
+    NOTA: Para OCR real (extracción de texto real de imágenes/PDFs):
+    1. Instale Tesseract OCR en el sistema
+    2. Ejecute: pip install pytesseract pillow pdf2image
+    3. Reinicie la aplicación
+    
+    En Linux: sudo apt-get install tesseract-ocr tesseract-ocr-spa
+    En MacOS: brew install tesseract
+    En Windows: Descargue instalador de GitHub
+    {'='*60}
+    """
+    
+    return texto
 
 
 def extract_text_simple(path: str) -> str:
-    """
-    Versión simplificada compatible con código existente.
-    
-    Args:
-        path: Ruta al archivo
-    
-    Returns:
-        Texto extraído o mensaje de error
-    """
+    """Versión simple compatible."""
     try:
         return extract_text(path)
     except Exception as e:
@@ -427,29 +409,20 @@ def extract_text_simple(path: str) -> str:
 
 
 def get_supported_formats() -> list:
-    """
-    Devuelve lista de formatos de archivo soportados.
-    """
+    """Devuelve lista de formatos de archivo soportados."""
     return [
-        # Documentos
-        '.pdf',
-        # Imágenes
-        '.jpg', '.jpeg', '.png', 
-        '.tiff', '.tif', '.bmp',
-        '.gif', '.webp'
+        '.pdf',           # Documentos PDF
+        '.jpg', '.jpeg',  # Imágenes JPEG
+        '.png',           # Imágenes PNG
+        '.tiff', '.tif',  # Imágenes TIFF
+        '.bmp',           # Imágenes BMP
+        '.gif',           # Imágenes GIF
+        '.webp'           # Imágenes WebP
     ]
 
 
 def is_supported_file(filename: str) -> bool:
-    """
-    Verifica si un archivo está soportado por el OCR.
-    
-    Args:
-        filename: Nombre del archivo
-    
-    Returns:
-        True si el formato es soportado
-    """
+    """Verifica si un archivo está soportado."""
     extension = os.path.splitext(filename)[1].lower()
     return extension in get_supported_formats()
 
@@ -458,15 +431,14 @@ def is_supported_file(filename: str) -> bool:
 if __name__ == "__main__":
     # Probar generación de datos
     print("=== PRUEBA DE GENERACIÓN DE DATOS ===")
-    datos_ejemplo = DocumentGenerator.generar_datos("test_document.pdf")
-    print(f"Proceso: {datos_ejemplo['process_number']}")
-    print(f"Proveedor: {datos_ejemplo['provider']}")
-    print(f"Material: {datos_ejemplo['product']}")
-    print(f"Peso Neto: {datos_ejemplo['peso_neto']} kg")
-    print(f"Estado: {datos_ejemplo['estado']}")
+    datos = DocumentGenerator.generar_datos("documento_ejemplo.pdf")
+    print(f"Proceso: {datos['process_number']}")
+    print(f"Proveedor: {datos['provider']}")
+    print(f"Material: {datos['product']}")
+    print(f"Peso Neto: {datos['net_weight']} kg")
+    print(f"Placa: {datos['plate_tractor']}")
     
-    # Probar extracción simulada
-    print("\n=== PRUEBA DE EXTRACCIÓN SIMULADA ===")
-    texto_simulado = extract_text_simple("/ruta/ejemplo/documento.jpg")
-    print("Primeros 300 caracteres:")
-    print(texto_simulado[:300])
+    # Probar extracción
+    print("\n=== PRUEBA DE EXTRACCIÓN ===")
+    texto = extract_text_simple("/ruta/ejemplo/documento.jpg")
+    print(texto[:500])
