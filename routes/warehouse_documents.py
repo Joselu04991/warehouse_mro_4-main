@@ -260,7 +260,7 @@ def upload_document():
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
         
-        # Guardar en base de datos
+        # Guardar en base de datos - VERSIÓN CORREGIDA
         try:
             record = DocumentRecord(
                 process_number=data.get("process_number", ""),
@@ -270,9 +270,12 @@ def upload_document():
                 net_weight=data.get("net_weight"),
                 original_file=str(saved_path),
                 excel_file=str(excel_path),
-                uploaded_by=current_user.id if current_user.is_authenticated else None,
                 file_size=saved_path.stat().st_size
             )
+            
+            # Solo añadir uploaded_by si current_user existe y tiene id
+            if current_user and hasattr(current_user, 'id'):
+                record.uploaded_by = current_user.id
             
             db.session.add(record)
             db.session.commit()
@@ -296,7 +299,7 @@ def upload_document():
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
         except Exception as e:
-            logger.error(f"Error inesperado: {e}")
+            logger.error(f"Error inesperado: {e}", exc_info=True)
             flash("Error inesperado al procesar documento", "danger")
             return render_template("documents/upload.html",
                                  supported_extensions=supported_extensions)
