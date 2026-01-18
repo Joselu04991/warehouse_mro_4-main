@@ -53,13 +53,19 @@ def get_upload_folder() -> Path:
     return upload_path
 
 
+def get_supported_extensions() -> str:
+    """Devuelve string con extensiones soportadas para mostrar al usuario."""
+    extensions = [ext.replace('.', '').upper() for ext in ALLOWED_EXTENSIONS]
+    return ', '.join(extensions)
+
+
 def save_uploaded_file(file) -> Tuple[Optional[Path], Optional[str]]:
     """Guarda un archivo subido de forma segura."""
     if not file or file.filename == '':
         return None, "No se seleccionó ningún archivo"
     
     if not allowed_file(file.filename):
-        return None, f"Tipo de archivo no permitido. Use: {', '.join(ALLOWED_EXTENSIONS)}"
+        return None, f"Tipo de archivo no permitido. Use: {get_supported_extensions()}"
     
     # Verificar tamaño del archivo
     file.seek(0, 2)  # Ir al final del archivo
@@ -135,18 +141,14 @@ def create_excel_file(data: Dict[str, Any], original_path: Path) -> Optional[Pat
         return None
 
 
-@warehouse_documents_bp.route("/")
-@login_required
-def list_documents():
-    """Lista todos los documentos procesados."""
+def get_document_list_data():
+    """Obtiene datos para la lista de documentos"""
     try:
-        # Obtener parámetros
         page = request.args.get('page', 1, type=int)
         per_page = 20
         process_number = request.args.get('process_number', '')
         provider = request.args.get('provider', '')
         
-        # Construir consulta
         query = DocumentRecord.query
         
         if process_number:
@@ -155,28 +157,47 @@ def list_documents():
         if provider:
             query = query.filter(DocumentRecord.provider.ilike(f'%{provider}%'))
         
-        # Paginación
-        pagination = query.order_by(
-            DocumentRecord.created_at.desc()
-        ).paginate(page=page, per_page=per_page, error_out=False)
+        pagination = query.order_by(DocumentRecord.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
         
-        # Calcular totales
-        total_weight = db.session.query(
+        # Calcular total de peso
+        total_result = db.session.query(
             db.func.coalesce(db.func.sum(DocumentRecord.net_weight), 0)
         ).scalar()
+        total_weight = float(total_result) if total_result else 0
+        
+        return {
+            'documents': pagination.items,
+            'pagination': pagination,
+            'total_weight': total_weight,
+            'process_number': process_number,
+            'provider': provider
+        }
+    except Exception as e:
+        logger.error(f"Error obteniendo datos de lista: {e}")
+        return {'documents': [], 'pagination': None, 'total_weight': 0}
+
+
+@warehouse_documents_bp.route("/")
+@login_required
+def list_documents():
+    """Lista todos los documentos procesados."""
+    try:
+        data = get_document_list_data()
         
         return render_template(
             "documents/list.html",
-            documents=pagination.items,
-            pagination=pagination,
-            total_weight=float(total_weight) if total_weight else 0,
-            process_number=process_number,
-            provider=provider
+            documents=data['documents'],
+            pagination=data['pagination'],
+            total_weight=data['total_weight'],
+            process_number=data['process_number'],
+            provider=data['provider']
         )
         
     except Exception as e:
-        logger.error(f"Error listando documentos: {e}", exc_info=True)
-        flash("Error al cargar la lista de documentos", "danger")
+        logger.error(f"Error en list_documents: {e}", exc_info=True)
+        flash("Error al cargar documentos", "danger")
         return render_template("documents/list.html", 
                              documents=[], 
                              pagination=None,
@@ -187,18 +208,35 @@ def list_documents():
 @login_required
 def upload_document():
     """Sube y procesa un nuevo documento."""
+    
+    # Obtener extensiones soportadas para mostrar en el template
+    supported_extensions = get_supported_extensions()
+    
     if request.method == "POST":
         if 'file' not in request.files:
             flash("No se encontró el archivo en la solicitud", "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html", 
+                                 supported_extensions=supported_extensions)
         
         file = request.files['file']
+        
+        if file.filename == '':
+            flash("No se seleccionó ningún archivo", "danger")
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
+        
+        # Verificar tipo de archivo
+        if not allowed_file(file.filename):
+            flash(f"Formato no soportado. Use: {supported_extensions}", "danger")
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
         
         # Guardar archivo
         saved_path, error = save_uploaded_file(file)
         if error:
             flash(error, "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
         
         # Procesar documento
         data, error = process_document(saved_path)
@@ -208,7 +246,8 @@ def upload_document():
             except:
                 pass
             flash(error, "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
         
         # Crear archivo Excel
         excel_path = create_excel_file(data, saved_path)
@@ -218,7 +257,8 @@ def upload_document():
             except:
                 pass
             flash("Error al crear archivo Excel", "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
         
         # Guardar en base de datos
         try:
@@ -237,7 +277,7 @@ def upload_document():
             db.session.add(record)
             db.session.commit()
             
-            flash(f"Documento procesado exitosamente: {record.process_number}", "success")
+            flash(f"✅ Documento procesado exitosamente: {record.process_number}", "success")
             return redirect(url_for("warehouse_documents.list_documents"))
             
         except SQLAlchemyError as e:
@@ -253,13 +293,16 @@ def upload_document():
                     pass
             
             flash("Error al guardar en base de datos", "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
         except Exception as e:
             logger.error(f"Error inesperado: {e}")
             flash("Error inesperado al procesar documento", "danger")
-            return redirect(request.url)
+            return render_template("documents/upload.html",
+                                 supported_extensions=supported_extensions)
     
-    return render_template("documents/upload.html")
+    return render_template("documents/upload.html", 
+                         supported_extensions=supported_extensions)
 
 
 @warehouse_documents_bp.route("/download/<int:document_id>/<file_type>")
@@ -335,11 +378,36 @@ def delete_document(document_id):
 @warehouse_documents_bp.route("/view/<int:document_id>")
 @login_required
 def view_document(document_id):
-    """Muestra los detalles de un documento."""
+    """Muestra vista detallada del documento."""
     try:
         document = DocumentRecord.query.get_or_404(document_id)
-        return render_template("documents/view.html", document=document)
+        
+        # Obtener información del archivo
+        original_exists = os.path.exists(document.original_file) if document.original_file else False
+        excel_exists = os.path.exists(document.excel_file) if document.excel_file else False
+        
+        # Calcular tamaño de archivos
+        original_size = ""
+        excel_size = ""
+        
+        if original_exists and document.original_file:
+            size_bytes = os.path.getsize(document.original_file)
+            original_size = f"({size_bytes / 1024 / 1024:.2f} MB)"
+        
+        if excel_exists and document.excel_file:
+            size_bytes = os.path.getsize(document.excel_file)
+            excel_size = f"({size_bytes / 1024 / 1024:.2f} MB)"
+        
+        return render_template(
+            "documents/view.html",
+            document=document,
+            original_exists=original_exists,
+            excel_exists=excel_exists,
+            original_size=original_size,
+            excel_size=excel_size
+        )
+        
     except Exception as e:
-        logger.error(f"Error viendo documento: {e}")
+        logger.error(f"Error en view_document: {e}")
         flash("Error al cargar documento", "danger")
         return redirect(url_for("warehouse_documents.list_documents"))
