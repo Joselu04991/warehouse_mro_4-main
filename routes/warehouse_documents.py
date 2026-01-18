@@ -13,7 +13,7 @@ warehouse_documents = Blueprint("warehouse_documents", __name__, url_prefix="/wa
 @login_required
 def list_documents():
     documents = DocumentRecord.query.order_by(DocumentRecord.created_at.desc()).all()
-    return render_template("warehouse/documents/list.html", documents=documents)
+    return render_template("documents/list.html", documents=documents)
 
 @warehouse_documents.route("/upload", methods=["GET", "POST"])
 @login_required
@@ -44,4 +44,4 @@ def upload_document():
         db.session.commit()
         return redirect(url_for("warehouse_documents.list_documents"))
 
-    return render_template("warehouse/documents/upload.html")
+    return render_template("documents/upload.html")
