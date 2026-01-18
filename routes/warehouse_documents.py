@@ -118,7 +118,7 @@ def process_document(file_path: Path) -> Tuple[Optional[Dict[str, Any]], Optiona
 def create_excel_file(data: Dict[str, Any], original_path: Path) -> Optional[Path]:
     """Crea archivo Excel a partir de los datos."""
     try:
-        excel_filename = f"{original_path.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        excel_filename = f"{original_path.stem}.xlsx"
         excel_path = get_upload_folder() / excel_filename
         
         generate_excel(data, str(excel_path))
@@ -140,37 +140,47 @@ def create_excel_file(data: Dict[str, Any], original_path: Path) -> Optional[Pat
 def list_documents():
     """Lista todos los documentos procesados."""
     try:
+        # Obtener parámetros
         page = request.args.get('page', 1, type=int)
         per_page = 20
+        process_number = request.args.get('process_number', '')
+        provider = request.args.get('provider', '')
         
-        # Paginación con filtros opcionales
+        # Construir consulta
         query = DocumentRecord.query
         
-        # Filtros
-        process_number = request.args.get('process_number')
         if process_number:
             query = query.filter(DocumentRecord.process_number.ilike(f'%{process_number}%'))
         
-        provider = request.args.get('provider')
         if provider:
             query = query.filter(DocumentRecord.provider.ilike(f'%{provider}%'))
         
-        # Ordenar y paginar
-        documents = query.order_by(
+        # Paginación
+        pagination = query.order_by(
             DocumentRecord.created_at.desc()
         ).paginate(page=page, per_page=per_page, error_out=False)
         
+        # Calcular totales
+        total_weight = db.session.query(
+            db.func.coalesce(db.func.sum(DocumentRecord.net_weight), 0)
+        ).scalar()
+        
         return render_template(
-            "documents/list.html", 
-            documents=documents,
-            current_page=page,
-            total_pages=documents.pages
+            "documents/list.html",
+            documents=pagination.items,
+            pagination=pagination,
+            total_weight=float(total_weight) if total_weight else 0,
+            process_number=process_number,
+            provider=provider
         )
         
     except Exception as e:
-        logger.error(f"Error listando documentos: {e}")
+        logger.error(f"Error listando documentos: {e}", exc_info=True)
         flash("Error al cargar la lista de documentos", "danger")
-        return render_template("documents/list.html", documents=[])
+        return render_template("documents/list.html", 
+                             documents=[], 
+                             pagination=None,
+                             total_weight=0)
 
 
 @warehouse_documents_bp.route("/upload", methods=["GET", "POST"])
@@ -178,7 +188,6 @@ def list_documents():
 def upload_document():
     """Sube y procesa un nuevo documento."""
     if request.method == "POST":
-        # Verificar si se envió archivo
         if 'file' not in request.files:
             flash("No se encontró el archivo en la solicitud", "danger")
             return redirect(request.url)
@@ -194,7 +203,6 @@ def upload_document():
         # Procesar documento
         data, error = process_document(saved_path)
         if error:
-            # Eliminar archivo si falla el procesamiento
             try:
                 saved_path.unlink()
             except:
@@ -205,40 +213,42 @@ def upload_document():
         # Crear archivo Excel
         excel_path = create_excel_file(data, saved_path)
         if not excel_path:
+            try:
+                saved_path.unlink()
+            except:
+                pass
             flash("Error al crear archivo Excel", "danger")
             return redirect(request.url)
         
         # Guardar en base de datos
         try:
             record = DocumentRecord(
-                process_number=data.get("process_number"),
-                provider=data.get("provider"),
-                driver=data.get("driver"),
-                plate_tractor=data.get("plate_tractor"),
+                process_number=data.get("process_number", ""),
+                provider=data.get("provider", ""),
+                driver=data.get("driver", ""),
+                plate_tractor=data.get("plate_tractor", ""),
                 net_weight=data.get("net_weight"),
                 original_file=str(saved_path),
                 excel_file=str(excel_path),
                 uploaded_by=current_user.id if current_user.is_authenticated else None,
-                file_size=saved_path.stat().st_size,
-                pages=data.get("pages", 1)  # Si tu OCR devuelve número de páginas
+                file_size=saved_path.stat().st_size
             )
             
             db.session.add(record)
             db.session.commit()
             
-            logger.info(f"Documento registrado: ID {record.id}, Proceso: {record.process_number}")
-            flash(f"Documento procesado exitosamente. Número de proceso: {record.process_number}", "success")
-            
-            return redirect(url_for("warehouse_documents.document_detail", document_id=record.id))
+            flash(f"Documento procesado exitosamente: {record.process_number}", "success")
+            return redirect(url_for("warehouse_documents.list_documents"))
             
         except SQLAlchemyError as e:
             db.session.rollback()
             logger.error(f"Error de base de datos: {e}")
             
-            # Limpiar archivos creados
+            # Limpiar archivos
             for file_path in [saved_path, excel_path]:
                 try:
-                    file_path.unlink()
+                    if file_path.exists():
+                        file_path.unlink()
                 except:
                     pass
             
@@ -252,19 +262,6 @@ def upload_document():
     return render_template("documents/upload.html")
 
 
-@warehouse_documents_bp.route("/document/<int:document_id>")
-@login_required
-def document_detail(document_id):
-    """Muestra el detalle de un documento específico."""
-    try:
-        document = DocumentRecord.query.get_or_404(document_id)
-        return render_template("documents/detail.html", document=document)
-    except Exception as e:
-        logger.error(f"Error cargando documento {document_id}: {e}")
-        flash("Error al cargar el documento", "danger")
-        return redirect(url_for("warehouse_documents.list_documents"))
-
-
 @warehouse_documents_bp.route("/download/<int:document_id>/<file_type>")
 @login_required
 def download_file(document_id, file_type):
@@ -274,16 +271,16 @@ def download_file(document_id, file_type):
         
         if file_type == 'original':
             file_path = Path(document.original_file)
-            download_name = f"original_{document.process_number}{file_path.suffix}"
+            download_name = f"original_{document.process_number or document.id}{file_path.suffix}"
         elif file_type == 'excel':
             file_path = Path(document.excel_file)
-            download_name = f"datos_{document.process_number}.xlsx"
+            download_name = f"datos_{document.process_number or document.id}.xlsx"
         else:
             abort(404)
         
         if not file_path.exists():
             flash("Archivo no encontrado", "danger")
-            return redirect(url_for("warehouse_documents.document_detail", document_id=document_id))
+            return redirect(url_for("warehouse_documents.list_documents"))
         
         return send_file(
             file_path,
@@ -293,9 +290,9 @@ def download_file(document_id, file_type):
         )
         
     except Exception as e:
-        logger.error(f"Error descargando archivo {document_id}/{file_type}: {e}")
+        logger.error(f"Error descargando archivo: {e}")
         flash("Error al descargar archivo", "danger")
-        return redirect(url_for("warehouse_documents.document_detail", document_id=document_id))
+        return redirect(url_for("warehouse_documents.list_documents"))
 
 
 @warehouse_documents_bp.route("/delete/<int:document_id>", methods=["POST"])
@@ -306,85 +303,43 @@ def delete_document(document_id):
         document = DocumentRecord.query.get_or_404(document_id)
         
         # Eliminar archivos físicos
-        files_to_delete = []
-        if document.original_file:
-            files_to_delete.append(Path(document.original_file))
-        if document.excel_file:
-            files_to_delete.append(Path(document.excel_file))
+        files_deleted = []
+        for file_attr in ['original_file', 'excel_file']:
+            file_path = getattr(document, file_attr, None)
+            if file_path:
+                path_obj = Path(file_path)
+                try:
+                    if path_obj.exists():
+                        path_obj.unlink()
+                        files_deleted.append(path_obj.name)
+                except Exception as e:
+                    logger.warning(f"No se pudo eliminar {file_path}: {e}")
         
-        deleted_files = []
-        for file_path in files_to_delete:
-            try:
-                if file_path.exists():
-                    file_path.unlink()
-                    deleted_files.append(file_path.name)
-            except Exception as e:
-                logger.warning(f"No se pudo eliminar archivo {file_path}: {e}")
-        
-        # Eliminar registro de base de datos
+        # Eliminar de base de datos
         db.session.delete(document)
         db.session.commit()
         
-        logger.info(f"Documento {document_id} eliminado. Archivos: {', '.join(deleted_files)}")
         flash("Documento eliminado exitosamente", "success")
         
     except SQLAlchemyError as e:
         db.session.rollback()
-        logger.error(f"Error eliminando documento {document_id}: {e}")
-        flash("Error al eliminar documento de la base de datos", "danger")
+        logger.error(f"Error eliminando documento: {e}")
+        flash("Error al eliminar documento", "danger")
     except Exception as e:
-        logger.error(f"Error inesperado eliminando documento {document_id}: {e}")
+        logger.error(f"Error inesperado eliminando documento: {e}")
         flash("Error inesperado al eliminar documento", "danger")
     
     return redirect(url_for("warehouse_documents.list_documents"))
 
 
-@warehouse_documents_bp.route("/search", methods=["GET"])
+@warehouse_documents_bp.route("/view/<int:document_id>")
 @login_required
-def search_documents():
-    """Búsqueda avanzada de documentos."""
+def view_document(document_id):
+    """Muestra los detalles de un documento."""
     try:
-        query = DocumentRecord.query
-        
-        # Filtros de búsqueda
-        filters = []
-        
-        process_number = request.args.get('process_number')
-        if process_number:
-            filters.append(DocumentRecord.process_number.ilike(f'%{process_number}%'))
-        
-        provider = request.args.get('provider')
-        if provider:
-            filters.append(DocumentRecord.provider.ilike(f'%{provider}%'))
-        
-        driver = request.args.get('driver')
-        if driver:
-            filters.append(DocumentRecord.driver.ilike(f'%{driver}%'))
-        
-        date_from = request.args.get('date_from')
-        if date_from:
-            try:
-                date_obj = datetime.strptime(date_from, '%Y-%m-%d')
-                filters.append(DocumentRecord.created_at >= date_obj)
-            except ValueError:
-                pass
-        
-        date_to = request.args.get('date_to')
-        if date_to:
-            try:
-                date_obj = datetime.strptime(date_to, '%Y-%m-%d')
-                filters.append(DocumentRecord.created_at <= date_obj)
-            except ValueError:
-                pass
-        
-        if filters:
-            query = query.filter(*filters)
-        
-        documents = query.order_by(DocumentRecord.created_at.desc()).limit(100).all()
-        
-        return render_template("documents/search_results.html", documents=documents)
-        
+        document = DocumentRecord.query.get_or_404(document_id)
+        return render_template("documents/view.html", document=document)
     except Exception as e:
-        logger.error(f"Error en búsqueda: {e}")
-        flash("Error en la búsqueda", "danger")
-        return render_template("documents/search_results.html", documents=[])
+        logger.error(f"Error viendo documento: {e}")
+        flash("Error al cargar documento", "danger")
+        return redirect(url_for("warehouse_documents.list_documents"))
