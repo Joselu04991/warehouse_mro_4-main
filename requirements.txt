@@ -77,3 +77,9 @@ requests==2.32.3
 # SVG Y GRÁFICOS (opcional)
 ##########################
 # svglib==1.5.1          # REMOVIDO - Puede causar problemas
+##########################
+# OCR - RECONOCIMIENTO DE TEXTO
+##########################
+pytesseract==0.3.10      # Wrapper para Tesseract OCR
+pdf2image==1.16.3        # Convertir PDF a imágenes para OCR
+poppler-utils==0.1       # Dependencia para pdf2image (si está disponible en PyPI)
