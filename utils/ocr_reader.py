@@ -1,8 +1,7 @@
-# utils/ocr_reader.py - VERSIÓN CON BÚSQUEDA AVANZADA
+# utils/ocr_reader.py - VERSIÓN SIN OPENCV
 import pytesseract
-from PIL import Image
-import fitz
-import cv2
+from PIL import Image, ImageEnhance, ImageFilter
+import fitz  # PyMuPDF
 import numpy as np
 import io
 import os
@@ -21,9 +20,17 @@ class AdvancedOCRReader:
         
         if self.tesseract_available:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
-            logger.info(f"Tesseract encontrado en: {self.tesseract_path}")
+            logger.info(f"✅ Tesseract encontrado en: {self.tesseract_path}")
+            
+            # Probar Tesseract
+            try:
+                version = subprocess.run([self.tesseract_path, '--version'], 
+                                       capture_output=True, text=True)
+                logger.info(f"Tesseract versión: {version.stdout.split()[1] if version.stdout else 'Desconocida'}")
+            except:
+                logger.warning("No se pudo obtener versión de Tesseract")
         else:
-            logger.error("Tesseract NO disponible. El OCR no funcionará.")
+            logger.error("❌ Tesseract NO disponible. El OCR no funcionará.")
         
         # Configuración OCR
         self.config = r'--oem 3 --psm 6 -l spa+eng'
@@ -43,31 +50,17 @@ class AdvancedOCRReader:
         except:
             pass
         
-        # 3. Buscar en ubicaciones comunes de Railway/Ubuntu
+        # 3. Buscar en ubicaciones comunes
         common_paths = [
             '/usr/bin/tesseract',
             '/usr/local/bin/tesseract',
             '/bin/tesseract',
             '/app/.apt/usr/bin/tesseract',
-            '/opt/homebrew/bin/tesseract',  # macOS
-            '/usr/local/Cellar/tesseract/*/bin/tesseract',  # Homebrew
         ]
         
         for path in common_paths:
             if os.path.exists(path):
                 return path
-        
-        # 4. Expandir glob patterns
-        import glob
-        glob_paths = [
-            '/usr/local/Cellar/tesseract/*/bin/tesseract',
-            '/opt/homebrew/Cellar/tesseract/*/bin/tesseract',
-        ]
-        
-        for pattern in glob_paths:
-            matches = glob.glob(pattern)
-            if matches:
-                return matches[0]
         
         return None
     
@@ -96,12 +89,12 @@ class AdvancedOCRReader:
             
             if ext == '.pdf':
                 result['file_type'] = 'pdf'
-                result['text'] = self._process_pdf(file_path)
+                result['text'] = self._process_pdf_simple(file_path)
                 result['pages'] = self._count_pdf_pages(file_path)
                 
             elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']:
                 result['file_type'] = 'image'
-                result['text'] = self._process_image(file_path)
+                result['text'] = self._process_image_simple(file_path)
                 result['pages'] = 1
                 
             else:
@@ -116,50 +109,136 @@ class AdvancedOCRReader:
         
         return result
     
-    def _process_pdf(self, pdf_path: str) -> str:
-        """Procesa PDFs"""
+    def _process_pdf_simple(self, pdf_path: str) -> str:
+        """Procesa PDFs de forma simple"""
         try:
             doc = fitz.open(pdf_path)
             all_text = []
             
+            logger.info(f"Procesando PDF con {len(doc)} páginas")
+            
             for page_num in range(len(doc)):
                 page = doc.load_page(page_num)
                 
-                # Intentar texto directo primero
+                # 1. Intentar extraer texto directo (si el PDF tiene texto)
                 text = page.get_text()
-                if text and len(text.strip()) > 20:
-                    all_text.append(f"=== Página {page_num + 1} ===\n{text}")
+                if text and len(text.strip()) > 50:
+                    all_text.append(text)
                     continue
                 
-                # Convertir a imagen para OCR
+                # 2. Si no hay texto, convertir a imagen y usar OCR
+                # Usar resolución moderada para mejor velocidad/calidad
                 zoom = 2.0
                 mat = fitz.Matrix(zoom, zoom)
                 pix = page.get_pixmap(matrix=mat, alpha=False)
                 
+                # Convertir a imagen PIL
                 img_data = pix.tobytes("png")
                 image = Image.open(io.BytesIO(img_data))
                 
-                # OCR
-                page_text = pytesseract.image_to_string(image, config=self.config, lang='spa')
+                # Mejorar imagen para OCR (sin OpenCV)
+                enhanced = self._enhance_image_pil(image)
+                
+                # Aplicar OCR
+                page_text = pytesseract.image_to_string(
+                    enhanced, 
+                    config=self.config,
+                    lang='spa'
+                )
+                
                 if page_text.strip():
-                    all_text.append(f"=== Página {page_num + 1} (OCR) ===\n{page_text}")
+                    all_text.append(page_text)
+                else:
+                    # Intentar con la imagen original
+                    page_text = pytesseract.image_to_string(
+                        image,
+                        config=self.config,
+                        lang='spa'
+                    )
+                    if page_text.strip():
+                        all_text.append(page_text)
             
             doc.close()
-            return "\n\n".join(all_text) if all_text else ""
+            return "\n\n".join(all_text) if all_text else "No se pudo extraer texto"
             
         except Exception as e:
-            logger.error(f"Error procesando PDF: {e}")
+            logger.error(f"Error procesando PDF {pdf_path}: {e}")
             return f"Error: {str(e)}"
     
-    def _process_image(self, image_path: str) -> str:
-        """Procesa imágenes"""
+    def _process_image_simple(self, image_path: str) -> str:
+        """Procesa imágenes de forma simple"""
         try:
             image = Image.open(image_path)
-            text = pytesseract.image_to_string(image, config=self.config, lang='spa')
-            return text.strip()
+            
+            # Probar diferentes procesamientos
+            texts = []
+            
+            # 1. Imagen original
+            text_original = pytesseract.image_to_string(
+                image, 
+                config=self.config,
+                lang='spa'
+            )
+            if text_original.strip():
+                texts.append(text_original)
+            
+            # 2. Imagen mejorada
+            enhanced = self._enhance_image_pil(image)
+            text_enhanced = pytesseract.image_to_string(
+                enhanced,
+                config=self.config,
+                lang='spa'
+            )
+            if text_enhanced.strip() and text_enhanced != text_original:
+                texts.append(text_enhanced)
+            
+            # 3. Imagen en escala de grises
+            gray = image.convert('L')
+            text_gray = pytesseract.image_to_string(
+                gray,
+                config=self.config,
+                lang='spa'
+            )
+            if text_gray.strip() and text_gray not in texts:
+                texts.append(text_gray)
+            
+            # Usar el texto más largo encontrado
+            if texts:
+                return max(texts, key=len)
+            else:
+                return "No se pudo extraer texto"
+                
         except Exception as e:
-            logger.error(f"Error procesando imagen: {e}")
+            logger.error(f"Error procesando imagen {image_path}: {e}")
             return f"Error: {str(e)}"
+    
+    def _enhance_image_pil(self, image: Image.Image) -> Image.Image:
+        """Mejora imagen usando solo PIL (sin OpenCV)"""
+        try:
+            # Convertir a escala de grises si es color
+            if image.mode != 'L':
+                image = image.convert('L')
+            
+            # Aumentar contraste
+            enhancer = ImageEnhance.Contrast(image)
+            image = enhancer.enhance(2.0)
+            
+            # Aumentar nitidez
+            enhancer = ImageEnhance.Sharpness(image)
+            image = enhancer.enhance(2.0)
+            
+            # Aumentar brillo si está muy oscuro
+            enhancer = ImageEnhance.Brightness(image)
+            image = enhancer.enhance(1.2)
+            
+            # Aplicar filtro para reducir ruido
+            image = image.filter(ImageFilter.MedianFilter(size=3))
+            
+            return image
+            
+        except Exception as e:
+            logger.warning(f"Error mejorando imagen con PIL: {e}")
+            return image
     
     def _count_pdf_pages(self, pdf_path: str) -> int:
         try:
@@ -178,6 +257,4 @@ def extract_text_from_file(file_path: str) -> str:
         return result['text']
     else:
         error_msg = result.get('error', 'Error desconocido')
-        tesseract_info = f"\nTesseract disponible: {result.get('tesseract_available')}"
-        tesseract_path = f"\nTesseract path: {result.get('tesseract_path')}"
-        return f"Error: {error_msg}{tesseract_info}{tesseract_path}"
+        return f"Error: {error_msg}\nTesseract disponible: {result.get('tesseract_available')}"
