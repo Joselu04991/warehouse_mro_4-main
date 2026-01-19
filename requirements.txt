@@ -8,7 +8,7 @@ SQLAlchemy==2.0.27
 Werkzeug==3.0.1
 python-dotenv==1.0.1
 gunicorn==21.2.0
-
+python-3.10.13
 ##########################
 # BASES DE DATOS
 ##########################
@@ -65,3 +65,4 @@ pytesseract==0.3.10      # Solo el wrapper - Tesseract debe estar instalado
 PyMuPDF==1.24.9          # Para PDFs - Ligero y eficiente
 # pdf2image==1.16.3      # REMOVIDO - Necesita poppler-utils del sistema
 # opencv-python-headless==4.10.0.84  # REMOVIDO - Muy pesado, usa PIL en su lugar
+
