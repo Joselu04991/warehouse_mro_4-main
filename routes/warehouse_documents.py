@@ -1,4 +1,4 @@
-# routes/warehouse_documents.py - VERSIÓN SIMPLIFICADA
+# routes/warehouse_documents.py - SOLUCIÓN 1
 from flask import Blueprint, request, jsonify, send_file
 import os
 import tempfile
@@ -9,8 +9,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Crear blueprint
-warehouse_bp = Blueprint('warehouse', __name__, url_prefix='/api/warehouse')
+# Crear blueprint - CAMBIA warehouse_bp por warehouse_documents_bp
+warehouse_documents_bp = Blueprint('warehouse_documents', __name__, url_prefix='/api/warehouse')
 
 # Configuración
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tiff', 'tif'}
@@ -19,7 +19,8 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@warehouse_bp.route('/upload', methods=['POST'])
+# CAMBIA TODOS LOS DECORADORES @warehouse_bp.route por @warehouse_documents_bp.route
+@warehouse_documents_bp.route('/upload', methods=['POST'])
 def upload_documents():
     """Endpoint simplificado para probar"""
     return jsonify({
@@ -28,7 +29,7 @@ def upload_documents():
         'timestamp': datetime.now().isoformat()
     })
 
-@warehouse_bp.route('/test', methods=['GET'])
+@warehouse_documents_bp.route('/test', methods=['GET'])
 def test_endpoint():
     """Endpoint de prueba"""
     return jsonify({
@@ -42,7 +43,7 @@ def test_endpoint():
         }
     })
 
-@warehouse_bp.route('/supported-formats', methods=['GET'])
+@warehouse_documents_bp.route('/supported-formats', methods=['GET'])
 def supported_formats():
     """Devuelve los formatos de archivo soportados"""
     return jsonify({
@@ -52,7 +53,7 @@ def supported_formats():
     })
 
 # Ruta de salud para Railway
-@warehouse_bp.route('/health', methods=['GET'])
+@warehouse_documents_bp.route('/health', methods=['GET'])
 def health_check():
     """Health check para Railway"""
     return jsonify({
