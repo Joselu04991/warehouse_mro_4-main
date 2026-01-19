@@ -1,5 +1,4 @@
-# routes/__init__.py
-
+# routes/__init__.py - SOLUCIÓN 2
 from routes.dashboard_routes import dashboard_bp
 from routes.auth_routes import auth_bp
 from routes.inventory_routes import inventory_bp
@@ -14,7 +13,7 @@ from routes.auditoria_routes import auditoria_bp
 from routes.alertas_ai_routes import alertas_ai_bp
 from routes.admin_roles_routes import admin_roles_bp
 from routes.tasks_routes import tasks_bp
-from routes.warehouse_documents import warehouse_documents_bp
+from routes.warehouse_documents import warehouse_bp as warehouse_documents_bp  # <-- CAMBIO AQUÍ
 
 def register_blueprints(app):
 
@@ -67,6 +66,3 @@ def register_blueprints(app):
     print("👉 Cargado: warehouse_documents")
 
     print("\n========== BLUEPRINTS CARGADOS OK ==========\n")
-
-
-
