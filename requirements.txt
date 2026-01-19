@@ -1,32 +1,13 @@
-# requirements.txt - VERSIÓN PARA RAILWAY (MÍNIMA)
 Flask==3.0.2
 Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
 SQLAlchemy==2.0.27
 Werkzeug==3.0.1
-python-dotenv==1.0.1
 gunicorn==21.2.0
-
-# Bases de datos
 psycopg2-binary==2.9.9
-pymysql==1.1.1
-
-# Excel/CSV
 pandas==2.2.3
 openpyxl==3.1.2
-xlsxwriter==3.2.0
-numpy==1.26.4
-
-# PDF/Imágenes
-PyPDF2==2.12.1
-Pillow==10.2.0
-qrcode==7.4.2
-
-# OCR
-pytesseract==0.3.10
 PyMuPDF==1.24.9
-
-# Utilidades
-python-dateutil==2.9.0.post0
-pytz==2024.1
-requests==2.32.3
+pytesseract==0.3.10
+Pillow==10.2.0
+python-dotenv==1.0.1
