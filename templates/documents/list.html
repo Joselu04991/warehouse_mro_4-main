@@ -1,91 +1,59 @@
-<!-- templates/documents/list.html - ACTUALIZADO CON PROCESAMIENTO REAL -->
+<!-- templates/documents/list.html -->
 {% extends "base.html" %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>📄 Documentos de Almacén</h2>
+    <h2>📋 Extracción de Datos para Excel</h2>
     
     <div class="card">
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-8">
-                    <h4>Procesamiento Automático de Documentos</h4>
-                    <p class="lead">Sube tickets, facturas o guías y obtén un Excel organizado automáticamente</p>
-                    
-                    <div class="alert alert-success">
-                        <h5>✅ Información que extraemos:</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <ul class="mb-0">
-                                    <li>Número de proceso</li>
-                                    <li>Proveedor</li>
-                                    <li>Conductor</li>
-                                    <li>Placa del vehículo</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <ul class="mb-0">
-                                    <li>Pesos (tara, bruto, neto)</li>
-                                    <li>Producto/material</li>
-                                    <li>Fechas</li>
-                                    <li>RUC/DNI</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>¿Cómo funciona?</h5>
+                <p>Sube documentos (PDF/imágenes) y el sistema extraerá automáticamente estos 9 campos:</p>
                 
-                <div class="col-md-4">
-                    <div class="card bg-light">
-                        <div class="card-body">
-                            <h5>📊 Formatos Soportados</h5>
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                <span class="badge bg-primary">PDF</span>
-                                <span class="badge bg-primary">JPG</span>
-                                <span class="badge bg-primary">PNG</span>
-                                <span class="badge bg-primary">BMP</span>
-                                <span class="badge bg-primary">TIFF</span>
-                            </div>
-                            <p class="small text-muted">Tamaño máximo: 16MB por archivo</p>
-                        </div>
-                    </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Col</th>
+                                <th>Nombre exacto</th>
+                                <th>Ejemplo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>A</td><td>N° de Guía</td><td>852752</td></tr>
+                            <tr><td>B</td><td>Fecha</td><td>14/01/2026</td></tr>
+                            <tr><td>C</td><td>CANTIDAD DE PRESENTACION</td><td>31880</td></tr>
+                            <tr><td>D</td><td>Unidad (kg)</td><td>KG</td></tr>
+                            <tr><td>E</td><td>Material</td><td>OXIDO DE CALCIO</td></tr>
+                            <tr><td>F</td><td>Número de RUC del PROVEEDOR</td><td>2040288554B</td></tr>
+                            <tr><td>G</td><td>Número de RUC del transportista</td><td>-</td></tr>
+                            <tr><td>H</td><td>Placa del vehículo</td><td>CDL-733</td></tr>
+                            <tr><td>I</td><td>Número de licencia de conducir del conductor</td><td>46695131</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             
-            <hr class="my-4">
-            
             <!-- Formulario de subida -->
-            <div class="card">
+            <div class="card mt-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Subir Documentos</h5>
                 </div>
                 <div class="card-body">
-                    <form id="uploadForm" enctype="multipart/form-data">
+                    <form id="uploadForm">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Seleccionar archivos:</label>
                             <input type="file" class="form-control" id="documentFiles" 
                                    name="files" multiple 
                                    accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff"
                                    required>
-                            <div class="form-text">Puedes seleccionar múltiples archivos a la vez</div>
+                            <div class="form-text">Puedes seleccionar múltiples archivos (PDF, JPG, PNG, etc.)</div>
                         </div>
                         
-                        <div class="alert alert-info">
-                            <h6><i class="fas fa-info-circle me-2"></i>Tipos de documentos aceptados:</h6>
-                            <ul class="mb-0">
-                                <li>Tickets de pesaje/báscula</li>
-                                <li>Guías de remisión/traslado</li>
-                                <li>Facturas de proveedores</li>
-                                <li>Bauchers de recepción</li>
-                            </ul>
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                            <button type="button" class="btn btn-primary btn-lg px-4" onclick="uploadDocuments()" id="uploadButton">
-                                <i class="fas fa-upload me-2"></i>Subir y Procesar
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="testAPI()">
-                                <i class="fas fa-vial me-2"></i>Probar API
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary btn-lg" onclick="uploadDocuments()" id="uploadButton">
+                                <i class="fas fa-upload me-2"></i>Subir y Extraer Datos
                             </button>
                         </div>
                     </form>
@@ -94,58 +62,33 @@
                     <div id="resultsContainer" class="mt-4" style="display: none;">
                         <div class="card">
                             <div class="card-header">
-                                <h5 class="mb-0">Resultados del Procesamiento</h5>
+                                <h5 class="mb-0">Resultados de Extracción</h5>
                             </div>
                             <div class="card-body">
                                 <div id="resultsContent"></div>
-                                <div id="downloadSection" style="display: none;" class="mt-3">
-                                    <hr>
-                                    <h6><i class="fas fa-file-excel text-success me-2"></i>Excel Generado</h6>
-                                    <p>Tu archivo Excel está listo para descargar con todos los datos organizados.</p>
-                                    <a href="#" id="downloadLink" class="btn btn-success">
-                                        <i class="fas fa-download me-2"></i>Descargar Excel
-                                    </a>
-                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Ejemplos -->
+            <!-- Instrucciones -->
             <div class="card mt-4">
                 <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-images me-2"></i>Ejemplos de Documentos</h5>
+                    <h5 class="mb-0"><i class="fas fa-clipboard-check me-2"></i>Instrucciones</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-weight fa-3x text-primary mb-3"></i>
-                                    <h6>Ticket de Pesaje</h6>
-                                    <p class="small">Extrae: Pesos, placa, conductor, fechas</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-truck fa-3x text-warning mb-3"></i>
-                                    <h6>Guía de Remisión</h6>
-                                    <p class="small">Extrae: Proveedor, producto, direcciones</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-file-invoice-dollar fa-3x text-success mb-3"></i>
-                                    <h6>Factura</h6>
-                                    <p class="small">Extrae: RUC, montos, productos, fechas</p>
-                                </div>
-                            </div>
-                        </div>
+                    <ol>
+                        <li>Sube tus documentos (tickets, guías, facturas)</li>
+                        <li>El sistema extraerá automáticamente los 9 campos</li>
+                        <li>Copia el texto generado</li>
+                        <li>Pega en tu Excel en la fila correspondiente</li>
+                        <li>Los datos se pegarán cada uno en su columna correcta</li>
+                    </ol>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Nota importante:</h6>
+                        <p class="mb-0">El sistema muestra los datos en formato <strong>tabulado</strong> para que al pegarlo en Excel, cada valor vaya a su columna correspondiente (A, B, C, etc.).</p>
                     </div>
                 </div>
             </div>
@@ -154,8 +97,6 @@
 </div>
 
 <script>
-let currentExcelUrl = null;
-
 function uploadDocuments() {
     const files = document.getElementById('documentFiles').files;
     if (files.length === 0) {
@@ -168,20 +109,20 @@ function uploadDocuments() {
         formData.append('files', files[i]);
     }
     
-    // Mostrar indicador de carga
+    // Mostrar carga
     const button = document.getElementById('uploadButton');
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
     button.disabled = true;
     
-    // Mostrar contenedor de resultados
+    // Mostrar contenedor
     document.getElementById('resultsContainer').style.display = 'block';
     document.getElementById('resultsContent').innerHTML = `
         <div class="text-center">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Procesando...</span>
             </div>
-            <p class="mt-2">Procesando ${files.length} documento(s)...</p>
+            <p class="mt-2">Extrayendo datos de ${files.length} documento(s)...</p>
         </div>
     `;
     
@@ -197,56 +138,71 @@ function uploadDocuments() {
         if (data.success) {
             html += `
                 <div class="alert alert-success">
-                    <h5><i class="fas fa-check-circle me-2"></i>Procesamiento Completado</h5>
-                    <p>${data.message}</p>
-                    <p><strong>Total:</strong> ${data.total_files} archivos | 
+                    <h5><i class="fas fa-check-circle me-2"></i>Extracción Completada</h5>
+                    <p>Se procesaron ${data.total_files} archivos. 
                        <strong>Exitosos:</strong> ${data.successful} | 
                        <strong>Fallidos:</strong> ${data.failed}</p>
                 </div>
             `;
             
-            // Mostrar detalles de cada archivo
-            if (data.results && data.results.length > 0) {
-                html += `<h6>Detalles por archivo:</h6><div class="list-group">`;
-                data.results.forEach((result, index) => {
-                    if (result.success) {
-                        html += `
-                            <div class="list-group-item list-group-item-success">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <strong>${result.filename}</strong>
-                                    <span class="badge bg-success">ÉXITO</span>
-                                </div>
-                                <small>Páginas: ${result.pages} | Texto extraído: ${result.text_length} caracteres</small>
-                            </div>
-                        `;
-                    } else {
-                        html += `
-                            <div class="list-group-item list-group-item-danger">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <strong>${result.filename}</strong>
-                                    <span class="badge bg-danger">ERROR</span>
-                                </div>
-                                <small>Error: ${result.error}</small>
-                            </div>
-                        `;
-                    }
-                });
-                html += `</div>`;
-            }
-            
-            // Mostrar botón de descarga si hay Excel
-            if (data.excel_generated) {
-                currentExcelUrl = data.excel_url;
-                document.getElementById('downloadSection').style.display = 'block';
-                document.getElementById('downloadLink').href = data.excel_url;
-                document.getElementById('downloadLink').download = data.excel_filename;
-            }
+            // Mostrar resultados por archivo
+            data.resultados.forEach((resultado, index) => {
+                html += `<div class="card mb-3 ${resultado.success ? 'border-success' : 'border-danger'}">`;
+                html += `<div class="card-header ${resultado.success ? 'bg-success text-white' : 'bg-danger text-white'}">`;
+                html += `<strong>${resultado.filename}</strong>`;
+                html += `<span class="badge ${resultado.success ? 'bg-light text-success' : 'bg-warning text-dark'} float-end">`;
+                html += resultado.success ? '✅ ÉXITO' : '❌ ERROR';
+                html += `</span></div>`;
+                html += `<div class="card-body">`;
+                
+                if (resultado.success) {
+                    // Mostrar campos extraídos
+                    html += `<h6>Campos extraídos (${resultado.porcentaje_exito}):</h6>`;
+                    html += `<div class="table-responsive">`;
+                    html += `<table class="table table-sm">`;
+                    html += `<thead><tr><th>Campo</th><th>Valor</th></tr></thead>`;
+                    html += `<tbody>`;
+                    
+                    const campos = [
+                        'N° de Guía', 'Fecha', 'CANTIDAD DE PRESENTACION', 
+                        'Unidad (kg)', 'Material', 'Número de RUC del PROVEEDOR',
+                        'Número de RUC del transportista', 'Placa del vehículo',
+                        'Número de licencia de conducir del conductor'
+                    ];
+                    
+                    campos.forEach(campo => {
+                        const valor = resultado.campos_extraidos[campo] || 
+                                     (resultado.campos_faltantes.includes(campo) ? 
+                                      '<span class="text-danger">No encontrado</span>' : 
+                                      '<span class="text-muted">-</span>');
+                        html += `<tr><td><strong>${campo}</strong></td><td>${valor}</td></tr>`;
+                    });
+                    
+                    html += `</tbody></table></div>`;
+                    
+                    // Área para copiar
+                    html += `<h6 class="mt-3">📋 Para copiar y pegar en Excel:</h6>`;
+                    html += `<div class="input-group mb-2">`;
+                    html += `<textarea class="form-control font-monospace" rows="2" id="texto_${index}" readonly>${resultado.texto_copiable || ''}</textarea>`;
+                    html += `<button class="btn btn-outline-primary" type="button" onclick="copiarTexto(${index})">`;
+                    html += `<i class="fas fa-copy"></i> Copiar</button>`;
+                    html += `</div>`;
+                    html += `<small class="text-muted">Copia este texto y péguelo en la fila correspondiente de su Excel</small>`;
+                    
+                } else {
+                    html += `<div class="alert alert-danger mb-0">`;
+                    html += `<p><strong>Error:</strong> ${resultado.error || 'Error desconocido'}</p>`;
+                    html += `</div>`;
+                }
+                
+                html += `</div></div>`;
+            });
             
         } else {
             html += `
                 <div class="alert alert-danger">
-                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error en el Procesamiento</h5>
-                    <p>${data.error || 'Error desconocido'}</p>
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error en la Extracción</h5>
+                    <p>${data.error || 'No se pudo extraer datos de ningún documento'}</p>
                 </div>
             `;
         }
@@ -258,8 +214,8 @@ function uploadDocuments() {
         document.getElementById('resultsContent').innerHTML = `
             <div class="alert alert-danger">
                 <h5><i class="fas fa-exclamation-triangle me-2"></i>Error de Conexión</h5>
-                <p>No se pudo conectar con el servidor. Error: ${error.message}</p>
-                <p>Verifica tu conexión a internet o intenta nuevamente.</p>
+                <p>No se pudo conectar con el servidor.</p>
+                <p>Verifica tu conexión a internet.</p>
             </div>
         `;
     })
@@ -270,28 +226,36 @@ function uploadDocuments() {
     });
 }
 
-function testAPI() {
-    fetch('{{ url_for("warehouse_documents.test_endpoint") }}')
-        .then(response => response.json())
-        .then(data => {
-            alert('✅ API funcionando correctamente\n\n' + JSON.stringify(data, null, 2));
-        })
-        .catch(error => {
-            alert('❌ Error probando API: ' + error.message);
-        });
+function copiarTexto(index) {
+    const textarea = document.getElementById(`texto_${index}`);
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // Para móviles
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            // Mostrar notificación
+            const originalText = textarea.nextElementSibling.innerHTML;
+            textarea.nextElementSibling.innerHTML = '<i class="fas fa-check"></i> ¡Copiado!';
+            setTimeout(() => {
+                textarea.nextElementSibling.innerHTML = originalText;
+            }, 2000);
+        }
+    } catch (err) {
+        console.error('Error al copiar:', err);
+    }
 }
 
-// Descargar Excel cuando se hace clic
-document.getElementById('downloadLink')?.addEventListener('click', function(e) {
-    if (currentExcelUrl) {
-        // Forzar descarga
-        const link = document.createElement('a');
-        link.href = currentExcelUrl;
-        link.download = 'documentos_procesados.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-});
+// Probar con ejemplo
+function probarEjemplo() {
+    fetch('{{ url_for("warehouse_documents.test_parser") }}')
+        .then(response => response.json())
+        .then(data => {
+            alert('✅ Parser funcionando\n\nTexto copiable:\n' + data.texto_copiable);
+        })
+        .catch(error => {
+            alert('❌ Error: ' + error.message);
+        });
+}
 </script>
 {% endblock %}
