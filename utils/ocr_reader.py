@@ -8,7 +8,7 @@ import io
 import os
 import tempfile
 import logging
-from typing import List, Optional, Union
+from typing import Dict, Any, Optional, Union  # <-- AÑADIR ESTO
 
 logger = logging.getLogger(__name__)
 
