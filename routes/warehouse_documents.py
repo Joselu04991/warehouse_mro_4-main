@@ -390,3 +390,47 @@ def verify_installation():
         'checks': checks,
         'instructions': 'Si tesseract muestra "NO INSTALADO", Railway no instaló las dependencias del sistema'
     })
+# routes/warehouse_documents.py - Agrega este endpoint
+@warehouse_documents_bp.route('/railway-status', methods=['GET'])
+def railway_status():
+    """Verifica el estado de Railway y OCR"""
+    from utils.ocr_reader import railway_ocr_reader
+    
+    # Probar Tesseract
+    tesseract_test = railway_ocr_reader.test_tesseract()
+    
+    # Información del sistema
+    import sys
+    import os
+    import platform
+    
+    system_info = {
+        'python_version': sys.version,
+        'platform': platform.platform(),
+        'current_directory': os.getcwd(),
+        'files_in_app': len(os.listdir('/app')) if os.path.exists('/app') else 0,
+        'environment': dict(os.environ)  # Cuidado con datos sensibles
+    }
+    
+    # Listar archivos importantes
+    important_files = [
+        'requirements.txt', 'aptfile', 'runtime.txt',
+        'utils/ocr_reader.py', 'utils/document_parser.py'
+    ]
+    
+    file_status = {}
+    for file in important_files:
+        file_status[file] = os.path.exists(file)
+    
+    return jsonify({
+        'railway': True,
+        'tesseract': tesseract_test,
+        'system': system_info,
+        'files': file_status,
+        'instructions': {
+            'missing_aptfile': 'Crea un archivo "aptfile" con tesseract-ocr y tesseract-ocr-spa',
+            'missing_requirements': 'Asegura que requirements.txt tiene pytesseract y PyMuPDF',
+            'deployment': 'Después de agregar aptfile, haz redeploy en Railway'
+        },
+        'timestamp': datetime.now().isoformat()
+    })
