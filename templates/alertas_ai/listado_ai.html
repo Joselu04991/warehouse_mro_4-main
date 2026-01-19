@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Variables de diseño */
+    :root {
+        --ai-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --ai-gradient-light: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        --critical: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        --warning: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        --info: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+        --success: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        --border-radius-lg: 16px;
+        --border-radius-md: 12px;
+        --border-radius-sm: 8px;
+        --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Contenedor principal */
+    .ai-alerts-container {
+        min-height: calc(100vh - 80px);
+        padding: 24px;
+        background: #f8fafc;
+    }
+
+    /* Header mejorado */
+    .ai-header {
+        background: var(--ai-gradient);
+        color: white;
+        padding: 28px 32px;
+        border-radius: var(--border-radius-lg);
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-md);
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+
+    .ai-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .header-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .header-content h3 {
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .header-content h3 i {
+        font-size: 1.8rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .stat-item.critical {
+        background: rgba(245, 101, 101, 0.25);
+        border-color: rgba(245, 101, 101, 0.4);
+    }
+
+    /* Filtros */
+    .ai-filters {
+        background: white;
+        border-radius: var(--border-radius-md);
+        padding: 20px 24px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 24px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        align-items: end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #4a5568;
+        font-size: 0.875rem;
+    }
+
+    .filter-select, .filter-input {
+        border: 1px solid #e2e8f0;
+        border-radius: var(--border-radius-sm);
+        padding: 10px 16px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .filter-select:focus, .filter-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+
+    /* Tarjeta principal */
+    .ai-main-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #e2e8f0;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header de tabla */
+    .table-header {
+        background: #f7fafc;
+        padding: 20px 24px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .table-header h5 {
+        color: #2d3748;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-export {
+        background: var(--ai-gradient);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: var(--border-radius-sm);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .btn-export:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-refresh {
+        background: #edf2f7;
+        color: #4a5568;
+        border: 1px solid #e2e8f0;
+        padding: 10px 20px;
+        border-radius: var(--border-radius-sm);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .btn-refresh:hover {
+        background: #e2e8f0;
+    }
+
+    /* Tabla mejorada */
+    .ai-table-container {
+        overflow: hidden;
+    }
+
+    .ai-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0;
+    }
+
+    .ai-table thead {
+        background: #f1f5f9;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .ai-table thead th {
+        color: #4a5568;
+        font-weight: 600;
+        padding: 16px 20px;
+        border-bottom: 2px solid #e2e8f0;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    .ai-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .ai-table tbody tr:hover {
+        background: #f8fafc;
+        transform: translateX(4px);
+    }
+
+    .ai-table tbody tr::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: transparent;
+        transition: all 0.2s;
+    }
+
+    .ai-table tbody tr.critical-alert::before { background: var(--critical); }
+    .ai-table tbody tr.warning-alert::before { background: var(--warning); }
+    .ai-table tbody tr.info-alert::before { background: var(--info); }
+
+    .ai-table tbody td {
+        padding: 18px 20px;
+        color: #2d3748;
+        font-size: 0.9rem;
+        vertical-align: middle;
+        position: relative;
+    }
+
+    /* Badges mejorados */
+    .alert-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        border: none;
+        min-width: 80px;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .badge-critical {
+        background: var(--critical);
+        color: white;
+        box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+    }
+
+    .badge-warning {
+        background: var(--warning);
+        color: white;
+        box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+    }
+
+    .badge-info {
+        background: var(--info);
+        color: white;
+        box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+    }
+
+    .badge-success {
+        background: var(--success);
+        color: white;
+        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+    }
+
+    .badge-secondary {
+        background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+        color: white;
+    }
+
+    /* Mensaje con icono */
+    .message-cell {
+        max-width: 350px;
+        position: relative;
+    }
+
+    .message-content {
+        white-space: normal;
+        line-height: 1.5;
+        position: relative;
+        padding-left: 24px;
+    }
+
+    .message-content::before {
+        content: '💡';
+        position: absolute;
+        left: 0;
+        top: 2px;
+        font-size: 0.9rem;
+    }
+
+    .critical-alert .message-content::before { content: '🚨'; }
+    .warning-alert .message-content::before { content: '⚠️'; }
+
+    /* Estado vacío */
+    .empty-state {
+        padding: 60px 24px;
+        text-align: center;
+        background: var(--ai-gradient-light);
+        border-radius: var(--border-radius-md);
+        margin: 24px;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #a0aec0;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-state h4 {
+        color: #4a5568;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .empty-state p {
+        color: #718096;
+        max-width: 400px;
+        margin: 0 auto 24px;
+        font-size: 0.95rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .ai-alerts-container {
+            padding: 16px;
+        }
+        
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ai-header {
+            padding: 24px;
+        }
+        
+        .header-stats {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .table-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+        }
+        
+        .header-actions {
+            justify-content: center;
+        }
+        
+        .ai-table thead {
+            display: none;
+        }
+        
+        .ai-table tbody tr {
+            display: block;
+            margin-bottom: 16px;
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-sm);
+            background: white;
+        }
+        
+        .ai-table tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        
+        .ai-table tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        
+        .ai-table tbody tr:last-child {
+            margin-bottom: 0;
+        }
+        
+        .message-cell {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<div class="ai-alerts-container">
+    <!-- Header con estadísticas -->
+    <div class="ai-header">
+        <div class="header-content">
+            <h3>
+                <i class="bi bi-robot"></i>
+                Sistema de Alertas IA
+            </h3>
+            <p class="mb-0 opacity-90">Monitoreo inteligente y detección de anomalías en tiempo real</p>
+            
+            <div class="header-stats">
+                <div class="stat-item">
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    <span>Total: {{ alertas|length }}</span>
+                </div>
+                {% set critical_count = alertas|selectattr('nivel', 'equalto', 'Alto')|list|length %}
+                <div class="stat-item critical">
+                    <i class="bi bi-exclamation-octagon-fill"></i>
+                    <span>Críticas: {{ critical_count }}</span>
+                </div>
+                <div class="stat-item">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Última: {{ alertas[0].fecha if alertas else 'N/A' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros avanzados -->
+    <div class="ai-filters">
+        <form method="get" id="filterForm" class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label">Nivel de Alerta</label>
+                <select name="nivel" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Todos los niveles</option>
+                    <option value="Alto">Alto</option>
+                    <option value="Medio">Medio</option>
+                    <option value="Bajo">Bajo</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Categoría</label>
+                <select name="categoria" class="filter-select" onchange="document.getElementById('filterForm').submit()">
+                    <option value="">Todas las categorías</option>
+                    {% set categorias = [] %}
+                    {% for a in alertas %}
+                        {% if a.categoria not in categorias %}
+                            {% set _ = categorias.append(a.categoria) %}
+                            <option value="{{ a.categoria }}" 
+                                {% if request.args.get('categoria') == a.categoria %}selected{% endif %}>
+                                {{ a.categoria }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Fecha desde</label>
+                <input type="date" name="desde" class="filter-input" 
+                       value="{{ request.args.get('desde', '') }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Fecha hasta</label>
+                <input type="date" name="hasta" class="filter-input" 
+                       value="{{ request.args.get('hasta', '') }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Palabra clave</label>
+                <input type="text" name="q" class="filter-input" 
+                       placeholder="Buscar en descripción..." 
+                       value="{{ request.args.get('q', '') }}">
+            </div>
+            
+            <div class="filter-group" style="grid-column: span 2;">
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-export" style="flex: 1;">
+                        <i class="bi bi-funnel"></i>
+                        Aplicar Filtros
+                    </button>
+                    <button type="button" onclick="location.href='{{ url_for('alertas_ai.listado_ai') }}'" 
+                            class="btn-refresh" style="flex: 1;">
+                        <i class="bi bi-x-lg"></i>
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tarjeta principal -->
+    <div class="ai-main-card">
+        {% if alertas|length == 0 %}
+            <div class="empty-state">
+                <i class="bi bi-robot"></i>
+                <h4>No hay alertas generadas</h4>
+                <p>El sistema de IA no ha detectado anomalías o eventos que requieran atención en este momento.</p>
+                <a href="{{ url_for('dashboard.dashboard') }}" class="btn-export">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    Ir al Dashboard
+                </a>
+            </div>
+        {% else %}
+            <!-- Header de tabla -->
+            <div class="table-header">
+                <h5>
+                    <i class="bi bi-list-stars text-primary"></i>
+                    Lista de Alertas Detectadas
+                    <span class="badge bg-primary rounded-pill ms-2">{{ alertas|length }}</span>
+                </h5>
+                <div class="header-actions">
+                    <button onclick="exportAlertas()" class="btn-export">
+                        <i class="bi bi-download"></i>
+                        Exportar CSV
+                    </button>
+                    <button onclick="refreshAlertas()" class="btn-refresh">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabla de alertas -->
+            <div class="ai-table-container">
+                <table class="ai-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Nivel</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in alertas %}
+                        {% set nivel_class = 'critical-alert' if a.nivel == 'Alto' else 'warning-alert' if a.nivel == 'Medio' else 'info-alert' %}
+                        <tr class="{{ nivel_class }}">
+                            <!-- ID -->
+                            <td data-label="ID">
+                                <span class="badge bg-dark rounded-pill">#{{ loop.index }}</span>
+                            </td>
+
+                            <!-- Categoría -->
+                            <td data-label="Categoría" class="fw-bold">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-{{ 'shield-exclamation' if a.nivel == 'Alto' else 'exclamation-triangle' if a.nivel == 'Medio' else 'info-circle' }} 
+                                              {{ 'text-danger' if a.nivel == 'Alto' else 'text-warning' if a.nivel == 'Medio' else 'text-info' }}"></i>
+                                    {{ a.categoria }}
+                                </div>
+                            </td>
+
+                            <!-- Descripción -->
+                            <td data-label="Descripción" class="message-cell">
+                                <div class="message-content">
+                                    {{ a.descripcion }}
+                                </div>
+                            </td>
+
+                            <!-- Nivel -->
+                            <td data-label="Nivel">
+                                {% if a.nivel == "Alto" %}
+                                    <span class="alert-badge badge-critical">
+                                        <i class="bi bi-exclamation-octagon-fill me-1"></i>
+                                        {{ a.nivel }}
+                                    </span>
+                                {% elif a.nivel == "Medio" %}
+                                    <span class="alert-badge badge-warning">
+                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        {{ a.nivel }}
+                                    </span>
+                                {% elif a.nivel == "Bajo" %}
+                                    <span class="alert-badge badge-info">
+                                        <i class="bi bi-info-circle-fill me-1"></i>
+                                        {{ a.nivel }}
+                                    </span>
+                                {% else %}
+                                    <span class="alert-badge badge-secondary">{{ a.nivel }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Fecha -->
+                            <td data-label="Fecha">
+                                <div class="d-flex flex-column">
+                                    <span class="fw-semibold">{{ a.fecha[:10] }}</span>
+                                    <small class="text-muted">{{ a.fecha[11:] if a.fecha|length > 10 else '' }}</small>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Botón flotante Volver -->
+<a href="{{ url_for('dashboard.dashboard') }}" 
+   class="btn btn-primary rounded-pill position-fixed bottom-3 start-3 d-flex align-items-center gap-2 shadow-lg"
+   style="padding: 12px 24px; z-index: 1000;">
+    <i class="bi bi-arrow-left"></i>
+    Volver al Dashboard
+</a>
+
+<script>
+    // Función para exportar alertas a CSV
+    function exportAlertas() {
+        const table = document.querySelector('.ai-table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        const csv = [];
+        
+        // Encabezados
+        const headers = Array.from(table.querySelectorAll('thead th'))
+            .map(th => th.textContent.trim());
+        csv.push(headers.join(','));
+        
+        // Datos
+        rows.slice(1).forEach(row => {
+            const cells = Array.from(row.querySelectorAll('td'));
+            const rowData = cells.map(cell => {
+                // Obtener texto limpio (sin elementos HTML)
+                let text = cell.textContent.trim();
+                // Quitar iconos y espacios extra
+                text = text.replace(/\s+/g, ' ').trim();
+                // Escapar comillas
+                text = text.replace(/"/g, '""');
+                return `"${text}"`;
+            });
+            csv.push(rowData.join(','));
+        });
+        
+        // Crear y descargar archivo
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `alertas_ia_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Notificación
+        showNotification('Alertas exportadas correctamente', 'success');
+    }
+    
+    // Función para actualizar alertas
+    function refreshAlertas() {
+        // Mostrar loading
+        const btn = document.querySelector('.btn-refresh');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Actualizando...';
+        btn.disabled = true;
+        
+        // Recargar la página
+        setTimeout(() => {
+            window.location.reload();
+        }, 800);
+    }
+    
+    // Función para mostrar notificaciones
+    function showNotification(message, type = 'info') {
+        // Crear notificación
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
+        notification.style.zIndex = '9999';
+        notification.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remover después de 3 segundos
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+    
+    // Agregar animación de spin
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .spin { animation: spin 1s linear infinite; }
+        
+        /* Estilos para tooltips */
+        [title] { position: relative; }
+        [title]:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', function() {
+        // Agregar tooltips a descripciones largas
+        document.querySelectorAll('.message-content').forEach(el => {
+            if (el.scrollWidth > el.clientWidth) {
+                el.parentElement.title = el.textContent;
+            }
+        });
+        
+        // Auto-focus en campo de búsqueda
+        const searchInput = document.querySelector('input[name="q"]');
+        if (searchInput) {
+            searchInput.focus();
+        }
+    });
+</script>
+
+{% endblock %}

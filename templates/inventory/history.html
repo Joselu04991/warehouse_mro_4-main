@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-clock-history fs-2 me-3 text-primary"></i>
+    <div>
+      <h2 class="fw-bold mb-0">Inventarios Anteriores</h2>
+      <div class="text-muted small">Total snapshots: <span class="fw-semibold">{{ total_snapshots }}</span></div>
+    </div>
+  </div>
+<form method="post"
+      action="{{ url_for('inventory.cleanup_duplicates') }}"
+      onsubmit="return confirm('¿Eliminar inventarios duplicados?')">
+  <button class="btn btn-danger">
+    <i class="bi bi-trash3 me-2"></i>
+    Limpiar duplicados
+  </button>
+</form>
+  <a href="{{ url_for('inventory.upload_history_form') }}"
+   class="btn btn-warning">
+  <i class="bi bi-upload"></i> Subir Histórico
+  </a>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Desde</label>
+        <input type="date" name="desde" value="{{ desde }}" class="form-control">
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Hasta</label>
+        <input type="date" name="hasta" value="{{ hasta }}" class="form-control">
+      </div>
+
+      <div class="col-md-4 d-flex gap-2">
+        <button class="btn btn-primary w-100">
+          <i class="bi bi-funnel-fill me-2"></i> Filtrar
+        </button>
+        <a class="btn btn-outline-secondary w-100" href="{{ url_for('inventory.history_inventory') }}">
+          <i class="bi bi-x-circle me-2"></i> Limpiar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-body table-responsive">
+
+    <table class="table table-hover align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Inventario</th>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Total Ítems</th>
+          <th>Archivo</th>
+          <th style="width: 170px;">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% if snapshots %}
+          {% for s in snapshots %}
+          <tr>
+            <td class="fw-semibold">{{ s.snapshot_name }}</td>
+
+            <td class="text-center">
+              {{ s.creado_en.strftime('%d/%m/%Y') if s.creado_en else '-' }}
+            </td>
+
+            <td class="text-center">
+              {% set t = (s.source_type or '') %}
+              <span class="badge {% if t=='HISTORICO' %}
+                bg-warning text-dark
+              {% elif t=='CIERRE' %}
+                bg-danger
+              {% elif t=='DIARIO' %}
+                bg-success
+              {% else %}
+                bg-secondary
+              {% endif %}
+              ">
+                {{ t }}
+              </span>
+            </td>
+
+            <td class="text-center fw-bold">{{ s.total }}</td>
+
+            <td class="text-center text-muted small">
+              {{ s.source_filename or '—' }}
+            </td>
+            
+            <td class="text-center">
+              <a href="{{ url_for('inventory.history_download', snapshot_id=s.snapshot_id) }}"
+                 class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Excel
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-muted py-5">
+              <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+              No hay inventarios históricos cargados con esos filtros.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    {% if total_pages > 1 %}
+    <nav class="d-flex justify-content-between align-items-center mt-3">
+      <div class="text-muted small">
+        Página <span class="fw-semibold">{{ page }}</span> de <span class="fw-semibold">{{ total_pages }}</span>
+      </div>
+
+      <ul class="pagination mb-0">
+        <li class="page-item {% if page<=1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('inventory.history_inventory', page=page-1, desde=desde, hasta=hasta) }}">«</a>
+        </li>
+
+        {% for p in range(1, total_pages+1) %}
+          {% if p==1 or p==total_pages or (p>=page-2 and p<=page+2) %}
+            <li class="page-item {% if p==page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('inventory.history_inventory', page=p, desde=desde, hasta=hasta) }}">{{ p }}</a>
+            </li>
+          {% elif p==page-3 or p==page+3 %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if page>=total_pages %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('inventory.history_inventory', page=page+1, desde=desde, hasta=hasta) }}">»</a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container">
+
+    <h2 class="mb-4 fw-bold">
+        <i class="bi bi-clock-history me-2"></i> Cargar Inventario Histórico
+    </h2>
+
+    <div class="card shadow-sm p-4">
+
+        <form method="POST" enctype="multipart/form-data">
+
+            <label class="form-label fw-semibold">Seleccionar archivo Excel:</label>
+            <input type="file" name="file" accept=".xlsx" class="form-control mb-3" required>
+
+            <button class="btn btn-warning px-4">
+                <i class="bi bi-upload me-2"></i> Subir Inventario Antiguo
+            </button>
+
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,1718 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* ================= MODE STYLES ================= */
+  .gloves-mode * { 
+    font-size: 1.1rem !important; 
+  }
+  .gloves-mode input { 
+    height: 50px; 
+    font-size: 1.2rem !important;
+    min-width: 90px;
+    border-width: 2px;
+  }
+  .gloves-mode .btn { 
+    padding: 0.8rem 1rem !important;
+    min-height: 50px;
+    font-size: 1.1rem !important;
+  }
+  .gloves-mode .table td, .gloves-mode .table th {
+    padding: 0.8rem 0.5rem;
+  }
+  .gloves-mode .badge {
+    font-size: 0.9rem !important;
+    padding: 0.5rem 0.7rem !important;
+  }
+
+  /* ================= LAYOUT STYLES ================= */
+  .page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 10px;
+  }
+  
+  .header-section {
+    background: linear-gradient(135deg, #1a5f7a 0%, #0d4c6e 100%);
+    color: white;
+    padding: 1rem 0;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .user-info {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-left: 3px solid #4cd964;
+  }
+  
+  .control-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  
+  .action-panel {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .status-badge {
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .status-badge.pendiente {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .status-badge.ok {
+    background-color: #198754;
+    color: white;
+  }
+  
+  .status-badge.diferencia {
+    background-color: #ffc107;
+    color: #212529;
+  }
+  
+  .table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-bottom: 2rem;
+  }
+  
+  .table-header {
+    background-color: #343a40;
+    color: white;
+    padding: 0.8rem 1rem;
+  }
+  
+  .table thead th {
+    background-color: #495057;
+    color: white;
+    border-bottom: none;
+    font-weight: 600;
+    padding: 0.8rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  .table tbody tr {
+    transition: background-color 0.2s ease;
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+  }
+  
+  /* ================= INPUT STYLES ================= */
+  .count-input {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 120px;
+    margin: 0 auto;
+    display: block;
+    background-color: white;
+  }
+  
+  .count-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13,110,253,0.15);
+    background-color: #f8f9ff;
+  }
+  
+  .count-input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+  }
+  
+  /* ================= DECIMAL INPUT STYLES ================= */
+  .decimal-input {
+    font-family: 'Courier New', monospace;
+  }
+  
+  .input-hint {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-top: 2px;
+  }
+  
+  /* ================= VOICE CONTROL STYLES ================= */
+  .voice-controls {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #dee2e6;
+    padding: 0.8rem 0;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  }
+  
+  .voice-status {
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  
+  .voice-active {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+  
+  /* ================= ACTION BUTTONS ================= */
+  .btn-save-inventory {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+  }
+  
+  .btn-save-inventory:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+  }
+  
+  .btn-save-inventory:disabled {
+    background: linear-gradient(135deg, #6c757d 0%, #868e96 100%);
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .btn-export-differences {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    border: none;
+    color: #212529;
+    font-weight: 600;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(255, 193, 7, 0.2);
+  }
+  
+  .btn-export-differences:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 193, 7, 0.3);
+  }
+  
+  /* ================= PROGRESS BAR ================= */
+  .progress-container {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 0.8rem;
+    margin: 1rem 0;
+    border: 1px solid #e9ecef;
+  }
+  
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: #495057;
+  }
+  
+  .progress-bar {
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #20c997, #28a745);
+    border-radius: 5px;
+    transition: width 0.5s ease;
+  }
+  
+  /* ================= MODAL STYLES ================= */
+  .summary-modal .modal-header {
+    background: linear-gradient(135deg, #0d4c6e 0%, #1a5f7a 100%);
+    color: white;
+  }
+  
+  .summary-item {
+    padding: 0.8rem;
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .summary-item:last-child {
+    border-bottom: none;
+  }
+  
+  .summary-item label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.2rem;
+  }
+  
+  /* ================= SAVE FEEDBACK ================= */
+  .saving-indicator {
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  .row-saving .saving-indicator {
+    display: block;
+  }
+  
+  .row-saving {
+    position: relative;
+    background-color: rgba(25,135,84,0.05) !important;
+    border-left: 4px solid #198754 !important;
+  }
+  
+  .row-saved {
+    animation: savedFlash 1.5s ease-out;
+  }
+  
+  @keyframes savedFlash {
+    0% { background-color: rgba(25,135,84,0.15); }
+    100% { background-color: transparent; }
+  }
+  
+  /* ================= RESPONSIVE STYLES ================= */
+  @media (max-width: 768px) {
+    .page-container {
+      padding: 0 5px;
+    }
+    
+    .header-section {
+      padding: 0.8rem 0;
+      margin-bottom: 1rem;
+    }
+    
+    .control-panel {
+      padding: 0.8rem;
+    }
+    
+    .action-panel {
+      padding: 0.8rem;
+    }
+    
+    .table-responsive {
+      font-size: 0.85rem;
+    }
+    
+    .count-input {
+      font-size: 0.9rem;
+      height: 42px;
+      max-width: 100px;
+    }
+    
+    .table thead th,
+    .table tbody td {
+      padding: 0.5rem 0.3rem;
+    }
+    
+    .voice-controls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0.6rem;
+    }
+    
+    .main-content {
+      margin-bottom: 120px;
+    }
+    
+    .btn-save-inventory,
+    .btn-export-differences {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  }
+  
+  @media (max-width: 576px) {
+    .btn span:not(.bi) {
+      display: none;
+    }
+    
+    .btn .bi {
+      margin-right: 0 !important;
+    }
+    
+    .table th:nth-child(2), /* Hide description on very small screens */
+    .table td:nth-child(2) {
+      display: none;
+    }
+  }
+  
+  /* ================= FOOTER LEGEND ================= */
+  .legend {
+    font-size: 0.85rem;
+    color: #6c757d;
+    border-top: 1px solid #dee2e6;
+    padding-top: 0.8rem;
+    margin-top: 1rem;
+  }
+  
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 1rem;
+  }
+  
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+  }
+  
+  .legend-ok { background-color: #198754; }
+  .legend-diferencia { background-color: #ffc107; }
+  .legend-pendiente { background-color: #6c757d; }
+</style>
+
+<div class="page-container">
+  <!-- ================= HEADER SECTION ================= -->
+  <div class="header-section">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h1 class="h2 mb-1 fw-bold">
+            <i class="bi bi-clipboard-check me-2"></i>Conteo Físico de Inventario
+          </h1>
+          <p class="mb-0 opacity-75">
+            Dictado por voz • Guardado automático • Modo guantes • Decimales permitidos
+          </p>
+        </div>
+        <div class="col-md-4 text-end">
+          <div class="user-info d-inline-block">
+            <i class="bi bi-person-circle me-1"></i>
+            <span>{{ session.get('username', 'Usuario') }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= ACTION PANEL ================= -->
+  <div class="action-panel">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="d-flex flex-wrap gap-2">
+          <button id="btnSaveInventory" class="btn btn-save-inventory">
+            <i class="bi bi-floppy-fill me-2"></i>
+            <span>Guardar Inventario</span>
+          </button>
+          
+          <button id="btnExportDifferences" class="btn btn-export-differences">
+            <i class="bi bi-file-earmark-excel me-2"></i>
+            <span>Descargar Diferencias</span>
+          </button>
+          
+          <button id="btnViewSummary" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#summaryModal">
+            <i class="bi bi-graph-up me-2"></i>
+            <span>Ver Resumen</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="col-md-4">
+        <div class="progress-container">
+          <div class="progress-info">
+            <span>Progreso de Conteo</span>
+            <span id="progressText">0/0 (0%)</span>
+          </div>
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CONTROL PANEL ================= -->
+  <div class="control-panel">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="d-flex flex-wrap gap-3 align-items-center">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleContinuous" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleContinuous">
+              <i class="bi bi-arrow-repeat me-1"></i>Dictado continuo
+            </label>
+          </div>
+          
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleSpeak" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleSpeak">
+              <i class="bi bi-speaker me-1"></i>Confirmación por voz
+            </label>
+          </div>
+          
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="toggleDecimals" checked
+                   style="width: 3em; height: 1.5em;">
+            <label class="form-check-label fw-medium" for="toggleDecimals">
+              <i class="bi bi-dot me-1"></i>Permitir decimales
+            </label>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 text-md-end mt-2 mt-md-0">
+        <div class="d-flex gap-2 justify-content-md-end">
+          <button id="btnGloves" class="btn btn-outline-secondary">
+            <i class="bi bi-hand-index-thumb me-1"></i><span>Modo Guantes</span>
+          </button>
+          <button id="btnVoice" class="btn btn-primary">
+            <i class="bi bi-mic me-1"></i><span>Dictado por Voz</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <div class="main-content">
+    <!-- Table Header -->
+    <div class="table-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0 fw-bold">Items para Conteo</h5>
+      <div class="text-light small">
+        <span class="badge bg-info me-2">Total: {{ items|length }}</span>
+        <span class="badge bg-warning me-2" id="decimalIndicator">
+          <i class="bi bi-dot me-1"></i>Decimales permitidos
+        </span>
+        <span class="opacity-75">Stock: Sistema | Conteo: Físico</span>
+      </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="table-container">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 12%">Código</th>
+              <th class="text-start" style="width: 25%">Descripción</th>
+              <th class="text-center" style="width: 8%">UM</th>
+              <th class="text-center" style="width: 10%">Ubicación</th>
+              <th class="text-center" style="width: 10%">Stock</th>
+              <th class="text-center" style="width: 12%">Conteo</th>
+              <th class="text-center" style="width: 12%">Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for i in items %}
+            <tr id="row-{{ i.material_code }}-{{ i.location }}"
+                class="{% if i.estado == 'OK' %}table-success{% elif i.estado == 'Diferencia' %}table-warning{% endif %}">
+              <!-- Código -->
+              <td class="text-center fw-bold">
+                <code class="bg-light px-2 py-1 rounded">{{ i.material_code }}</code>
+              </td>
+              
+              <!-- Descripción -->
+              <td class="text-start">
+                <div class="small text-muted" title="{{ i.material_text }}">
+                  {{ i.material_text|truncate(50, true, '...') }}
+                </div>
+              </td>
+              
+              <!-- Unidad de Medida -->
+              <td class="text-center fw-semibold">
+                <span class="badge bg-secondary">{{ i.base_unit }}</span>
+              </td>
+              
+              <!-- Ubicación -->
+              <td class="text-center fw-bold">
+                <span class="badge bg-dark">{{ i.location }}</span>
+              </td>
+              
+              <!-- Stock del Sistema -->
+              <td class="text-center fw-bold text-primary">
+                {{ i.stock }}
+              </td>
+              
+              <!-- Conteo Físico -->
+              <td class="text-center position-relative">
+                <input type="text"
+                       class="form-control count-input decimal-input"
+                       value="{% if i.real_count and i.real_count > 0 %}{{ i.real_count }}{% endif %}"
+                       inputmode="decimal"
+                       pattern="[0-9]*[.,]?[0-9]*"
+                       autocomplete="off"
+                       data-code="{{ i.material_code }}"
+                       data-loc="{{ i.location }}"
+                       data-stock="{{ i.stock }}"
+                       data-allows-decimals="{{ i.allows_decimals|default(true) }}"
+                       placeholder="0"
+                       aria-label="Conteo para {{ i.material_code }}">
+                <div class="input-hint">
+                  Use punto o coma para decimales
+                </div>
+                <div class="saving-indicator">
+                  <div class="spinner-border spinner-border-sm text-success" role="status">
+                    <span class="visually-hidden">Guardando...</span>
+                  </div>
+                </div>
+              </td>
+              
+              <!-- Estado -->
+              <td class="text-center">
+                {% if i.estado == 'OK' %}
+                  <span class="status-badge ok">
+                    <i class="bi bi-check-circle me-1"></i>OK
+                  </span>
+                {% elif i.estado == 'Diferencia' %}
+                  <span class="status-badge diferencia">
+                    <i class="bi bi-exclamation-triangle me-1"></i>Diferencia
+                  </span>
+                {% else %}
+                  <span class="status-badge pendiente">
+                    <i class="bi bi-clock me-1"></i>Pendiente
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color legend-ok"></div>
+        <span>OK: Coincide con stock</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-diferencia"></div>
+        <span>Diferencia: Revisar</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color legend-pendiente"></div>
+        <span>Pendiente: Sin conteo</span>
+      </div>
+      <div class="legend-item">
+        <i class="bi bi-dot text-primary me-1"></i>
+        <span class="text-primary">Decimales permitidos para este material</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL DE RESUMEN ================= -->
+  <div class="modal fade summary-modal" id="summaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-graph-up me-2"></i>Resumen del Inventario
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="summary-item">
+                <label>Total de Items:</label>
+                <div class="h4" id="summaryTotal">{{ items|length }}</div>
+              </div>
+              <div class="summary-item">
+                <label>Contados:</label>
+                <div class="h4 text-success" id="summaryContados">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Pendientes:</label>
+                <div class="h4 text-warning" id="summaryPendientes">0</div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="summary-item">
+                <label>Coinciden:</label>
+                <div class="h4 text-success" id="summaryCoinciden">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Diferencias:</label>
+                <div class="h4 text-danger" id="summaryDiferencias">0</div>
+              </div>
+              <div class="summary-item">
+                <label>Progreso:</label>
+                <div class="h4 text-primary" id="summaryProgreso">0%</div>
+              </div>
+            </div>
+          </div>
+          <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Información:</strong> El inventario se guarda automáticamente cuando ingresas un conteo. 
+            Use punto o coma para ingresar decimales (ej: 12.5 o 12,5).
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" onclick="printSummary()">
+            <i class="bi bi-printer me-1"></i> Imprimir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= VOICE CONTROLS FOOTER ================= -->
+  <div class="voice-controls">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <div id="voiceStatus" class="voice-status">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="statusText">Preparado para dictado</span>
+            <div id="voiceInstructions" class="small mt-1">
+              Para decimales: diga "código X cantidad Y punto Z" o use "coma"
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="d-flex gap-2 justify-content-md-end">
+            <span class="badge bg-light text-dark border d-none" id="lastCommand">
+              <i class="bi bi-soundwave me-1"></i><span id="commandText"></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SCRIPT MEJORADO CON DECIMALES ================= -->
+<script>
+/**
+ * Sistema de Conteo Físico - Versión con Decimales
+ */
+
+(function() {
+  'use strict';
+  
+  // ================= CONFIGURACIÓN =================
+  const CONFIG = {
+    DEBOUNCE_DELAY: 800,
+    SPEECH_LANG: 'es-PE',
+    DECIMAL_SEPARATOR: '.', // Separador por defecto
+    MAX_DECIMALS: 3, // Máximo de decimales permitidos
+    INVENTORY_API: {
+      save: "{{ url_for('inventory.save_inventory') }}",
+      export: "{{ url_for('inventory.export_differences') }}",
+      summary: "{{ url_for('inventory.get_summary') }}"
+    }
+  };
+  
+  // ================= ESTADO =================
+  const State = {
+    voice: {
+      recognition: null,
+      isListening: false,
+      continuous: true,
+      feedback: true,
+      allowDecimals: true
+    },
+    ui: {
+      glovesMode: false,
+      savingRows: new Set(),
+      inventorySaved: false,
+      decimalsEnabled: true
+    },
+    stats: {
+      total: {{ items|length }},
+      counted: 0,
+      ok: 0,
+      differences: 0
+    }
+  };
+  
+  // ================= ELEMENTOS DOM =================
+  const DOM = {
+    // Elementos existentes
+    btnVoice: document.getElementById('btnVoice'),
+    btnGloves: document.getElementById('btnGloves'),
+    voiceStatus: document.getElementById('voiceStatus'),
+    statusText: document.getElementById('statusText'),
+    voiceInstructions: document.getElementById('voiceInstructions'),
+    toggleContinuous: document.getElementById('toggleContinuous'),
+    toggleSpeak: document.getElementById('toggleSpeak'),
+    toggleDecimals: document.getElementById('toggleDecimals'),
+    pageContainer: document.querySelector('.page-container'),
+    decimalIndicator: document.getElementById('decimalIndicator'),
+    
+    // Nuevos elementos
+    btnSaveInventory: document.getElementById('btnSaveInventory'),
+    btnExportDifferences: document.getElementById('btnExportDifferences'),
+    btnViewSummary: document.getElementById('btnViewSummary'),
+    progressText: document.getElementById('progressText'),
+    progressFill: document.getElementById('progressFill'),
+    
+    // Elementos del modal
+    summaryTotal: document.getElementById('summaryTotal'),
+    summaryContados: document.getElementById('summaryContados'),
+    summaryPendientes: document.getElementById('summaryPendientes'),
+    summaryCoinciden: document.getElementById('summaryCoinciden'),
+    summaryDiferencias: document.getElementById('summaryDiferencias'),
+    summaryProgreso: document.getElementById('summaryProgreso')
+  };
+  
+  // ================= FUNCIONES UTILITARIAS =================
+  
+  /**
+   * Valida y formatea número decimal
+   */
+  function formatDecimal(value, allowDecimals = true) {
+    if (!value) return '';
+    
+    // Reemplazar coma por punto para procesamiento
+    let strValue = value.toString().replace(',', '.');
+    
+    // Validar que sea un número válido
+    if (isNaN(parseFloat(strValue))) {
+      return '';
+    }
+    
+    // Si no permite decimales, redondear al entero más cercano
+    if (!allowDecimals && !State.ui.decimalsEnabled) {
+      const intValue = Math.round(parseFloat(strValue));
+      return intValue.toString();
+    }
+    
+    // Validar formato decimal
+    const parts = strValue.split('.');
+    if (parts.length > 2) {
+      // Si hay más de un punto, solo tomar la primera parte
+      strValue = parts[0] + '.' + parts[1];
+    }
+    
+    // Limitar decimales
+    if (parts.length === 2) {
+      strValue = parts[0] + '.' + parts[1].substring(0, CONFIG.MAX_DECIMALS);
+    }
+    
+    // Usar punto como separador decimal
+    return strValue.replace(',', '.');
+  }
+  
+  /**
+   * Normaliza número decimal para comparación
+   */
+  function parseDecimal(value) {
+    if (!value) return 0;
+    
+    const num = parseFloat(value.toString().replace(',', '.'));
+    return isNaN(num) ? 0 : num;
+  }
+  
+  /**
+   * Compara números considerando decimales
+   */
+  function compareDecimals(a, b, tolerance = 0.001) {
+    const numA = parseDecimal(a);
+    const numB = parseDecimal(b);
+    return Math.abs(numA - numB) <= tolerance;
+  }
+  
+  /**
+   * Verifica si un item permite decimales
+   */
+  function allowsDecimalInput(input) {
+    if (!State.ui.decimalsEnabled) return false;
+    const allowsDecimals = input.dataset.allowsDecimals !== 'false';
+    return allowsDecimals;
+  }
+  
+  /**
+   * Actualiza la interfaz de voz
+   */
+  function updateVoiceUI(state, message = '') {
+    const states = {
+      idle: {
+        icon: 'bi-mic',
+        btnClass: 'btn-primary',
+        defaultMsg: 'Preparado para dictado',
+        instructions: State.ui.decimalsEnabled 
+          ? 'Para decimales: diga "código X cantidad Y punto Z"' 
+          : 'Di "código" seguido de números y "cantidad" seguido de números'
+      },
+      listening: {
+        icon: 'bi-mic-fill',
+        btnClass: 'btn-danger voice-active',
+        defaultMsg: 'Escuchando... Habla ahora',
+        instructions: 'Habla claramente cerca del micrófono'
+      },
+      error: {
+        icon: 'bi-exclamation-triangle',
+        btnClass: 'btn-outline-danger',
+        defaultMsg: 'Error de micrófono',
+        instructions: 'Verifica los permisos del micrófono'
+      }
+    };
+    
+    const config = states[state] || states.idle;
+    
+    DOM.btnVoice.innerHTML = `<i class="bi ${config.icon} me-1"></i><span>Dictado por Voz</span>`;
+    DOM.btnVoice.className = DOM.btnVoice.className.replace(/btn-(primary|danger|outline-danger)/g, '');
+    DOM.btnVoice.classList.add(config.btnClass);
+    
+    DOM.statusText.textContent = message || config.defaultMsg;
+    DOM.voiceInstructions.textContent = config.instructions;
+    
+    if (/Mobi|Android/i.test(navigator.userAgent) && state === 'idle') {
+      DOM.voiceInstructions.textContent = 'Toca el botón de dictado y habla claramente';
+    }
+  }
+  
+  /**
+   * Síntesis de voz para confirmación
+   */
+  function speak(text) {
+    if (!State.voice.feedback || !window.speechSynthesis) return;
+    
+    try {
+      speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = CONFIG.SPEECH_LANG;
+      utterance.rate = 1.0;
+      utterance.volume = 0.9;
+      
+      setTimeout(() => {
+        speechSynthesis.speak(utterance);
+      }, 50);
+    } catch (error) {
+      console.warn('Síntesis de voz no disponible:', error);
+    }
+  }
+  
+  /**
+   * Busca input por código de material
+   */
+  function findInputByCode(code) {
+    return document.querySelector(`.count-input[data-code="${code}"]`);
+  }
+  
+  /**
+   * Actualiza estadísticas y progreso
+   */
+  function updateStatistics() {
+    const inputs = document.querySelectorAll('.count-input');
+    let counted = 0;
+    let ok = 0;
+    let differences = 0;
+    
+    inputs.forEach(input => {
+      const value = parseDecimal(input.value);
+      const stock = parseDecimal(input.dataset.stock);
+      
+      if (value > 0) {
+        counted++;
+        
+        if (compareDecimals(value, stock)) {
+          ok++;
+        } else if (value !== 0) {
+          differences++;
+        }
+      }
+    });
+    
+    State.stats.counted = counted;
+    State.stats.ok = ok;
+    State.stats.differences = differences;
+    
+    const percentage = State.stats.total > 0 ? Math.round((counted / State.stats.total) * 100) : 0;
+    
+    // Actualizar progreso
+    DOM.progressText.textContent = `${counted}/${State.stats.total} (${percentage}%)`;
+    DOM.progressFill.style.width = `${percentage}%`;
+    
+    // Actualizar resumen modal
+    DOM.summaryTotal.textContent = State.stats.total;
+    DOM.summaryContados.textContent = counted;
+    DOM.summaryPendientes.textContent = State.stats.total - counted;
+    DOM.summaryCoinciden.textContent = ok;
+    DOM.summaryDiferencias.textContent = differences;
+    DOM.summaryProgreso.textContent = `${percentage}%`;
+    
+    // Habilitar/deshabilitar botón guardar
+    DOM.btnSaveInventory.disabled = counted === 0;
+    
+    return { counted, ok, differences, percentage };
+  }
+  
+  /**
+   * Muestra feedback visual al guardar
+   */
+  function showSaveFeedback(input, success = true) {
+    const code = input.dataset.code;
+    const loc = input.dataset.loc;
+    const row = document.getElementById(`row-${code}-${loc}`);
+    
+    if (!row) return;
+    
+    row.classList.remove('row-saving', 'row-saved');
+    
+    const count = parseDecimal(input.value);
+    const stock = parseDecimal(input.dataset.stock);
+    
+    if (success) {
+      row.classList.add('row-saving');
+      
+      setTimeout(() => {
+        row.classList.remove('row-saving');
+        row.classList.add('row-saved');
+        
+        const badge = row.querySelector('.status-badge');
+        if (badge) {
+          if (count === 0) {
+            badge.className = 'status-badge pendiente';
+            badge.innerHTML = '<i class="bi bi-clock me-1"></i>Pendiente';
+          } else if (compareDecimals(count, stock)) {
+            badge.className = 'status-badge ok';
+            badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>OK';
+          } else {
+            badge.className = 'status-badge diferencia';
+            badge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Diferencia';
+          }
+        }
+        
+        updateStatistics();
+      }, 600);
+      
+      setTimeout(() => row.classList.remove('row-saved'), 2000);
+    }
+  }
+  
+  /**
+   * Guarda una fila en el servidor
+   */
+  async function saveRow(input) {
+    const value = formatDecimal(input.value, allowsDecimalInput(input));
+    const code = input.dataset.code;
+    
+    if (State.ui.savingRows.has(code)) return;
+    
+    State.ui.savingRows.add(code);
+    
+    try {
+      const response = await fetch("{{ url_for('inventory.save_count_row') }}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({
+          material_code: input.dataset.code,
+          location: input.dataset.loc,
+          real_count: value
+        })
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      showSaveFeedback(input, true);
+      
+      const countNum = parseDecimal(value);
+      if (countNum > 0) {
+        const countStr = countNum % 1 === 0 ? countNum.toString() : countNum.toFixed(2);
+        speak(`Registrado ${countStr} para ${code}`);
+      }
+      
+    } catch (error) {
+      console.error('Error guardando fila:', error);
+      showSaveFeedback(input, false);
+      speak('Error al guardar');
+    } finally {
+      setTimeout(() => {
+        State.ui.savingRows.delete(code);
+      }, 1000);
+    }
+  }
+  
+  // ================= NUEVAS FUNCIONES =================
+  
+  /**
+   * Guarda el inventario completo
+   */
+  async function saveInventory() {
+    if (State.stats.counted === 0) {
+      showNotification('No hay items contados para guardar', 'warning');
+      speak('No hay items contados');
+      return;
+    }
+    
+    if (State.ui.inventorySaved) {
+      showNotification('El inventario ya fue guardado', 'info');
+      speak('Inventario ya guardado');
+      return;
+    }
+    
+    const confirmSave = confirm(`¿Está seguro de guardar el inventario?\n\nTotal: ${State.stats.total} items\nContados: ${State.stats.counted} (${Math.round((State.stats.counted/State.stats.total)*100)}%)\nDiferencias: ${State.stats.differences}`);
+    
+    if (!confirmSave) return;
+    
+    DOM.btnSaveInventory.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><span>Guardando...</span>';
+    DOM.btnSaveInventory.disabled = true;
+    
+    try {
+      const response = await fetch(CONFIG.INVENTORY_API.save, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      });
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        State.ui.inventorySaved = true;
+        showNotification('¡Inventario guardado correctamente!', 'success');
+        speak('Inventario guardado exitosamente');
+        
+        DOM.btnSaveInventory.innerHTML = '<i class="bi bi-check-circle me-2"></i><span>Guardado</span>';
+        DOM.btnSaveInventory.classList.remove('btn-save-inventory');
+        DOM.btnSaveInventory.classList.add('btn-success');
+        
+        // Generar resumen final
+        generateFinalReport();
+      } else {
+        throw new Error(result.error || 'Error desconocido');
+      }
+      
+    } catch (error) {
+      console.error('Error guardando inventario:', error);
+      showNotification('Error al guardar el inventario', 'danger');
+      speak('Error al guardar inventario');
+      
+      DOM.btnSaveInventory.innerHTML = '<i class="bi bi-floppy-fill me-2"></i><span>Guardar Inventario</span>';
+      DOM.btnSaveInventory.disabled = false;
+    }
+  }
+  
+  /**
+   * Exporta diferencias a Excel
+   */
+  async function exportDifferences() {
+    if (State.stats.differences === 0) {
+      showNotification('No hay diferencias para exportar', 'warning');
+      speak('No hay diferencias');
+      return;
+    }
+    
+    DOM.btnExportDifferences.innerHTML = '<i class="bi bi-hourglass-split me-2"></i><span>Generando...</span>';
+    DOM.btnExportDifferences.disabled = true;
+    
+    try {
+      const response = await fetch(CONFIG.INVENTORY_API.export);
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      // Crear blob y descargar
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const date = new Date().toISOString().split('T')[0];
+      
+      a.href = url;
+      a.download = `diferencias_inventario_${date}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showNotification('Diferencias exportadas correctamente', 'success');
+      speak('Reporte de diferencias descargado');
+      
+    } catch (error) {
+      console.error('Error exportando diferencias:', error);
+      showNotification('Error al exportar diferencias', 'danger');
+      speak('Error al exportar');
+    } finally {
+      setTimeout(() => {
+        DOM.btnExportDifferences.innerHTML = '<i class="bi bi-file-earmark-excel me-2"></i><span>Descargar Diferencias</span>';
+        DOM.btnExportDifferences.disabled = false;
+      }, 1000);
+    }
+  }
+  
+  /**
+   * Genera reporte final del inventario
+   */
+  function generateFinalReport() {
+    const report = `
+      === REPORTE DE INVENTARIO ===
+      Fecha: ${new Date().toLocaleString()}
+      Usuario: {{ session.get('username', 'Usuario') }}
+      Total Items: ${State.stats.total}
+      Items Contados: ${State.stats.counted} (${Math.round((State.stats.counted/State.stats.total)*100)}%)
+      Coincidencias: ${State.stats.ok}
+      Diferencias: ${State.stats.differences}
+      Decimales permitidos: ${State.ui.decimalsEnabled ? 'Sí' : 'No'}
+      
+      === RESUMEN ===
+      - ${State.stats.counted} de ${State.stats.total} items contados
+      - ${State.stats.differences} diferencias detectadas
+      - Progreso completado: ${Math.round((State.stats.counted/State.stats.total)*100)}%
+    `;
+    
+    console.log('Reporte de inventario:', report);
+    
+    // Podrías enviar este reporte al servidor o mostrarlo
+    showNotification('Reporte generado en consola', 'info');
+  }
+  
+  /**
+   * Muestra notificación
+   */
+  function showNotification(message, type = 'info') {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed top-3 end-3`;
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+      <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+      if (alert.parentNode) {
+        alert.remove();
+      }
+    }, 5000);
+  }
+  
+  /**
+   * Imprime resumen
+   */
+  function printSummary() {
+    const printContent = `
+      <html>
+        <head>
+          <title>Resumen de Inventario</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #333; }
+            .summary { margin: 20px 0; }
+            .summary-item { margin: 10px 0; }
+            .label { font-weight: bold; }
+            .total { font-size: 18px; }
+          </style>
+        </head>
+        <body>
+          <h1>Resumen de Inventario</h1>
+          <p>Fecha: ${new Date().toLocaleString()}</p>
+          <p>Usuario: {{ session.get('username', 'Usuario') }}</p>
+          <p>Decimales permitidos: ${State.ui.decimalsEnabled ? 'Sí' : 'No'}</p>
+          <div class="summary">
+            <div class="summary-item">
+              <span class="label">Total de Items:</span>
+              <span class="total">${State.stats.total}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Items Contados:</span>
+              <span>${State.stats.counted}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Pendientes:</span>
+              <span>${State.stats.total - State.stats.counted}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Coincidencias:</span>
+              <span>${State.stats.ok}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Diferencias:</span>
+              <span>${State.stats.differences}</span>
+            </div>
+            <div class="summary-item">
+              <span class="label">Progreso:</span>
+              <span>${Math.round((State.stats.counted/State.stats.total)*100)}%</span>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
+  
+  /**
+   * Procesa comandos de voz con decimales
+   */
+  function processVoiceCommand(transcript) {
+    console.log('Voz reconocida:', transcript);
+    
+    // Convertir "coma" a punto para decimales
+    let processedTranscript = transcript
+      .toLowerCase()
+      .replace(/coma/g, 'punto')
+      .replace(/ y medio/g, ' punto cinco')
+      .replace(/ y cuarto/g, ' punto veinticinco')
+      .replace(/ y tres cuartos/g, ' punto setenta y cinco');
+    
+    // Buscar patrones de código y cantidad
+    const patterns = [
+      /código\s*(\d+)\s*cantidad\s*(\d+(?:[.,]\d+)?)/i,
+      /código\s*(\d+)\s*(\d+(?:[.,]\d+)?)/i,
+      /(\d+)\s*cantidad\s*(\d+(?:[.,]\d+)?)/i,
+      /(\d+)\s*(\d+(?:[.,]\d+)?)/i
+    ];
+    
+    let match = null;
+    for (const pattern of patterns) {
+      match = processedTranscript.match(pattern);
+      if (match) break;
+    }
+    
+    if (match && match.length >= 3) {
+      const code = match[1];
+      let quantity = match[2].replace(',', '.'); // Normalizar decimales
+      
+      // Si no permite decimales, redondear
+      const input = findInputByCode(code);
+      if (input && !allowsDecimalInput(input)) {
+        quantity = Math.round(parseFloat(quantity)).toString();
+      }
+      
+      if (input) {
+        input.value = quantity;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        saveRow(input);
+        
+        const quantityNum = parseFloat(quantity);
+        const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+        speak(`Registrado ${quantityStr} para código ${code}`);
+        updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+      } else {
+        updateVoiceUI('error', `Código ${code} no encontrado`);
+        speak(`Código ${code} no existe`);
+      }
+    } else {
+      // Intentar extraer números directamente
+      const numbers = processedTranscript.match(/\d+(?:[.,]\d+)?/g);
+      
+      if (numbers && numbers.length >= 2) {
+        let code = numbers[0];
+        let quantity = numbers[1].replace(',', '.');
+        
+        // Buscar si el código existe
+        const input = findInputByCode(code);
+        
+        if (input) {
+          // Si no permite decimales, redondear
+          if (!allowsDecimalInput(input)) {
+            quantity = Math.round(parseFloat(quantity)).toString();
+          }
+          
+          input.value = quantity;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          saveRow(input);
+          
+          const quantityNum = parseFloat(quantity);
+          const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+          speak(`Registrado ${quantityStr} para código ${code}`);
+          updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+        } else {
+          // Intentar con el número más largo como código
+          const sortedNumbers = numbers.sort((a, b) => b.length - a.length);
+          code = sortedNumbers[0];
+          quantity = sortedNumbers[1] || sortedNumbers[0];
+          
+          const input2 = findInputByCode(code);
+          if (input2) {
+            if (!allowsDecimalInput(input2)) {
+              quantity = Math.round(parseFloat(quantity.replace(',', '.'))).toString();
+            }
+            
+            input2.value = quantity;
+            input2.dispatchEvent(new Event('input', { bubbles: true }));
+            saveRow(input2);
+            
+            const quantityNum = parseFloat(quantity);
+            const quantityStr = quantityNum % 1 === 0 ? quantityNum.toString() : quantityNum.toFixed(2);
+            speak(`Registrado ${quantityStr} para código ${code}`);
+            updateVoiceUI('listening', `Registrado ${quantityStr} para ${code}`);
+          } else {
+            updateVoiceUI('error', 'No se pudo identificar código válido');
+            speak('Por favor di código y cantidad claramente');
+          }
+        }
+      } else {
+        updateVoiceUI('error', 'No se entendió código y cantidad');
+        speak('Por favor di código y cantidad');
+      }
+    }
+  }
+  
+  // ================= RECONOCIMIENTO DE VOZ =================
+  
+  function initVoiceRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      updateVoiceUI('error', 'Navegador no compatible');
+      DOM.btnVoice.disabled = true;
+      DOM.btnVoice.innerHTML = '<i class="bi bi-mic-mute me-1"></i><span>No compatible</span>';
+      return false;
+    }
+    
+    try {
+      State.voice.recognition = new SpeechRecognition();
+      State.voice.recognition.lang = CONFIG.SPEECH_LANG;
+      State.voice.recognition.interimResults = false;
+      State.voice.recognition.continuous = false;
+      State.voice.recognition.maxAlternatives = 3; // Aumentar alternativas para mejor reconocimiento
+      
+      State.voice.recognition.onstart = () => {
+        State.voice.isListening = true;
+        updateVoiceUI('listening');
+      };
+      
+      State.voice.recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        processVoiceCommand(transcript);
+        
+        if (State.voice.continuous && State.voice.isListening) {
+          setTimeout(() => {
+            if (State.voice.isListening) {
+              State.voice.recognition.start();
+            }
+          }, 500);
+        }
+      };
+      
+      State.voice.recognition.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+        
+        switch (event.error) {
+          case 'not-allowed':
+          case 'permission-denied':
+            updateVoiceUI('error', 'Permiso de micrófono denegado');
+            break;
+          case 'no-speech':
+            updateVoiceUI('error', 'No se detectó voz');
+            break;
+          default:
+            updateVoiceUI('error', 'Error de reconocimiento');
+        }
+        
+        State.voice.isListening = false;
+        updateVoiceUI('idle');
+      };
+      
+      State.voice.recognition.onend = () => {
+        State.voice.isListening = false;
+        updateVoiceUI('idle');
+      };
+      
+      return true;
+      
+    } catch (error) {
+      console.error('Error inicializando reconocimiento:', error);
+      updateVoiceUI('error', 'Error al acceder al micrófono');
+      return false;
+    }
+  }
+  
+  function startVoiceRecognition() {
+    if (State.voice.isListening) return;
+    
+    if (/Mobi|Android/i.test(navigator.userAgent) && navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          try {
+            State.voice.recognition.start();
+          } catch (error) {
+            updateVoiceUI('error', 'Error iniciando micrófono');
+          }
+        })
+        .catch(error => {
+          updateVoiceUI('error', 'Permiso de micrófono requerido');
+          speak('Por favor, permite el acceso al micrófono');
+        });
+    } else {
+      try {
+        State.voice.recognition.start();
+      } catch (error) {
+        updateVoiceUI('error', 'No se pudo iniciar el dictado');
+      }
+    }
+  }
+  
+  function stopVoiceRecognition() {
+    if (State.voice.recognition && State.voice.isListening) {
+      try {
+        State.voice.recognition.stop();
+      } catch (error) {}
+    }
+    State.voice.isListening = false;
+    updateVoiceUI('idle');
+  }
+  
+  function toggleVoiceRecognition() {
+    if (State.voice.isListening) {
+      stopVoiceRecognition();
+    } else {
+      startVoiceRecognition();
+    }
+  }
+  
+  // ================= MODO GUANTES =================
+  
+  function toggleGlovesMode() {
+    State.ui.glovesMode = !State.ui.glovesMode;
+    
+    if (State.ui.glovesMode) {
+      DOM.pageContainer.classList.add('gloves-mode');
+      DOM.btnGloves.classList.remove('btn-outline-secondary');
+      DOM.btnGloves.classList.add('btn-secondary');
+      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb-fill me-1"></i><span>Guantes ON</span>';
+      speak('Modo guantes activado');
+    } else {
+      DOM.pageContainer.classList.remove('gloves-mode');
+      DOM.btnGloves.classList.remove('btn-secondary');
+      DOM.btnGloves.classList.add('btn-outline-secondary');
+      DOM.btnGloves.innerHTML = '<i class="bi bi-hand-index-thumb me-1"></i><span>Modo Guantes</span>';
+    }
+  }
+  
+  // ================= MANEJO DE INPUTS CON DECIMALES =================
+  
+  function setupInputHandlers() {
+    let saveTimer;
+    
+    document.querySelectorAll('.count-input').forEach(input => {
+      input.addEventListener('input', function() {
+        clearTimeout(saveTimer);
+        
+        // Permitir solo números, punto y coma
+        let value = this.value.replace(/[^0-9.,]/g, '');
+        
+        // Reemplazar comas por puntos para validación interna
+        let normalizedValue = value.replace(',', '.');
+        
+        // Validar que solo haya un separador decimal
+        const decimalCount = (normalizedValue.match(/\./g) || []).length;
+        if (decimalCount > 1) {
+          // Si hay más de un punto, mantener solo el primero
+          const parts = normalizedValue.split('.');
+          normalizedValue = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        // Limitar decimales
+        if (normalizedValue.includes('.')) {
+          const parts = normalizedValue.split('.');
+          if (parts[1].length > CONFIG.MAX_DECIMALS) {
+            parts[1] = parts[1].substring(0, CONFIG.MAX_DECIMALS);
+            normalizedValue = parts.join('.');
+          }
+        }
+        
+        // Actualizar valor visual manteniendo coma si el usuario la usó
+        this.value = value.includes(',') ? normalizedValue.replace('.', ',') : normalizedValue;
+        
+        const row = this.closest('tr');
+        if (row) {
+          row.classList.add('row-saving');
+        }
+        
+        if (this.value && parseDecimal(this.value) > 0) {
+          saveTimer = setTimeout(() => {
+            saveRow(this);
+          }, CONFIG.DEBOUNCE_DELAY);
+        }
+      });
+      
+      input.addEventListener('blur', function() {
+        // Formatear al perder foco
+        if (this.value) {
+          const formattedValue = formatDecimal(this.value, allowsDecimalInput(this));
+          this.value = formattedValue;
+          
+          if (parseDecimal(formattedValue) > 0) {
+            saveRow(this);
+          }
+        }
+        
+        const row = this.closest('tr');
+        if (row) {
+          setTimeout(() => {
+            row.classList.remove('row-saving');
+          }, 300);
+        }
+      });
+      
+      // Permitir atajos de teclado
+      input.addEventListener('keydown', function(e) {
+        // Incrementar/decrementar con flechas
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const current = parseDecimal(this.value) || 0;
+          const increment = allowsDecimalInput(this) ? 0.5 : 1;
+          this.value = formatDecimal(current + increment, allowsDecimalInput(this));
+          this.dispatchEvent(new Event('input', { bubbles: true }));
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const current = parseDecimal(this.value) || 0;
+          const decrement = allowsDecimalInput(this) ? 0.5 : 1;
+          const newValue = Math.max(0, current - decrement);
+          this.value = formatDecimal(newValue, allowsDecimalInput(this));
+          this.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
+  }
+  
+  // ================= TOGGLE DECIMALES =================
+  
+  function toggleDecimals() {
+    State.ui.decimalsEnabled = DOM.toggleDecimals.checked;
+    
+    if (State.ui.decimalsEnabled) {
+      DOM.decimalIndicator.style.display = 'inline-block';
+      speak('Decimales permitidos');
+      
+      // Actualizar todos los inputs
+      document.querySelectorAll('.count-input').forEach(input => {
+        input.pattern = "[0-9]*[.,]?[0-9]*";
+        input.inputMode = "decimal";
+        
+        // Si no permite decimales, marcar visualmente
+        if (!allowsDecimalInput(input)) {
+          input.style.borderColor = '#ffc107';
+          input.title = 'Este material no permite decimales';
+        }
+      });
+    } else {
+      DOM.decimalIndicator.style.display = 'none';
+      speak('Solo números enteros');
+      
+      // Convertir todos los valores a enteros
+      document.querySelectorAll('.count-input').forEach(input => {
+        input.pattern = "[0-9]*";
+        input.inputMode = "numeric";
+        input.style.borderColor = '';
+        input.title = '';
+        
+        // Redondear valores existentes
+        if (input.value) {
+          const currentValue = parseDecimal(input.value);
+          if (!isNaN(currentValue)) {
+            input.value = Math.round(currentValue).toString();
+            if (currentValue > 0) {
+              saveRow(input);
+            }
+          }
+        }
+      });
+      
+      updateStatistics();
+    }
+    
+    updateVoiceUI(State.voice.isListening ? 'listening' : 'idle');
+  }
+  
+  // ================= INICIALIZACIÓN =================
+  
+  function initApp() {
+    console.log('Inicializando sistema de conteo con decimales...');
+    
+    // Inicializar reconocimiento de voz
+    if (initVoiceRecognition()) {
+      updateVoiceUI('idle');
+    }
+    
+    // Configurar controles de voz
+    DOM.btnVoice.addEventListener('click', toggleVoiceRecognition);
+    DOM.toggleContinuous.addEventListener('change', function() {
+      State.voice.continuous = this.checked;
+    });
+    DOM.toggleSpeak.addEventListener('change', function() {
+      State.voice.feedback = this.checked;
+    });
+    
+    // Configurar toggle de decimales
+    DOM.toggleDecimals.addEventListener('change', toggleDecimals);
+    
+    // Configurar modo guantes
+    DOM.btnGloves.addEventListener('click', toggleGlovesMode);
+    
+    // Configurar nuevos botones
+    DOM.btnSaveInventory.addEventListener('click', saveInventory);
+    DOM.btnExportDifferences.addEventListener('click', exportDifferences);
+    
+    // Configurar handlers de inputs
+    setupInputHandlers();
+    
+    // Actualizar estadísticas iniciales
+    updateStatistics();
+    
+    // Inicializar estado de decimales
+    toggleDecimals();
+    
+    // Eventos de visibilidad
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && State.voice.isListening) {
+        stopVoiceRecognition();
+      }
+    });
+    
+    console.log('Sistema de conteo con decimales inicializado correctamente');
+  }
+  
+  // Iniciar aplicación
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+  } else {
+    initApp();
+  }
+  
+})();
+</script>
+{% endblock %}

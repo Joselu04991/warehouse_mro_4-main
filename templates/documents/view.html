@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Documento {{ document.process_number }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Encabezado -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">
+        <i class="bi bi-file-text text-primary me-2"></i>
+        Documento #{{ document.process_number or document.id }}
+      </h2>
+      <p class="text-muted mb-0">
+        <i class="bi bi-calendar me-1"></i>
+        Subido: {{ document.created_at.strftime('%d/%m/%Y %H:%M') }}
+        {% if document.file_size %}
+        | <i class="bi bi-hdd me-1"></i>
+        Tamaño: {{ (document.file_size / 1024 / 1024)|round(2) }} MB
+        {% endif %}
+      </p>
+    </div>
+    <div>
+      <a href="{{ url_for('warehouse_documents.list_documents') }}"
+         class="btn btn-outline-secondary">
+         <i class="bi bi-arrow-left me-1"></i> Volver a lista
+      </a>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Información principal -->
+    <div class="col-lg-8">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Información del Documento
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Columna 1 -->
+            <div class="col-md-6">
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <th width="40%" class="text-muted">Número de Proceso:</th>
+                  <td>
+                    <span class="badge bg-primary fs-6">{{ document.process_number or 'N/A' }}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th class="text-muted">Proveedor:</th>
+                  <td class="fw-bold">{{ document.provider or 'No especificado' }}</td>
+                </tr>
+                <tr>
+                  <th class="text-muted">Conductor:</th>
+                  <td>{{ document.driver or 'No especificado' }}</td>
+                </tr>
+                <tr>
+                  <th class="text-muted">Placa Tracto:</th>
+                  <td>
+                    {% if document.plate_tractor %}
+                    <span class="badge bg-dark">{{ document.plate_tractor }}</span>
+                    {% else %}
+                    No especificada
+                    {% endif %}
+                  </td>
+                </tr>
+              </table>
+            </div>
+            
+            <!-- Columna 2 -->
+            <div class="col-md-6">
+              <table class="table table-sm table-borderless">
+                <tr>
+                  <th class="text-muted">Peso Neto:</th>
+                  <td>
+                    {% if document.net_weight %}
+                    <span class="fw-bold fs-5 text-success">
+                      {{ "{:,.2f}".format(document.net_weight) }} kg
+                    </span>
+                    {% else %}
+                    No especificado
+                    {% endif %}
+                  </td>
+                </tr>
+                <tr>
+                  <th class="text-muted">Fecha creación:</th>
+                  <td>{{ document.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                </tr>
+                <tr>
+                  <th class="text-muted">ID Documento:</th>
+                  <td><code>#{{ document.id }}</code></td>
+                </tr>
+                <tr>
+                  <th class="text-muted">Subido por:</th>
+                  <td>
+                    {% if document.uploaded_by %}
+                    Usuario #{{ document.uploaded_by }}
+                    {% else %}
+                    Sistema
+                    {% endif %}
+                  </td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Archivos y acciones -->
+    <div class="col-lg-4">
+      <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-file-excel me-2"></i>
+            Archivo Excel
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-file-excel text-success" style="font-size: 3rem;"></i>
+          </div>
+          <p class="text-muted">
+            Datos extraídos en formato Excel
+            {% if excel_size %}
+            <br>{{ excel_size }}
+            {% endif %}
+          </p>
+          
+          {% if excel_exists %}
+          <a href="{{ url_for('warehouse_documents.download_file', 
+                             document_id=document.id, 
+                             file_type='excel') }}"
+             class="btn btn-success w-100 mb-2">
+            <i class="bi bi-download me-1"></i> Descargar Excel
+          </a>
+          {% else %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Archivo Excel no encontrado
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-file-earmark me-2"></i>
+            Documento Original
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-file-earmark-text text-secondary" style="font-size: 3rem;"></i>
+          </div>
+          <p class="text-muted">
+            {% if document.original_file and '.pdf' in document.original_file.lower() %}
+            Documento PDF original
+            {% else %}
+            Imagen del documento
+            {% endif %}
+            {% if original_size %}
+            <br>{{ original_size }}
+            {% endif %}
+          </p>
+          
+          {% if original_exists %}
+          <a href="{{ url_for('warehouse_documents.download_file', 
+                             document_id=document.id, 
+                             file_type='original') }}"
+             class="btn btn-outline-secondary w-100 mb-2">
+            <i class="bi bi-eye me-1"></i> Ver/Descargar Original
+          </a>
+          {% else %}
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Archivo original no encontrado
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Acción de eliminar -->
+      <div class="card border-danger">
+        <div class="card-header bg-danger text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Eliminar Documento
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <div class="mb-3">
+            <i class="bi bi-trash text-danger" style="font-size: 2.5rem;"></i>
+          </div>
+          <p class="text-muted small mb-3">
+            Esta acción eliminará el documento y todos sus archivos asociados.
+            <strong class="text-danger">No se puede deshacer.</strong>
+          </p>
+          
+          <form method="POST" 
+                action="{{ url_for('warehouse_documents.delete_document', 
+                                 document_id=document.id) }}"
+                onsubmit="return confirmDelete()">
+            <button type="submit" class="btn btn-danger w-100">
+              <i class="bi bi-trash me-1"></i> Eliminar Documento
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Información adicional -->
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">
+            <i class="bi bi-info-square me-2"></i>
+            Información Adicional
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <small class="text-muted d-block">Ruta del archivo original:</small>
+              <code class="small">{{ document.original_file or 'No disponible' }}</code>
+            </div>
+            <div class="col-md-6">
+              <small class="text-muted d-block">Ruta del archivo Excel:</small>
+              <code class="small">{{ document.excel_file or 'No disponible' }}</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmDelete() {
+  const processNumber = "{{ document.process_number or 'este documento' }}";
+  return confirm(`¿Está seguro de eliminar el documento "${processNumber}"?\n\nEsta acción eliminará:\n• El registro de la base de datos\n• El archivo Excel\n• El documento original\n\nEsta acción NO se puede deshacer.`);
+}
+</script>
+
+<style>
+.table-borderless th {
+  font-weight: 500;
+}
+.badge {
+  font-size: 0.9em;
+  padding: 0.4em 0.8em;
+}
+.card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card-header {
+  border-bottom: none;
+}
+</style>
+{% endblock %}

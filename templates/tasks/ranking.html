@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .ranking-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+    
+    .ranking-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .ranking-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .podium-item {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .gold {
+        background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        color: #000;
+    }
+    
+    .silver {
+        background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%);
+        color: #000;
+    }
+    
+    .bronze {
+        background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%);
+        color: #fff;
+    }
+    
+    .medal-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .podium-rank {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    
+    .podium-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .podium-score {
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+    
+    .status-excelente {
+        color: #28a745;
+        font-weight: 600;
+    }
+    
+    .status-bueno {
+        color: #20c997;
+        font-weight: 600;
+    }
+    
+    .status-regular {
+        color: #ffc107;
+        font-weight: 600;
+    }
+    
+    .status-riesgo {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    
+    .progress-ranking {
+        height: 8px;
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+    
+    .user-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #495057;
+        margin-right: 10px;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        transform: translateX(2px);
+        transition: all 0.2s;
+    }
+</style>
+
+<div class="ranking-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-1">🏆 Ranking de Técnicos</h2>
+            <p class="mb-0 opacity-90">Puntaje basado en desempeño y cumplimiento de tareas</p>
+        </div>
+        <span class="badge bg-light text-dark fs-6">Actualizado: {{ hoy.strftime('%d/%m/%Y') if hoy else '' }}</span>
+    </div>
+</div>
+
+<!-- PÓDUM (Top 3) -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="podium-item silver">
+            <div class="podium-rank">🥈</div>
+            <div class="podium-name">
+                {% if usuarios|length >= 2 %}
+                    {{ usuarios[1].username }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="podium-score">
+                {% if usuarios|length >= 2 %}
+                    {{ usuarios[1].score }} pts
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="podium-item gold">
+            <div class="podium-rank">🥇</div>
+            <div class="podium-name">
+                {% if usuarios|length >= 1 %}
+                    {{ usuarios[0].username }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="podium-score">
+                {% if usuarios|length >= 1 %}
+                    {{ usuarios[0].score }} pts
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="podium-item bronze">
+            <div class="podium-rank">🥉</div>
+            <div class="podium-name">
+                {% if usuarios|length >= 3 %}
+                    {{ usuarios[2].username }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div class="podium-score">
+                {% if usuarios|length >= 3 %}
+                    {{ usuarios[2].score }} pts
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLA COMPLETA DE RANKING -->
+<div class="ranking-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover ranking-table mb-0">
+                <thead>
+                    <tr>
+                        <th width="60">#</th>
+                        <th>Técnico</th>
+                        <th width="120">Rol</th>
+                        <th width="150">Puntaje</th>
+                        <th width="200">Progreso</th>
+                        <th width="120">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td class="align-middle">
+                            <span class="fw-bold fs-5 {% if loop.index <= 3 %}text-primary{% endif %}">
+                                {{ loop.index }}
+                            </span>
+                        </td>
+                        <td class="align-middle">
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar">
+                                    {{ usuario.username[0]|upper if usuario.username else '?' }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ usuario.username }}</div>
+                                    <small class="text-muted">{{ usuario.email or 'Sin email' }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            {% if usuario.role == 'owner' %}
+                                <span class="badge bg-danger">Owner</span>
+                            {% elif usuario.role == 'admin' %}
+                                <span class="badge bg-primary">Admin</span>
+                            {% elif usuario.role == 'tecnico' %}
+                                <span class="badge bg-success">Técnico</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ usuario.role }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">
+                            <div class="fw-bold fs-5">{{ usuario.score|default(0) }}</div>
+                            <small class="text-muted">/ 20 puntos</small>
+                        </td>
+                        <td class="align-middle">
+                            {% set porcentaje = (usuario.score|default(0) / 20 * 100)|round(1) if usuario.score else 0 %}
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1 me-2">
+                                    <div class="progress progress-ranking">
+                                        <div class="progress-bar 
+                                            {% if porcentaje >= 90 %}bg-success
+                                            {% elif porcentaje >= 70 %}bg-info
+                                            {% elif porcentaje >= 50 %}bg-warning
+                                            {% else %}bg-danger{% endif %}" 
+                                            role="progressbar" 
+                                            style="width: {{ porcentaje }}%"
+                                            aria-valuenow="{{ porcentaje }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="fw-bold" style="min-width: 45px;">
+                                    {{ porcentaje }}%
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle">
+                            {% set score = usuario.score|default(0) %}
+                            {% if score >= 18 %}
+                                <span class="status-excelente">⭐ Excelente</span>
+                            {% elif score >= 15 %}
+                                <span class="status-bueno">✅ Bueno</span>
+                            {% elif score >= 12 %}
+                                <span class="status-regular">⚠️ Regular</span>
+                            {% else %}
+                                <span class="status-riesgo">🚨 En riesgo</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="py-5">
+                                <i class="bi bi-trophy display-1 text-muted mb-3"></i>
+                                <h4 class="text-muted">No hay datos de ranking</h4>
+                                <p class="text-muted mb-0">Los puntajes se generan al completar tareas</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ESTADÍSTICAS -->
+<div class="row mt-4">
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">PROMEDIO</div>
+                <div class="display-6 fw-bold text-primary">
+                    {% if usuarios %}
+                        {{ (usuarios|sum(attribute='score') / usuarios|length)|round(1) }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+                <small class="text-muted">puntos promedio</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">MÁXIMO</div>
+                <div class="display-6 fw-bold text-success">
+                    {% if usuarios %}
+                        {{ usuarios|max(attribute='score')|default(0) }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+                <small class="text-muted">puntaje máximo</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">MÍNIMO</div>
+                <div class="display-6 fw-bold text-warning">
+                    {% if usuarios %}
+                        {{ usuarios|min(attribute='score')|default(0) }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+                <small class="text-muted">puntaje mínimo</small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 col-6 mb-3">
+        <div class="card text-center h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">TÉCNICOS</div>
+                <div class="display-6 fw-bold text-info">
+                    {{ usuarios|length }}
+                </div>
+                <small class="text-muted">en ranking</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LEYENDA -->
+<div class="card mt-3 border-info">
+    <div class="card-body">
+        <h6 class="text-info mb-3">📊 Criterios de evaluación:</h6>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="status-excelente me-2">⭐ Excelente</div>
+                    <small class="text-muted">(18-20 pts)</small>
+                </div>
+                <p class="small text-muted mb-0">Tareas completadas siempre a tiempo</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="status-bueno me-2">✅ Bueno</div>
+                    <small class="text-muted">(15-17 pts)</small>
+                </div>
+                <p class="small text-muted mb-0">Cumplimiento consistente</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="status-regular me-2">⚠️ Regular</div>
+                    <small class="text-muted">(12-14 pts)</small>
+                </div>
+                <p class="small text-muted mb-0">Algunas tareas fuera de plazo</p>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="status-riesgo me-2">🚨 En riesgo</div>
+                    <small class="text-muted">(0-11 pts)</small>
+                </div>
+                <p class="small text-muted mb-0">Frecuentes incumplimientos</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Agregar animación a las filas
+    const rows = document.querySelectorAll('.ranking-table tbody tr');
+    rows.forEach((row, index) => {
+        row.style.animationDelay = `${index * 0.05}s`;
+        row.classList.add('animate__animated', 'animate__fadeInUp');
+    });
+    
+    // Actualizar automáticamente cada 30 segundos
+    setTimeout(() => {
+        window.location.reload();
+    }, 30000);
+    
+    // Efecto hover en pódium
+    const podiumItems = document.querySelectorAll('.podium-item');
+    podiumItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s';
+        });
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+
+{% endblock %}

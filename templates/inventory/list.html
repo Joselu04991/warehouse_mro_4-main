@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="fw-bold mb-4">
+    <i class="bi bi-archive me-2"></i> Inventario Actual
+</h2>
+
+<div class="card shadow-sm p-3">
+
+    <div class="d-flex justify-content-between mb-3 align-items-center">
+
+        <input type="text" id="searchInput" class="form-control w-50"
+               placeholder="🔍 Buscar por material, texto o ubicación...">
+
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+
+            <a href="{{ url_for('inventory.count_inventory') }}"
+               class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square me-2"></i> Conteo en línea
+            </a>
+
+            <a href="{{ url_for('inventory.history_inventory') }}"
+               class="btn btn-outline-dark">
+                <i class="bi bi-clock-history me-2"></i> Inventarios Anteriores
+            </a>
+
+            <a href="{{ url_for('inventory.upload_history') }}"
+               class="btn btn-outline-warning">
+                <i class="bi bi-upload me-2"></i> Subir Inventario Antiguo
+            </a>
+
+            <form method="GET" action="{{ url_for('inventory.list_inventory') }}"
+                  onsubmit="return confirm('¿Seguro que deseas CERRAR el inventario del día? Se archivará y se limpiará el inventario actual.');">
+                <button class="btn btn-danger">
+                    <i class="bi bi-lock-fill me-2"></i> Cerrar inventario del día
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover" id="inventoryTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th>Unidad</th>
+                    <th>Ubicación</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in items %}
+                <tr>
+                    <td>{{ i.material_code }}</td>
+                    <td>{{ i.material_text }}</td>
+                    <td>{{ i.base_unit }}</td>
+                    <td>{{ i.location }}</td>
+                    <td>{{ i.libre_utilizacion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+document.getElementById("searchInput").addEventListener("keyup", function() {
+    let filter = this.value.toLowerCase();
+    let rows = document.querySelectorAll("#inventoryTable tbody tr");
+    rows.forEach(r => {
+        let txt = r.innerText.toLowerCase();
+        r.style.display = txt.includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}
+
+

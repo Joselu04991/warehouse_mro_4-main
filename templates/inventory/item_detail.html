@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Detalles del Item
+                </h4>
+                <a href="{{ url_for('inventory.dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Volver al Dashboard
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Contenido de detalles del item -->
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Información Básica</h5>
+                    <table class="table">
+                        <tr>
+                            <th>Código:</th>
+                            <td>{{ item.material_code if item else '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Descripción:</th>
+                            <td>{{ item.material_text if item else '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Ubicación:</th>
+                            <td>{{ item.location if item else '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Stock Sistema:</th>
+                            <td>{{ item.stock if item else '' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Conteo Físico:</th>
+                            <td>{{ item.real_count if item else '' }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h5>Estadísticas</h5>
+                    <!-- Aquí puedes agregar más detalles si los necesitas -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

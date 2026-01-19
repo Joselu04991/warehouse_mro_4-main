@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Historial de Conteos{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="fw-bold">📋 Historial de Post-Registros</h2>
+
+    <div class="card mt-3 shadow-sm">
+        <div class="card-body table-responsive">
+
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Bulto</th>
+                        <th>Chofer</th>
+                        <th>Placa</th>
+                        <th class="text-end">Sistema</th>
+                        <th class="text-end">Real</th>
+                        <th class="text-end">Diferencia</th>
+                        <th>Observación</th>
+                        <th>Registrado por</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in historial %}
+                    <tr>
+                        <td>{{ r.id }}</td>
+                        <td>#{{ r.bulto_id }}</td>
+                        <td>{{ r.bulto.chofer if r.bulto else "-" }}</td>
+                        <td>{{ r.bulto.placa if r.bulto else "-" }}</td>
+
+                        <td class="text-end">{{ r.cantidad_sistema }}</td>
+                        <td class="text-end">{{ r.cantidad_real }}</td>
+
+                        <td class="text-end fw-bold
+                            {% if r.diferencia < 0 %} text-danger
+                            {% elif r.diferencia > 0 %} text-success
+                            {% else %} text-muted {% endif %}
+                        ">
+                            {{ r.diferencia }}
+                        </td>
+
+                        <td>{{ r.observacion or "" }}</td>
+                        <td>{{ r.registrado_por }}</td>
+                        <td>{{ r.fecha_registro.strftime("%d/%m/%Y %H:%M") }}</td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-3">
+                            No hay registros aún.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
