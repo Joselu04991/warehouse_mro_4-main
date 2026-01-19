@@ -1,47 +1,44 @@
-# utils/ocr_reader.py - VERSIÓN SIN OPENCV
+# utils/ocr_reader.py - VERSIÓN LIGERA PARA RAILWAY
 import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 import fitz  # PyMuPDF
-import numpy as np
 import io
 import os
 import subprocess
 import logging
 from typing import Dict, Any, Optional
-import tempfile
 
 logger = logging.getLogger(__name__)
 
-class AdvancedOCRReader:
-    def __init__(self, tesseract_path: Optional[str] = None):
-        """Inicializa el lector OCR con búsqueda automática"""
-        self.tesseract_path = self._find_tesseract(tesseract_path)
+class RailwayOCRReader:
+    def __init__(self):
+        """Inicializa el lector OCR optimizado para Railway"""
+        self.tesseract_path = self._find_tesseract()
         self.tesseract_available = bool(self.tesseract_path)
         
         if self.tesseract_available:
             pytesseract.pytesseract.tesseract_cmd = self.tesseract_path
-            logger.info(f"✅ Tesseract encontrado en: {self.tesseract_path}")
-            
-            # Probar Tesseract
-            try:
-                version = subprocess.run([self.tesseract_path, '--version'], 
-                                       capture_output=True, text=True)
-                logger.info(f"Tesseract versión: {version.stdout.split()[1] if version.stdout else 'Desconocida'}")
-            except:
-                logger.warning("No se pudo obtener versión de Tesseract")
+            logger.info(f"✅ Tesseract encontrado en Railway: {self.tesseract_path}")
         else:
-            logger.error("❌ Tesseract NO disponible. El OCR no funcionará.")
+            logger.error("❌ Tesseract NO disponible en Railway")
         
-        # Configuración OCR
-        self.config = r'--oem 3 --psm 6 -l spa+eng'
+        # Configuración optimizada
+        self.config = r'--oem 3 --psm 6 -l spa'
     
-    def _find_tesseract(self, custom_path: Optional[str] = None) -> Optional[str]:
-        """Busca Tesseract en múltiples ubicaciones"""
-        # 1. Usar ruta personalizada si se proporciona
-        if custom_path and os.path.exists(custom_path):
-            return custom_path
+    def _find_tesseract(self) -> Optional[str]:
+        """Busca Tesseract en Railway"""
+        # Railway generalmente instala Tesseract en /usr/bin
+        possible_paths = [
+            '/usr/bin/tesseract',
+            '/usr/local/bin/tesseract',
+            '/bin/tesseract',
+        ]
         
-        # 2. Buscar en PATH
+        for path in possible_paths:
+            if os.path.exists(path):
+                return path
+        
+        # Si no se encuentra, intentar usar 'which'
         try:
             result = subprocess.run(['which', 'tesseract'], 
                                   capture_output=True, text=True)
@@ -50,22 +47,10 @@ class AdvancedOCRReader:
         except:
             pass
         
-        # 3. Buscar en ubicaciones comunes
-        common_paths = [
-            '/usr/bin/tesseract',
-            '/usr/local/bin/tesseract',
-            '/bin/tesseract',
-            '/app/.apt/usr/bin/tesseract',
-        ]
-        
-        for path in common_paths:
-            if os.path.exists(path):
-                return path
-        
         return None
     
     def extract_text_from_file(self, file_path: str) -> Dict[str, Any]:
-        """Extrae texto de archivos"""
+        """Extrae texto de archivos en Railway"""
         result = {
             'success': False,
             'text': '',
@@ -78,9 +63,10 @@ class AdvancedOCRReader:
         
         if not self.tesseract_available:
             result['error'] = (
-                'Tesseract OCR no está instalado.\n'
-                'En Railway, agrega esto a nixpacks.toml:\n'
-                'apt-get install -y tesseract-ocr tesseract-ocr-spa'
+                'Tesseract OCR no está instalado en Railway.\n'
+                'Railway necesita instalar dependencias del sistema.\n'
+                'Crea un archivo "aptfile" con:\n'
+                'tesseract-ocr\ntesseract-ocr-spa\npoppler-utils'
             )
             return result
         
@@ -89,12 +75,13 @@ class AdvancedOCRReader:
             
             if ext == '.pdf':
                 result['file_type'] = 'pdf'
-                result['text'] = self._process_pdf_simple(file_path)
-                result['pages'] = self._count_pdf_pages(file_path)
+                text, pages = self._process_pdf_railway(file_path)
+                result['text'] = text
+                result['pages'] = pages
                 
-            elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']:
+            elif ext in ['.jpg', '.jpeg', '.png', '.bmp']:
                 result['file_type'] = 'image'
-                result['text'] = self._process_image_simple(file_path)
+                result['text'] = self._process_image_railway(file_path)
                 result['pages'] = 1
                 
             else:
@@ -105,156 +92,143 @@ class AdvancedOCRReader:
             
         except Exception as e:
             result['error'] = str(e)
-            logger.error(f"Error procesando {file_path}: {e}")
+            logger.error(f"Error en Railway procesando {file_path}: {e}")
         
         return result
     
-    def _process_pdf_simple(self, pdf_path: str) -> str:
-        """Procesa PDFs de forma simple"""
+    def _process_pdf_railway(self, pdf_path: str):
+        """Procesa PDFs optimizado para Railway"""
         try:
             doc = fitz.open(pdf_path)
             all_text = []
+            total_pages = len(doc)
             
-            logger.info(f"Procesando PDF con {len(doc)} páginas")
+            # Procesar máximo 10 páginas para eficiencia
+            max_pages = min(total_pages, 10)
             
-            for page_num in range(len(doc)):
+            for page_num in range(max_pages):
                 page = doc.load_page(page_num)
                 
-                # 1. Intentar extraer texto directo (si el PDF tiene texto)
+                # 1. Intentar texto directo
                 text = page.get_text()
-                if text and len(text.strip()) > 50:
+                if text and len(text.strip()) > 30:
                     all_text.append(text)
                     continue
                 
-                # 2. Si no hay texto, convertir a imagen y usar OCR
-                # Usar resolución moderada para mejor velocidad/calidad
-                zoom = 2.0
+                # 2. OCR si no hay texto
+                zoom = 1.5  # Resolución moderada para Railway
                 mat = fitz.Matrix(zoom, zoom)
                 pix = page.get_pixmap(matrix=mat, alpha=False)
                 
-                # Convertir a imagen PIL
                 img_data = pix.tobytes("png")
                 image = Image.open(io.BytesIO(img_data))
                 
-                # Mejorar imagen para OCR (sin OpenCV)
-                enhanced = self._enhance_image_pil(image)
+                # Optimizar imagen para Railway
+                image = self._optimize_image_railway(image)
                 
-                # Aplicar OCR
                 page_text = pytesseract.image_to_string(
-                    enhanced, 
+                    image, 
                     config=self.config,
                     lang='spa'
                 )
                 
                 if page_text.strip():
                     all_text.append(page_text)
-                else:
-                    # Intentar con la imagen original
-                    page_text = pytesseract.image_to_string(
-                        image,
-                        config=self.config,
-                        lang='spa'
-                    )
-                    if page_text.strip():
-                        all_text.append(page_text)
             
             doc.close()
-            return "\n\n".join(all_text) if all_text else "No se pudo extraer texto"
+            return "\n\n".join(all_text), total_pages
             
         except Exception as e:
-            logger.error(f"Error procesando PDF {pdf_path}: {e}")
-            return f"Error: {str(e)}"
+            logger.error(f"Error procesando PDF en Railway: {e}")
+            return f"Error PDF: {str(e)}", 0
     
-    def _process_image_simple(self, image_path: str) -> str:
-        """Procesa imágenes de forma simple"""
+    def _process_image_railway(self, image_path: str) -> str:
+        """Procesa imágenes optimizado para Railway"""
         try:
             image = Image.open(image_path)
             
-            # Probar diferentes procesamientos
-            texts = []
+            # Optimizar para Railway
+            image = self._optimize_image_railway(image)
             
-            # 1. Imagen original
-            text_original = pytesseract.image_to_string(
-                image, 
+            # OCR simple - un solo intento para eficiencia
+            text = pytesseract.image_to_string(
+                image,
                 config=self.config,
                 lang='spa'
             )
-            if text_original.strip():
-                texts.append(text_original)
             
-            # 2. Imagen mejorada
-            enhanced = self._enhance_image_pil(image)
-            text_enhanced = pytesseract.image_to_string(
-                enhanced,
-                config=self.config,
-                lang='spa'
-            )
-            if text_enhanced.strip() and text_enhanced != text_original:
-                texts.append(text_enhanced)
-            
-            # 3. Imagen en escala de grises
-            gray = image.convert('L')
-            text_gray = pytesseract.image_to_string(
-                gray,
-                config=self.config,
-                lang='spa'
-            )
-            if text_gray.strip() and text_gray not in texts:
-                texts.append(text_gray)
-            
-            # Usar el texto más largo encontrado
-            if texts:
-                return max(texts, key=len)
-            else:
-                return "No se pudo extraer texto"
+            return text.strip() if text.strip() else "No se pudo extraer texto"
                 
         except Exception as e:
-            logger.error(f"Error procesando imagen {image_path}: {e}")
-            return f"Error: {str(e)}"
+            logger.error(f"Error procesando imagen en Railway: {e}")
+            return f"Error imagen: {str(e)}"
     
-    def _enhance_image_pil(self, image: Image.Image) -> Image.Image:
-        """Mejora imagen usando solo PIL (sin OpenCV)"""
+    def _optimize_image_railway(self, image: Image.Image) -> Image.Image:
+        """Optimiza imagen para OCR en Railway (sin OpenCV)"""
         try:
-            # Convertir a escala de grises si es color
+            # Convertir a escala de grises
             if image.mode != 'L':
                 image = image.convert('L')
             
-            # Aumentar contraste
+            # Mejorar contraste (simple)
             enhancer = ImageEnhance.Contrast(image)
-            image = enhancer.enhance(2.0)
+            image = enhancer.enhance(1.5)
             
-            # Aumentar nitidez
-            enhancer = ImageEnhance.Sharpness(image)
-            image = enhancer.enhance(2.0)
-            
-            # Aumentar brillo si está muy oscuro
-            enhancer = ImageEnhance.Brightness(image)
-            image = enhancer.enhance(1.2)
-            
-            # Aplicar filtro para reducir ruido
-            image = image.filter(ImageFilter.MedianFilter(size=3))
+            # Redimensionar si es muy grande (para eficiencia)
+            max_size = 2000
+            if image.width > max_size or image.height > max_size:
+                ratio = max_size / max(image.width, image.height)
+                new_size = (int(image.width * ratio), int(image.height * ratio))
+                image = image.resize(new_size, Image.Resampling.LANCZOS)
             
             return image
             
         except Exception as e:
-            logger.warning(f"Error mejorando imagen con PIL: {e}")
+            logger.warning(f"Error optimizando imagen: {e}")
             return image
     
-    def _count_pdf_pages(self, pdf_path: str) -> int:
+    def test_tesseract(self) -> Dict[str, Any]:
+        """Prueba Tesseract en Railway"""
+        result = {
+            'available': self.tesseract_available,
+            'path': self.tesseract_path,
+            'version': None,
+            'test_ocr': False,
+            'error': None
+        }
+        
+        if not self.tesseract_available:
+            result['error'] = 'Tesseract no disponible'
+            return result
+        
         try:
-            doc = fitz.open(pdf_path)
-            pages = len(doc)
-            doc.close()
-            return pages
-        except:
-            return 0
+            # Obtener versión
+            version = subprocess.run([self.tesseract_path, '--version'], 
+                                   capture_output=True, text=True)
+            result['version'] = version.stdout.split('\n')[0] if version.stdout else None
+            
+            # Probar OCR simple
+            img = Image.new('RGB', (200, 50), color='white')
+            from PIL import ImageDraw
+            d = ImageDraw.Draw(img)
+            d.text((10, 10), "TEST 123", fill='black')
+            
+            text = pytesseract.image_to_string(img, lang='spa')
+            result['test_ocr'] = '123' in text
+            
+            return result
+            
+        except Exception as e:
+            result['error'] = str(e)
+            return result
 
-def extract_text_from_file(file_path: str) -> str:
-    reader = AdvancedOCRReader()
-    result = reader.extract_text_from_file(file_path)
-    
-    if result['success']:
-        return result['text']
-    else:
-        error_msg = result.get('error', 'Error desconocido')
-        return f"Error: {error_msg}\nTesseract disponible: {result.get('tesseract_available')}"
+# Instancia global para Railway
+railway_ocr_reader = RailwayOCRReader()
+
+def extract_text_from_file(file_path: str) -> Dict[str, Any]:
+    """Función principal para Railway"""
+    return railway_ocr_reader.extract_text_from_file(file_path)
+
+def get_ocr_reader() -> RailwayOCRReader:
+    """Obtiene el lector OCR configurado para Railway"""
+    return railway_ocr_reader
