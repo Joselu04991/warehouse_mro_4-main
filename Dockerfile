@@ -15,4 +15,4 @@ RUN pip install -r requirements.txt
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "gunicorn wsgi:app -b 0.0.0.0:${PORT} --workers 3"]
+CMD ["gunicorn", "wsgi:app", "-b", "0.0.0.0:8080", "--workers", "3"]
