@@ -331,3 +331,62 @@ def test_ocr_simple():
         'test_image_text': ['PRUEBA OCR 12345 ABC', 'TICKET DE PESAJE', 'PLACA: CDL-733'],
         'timestamp': datetime.now().isoformat()
     })
+
+# routes/warehouse_documents.py - Endpoint de prueba
+@warehouse_documents_bp.route('/verify', methods=['GET'])
+def verify_installation():
+    """Verifica que todo está instalado correctamente"""
+    import sys
+    import subprocess
+    
+    checks = {}
+    
+    # 1. Python version
+    checks['python'] = sys.version.split()[0]
+    
+    # 2. Tesseract
+    try:
+        result = subprocess.run(['tesseract', '--version'], 
+                              capture_output=True, text=True)
+        checks['tesseract'] = result.stdout.split('\n')[0] if result.stdout else 'No encontrado'
+    except:
+        checks['tesseract'] = 'NO INSTALADO'
+    
+    # 3. Librerías Python
+    libs = ['flask', 'pandas', 'pytesseract', 'fitz', 'PIL']
+    for lib in libs:
+        try:
+            if lib == 'fitz':
+                import fitz
+                checks[lib] = 'OK'
+            elif lib == 'PIL':
+                from PIL import Image
+                checks[lib] = 'OK'
+            else:
+                __import__(lib)
+                checks[lib] = 'OK'
+        except ImportError as e:
+            checks[lib] = f'ERROR: {str(e)}'
+    
+    # 4. OCR simple test
+    try:
+        import pytesseract
+        from PIL import Image, ImageDraw
+        import io
+        
+        # Crear imagen de prueba
+        img = Image.new('RGB', (300, 100), color='white')
+        d = ImageDraw.Draw(img)
+        d.text((10, 10), "TEST OCR 12345", fill='black')
+        
+        # Probar OCR
+        text = pytesseract.image_to_string(img, lang='spa')
+        checks['ocr_test'] = f'OK - Reconoció: {text.strip()}' if text.strip() else 'OK - Sin texto'
+    except Exception as e:
+        checks['ocr_test'] = f'ERROR: {str(e)}'
+    
+    return jsonify({
+        'status': 'Tesseract instalado' if 'NO INSTALADO' not in checks.get('tesseract', '') else 'ERROR: Tesseract no instalado',
+        'checks': checks,
+        'instructions': 'Si tesseract muestra "NO INSTALADO", Railway no instaló las dependencias del sistema'
+    })
