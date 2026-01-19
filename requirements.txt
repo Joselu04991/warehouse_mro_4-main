@@ -4,7 +4,7 @@
 Flask==3.0.2
 Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
-SQLAlchemy==2.0.25
+SQLAlchemy==2.0.27
 Werkzeug==3.0.1
 python-dotenv==1.0.1
 gunicorn==21.2.0
@@ -23,7 +23,7 @@ pandas==2.2.3
 openpyxl==3.1.2
 # xlrd==2.0.1          # REMOVIDO - Conflictos con pandas
 xlsxwriter==3.2.0
-numpy==2.2.2
+numpy==1.26.4
 
 ##########################
 # REPORTES / PDF
@@ -84,4 +84,5 @@ pytesseract==0.3.10      # Wrapper para Tesseract OCR
 pdf2image==1.16.3        # Convertir PDF a imágenes para OCR
 PyMuPDF==1.24.9          # Procesar PDFs (mejor que pdf2image para extracción directa)
 opencv-python-headless==4.10.0.84  # Procesamiento de imágenes para OCR
+
 
