@@ -82,4 +82,6 @@ requests==2.32.3
 ##########################
 pytesseract==0.3.10      # Wrapper para Tesseract OCR
 pdf2image==1.16.3        # Convertir PDF a imágenes para OCR
-poppler-utils==0.1       # Dependencia para pdf2image (si está disponible en PyPI)
+PyMuPDF==1.24.9          # Procesar PDFs (mejor que pdf2image para extracción directa)
+opencv-python-headless==4.10.0.84  # Procesamiento de imágenes para OCR
+
