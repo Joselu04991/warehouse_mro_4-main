@@ -211,3 +211,84 @@ def supported_formats():
         'formats': list(ALLOWED_EXTENSIONS),
         'max_size_mb': MAX_FILE_SIZE / (1024 * 1024)
     })
+
+@warehouse_documents_bp.route('/diagnostic', methods=['GET'])
+def diagnostic():
+    """Endpoint de diagnóstico completo"""
+    import platform
+    import sys
+    import subprocess
+    
+    info = {
+        'system': {
+            'platform': platform.platform(),
+            'python_version': sys.version,
+            'python_executable': sys.executable
+        },
+        'tesseract': {
+            'available': False,
+            'path': None,
+            'version': None,
+            'error': None
+        },
+        'libraries': {
+            'pytesseract': False,
+            'pymupdf': False,
+            'opencv': False,
+            'pillow': False
+        }
+    }
+    
+    # Verificar librerías Python
+    try:
+        import pytesseract
+        info['libraries']['pytesseract'] = True
+    except:
+        info['libraries']['pytesseract'] = False
+    
+    try:
+        import fitz
+        info['libraries']['pymupdf'] = True
+    except:
+        pass
+    
+    try:
+        import cv2
+        info['libraries']['opencv'] = True
+    except:
+        pass
+    
+    try:
+        from PIL import Image
+        info['libraries']['pillow'] = True
+    except:
+        pass
+    
+    # Buscar Tesseract
+    from utils.ocr_reader import AdvancedOCRReader
+    reader = AdvancedOCRReader()
+    
+    info['tesseract']['available'] = reader.tesseract_available
+    info['tesseract']['path'] = reader.tesseract_path
+    
+    if reader.tesseract_available and reader.tesseract_path:
+        try:
+            version = subprocess.run([reader.tesseract_path, '--version'], 
+                                   capture_output=True, text=True)
+            info['tesseract']['version'] = version.stdout.split('\n')[0] if version.stdout else None
+        except:
+            info['tesseract']['error'] = "No se pudo obtener versión"
+    
+    # Verificar archivos del sistema
+    info['system_files'] = {}
+    common_files = [
+        '/usr/bin/tesseract',
+        '/usr/local/bin/tesseract',
+        '/etc/os-release',
+        '/usr/share/tesseract-ocr'
+    ]
+    
+    for file_path in common_files:
+        info['system_files'][file_path] = os.path.exists(file_path)
+    
+    return jsonify(info)
