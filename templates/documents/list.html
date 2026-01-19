@@ -86,7 +86,7 @@
             {% for doc in documents %}
             <tr>
               <td>
-                <small class="text-muted d-block">{{ doc.created_at.strftime('%d/%m/%Y') }}</small>
+                <small class="text-muted d-block">{{ doc.get('date', '') }}</small>
                 <small class="text-muted">{{ doc.created_at.strftime('%H:%M') }}</small>
               </td>
               <td>
