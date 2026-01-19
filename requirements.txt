@@ -12,16 +12,14 @@ gunicorn==21.2.0
 ##########################
 # BASES DE DATOS
 ##########################
-pymysql==1.1.1          # MySQL (opcional)
 psycopg2-binary==2.9.9  # PostgreSQL (Railway usa PostgreSQL)
-# sqlite-web==0.3.9     # REMOVIDO - Causa problemas en Railway
+pymysql==1.1.1          # MySQL (opcional, comentar si no usas)
 
 ##########################
 # ARCHIVOS EXCEL / CSV
 ##########################
 pandas==2.2.3
 openpyxl==3.1.2
-# xlrd==2.0.1          # REMOVIDO - Conflictos con pandas
 xlsxwriter==3.2.0
 numpy==1.26.4
 
@@ -30,14 +28,13 @@ numpy==1.26.4
 ##########################
 reportlab==4.1.0
 fpdf2==2.7.7
-PyPDF2==2.12.1          # VERSIÓN CORREGIDA - Compatible con Python 3.10
+PyPDF2==2.12.1
 
 ##########################
-# IMÁGENES Y QR
+# IMÁGENES Y PROCESAMIENTO
 ##########################
 Pillow==10.2.0
 qrcode==7.4.2
-# python-barcode==0.15.1  # REMOVIDO - Opcional
 
 ##########################
 # FECHAS Y TIEMPO
@@ -62,27 +59,9 @@ email-validator==2.2.0
 requests==2.32.3
 
 ##########################
-# MANIPULACIÓN AVANZADA (OPCIONAL)
+# OCR - RECONOCIMIENTO DE TEXTO (SIN DEPENDENCIAS DEL SISTEMA)
 ##########################
-# regex==2023.12.25      # REMOVIDO - Opcional
-# pyyaml==6.0.1          # REMOVIDO - Opcional
-
-##########################
-# IA / MACHINE LEARNING (OPCIONAL)
-##########################
-# scikit-learn==1.4.2    # REMOVIDO - Muy pesado para Railway
-# joblib==1.4.0          # REMOVIDO - Dependencia de scikit-learn
-
-##########################
-# SVG Y GRÁFICOS (opcional)
-##########################
-# svglib==1.5.1          # REMOVIDO - Puede causar problemas
-###########################
-# OCR - RECONOCIMIENTO DE TEXTO
-##########################
-pytesseract==0.3.10      # Wrapper para Tesseract OCR
-pdf2image==1.16.3        # Convertir PDF a imágenes para OCR
-PyMuPDF==1.24.9          # Procesar PDFs (mejor que pdf2image para extracción directa)
-opencv-python-headless==4.10.0.84  # Procesamiento de imágenes para OCR
-
-
+pytesseract==0.3.10      # Solo el wrapper - Tesseract debe estar instalado
+PyMuPDF==1.24.9          # Para PDFs - Ligero y eficiente
+# pdf2image==1.16.3      # REMOVIDO - Necesita poppler-utils del sistema
+# opencv-python-headless==4.10.0.84  # REMOVIDO - Muy pesado, usa PIL en su lugar
