@@ -6,6 +6,7 @@ import uuid
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import logging
+from flask import render_template 
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +62,36 @@ def health_check():
         'timestamp': datetime.now().isoformat(),
         'service': 'warehouse-documents-api'
     })
+
+@warehouse_documents_bp.route('/list')
+def list_documents():
+    """Página para listar documentos"""
+    # Datos de ejemplo
+    documents = [
+        {
+            'id': 1,
+            'filename': 'ticket_pesaje.pdf',
+            'type': 'Ticket de Pesaje',
+            'status': 'Procesado',
+            'date': '2024-01-19',
+            'items': 3
+        },
+        {
+            'id': 2, 
+            'filename': 'guia_remision.jpg',
+            'type': 'Guía de Remisión',
+            'status': 'Pendiente',
+            'date': '2024-01-18',
+            'items': 1
+        }
+    ]
+    
+    return render_template('documents/list.html',  # O 'warehouse_documents/list.html'
+                         title='Documentos de Almacén',
+                         documents=documents,
+                         active_page='documents')
+
+# También puedes agregar una ruta raíz
+@warehouse_documents_bp.route('/')
+def index():
+    return list_documents()  # Redirige a list_documents
