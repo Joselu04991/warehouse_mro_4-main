@@ -66,14 +66,14 @@ def health_check():
 @warehouse_documents_bp.route('/list')
 def list_documents():
     """Página para listar documentos"""
-    # Datos de ejemplo
+    # Datos de ejemplo CORREGIDOS - sin 'created_at'
     documents = [
         {
             'id': 1,
             'filename': 'ticket_pesaje.pdf',
             'type': 'Ticket de Pesaje',
             'status': 'Procesado',
-            'date': '2024-01-19',
+            'date': '19/01/2024',  # ← Formato string, no datetime
             'items': 3
         },
         {
@@ -81,12 +81,12 @@ def list_documents():
             'filename': 'guia_remision.jpg',
             'type': 'Guía de Remisión',
             'status': 'Pendiente',
-            'date': '2024-01-18',
+            'date': '18/01/2024',  # ← Formato string
             'items': 1
         }
     ]
     
-    return render_template('documents/list.html',  # O 'warehouse_documents/list.html'
+    return render_template('documents/list.html',
                          title='Documentos de Almacén',
                          documents=documents,
                          active_page='documents')
