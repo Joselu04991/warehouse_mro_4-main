@@ -1,6 +1,4 @@
-##########################
-# BASE DEL SISTEMA
-##########################
+# requirements.txt - VERSIÓN PARA RAILWAY (MÍNIMA)
 Flask==3.0.2
 Flask-Login==0.6.3
 Flask-SQLAlchemy==3.1.1
@@ -9,61 +7,26 @@ Werkzeug==3.0.1
 python-dotenv==1.0.1
 gunicorn==21.2.0
 
-##########################
-# BASES DE DATOS
-##########################
-psycopg2-binary==2.9.9  # PostgreSQL (Railway usa PostgreSQL)
-pymysql==1.1.1          # MySQL (opcional, comentar si no usas)
+# Bases de datos
+psycopg2-binary==2.9.9
+pymysql==1.1.1
 
-##########################
-# ARCHIVOS EXCEL / CSV
-##########################
+# Excel/CSV
 pandas==2.2.3
 openpyxl==3.1.2
 xlsxwriter==3.2.0
 numpy==1.26.4
 
-##########################
-# REPORTES / PDF
-##########################
-reportlab==4.1.0
-fpdf2==2.7.7
+# PDF/Imágenes
 PyPDF2==2.12.1
-
-##########################
-# IMÁGENES Y PROCESAMIENTO
-##########################
 Pillow==10.2.0
 qrcode==7.4.2
 
-##########################
-# FECHAS Y TIEMPO
-##########################
+# OCR
+pytesseract==0.3.10
+PyMuPDF==1.24.9
+
+# Utilidades
 python-dateutil==2.9.0.post0
 pytz==2024.1
-
-##########################
-# SEGURIDAD / OTP
-##########################
-pyotp==2.9.0
-bcrypt==4.1.2
-
-##########################
-# VALIDACIONES
-##########################
-email-validator==2.2.0
-
-##########################
-# REQUESTS / APIs
-##########################
 requests==2.32.3
-
-##########################
-# OCR - RECONOCIMIENTO DE TEXTO (SIN DEPENDENCIAS DEL SISTEMA)
-##########################
-pytesseract==0.3.10      # Solo el wrapper - Tesseract debe estar instalado
-PyMuPDF==1.24.9          # Para PDFs - Ligero y eficiente
-# pdf2image==1.16.3      # REMOVIDO - Necesita poppler-utils del sistema
-# opencv-python-headless==4.10.0.84  # REMOVIDO - Muy pesado, usa PIL en su lugar
-
-
