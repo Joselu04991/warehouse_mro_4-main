@@ -77,7 +77,7 @@ requests==2.32.3
 # SVG Y GRÁFICOS (opcional)
 ##########################
 # svglib==1.5.1          # REMOVIDO - Puede causar problemas
-##########################
+###########################
 # OCR - RECONOCIMIENTO DE TEXTO
 ##########################
 pytesseract==0.3.10      # Wrapper para Tesseract OCR
