@@ -1,4 +1,4 @@
-<!-- templates/documents/list.html - VERSIÓN CORREGIDA -->
+<!-- templates/documents/list.html - ACTUALIZADO CON PROCESAMIENTO REAL -->
 {% extends "base.html" %}
 
 {% block content %}
@@ -7,119 +7,143 @@
     
     <div class="card">
         <div class="card-body">
-            <p class="lead">Sistema de procesamiento automático de documentos</p>
-            
-            <div class="alert alert-info">
-                <h5>🚀 ¿Cómo funciona?</h5>
-                <ol>
-                    <li>Sube documentos (PDF, imágenes)</li>
-                    <li>El sistema extrae información automáticamente con OCR</li>
-                    <li>Los datos se organizan en Excel</li>
-                    <li>Puedes descargar los resultados</li>
-                </ol>
-            </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>📤 Subir Documentos</h5>
-                        </div>
-                        <div class="card-body">
-                            <form id="uploadForm" enctype="multipart/form-data">
-                                <div class="mb-3">
-                                    <label class="form-label">Seleccionar archivos:</label>
-                                    <input type="file" class="form-control" id="documentFiles" 
-                                           name="files" multiple 
-                                           accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff">
-                                </div>
-                                <button type="button" class="btn btn-primary" onclick="uploadDocuments()">
-                                    <i class="fas fa-upload"></i> Subir y Procesar
-                                </button>
-                            </form>
-                            
-                            <div class="mt-3">
-                                <a href="{{ url_for('warehouse_documents.test_endpoint') }}" 
-                                   class="btn btn-outline-info btn-sm">
-                                    🔍 Probar API
-                                </a>
-                                <a href="{{ url_for('warehouse_documents.health_check') }}" 
-                                   class="btn btn-outline-success btn-sm">
-                                    ❤️ Health Check
-                                </a>
-                                <a href="{{ url_for('warehouse_documents.supported_formats') }}" 
-                                   class="btn btn-outline-secondary btn-sm">
-                                    📋 Formatos
-                                </a>
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Procesamiento Automático de Documentos</h4>
+                    <p class="lead">Sube tickets, facturas o guías y obtén un Excel organizado automáticamente</p>
+                    
+                    <div class="alert alert-success">
+                        <h5>✅ Información que extraemos:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li>Número de proceso</li>
+                                    <li>Proveedor</li>
+                                    <li>Conductor</li>
+                                    <li>Placa del vehículo</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li>Pesos (tara, bruto, neto)</li>
+                                    <li>Producto/material</li>
+                                    <li>Fechas</li>
+                                    <li>RUC/DNI</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5>📊 Documentos Recientes</h5>
-                        </div>
+                <div class="col-md-4">
+                    <div class="card bg-light">
                         <div class="card-body">
-                            {% if documents %}
-                            <div class="list-group">
-                                {% for doc in documents %}
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ doc.filename }}</h6>
-                                        <small>{{ doc.date }}</small>
-                                    </div>
-                                    <p class="mb-1">Tipo: {{ doc.type }}</p>
-                                    <small>
-                                        Estado: 
-                                        <span class="badge bg-{{ 'success' if doc.status == 'Procesado' else 'warning' }}">
-                                            {{ doc.status }}
-                                        </span>
-                                        • Items: {{ doc.items }}
-                                    </small>
-                                </div>
-                                {% endfor %}
+                            <h5>📊 Formatos Soportados</h5>
+                            <div class="d-flex flex-wrap gap-2 mb-3">
+                                <span class="badge bg-primary">PDF</span>
+                                <span class="badge bg-primary">JPG</span>
+                                <span class="badge bg-primary">PNG</span>
+                                <span class="badge bg-primary">BMP</span>
+                                <span class="badge bg-primary">TIFF</span>
                             </div>
-                            {% else %}
-                            <div class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-3x mb-3"></i>
-                                <p>No hay documentos aún.</p>
-                                <p>Sube tu primer documento para comenzar.</p>
-                            </div>
-                            {% endif %}
+                            <p class="small text-muted">Tamaño máximo: 16MB por archivo</p>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div class="mt-4">
-                <h5>📋 Características</h5>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
-                                <h6>PDF e Imágenes</h6>
-                                <p class="small">Soporta múltiples formatos</p>
+            <hr class="my-4">
+            
+            <!-- Formulario de subida -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Subir Documentos</h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Seleccionar archivos:</label>
+                            <input type="file" class="form-control" id="documentFiles" 
+                                   name="files" multiple 
+                                   accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff"
+                                   required>
+                            <div class="form-text">Puedes seleccionar múltiples archivos a la vez</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Tipos de documentos aceptados:</h6>
+                            <ul class="mb-0">
+                                <li>Tickets de pesaje/báscula</li>
+                                <li>Guías de remisión/traslado</li>
+                                <li>Facturas de proveedores</li>
+                                <li>Bauchers de recepción</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <button type="button" class="btn btn-primary btn-lg px-4" onclick="uploadDocuments()" id="uploadButton">
+                                <i class="fas fa-upload me-2"></i>Subir y Procesar
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="testAPI()">
+                                <i class="fas fa-vial me-2"></i>Probar API
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Resultados -->
+                    <div id="resultsContainer" class="mt-4" style="display: none;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Resultados del Procesamiento</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="resultsContent"></div>
+                                <div id="downloadSection" style="display: none;" class="mt-3">
+                                    <hr>
+                                    <h6><i class="fas fa-file-excel text-success me-2"></i>Excel Generado</h6>
+                                    <p>Tu archivo Excel está listo para descargar con todos los datos organizados.</p>
+                                    <a href="#" id="downloadLink" class="btn btn-success">
+                                        <i class="fas fa-download me-2"></i>Descargar Excel
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-robot fa-2x text-primary mb-2"></i>
-                                <h6>OCR Automático</h6>
-                                <p class="small">Extrae texto automáticamente</p>
+                </div>
+            </div>
+            
+            <!-- Ejemplos -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-images me-2"></i>Ejemplos de Documentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-weight fa-3x text-primary mb-3"></i>
+                                    <h6>Ticket de Pesaje</h6>
+                                    <p class="small">Extrae: Pesos, placa, conductor, fechas</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-file-excel fa-2x text-success mb-2"></i>
-                                <h6>Exporta a Excel</h6>
-                                <p class="small">Organiza datos en planillas</p>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-truck fa-3x text-warning mb-3"></i>
+                                    <h6>Guía de Remisión</h6>
+                                    <p class="small">Extrae: Proveedor, producto, direcciones</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-file-invoice-dollar fa-3x text-success mb-3"></i>
+                                    <h6>Factura</h6>
+                                    <p class="small">Extrae: RUC, montos, productos, fechas</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -130,6 +154,8 @@
 </div>
 
 <script>
+let currentExcelUrl = null;
+
 function uploadDocuments() {
     const files = document.getElementById('documentFiles').files;
     if (files.length === 0) {
@@ -143,10 +169,21 @@ function uploadDocuments() {
     }
     
     // Mostrar indicador de carga
-    const button = document.querySelector('#uploadForm button');
+    const button = document.getElementById('uploadButton');
     const originalText = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
     button.disabled = true;
+    
+    // Mostrar contenedor de resultados
+    document.getElementById('resultsContainer').style.display = 'block';
+    document.getElementById('resultsContent').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Procesando...</span>
+            </div>
+            <p class="mt-2">Procesando ${files.length} documento(s)...</p>
+        </div>
+    `;
     
     fetch('{{ url_for("warehouse_documents.upload_documents") }}', {
         method: 'POST',
@@ -154,13 +191,77 @@ function uploadDocuments() {
     })
     .then(response => response.json())
     .then(data => {
-        alert('✅ Documentos subidos exitosamente\n\nResultado: ' + JSON.stringify(data, null, 2));
-        // Recargar página para mostrar nuevos documentos
-        window.location.reload();
+        console.log('Respuesta:', data);
+        
+        let html = '';
+        if (data.success) {
+            html += `
+                <div class="alert alert-success">
+                    <h5><i class="fas fa-check-circle me-2"></i>Procesamiento Completado</h5>
+                    <p>${data.message}</p>
+                    <p><strong>Total:</strong> ${data.total_files} archivos | 
+                       <strong>Exitosos:</strong> ${data.successful} | 
+                       <strong>Fallidos:</strong> ${data.failed}</p>
+                </div>
+            `;
+            
+            // Mostrar detalles de cada archivo
+            if (data.results && data.results.length > 0) {
+                html += `<h6>Detalles por archivo:</h6><div class="list-group">`;
+                data.results.forEach((result, index) => {
+                    if (result.success) {
+                        html += `
+                            <div class="list-group-item list-group-item-success">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <strong>${result.filename}</strong>
+                                    <span class="badge bg-success">ÉXITO</span>
+                                </div>
+                                <small>Páginas: ${result.pages} | Texto extraído: ${result.text_length} caracteres</small>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="list-group-item list-group-item-danger">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <strong>${result.filename}</strong>
+                                    <span class="badge bg-danger">ERROR</span>
+                                </div>
+                                <small>Error: ${result.error}</small>
+                            </div>
+                        `;
+                    }
+                });
+                html += `</div>`;
+            }
+            
+            // Mostrar botón de descarga si hay Excel
+            if (data.excel_generated) {
+                currentExcelUrl = data.excel_url;
+                document.getElementById('downloadSection').style.display = 'block';
+                document.getElementById('downloadLink').href = data.excel_url;
+                document.getElementById('downloadLink').download = data.excel_filename;
+            }
+            
+        } else {
+            html += `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-circle me-2"></i>Error en el Procesamiento</h5>
+                    <p>${data.error || 'Error desconocido'}</p>
+                </div>
+            `;
+        }
+        
+        document.getElementById('resultsContent').innerHTML = html;
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('❌ Error al subir documentos: ' + error.message);
+        document.getElementById('resultsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle me-2"></i>Error de Conexión</h5>
+                <p>No se pudo conectar con el servidor. Error: ${error.message}</p>
+                <p>Verifica tu conexión a internet o intenta nuevamente.</p>
+            </div>
+        `;
     })
     .finally(() => {
         // Restaurar botón
@@ -168,5 +269,29 @@ function uploadDocuments() {
         button.disabled = false;
     });
 }
+
+function testAPI() {
+    fetch('{{ url_for("warehouse_documents.test_endpoint") }}')
+        .then(response => response.json())
+        .then(data => {
+            alert('✅ API funcionando correctamente\n\n' + JSON.stringify(data, null, 2));
+        })
+        .catch(error => {
+            alert('❌ Error probando API: ' + error.message);
+        });
+}
+
+// Descargar Excel cuando se hace clic
+document.getElementById('downloadLink')?.addEventListener('click', function(e) {
+    if (currentExcelUrl) {
+        // Forzar descarga
+        const link = document.createElement('a');
+        link.href = currentExcelUrl;
+        link.download = 'documentos_procesados.xlsx';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+});
 </script>
 {% endblock %}
