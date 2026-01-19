@@ -25,20 +25,6 @@ from .task import Task
 from .score import Score
 from .document_record import DocumentRecord
 
-# Importar productividad si existe (el archivo se llama 'productivitydad.py')
-try:
-    from .productivitydad import Productividad
-    print("✅ Productividad importado correctamente")
-except ImportError as e:
-    print(f"⚠️  No se pudo importar Productividad: {e}")
-    # Crear un modelo dummy para evitar errores
-    class Productividad(db.Model):
-        __tablename__ = 'productividad_dummy'
-        id = db.Column(db.Integer, primary_key=True)
-        # Campos mínimos para que no falle
-        fecha = db.Column(db.Date)
-        usuario_id = db.Column(db.Integer)
-
 # Si no tienes el archivo simulator_mro_routes.py, crea uno dummy
 try:
     from .scenario_mro import ScenarioMRO, UserDecisionMRO
@@ -58,4 +44,5 @@ except ImportError:
 
 # Opcional: También corregir el nombre del archivo si prefieres
 # Puedes renombrar 'productivitydad.py' a 'productividad.py' y actualizar la importación
+
 
