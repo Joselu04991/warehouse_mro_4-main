@@ -6,112 +6,27 @@ import cv2
 import numpy as np
 import io
 import os
-import tempfile
 import logging
-from typing import Dict, Any, Optional, Union  # <-- AÑADIR ESTO
+from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 class AdvancedOCRReader:
     def __init__(self, tesseract_path: Optional[str] = None):
-        """
-        Inicializa el lector OCR avanzado
-        
-        Args:
-            tesseract_path: Ruta al ejecutable de Tesseract (opcional)
-        """
+        """Inicializa el lector OCR"""
+        # Configurar Tesseract si se proporciona ruta
         if tesseract_path:
             pytesseract.pytesseract.tesseract_cmd = tesseract_path
-        else:
-            # Intentar encontrar Tesseract automáticamente
-            try:
-                # Para Windows
-                pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-            except:
-                pass
         
-        # Configuración para documentos en español
+        # Configuración para español
         self.tessconfig = r'--oem 3 --psm 6 -l spa+eng'
-        
-    def extract_text_from_pdf_images(self, pdf_path: str) -> str:
-        """
-        Extrae texto de un PDF que contiene solo imágenes (cada página es una imagen)
-        
-        Args:
-            pdf_path: Ruta al archivo PDF
-            
-        Returns:
-            Texto de todas las páginas concatenado
-        """
-        all_text = []
-        
-        try:
-            # Abrir PDF
-            pdf_document = fitz.open(pdf_path)
-            
-            logger.info(f"Procesando PDF con {len(pdf_document)} páginas...")
-            
-            for page_num in range(len(pdf_document)):
-                page = pdf_document.load_page(page_num)
-                
-                # Obtener la imagen de la página con alta resolución
-                mat = fitz.Matrix(2.0, 2.0)  # Escala 2x para mejor calidad
-                pix = page.get_pixmap(matrix=mat)
-                
-                # Convertir a bytes
-                img_data = pix.tobytes("png")
-                
-                # Convertir a imagen PIL
-                image = Image.open(io.BytesIO(img_data))
-                
-                # Preprocesar y hacer OCR
-                page_text = self._ocr_from_image(image)
-                
-                if page_text.strip():
-                    all_text.append(f"=== PÁGINA {page_num + 1} ===\n{page_text}")
-                else:
-                    logger.warning(f"Página {page_num + 1} no produjo texto")
-            
-            pdf_document.close()
-            
-        except Exception as e:
-            logger.error(f"Error procesando PDF {pdf_path}: {e}")
-            return f"Error: {str(e)}"
-        
-        return "\n\n".join(all_text)
     
-    def extract_text_from_image_file(self, image_path: str) -> str:
+    def extract_text_from_file(self, file_path: str) -> Dict[str, Any]:
         """
-        Extrae texto de un archivo de imagen
+        Extrae texto de un archivo (PDF o imagen)
         
-        Args:
-            image_path: Ruta al archivo de imagen
-            
         Returns:
-            Texto extraído
-        """
-        try:
-            # Abrir imagen
-            image = Image.open(image_path)
-            
-            # Preprocesar y hacer OCR
-            text = self._ocr_from_image(image)
-            
-            return text
-            
-        except Exception as e:
-            logger.error(f"Error procesando imagen {image_path}: {e}")
-            return f"Error: {str(e)}"
-    
-    def extract_text_from_upload(self, file_path: str) -> Dict[str, Any]:
-        """
-        Extrae texto de cualquier archivo subido (PDF o imagen)
-        
-        Args:
-            file_path: Ruta al archivo
-            
-        Returns:
-            Diccionario con texto y metadatos
+            Dict con 'success', 'text', 'file_type', 'pages', 'error'
         """
         result = {
             'success': False,
@@ -127,22 +42,12 @@ class AdvancedOCRReader:
             
             if ext == '.pdf':
                 result['file_type'] = 'pdf'
-                # Verificar si el PDF tiene texto o solo imágenes
-                if self._pdf_has_text(file_path):
-                    # Extraer texto directo
-                    result['text'] = self._extract_pdf_text(file_path)
-                else:
-                    # PDF con imágenes, usar OCR
-                    result['text'] = self.extract_text_from_pdf_images(file_path)
+                result['text'] = self._extract_from_pdf(file_path)
+                result['pages'] = self._count_pdf_pages(file_path)
                 
-                # Contar páginas
-                pdf_doc = fitz.open(file_path)
-                result['pages'] = len(pdf_doc)
-                pdf_doc.close()
-                
-            elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif', '.webp']:
+            elif ext in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']:
                 result['file_type'] = 'image'
-                result['text'] = self.extract_text_from_image_file(file_path)
+                result['text'] = self._extract_from_image(file_path)
                 result['pages'] = 1
                 
             else:
@@ -150,152 +55,95 @@ class AdvancedOCRReader:
                 return result
             
             result['success'] = True
-            result['text_length'] = len(result['text'])
             
         except Exception as e:
             result['error'] = str(e)
-            logger.error(f"Error procesando archivo {file_path}: {e}")
+            logger.error(f"Error procesando {file_path}: {e}")
         
         return result
     
-    def _pdf_has_text(self, pdf_path: str) -> bool:
-        """Verifica si un PDF tiene texto seleccionable"""
+    def _extract_from_pdf(self, pdf_path: str) -> str:
+        """Extrae texto de PDF"""
         try:
-            pdf_doc = fitz.open(pdf_path)
-            has_text = False
+            doc = fitz.open(pdf_path)
+            all_text = []
             
-            for page_num in range(min(3, len(pdf_doc))):  # Revisar primeras 3 páginas
-                page = pdf_doc.load_page(page_num)
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                # Intentar extraer texto directamente
                 text = page.get_text()
+                
                 if text.strip():
-                    has_text = True
-                    break
+                    all_text.append(f"=== Página {page_num + 1} ===\n{text}")
+                else:
+                    # Convertir a imagen y usar OCR
+                    mat = fitz.Matrix(2.0, 2.0)
+                    pix = page.get_pixmap(matrix=mat)
+                    img_data = pix.tobytes("png")
+                    image = Image.open(io.BytesIO(img_data))
+                    
+                    # Preprocesar imagen
+                    processed = self._preprocess_image(image)
+                    page_text = pytesseract.image_to_string(processed, config=self.tessconfig)
+                    all_text.append(f"=== Página {page_num + 1} (OCR) ===\n{page_text}")
             
-            pdf_doc.close()
-            return has_text
-            
-        except:
-            return False
-    
-    def _extract_pdf_text(self, pdf_path: str) -> str:
-        """Extrae texto directo de PDF con texto seleccionable"""
-        all_text = []
-        
-        try:
-            pdf_doc = fitz.open(pdf_path)
-            
-            for page_num in range(len(pdf_doc)):
-                page = pdf_doc.load_page(page_num)
-                text = page.get_text()
-                if text.strip():
-                    all_text.append(f"=== PÁGINA {page_num + 1} ===\n{text}")
-            
-            pdf_doc.close()
+            doc.close()
+            return "\n\n".join(all_text)
             
         except Exception as e:
-            logger.error(f"Error extrayendo texto de PDF: {e}")
+            logger.error(f"Error extrayendo de PDF: {e}")
             return f"Error: {str(e)}"
-        
-        return "\n\n".join(all_text)
     
-    def _ocr_from_image(self, image: Image.Image) -> str:
-        """
-        Realiza OCR en una imagen PIL con preprocesamiento avanzado
-        
-        Args:
-            image: Imagen PIL
-            
-        Returns:
-            Texto extraído
-        """
+    def _extract_from_image(self, image_path: str) -> str:
+        """Extrae texto de imagen"""
         try:
-            # Convertir a OpenCV para preprocesamiento
+            image = Image.open(image_path)
+            processed = self._preprocess_image(image)
+            text = pytesseract.image_to_string(processed, config=self.tessconfig)
+            return text
+        except Exception as e:
+            logger.error(f"Error extrayendo de imagen: {e}")
+            return f"Error: {str(e)}"
+    
+    def _preprocess_image(self, image: Image.Image) -> Image.Image:
+        """Preprocesa imagen para mejorar OCR"""
+        try:
+            # Convertir a OpenCV
             cv_image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
             
-            # Preprocesamiento
-            processed = self._preprocess_image(cv_image)
+            # Escala de grises
+            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
             
-            # Convertir de nuevo a PIL
-            pil_image = Image.fromarray(processed)
-            
-            # Configuración para documentos
-            custom_config = r'--oem 3 --psm 6'
-            
-            # Intentar con español primero, luego inglés
-            try:
-                text = pytesseract.image_to_string(pil_image, config=custom_config, lang='spa')
-                if len(text.strip()) < 20:  # Si no hay suficiente texto
-                    text = pytesseract.image_to_string(pil_image, config=custom_config, lang='eng')
-            except:
-                # Fallback a solo inglés
-                text = pytesseract.image_to_string(pil_image, config=custom_config, lang='eng')
-            
-            return text
-            
-        except Exception as e:
-            logger.error(f"Error en OCR: {e}")
-            return ""
-    
-    def _preprocess_image(self, image: np.ndarray) -> np.ndarray:
-        """
-        Preprocesa imagen para mejorar OCR
-        
-        Args:
-            image: Imagen OpenCV (BGR)
-            
-        Returns:
-            Imagen preprocesada (RGB)
-        """
-        try:
-            # Convertir a escala de grises
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            
-            # Aplicar desenfoque para reducir ruido
-            blurred = cv2.GaussianBlur(gray, (3, 3), 0)
-            
-            # Aplicar umbral adaptativo
+            # Umbral adaptativo
             thresh = cv2.adaptiveThreshold(
-                blurred, 255,
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY, 11, 2
             )
             
-            # Dilatación para conectar caracteres rotos
-            kernel = np.ones((1, 1), np.uint8)
-            dilated = cv2.dilate(thresh, kernel, iterations=1)
-            
-            # Erosión para reducir ruido
-            eroded = cv2.erode(dilated, kernel, iterations=1)
-            
-            # Aumentar contraste
-            alpha = 1.5  # Factor de contraste
-            beta = 0    # Brillo
-            contrasted = cv2.convertScaleAbs(eroded, alpha=alpha, beta=beta)
-            
-            # Convertir de nuevo a RGB
-            result = cv2.cvtColor(contrasted, cv2.COLOR_GRAY2RGB)
-            
-            return result
+            # Convertir de nuevo a PIL
+            return Image.fromarray(thresh)
             
         except Exception as e:
-            logger.warning(f"Error en preprocesamiento: {e}, usando imagen original")
-            return image
-
-# Función principal simplificada
-def extract_text_from_file(file_path: str) -> str:
-    """
-    Función principal para extraer texto de archivos
+            logger.warning(f"Error en preprocesamiento: {e}")
+            return image  # Devolver imagen original si falla
     
-    Args:
-        file_path: Ruta al archivo
-        
-    Returns:
-        Texto extraído
-    """
+    def _count_pdf_pages(self, pdf_path: str) -> int:
+        """Cuenta páginas de PDF"""
+        try:
+            doc = fitz.open(pdf_path)
+            pages = len(doc)
+            doc.close()
+            return pages
+        except:
+            return 0
+
+# Función simple para uso rápido
+def extract_text_from_file(file_path: str) -> str:
+    """Extrae texto de un archivo (función simplificada)"""
     reader = AdvancedOCRReader()
-    result = reader.extract_text_from_upload(file_path)
+    result = reader.extract_text_from_file(file_path)
     
     if result['success']:
         return result['text']
     else:
-        raise Exception(f"Error extrayendo texto: {result.get('error', 'Unknown error')}")
+        raise Exception(f"Error: {result.get('error', 'Unknown error')}")
