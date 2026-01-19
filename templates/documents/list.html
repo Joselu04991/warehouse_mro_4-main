@@ -1,251 +1,172 @@
+<!-- templates/documents/list.html - VERSIÓN CORREGIDA -->
 {% extends "base.html" %}
 
-{% block title %}Documentos de Almacén{% endblock %}
-
 {% block content %}
-<div class="container-fluid">
-  <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="mb-1">📄 Documentos de Almacén</h2>
-      <p class="text-muted mb-0">
-        {% if pagination and pagination.total > 0 %}
-          <small>
-            Mostrando {{ pagination.items|length }} de {{ pagination.total }} documentos
-            {% if total_weight > 0 %}
-            | Peso total: {{ "{:,.2f}".format(total_weight) }} kg
-            {% endif %}
-          </small>
-        {% else %}
-          <small>No hay documentos registrados</small>
-        {% endif %}
-      </p>
-    </div>
-    <div>
-      <a href="{{ url_for('warehouse_documents.upload_documents') }}"
-         class="btn btn-primary">
-         <i class="bi bi-cloud-upload me-1"></i> Subir Documento
-      </a>
-    </div>
-  </div>
-
-  <!-- Filtros -->
-  <div class="card mb-4">
-    <div class="card-body p-3">
-      <form method="GET" action="{{ url_for('warehouse_documents.list_documents') }}" 
-            class="row g-2 align-items-end">
-        <div class="col-md-4">
-          <label class="form-label small mb-1">🔍 Número de Proceso</label>
-          <input type="text" class="form-control form-control-sm" 
-                 name="process_number" 
-                 placeholder="Ej: PROC-20240118-ABCD"
-                 value="{{ process_number }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label small mb-1">🏢 Proveedor</label>
-          <input type="text" class="form-control form-control-sm" 
-                 name="provider" 
-                 placeholder="Buscar proveedor..."
-                 value="{{ provider }}">
-        </div>
-        <div class="col-md-4">
-          <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-sm btn-primary flex-grow-1">
-              <i class="bi bi-search me-1"></i> Buscar
-            </button>
-            {% if process_number or provider %}
-            <a href="{{ url_for('warehouse_documents.list_documents') }}" 
-               class="btn btn-sm btn-outline-secondary">
-              <i class="bi bi-x-lg"></i> Limpiar
-            </a>
-            {% endif %}
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Tabla de documentos -->
-  <div class="card">
-    <div class="card-body p-0">
-      {% if documents %}
-      <div class="table-responsive">
-        <table class="table table-hover mb-0">
-          <thead class="table-light">
-            <tr>
-              <th width="120">📅 Fecha</th>
-              <th>🔢 Proceso</th>
-              <th>🏢 Proveedor</th>
-              <th>👤 Conductor</th>
-              <th>🚚 Placa</th>
-              <th class="text-end">⚖️ Peso Neto</th>
-              <th width="180" class="text-center">🔧 Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for doc in documents %}
-            <tr>
-              <td>
-                <small class="text-muted d-block">{{ doc.get('date', '') }}</small>
-                <small class="text-muted">{{ doc.created_at.strftime('%H:%M') }}</small>
-              </td>
-              <td>
-                <strong class="text-primary">{{ doc.process_number or 'Sin número' }}</strong>
-                {% if doc.file_size %}
-                <br>
-                <small class="text-muted">
-                  📏 {{ (doc.file_size / 1024 / 1024)|round(2) }} MB
-                </small>
-                {% endif %}
-              </td>
-              <td>{{ doc.provider or '-' }}</td>
-              <td>{{ doc.driver or '-' }}</td>
-              <td>
-                {% if doc.plate_tractor %}
-                <span class="badge bg-dark">{{ doc.plate_tractor }}</span>
-                {% else %}
-                -
-                {% endif %}
-              </td>
-              <td class="text-end">
-                {% if doc.net_weight %}
-                <strong class="text-success">{{ "{:,.2f}".format(doc.net_weight) }} kg</strong>
-                {% else %}
-                -
-                {% endif %}
-              </td>
-              <td class="text-center">
-                <div class="btn-group btn-group-sm" role="group">
-                  <!-- Ver detalles -->
-                  <a href="{{ url_for('warehouse_documents.view_document', document_id=doc.id) }}"
-                     class="btn btn-outline-info" 
-                     title="Ver detalles">
-                    <i class="bi bi-eye"></i>
-                  </a>
-                  
-                  <!-- Descargar Excel -->
-                  {% if doc.excel_file %}
-                  <a href="{{ url_for('warehouse_documents.download_file', 
-                                     document_id=doc.id, file_type='excel') }}"
-                     class="btn btn-outline-success" 
-                     title="Descargar Excel">
-                    <i class="bi bi-file-excel"></i>
-                  </a>
-                  {% else %}
-                  <button class="btn btn-outline-secondary" disabled title="Excel no disponible">
-                    <i class="bi bi-file-excel"></i>
-                  </button>
-                  {% endif %}
-                  
-                  <!-- Descargar Original -->
-                  {% if doc.original_file %}
-                  <a href="{{ url_for('warehouse_documents.download_file', 
-                                     document_id=doc.id, file_type='original') }}"
-                     class="btn btn-outline-secondary" 
-                     title="Ver original">
-                    <i class="bi bi-file-earmark"></i>
-                  </a>
-                  {% endif %}
-                  
-                  <!-- Eliminar -->
-                  <form method="POST" 
-                        action="{{ url_for('warehouse_documents.delete_document', 
-                                         document_id=doc.id) }}"
-                        class="d-inline"
-                        onsubmit="return confirm('¿Eliminar documento {{ doc.process_number }}?');">
-                    <button type="submit" class="btn btn-outline-danger" 
-                            title="Eliminar">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </form>
+<div class="container mt-4">
+    <h2>📄 Documentos de Almacén</h2>
+    
+    <div class="card">
+        <div class="card-body">
+            <p class="lead">Sistema de procesamiento automático de documentos</p>
+            
+            <div class="alert alert-info">
+                <h5>🚀 ¿Cómo funciona?</h5>
+                <ol>
+                    <li>Sube documentos (PDF, imágenes)</li>
+                    <li>El sistema extrae información automáticamente con OCR</li>
+                    <li>Los datos se organizan en Excel</li>
+                    <li>Puedes descargar los resultados</li>
+                </ol>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>📤 Subir Documentos</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="uploadForm" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label class="form-label">Seleccionar archivos:</label>
+                                    <input type="file" class="form-control" id="documentFiles" 
+                                           name="files" multiple 
+                                           accept=".pdf,.jpg,.jpeg,.png,.bmp,.tiff">
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="uploadDocuments()">
+                                    <i class="fas fa-upload"></i> Subir y Procesar
+                                </button>
+                            </form>
+                            
+                            <div class="mt-3">
+                                <a href="{{ url_for('warehouse_documents.test_endpoint') }}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    🔍 Probar API
+                                </a>
+                                <a href="{{ url_for('warehouse_documents.health_check') }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    ❤️ Health Check
+                                </a>
+                                <a href="{{ url_for('warehouse_documents.supported_formats') }}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    📋 Formatos
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          {% if total_weight > 0 %}
-          <tfoot class="table-light">
-            <tr>
-              <td colspan="5" class="text-end"><strong>📊 Total peso:</strong></td>
-              <td class="text-end">
-                <strong class="text-primary">{{ "{:,.2f}".format(total_weight) }} kg</strong>
-              </td>
-              <td></td>
-            </tr>
-          </tfoot>
-          {% endif %}
-        </table>
-      </div>
-      
-      <!-- Paginación -->
-      {% if pagination and pagination.pages > 1 %}
-      <div class="card-footer">
-        <nav aria-label="Paginación">
-          <ul class="pagination justify-content-center mb-0">
-            {% if pagination.has_prev %}
-            <li class="page-item">
-              <a class="page-link" 
-                 href="{{ url_for('warehouse_documents.list_documents', 
-                                page=pagination.prev_num, 
-                                process_number=process_number, 
-                                provider=provider) }}">
-                <i class="bi bi-chevron-left"></i>
-              </a>
-            </li>
-            {% endif %}
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>📊 Documentos Recientes</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if documents %}
+                            <div class="list-group">
+                                {% for doc in documents %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ doc.filename }}</h6>
+                                        <small>{{ doc.date }}</small>
+                                    </div>
+                                    <p class="mb-1">Tipo: {{ doc.type }}</p>
+                                    <small>
+                                        Estado: 
+                                        <span class="badge bg-{{ 'success' if doc.status == 'Procesado' else 'warning' }}">
+                                            {{ doc.status }}
+                                        </span>
+                                        • Items: {{ doc.items }}
+                                    </small>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <p>No hay documentos aún.</p>
+                                <p>Sube tu primer documento para comenzar.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-              {% if page %}
-                <li class="page-item {% if page == pagination.page %}active{% endif %}">
-                  <a class="page-link" 
-                     href="{{ url_for('warehouse_documents.list_documents', 
-                                    page=page, 
-                                    process_number=process_number, 
-                                    provider=provider) }}">
-                    {{ page }}
-                  </a>
-                </li>
-              {% else %}
-                <li class="page-item disabled">
-                  <span class="page-link">...</span>
-                </li>
-              {% endif %}
-            {% endfor %}
-            
-            {% if pagination.has_next %}
-            <li class="page-item">
-              <a class="page-link" 
-                 href="{{ url_for('warehouse_documents.list_documents', 
-                                page=pagination.next_num, 
-                                process_number=process_number, 
-                                provider=provider) }}">
-                <i class="bi bi-chevron-right"></i>
-              </a>
-            </li>
-            {% endif %}
-          </ul>
-          <p class="text-center text-muted mt-2 mb-0">
-            Página {{ pagination.page }} de {{ pagination.pages }}
-          </p>
-        </nav>
-      </div>
-      {% endif %}
-      
-      {% else %}
-      <!-- Estado vacío -->
-      <div class="text-center py-5">
-        <div class="text-muted mb-3">
-          <i class="bi bi-inbox" style="font-size: 4rem;"></i>
+            <div class="mt-4">
+                <h5>📋 Características</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-pdf fa-2x text-danger mb-2"></i>
+                                <h6>PDF e Imágenes</h6>
+                                <p class="small">Soporta múltiples formatos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-robot fa-2x text-primary mb-2"></i>
+                                <h6>OCR Automático</h6>
+                                <p class="small">Extrae texto automáticamente</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-excel fa-2x text-success mb-2"></i>
+                                <h6>Exporta a Excel</h6>
+                                <p class="small">Organiza datos en planillas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h4>📭 No hay documentos</h4>
-        <p class="text-muted mb-4">Comienza subiendo tu primer documento de almacén</p>
-        <a href="{{ url_for('warehouse_documents.upload_document') }}"
-           class="btn btn-primary btn-lg">
-           <i class="bi bi-cloud-upload me-2"></i> Subir Primer Documento
-        </a>
-      </div>
-      {% endif %}
     </div>
-  </div>
 </div>
+
+<script>
+function uploadDocuments() {
+    const files = document.getElementById('documentFiles').files;
+    if (files.length === 0) {
+        alert('Por favor, selecciona al menos un archivo');
+        return;
+    }
+    
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files', files[i]);
+    }
+    
+    // Mostrar indicador de carga
+    const button = document.querySelector('#uploadForm button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+    button.disabled = true;
+    
+    fetch('{{ url_for("warehouse_documents.upload_documents") }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('✅ Documentos subidos exitosamente\n\nResultado: ' + JSON.stringify(data, null, 2));
+        // Recargar página para mostrar nuevos documentos
+        window.location.reload();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('❌ Error al subir documentos: ' + error.message);
+    })
+    .finally(() => {
+        // Restaurar botón
+        button.innerHTML = originalText;
+        button.disabled = false;
+    });
+}
+</script>
 {% endblock %}
