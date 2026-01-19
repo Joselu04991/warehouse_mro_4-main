@@ -292,3 +292,42 @@ def diagnostic():
         info['system_files'][file_path] = os.path.exists(file_path)
     
     return jsonify(info)
+
+# routes/warehouse_documents.py
+@warehouse_documents_bp.route('/test-ocr-simple', methods=['GET'])
+def test_ocr_simple():
+    """Prueba OCR simple sin procesamiento complejo"""
+    from utils.ocr_reader import AdvancedOCRReader
+    
+    reader = AdvancedOCRReader()
+    
+    # Crear imagen de prueba en memoria
+    from PIL import Image, ImageDraw
+    import io
+    
+    img = Image.new('RGB', (400, 100), color='white')
+    d = ImageDraw.Draw(img)
+    d.text((10, 10), "PRUEBA OCR 12345 ABC", fill='black')
+    d.text((10, 40), "TICKET DE PESAJE", fill='black')
+    d.text((10, 70), "PLACA: CDL-733", fill='black')
+    
+    # Guardar en bytes
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='PNG')
+    img_bytes.seek(0)
+    
+    # Guardar temporalmente
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+        img.save(tmp.name)
+        
+        # Probar OCR
+        result = reader.extract_text_from_file(tmp.name)
+    
+    return jsonify({
+        'tesseract_available': reader.tesseract_available,
+        'tesseract_path': reader.tesseract_path,
+        'ocr_result': result,
+        'test_image_text': ['PRUEBA OCR 12345 ABC', 'TICKET DE PESAJE', 'PLACA: CDL-733'],
+        'timestamp': datetime.now().isoformat()
+    })
